@@ -1,8 +1,9 @@
-package com.yourco.warehouse.web.controller.client;
+package com.yourco.warehouse.controllers.client;
 
+import com.yourco.warehouse.repository.ProductRepository;
 import com.yourco.warehouse.service.AuditService;
 import com.yourco.warehouse.service.CatalogService;
-import com.yourco.warehouse.util.RequestUtils;
+import com.yourco.warehouse.utils.RequestUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,10 +20,12 @@ public class CatalogController {
 
     private final CatalogService catalogService;
     private final AuditService auditService;
+    private final ProductRepository productRepository;
 
-    public CatalogController(CatalogService catalogService, AuditService auditService) {
+    public CatalogController(CatalogService catalogService, AuditService auditService, ProductRepository productRepository) {
         this.catalogService = catalogService;
         this.auditService = auditService;
+        this.productRepository = productRepository;
     }
 
     @GetMapping("/catalog")
@@ -71,7 +74,7 @@ public class CatalogController {
             logger.error("Грешка при зареждане на каталога", e);
             model.addAttribute("error", "Възникна грешка при зареждане на каталога");
             model.addAttribute("q", query);
-            model.addAttribute("products", java.util.Collections.emptyList());
+            model.addAttribute("products", productRepository.findAll());
             model.addAttribute("resultCount", 0);
             return "client/catalog";
         }

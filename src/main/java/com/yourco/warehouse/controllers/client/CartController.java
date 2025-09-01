@@ -1,6 +1,6 @@
-package com.yourco.warehouse.web.controller.client;
+package com.yourco.warehouse.controllers.client;
 
-import com.yourco.warehouse.entity.Product;
+import com.yourco.warehouse.entity.ProductEntity;
 import com.yourco.warehouse.repository.ProductRepository;
 import com.yourco.warehouse.service.OrderService;
 import jakarta.servlet.http.HttpSession;
@@ -51,7 +51,7 @@ public class CartController {
                             Authentication auth,
                             RedirectAttributes redirectAttributes) {
         try {
-            Product p = productRepository.findBySku(sku)
+            ProductEntity p = productRepository.findBySku(sku)
                     .orElseThrow(() -> new IllegalArgumentException("Продуктът с SKU " + sku + " не е намерен"));
 
             if (!p.isActive()) {
@@ -156,7 +156,7 @@ public class CartController {
 
             // Валидация на всички продукти в кошницата
             for (CartLine line : cart.values()) {
-                Product p = productRepository.findBySku(line.sku).orElse(null);
+                ProductEntity p = productRepository.findBySku(line.sku).orElse(null);
                 if (p == null || !p.isActive()) {
                     redirectAttributes.addFlashAttribute("error",
                             "Продуктът \"" + line.name + "\" вече не е наличен. Моля, премахнете го от кошницата.");

@@ -1,4 +1,4 @@
-package com.yourco.warehouse.web.controller.admin;
+package com.yourco.warehouse.controllers.admin;
 
 import com.yourco.warehouse.entity.enums.OrderStatus;
 import com.yourco.warehouse.repository.OrderRepository;

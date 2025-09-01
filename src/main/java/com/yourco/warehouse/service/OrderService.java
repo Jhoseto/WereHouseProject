@@ -69,7 +69,7 @@ public class OrderService {
         BigDecimal totalVat = BigDecimal.ZERO;
 
         for (CartItem ci : cartItems.values()){
-            Product p = productRepository.findBySku(ci.getSku())
+            ProductEntity p = productRepository.findBySku(ci.getSku())
                     .orElseThrow(() -> new IllegalArgumentException("Несъществуващ SKU: " + ci.getSku()));
 
             if (!p.isActive()) {
@@ -152,39 +152,5 @@ public class OrderService {
         return saved;
     }
 
-    public boolean canUserAccessOrder(Order order, User user) {
-        if (user.getRole().name().equals("ADMIN")) {
-            return true;
-        }
 
-        if (user.getRole().name().equals("CLIENT") && user.getClient() != null) {
-            return order.getClient().getId().equals(user.getClient().getId());
-        }
-
-        return false;
-    }
-
-    // DTO за елемент в кошница (service-level)
-    public static class CartItem {
-        private final String sku;
-        private final BigDecimal qty;
-        private final String note;
-
-        public CartItem(String sku, BigDecimal qty, String note) {
-            if (sku == null || sku.trim().isEmpty()) {
-                throw new IllegalArgumentException("SKU не може да бъде празно");
-            }
-            if (qty == null || qty.compareTo(BigDecimal.ZERO) <= 0) {
-                throw new IllegalArgumentException("Количеството трябва да бъде положително число");
-            }
-
-            this.sku = sku.trim();
-            this.qty = qty;
-            this.note = note != null ? note.trim() : "";
-        }
-
-        public String getSku() { return sku; }
-        public BigDecimal getQty() { return qty; }
-        public String getNote() { return note; }
-    }
 }

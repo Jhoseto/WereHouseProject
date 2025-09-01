@@ -1,4 +1,4 @@
-package com.yourco.warehouse.util;
+package com.yourco.warehouse.utils;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.util.StringUtils;

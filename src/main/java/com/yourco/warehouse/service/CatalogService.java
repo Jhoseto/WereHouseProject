@@ -1,6 +1,6 @@
 package com.yourco.warehouse.service;
 
-import com.yourco.warehouse.entity.Product;
+import com.yourco.warehouse.entity.ProductEntity;
 import com.yourco.warehouse.repository.ProductRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,7 +24,7 @@ public class CatalogService {
     }
 
     @Cacheable(value = "products", key = "#query ?: 'all'", unless = "#result.isEmpty()")
-    public List<Product> searchActive(String query) {
+    public List<ProductEntity> searchActive(String query) {
         try {
             if (query == null || query.isBlank()) {
                 logger.debug("Зареждане на всички активни продукти");
@@ -34,12 +34,12 @@ public class CatalogService {
             String trimmedQuery = query.trim();
             logger.debug("Търсене на продукти с заявка: '{}'", trimmedQuery);
 
-            List<Product> results = productRepository.findByActiveTrueAndNameContainingIgnoreCase(trimmedQuery);
+            List<ProductEntity> results = productRepository.findByActiveTrueAndNameContainingIgnoreCase(trimmedQuery);
 
             // Ако няма резултати по име, опитваме се по SKU
             if (results.isEmpty()) {
                 logger.debug("Няма резултати по име, търсене по SKU: '{}'", trimmedQuery);
-                Optional<Product> productBySku = productRepository.findBySkuAndActiveTrue(trimmedQuery.toUpperCase());
+                Optional<ProductEntity> productBySku = productRepository.findBySkuAndActiveTrue(trimmedQuery.toUpperCase());
                 if (productBySku.isPresent()) {
                     results = List.of(productBySku.get());
                 }
@@ -54,7 +54,7 @@ public class CatalogService {
         }
     }
 
-    public Page<Product> searchActivePaginated(String query, Pageable pageable) {
+    public Page<ProductEntity> searchActivePaginated(String query, Pageable pageable) {
         try {
             if (query == null || query.isBlank()) {
                 return productRepository.findByActiveTrueOrderByName(pageable);
@@ -69,7 +69,7 @@ public class CatalogService {
         }
     }
 
-    public Optional<Product> findProductBySku(String sku) {
+    public Optional<ProductEntity> findProductBySku(String sku) {
         if (sku == null || sku.trim().isEmpty()) {
             return Optional.empty();
         }
@@ -77,7 +77,7 @@ public class CatalogService {
         return productRepository.findBySkuAndActiveTrue(sku.trim().toUpperCase());
     }
 
-    public List<Product> getAllActiveProducts() {
+    public List<ProductEntity> getAllActiveProducts() {
         return productRepository.findByActiveTrue();
     }
 

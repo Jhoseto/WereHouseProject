@@ -1,11 +1,13 @@
 
 package com.yourco.warehouse.repository;
 
-import com.yourco.warehouse.entity.Client;
+import com.yourco.warehouse.entity.UserEntity;
+import com.yourco.warehouse.entity.UserEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
 
-public interface ClientRepository extends JpaRepository<Client, Long> {
-    Optional<Client> findByClientCode(String code);
+public interface ClientRepository extends JpaRepository<UserEntity, Long> {
+    Optional<UserEntity> findByUserCode(Long userCode);
+
 }

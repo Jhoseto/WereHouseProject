@@ -1,6 +1,6 @@
 
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="bg" th:replace="layout/base :: content">
+<html xmlns:th="http://www.thymeleaf.org" lang="bg" th:replace="~{layout/base :: content}">
 <body>
 <section th:object="${order}">
   <h1>Заявка № <span th:text="*{id}">0</span> — <span th:text="*{status}"></span></h1>

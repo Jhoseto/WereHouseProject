@@ -6,7 +6,7 @@ import java.math.BigDecimal;
 
 @Entity
 @Table(name = "products")
-public class Product {
+public class ProductEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -46,9 +46,9 @@ public class Product {
     private String category;
 
     // Конструктор
-    public Product() {}
+    public ProductEntity() {}
 
-    public Product(String sku, String name, String unit, BigDecimal price, int vatRate) {
+    public ProductEntity(String sku, String name, String unit, BigDecimal price, int vatRate) {
         this.sku = sku;
         this.name = name;
         this.unit = unit;
@@ -154,8 +154,8 @@ public class Product {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof Product)) return false;
-        Product product = (Product) o;
+        if (!(o instanceof ProductEntity)) return false;
+        ProductEntity product = (ProductEntity) o;
         return sku != null && sku.equals(product.sku);
     }
 

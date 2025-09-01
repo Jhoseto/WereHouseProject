@@ -1,8 +1,8 @@
-package com.yourco.warehouse.web.controller;
+package com.yourco.warehouse.controllers;
 
 import com.yourco.warehouse.exception.AccessDeniedException;
 import com.yourco.warehouse.service.AuditService;
-import com.yourco.warehouse.util.RequestUtils;
+import com.yourco.warehouse.utils.RequestUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;

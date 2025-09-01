@@ -1,6 +1,6 @@
 package com.yourco.warehouse.service;
 
-import com.yourco.warehouse.entity.User;
+import com.yourco.warehouse.entity.UserEntity;
 import com.yourco.warehouse.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
@@ -27,7 +27,7 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User u = userRepository.findByUsername(username)
+        UserEntity u = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("Потребителят не е намерен: " + username));
 
         if (!u.isActive()) {

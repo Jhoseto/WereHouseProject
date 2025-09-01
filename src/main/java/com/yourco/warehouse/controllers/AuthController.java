@@ -1,5 +1,6 @@
-package com.yourco.warehouse.web.controller;
+package com.yourco.warehouse.controllers;
 
+import com.yourco.warehouse.entity.enums.Role;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -18,7 +19,7 @@ public class AuthController {
 
         // Ако потребителят вече е влязъл, пренасочваме го
         if (auth != null && auth.isAuthenticated()) {
-            if (auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
+            if (auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals(Role.ADMIN))) {
                 return "redirect:/admin";
             } else {
                 return "redirect:/catalog";
@@ -38,7 +39,7 @@ public class AuthController {
             model.addAttribute("logoutMessage", "Излязохте успешно от системата");
         }
 
-        // Добавяне на demo креденциали за удобство в dev режим
+
         model.addAttribute("showDemoCredentials", true);
 
         return "auth/login";

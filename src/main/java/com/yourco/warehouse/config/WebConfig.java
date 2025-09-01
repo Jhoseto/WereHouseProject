@@ -1,6 +1,6 @@
 package com.yourco.warehouse.config;
 
-import com.yourco.warehouse.components.AuditInterceptor;
+
 import com.yourco.warehouse.components.PerformanceInterceptor;
 import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
@@ -18,13 +18,11 @@ import java.util.Locale;
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
-    private final AuditInterceptor auditInterceptor;
 
     private final PerformanceInterceptor performanceInterceptor;
 
-    public WebConfig(AuditInterceptor auditInterceptor,
-                     PerformanceInterceptor performanceInterceptor) {
-        this.auditInterceptor = auditInterceptor;
+    public WebConfig(PerformanceInterceptor performanceInterceptor) {
+
         this.performanceInterceptor = performanceInterceptor;
     }
 
@@ -71,11 +69,7 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addInterceptor(performanceInterceptor)
                 .addPathPatterns("/**")
                 .excludePathPatterns("/css/**", "/js/**", "/img/**", "/favicon.ico");
-
-        // Audit interceptor for important operations
-        registry.addInterceptor(auditInterceptor)
-                .addPathPatterns("/admin/**", "/orders/**", "/cart/submit")
-                .excludePathPatterns("/css/**", "/js/**", "/img/**");
+        
     }
 
     /**

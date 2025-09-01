@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход - Система за поръчки</title>
+    <link rel="stylesheet" href="/css/index.css">
+</head>
+<body>
+<header>
+    <div class="logo">
+        <img src="/images/logo1.png" alt="Лого на фирмата">
+    </div>
+</header>
+
+<main>
+    <section class="login-container">
+        <div class="tabs">
+            <button class="tab-button active" data-tab="client">Клиент</button>
+            <button class="tab-button" data-tab="employee">Служител</button>
+        </div>
+
+        <div class="tab-content active" id="client">
+            <h2>Вход за клиенти</h2>
+            <form th:action="@{/login}" method="post">
+                <input type="hidden" name="role" value="CLIENT">
+                <label for="client-username">Потребителско име</label>
+                <input type="text" id="client-username" name="username" required>
+
+                <label for="client-password">Парола</label>
+                <input type="password" id="client-password" name="password" required>
+
+                <button type="submit">Вход</button>
+            </form>
+            <p class="error-message" th:text="${errorMessage}"></p>
+            <p class="logout-message" th:text="${logoutMessage}"></p>
+        </div>
+
+        <div class="tab-content" id="employee">
+            <h2>Вход за служители</h2>
+            <form th:action="@{/login}" method="post">
+                <input type="hidden" name="role" value="EMPLOYEE">
+                <label for="employee-username">Потребителско име</label>
+                <input type="text" id="employee-username" name="username" required>
+
+                <label for="employee-password">Парола</label>
+                <input type="password" id="employee-password" name="password" required>
+
+                <button type="submit">Вход</button>
+            </form>
+            <p class="error-message" th:text="${errorMessage}"></p>
+            <p class="logout-message" th:text="${logoutMessage}"></p>
+        </div>
+    </section>
+</main>
+
+<footer>
+    <p>&copy; 2025 Фирма за поръчки</p>
+</footer>
+
+<script>
+    const tabs = document.querySelectorAll('.tab-button');
+    const contents = document.querySelectorAll('.tab-content');
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            tabs.forEach(t => t.classList.remove('active'));
+            contents.forEach(c => c.classList.remove('active'));
+
+            tab.classList.add('active');
+            document.getElementById(tab.dataset.tab).classList.add('active');
+        });
+    });
+</script>
+</body>
+</html>

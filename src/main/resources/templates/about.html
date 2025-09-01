@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="bg" th:replace="layout/base :: content">
+<html xmlns:th="http://www.thymeleaf.org" lang="bg" th:replace="~{layout/base :: content}">
 <body>
 <section>
     <div class="about-header">
@@ -238,7 +238,7 @@
 
     <!-- Back to home -->
     <div class="back-actions">
-        <a th:href="@{/}" class="btn">
+        <a th:href="@{/static}" class="btn">
             <span class="nav-icon">🏠</span> Обратно към началото
         </a>
     </div>

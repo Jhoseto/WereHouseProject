@@ -14,7 +14,7 @@ public class OrderItem {
     private Order order;
 
     @ManyToOne(optional=false, fetch = FetchType.LAZY)
-    private Product product;
+    private ProductEntity product;
 
     @Column(nullable=false)
     private BigDecimal qty;
@@ -28,8 +28,8 @@ public class OrderItem {
     public Long getId() { return id; }
     public Order getOrder() { return order; }
     public void setOrder(Order order) { this.order = order; }
-    public Product getProduct() { return product; }
-    public void setProduct(Product product) { this.product = product; }
+    public ProductEntity getProduct() { return product; }
+    public void setProduct(ProductEntity product) { this.product = product; }
     public BigDecimal getQty() { return qty; }
     public void setQty(BigDecimal qty) { this.qty = qty; }
     public BigDecimal getUnitPrice() { return unitPrice; }

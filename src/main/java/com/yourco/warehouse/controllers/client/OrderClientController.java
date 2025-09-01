@@ -1,13 +1,13 @@
-package com.yourco.warehouse.web.controller.client;
+package com.yourco.warehouse.controllers.client;
 
 import com.yourco.warehouse.entity.Client;
 import com.yourco.warehouse.entity.Order;
-import com.yourco.warehouse.entity.User;
+import com.yourco.warehouse.entity.UserEntity;
 import com.yourco.warehouse.exception.AccessDeniedException;
 import com.yourco.warehouse.repository.OrderRepository;
 import com.yourco.warehouse.repository.UserRepository;
 import com.yourco.warehouse.service.OrderService;
-import com.yourco.warehouse.util.RequestUtils;
+import com.yourco.warehouse.utils.RequestUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.slf4j.Logger;
@@ -48,7 +48,7 @@ public class OrderClientController {
                            Model model,
                            Authentication auth) {
         UserDetails ud = (UserDetails) auth.getPrincipal();
-        User u = userRepository.findByUsername(ud.getUsername()).orElseThrow();
+        UserEntity u = userRepository.findByUsername(ud.getUsername()).orElseThrow();
         Client c = u.getClient();
 
         if (c == null) {
@@ -72,8 +72,8 @@ public class OrderClientController {
                               HttpSession session,
                               HttpServletRequest request) {
         try {
-            Map<String, com.yourco.warehouse.web.controller.client.CartController.CartLine> cart =
-                    (Map<String, com.yourco.warehouse.web.controller.client.CartController.CartLine>) session.getAttribute("CART");
+            Map<String, com.yourco.warehouse.controllers.client.CartController.CartLine> cart =
+                    (Map<String, com.yourco.warehouse.controllers.client.CartController.CartLine>) session.getAttribute("CART");
 
             if (cart == null || cart.isEmpty()) {
                 logger.warn("Опит за изпращане на празна кошница от потребител: {}", auth.getName());
@@ -82,7 +82,7 @@ public class OrderClientController {
 
             String notes = (String) session.getAttribute("ORDER_NOTES");
             UserDetails ud = (UserDetails) auth.getPrincipal();
-            User u = userRepository.findByUsername(ud.getUsername()).orElseThrow();
+            UserEntity u = userRepository.findByUsername(ud.getUsername()).orElseThrow();
             Client c = u.getClient();
 
             if (c == null) {
@@ -127,10 +127,10 @@ public class OrderClientController {
                     .orElseThrow(() -> new AccessDeniedException("Заявката не е намерена"));
 
             UserDetails ud = (UserDetails) auth.getPrincipal();
-            User currentUser = userRepository.findByUsername(ud.getUsername()).orElseThrow();
+            UserEntity currentUserEntity = userRepository.findByUsername(ud.getUsername()).orElseThrow();
 
             // Проверка за достъп
-            if (!orderService.canUserAccessOrder(o, currentUser)) {
+            if (!orderService.canUserAccessOrder(o, currentUserEntity)) {
                 logger.warn("Неоторизиран достъп до заявка #{} от потребител: {}", id, auth.getName());
                 throw new AccessDeniedException("Няmate право да разглеждате тази заявка");
             }

@@ -15,7 +15,7 @@ public class Order {
     private Long id;
 
     @ManyToOne(optional=false, fetch = FetchType.LAZY)
-    private Client client;
+    private UserEntity client;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable=false)
@@ -43,8 +43,8 @@ public class Order {
     }
 
     public Long getId() { return id; }
-    public Client getClient() { return client; }
-    public void setClient(Client client) { this.client = client; }
+    public UserEntity getClient() { return client; }
+    public void setClient(UserEntity client) { this.client = client; }
     public OrderStatus getStatus() { return status; }
     public void setStatus(OrderStatus status) { this.status = status; }
     public String getNotes() { return notes; }

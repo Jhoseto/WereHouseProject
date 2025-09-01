@@ -1,4 +1,4 @@
-package com.yourco.warehouse.web.controller;
+package com.yourco.warehouse.controllers;
 
 import com.yourco.warehouse.entity.enums.OrderStatus;
 import com.yourco.warehouse.repository.OrderRepository;
@@ -50,13 +50,13 @@ public class HomeController {
             model.addAttribute("isAuthenticated", false);
         }
 
-        return "home/index";
+        return "/index";
     }
 
     @GetMapping("/about")
     public String about(Model model) {
         model.addAttribute("appVersion", "1.0.0");
         model.addAttribute("buildDate", "2025-01-01");
-        return "home/about";
+        return "/about";
     }
 }

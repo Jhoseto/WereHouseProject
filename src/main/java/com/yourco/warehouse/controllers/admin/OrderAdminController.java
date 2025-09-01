@@ -1,10 +1,10 @@
-package com.yourco.warehouse.web.controller.admin;
+package com.yourco.warehouse.controllers.admin;
 
 import com.yourco.warehouse.entity.Order;
 import com.yourco.warehouse.entity.enums.OrderStatus;
 import com.yourco.warehouse.repository.OrderRepository;
 import com.yourco.warehouse.service.OrderService;
-import com.yourco.warehouse.util.RequestUtils;
+import com.yourco.warehouse.utils.RequestUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

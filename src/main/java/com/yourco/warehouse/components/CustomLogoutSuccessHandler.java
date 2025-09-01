@@ -1,7 +1,7 @@
 package com.yourco.warehouse.components;
 
-import com.yourco.warehouse.service.AuditService;
-import com.yourco.warehouse.util.RequestUtils;
+
+import com.yourco.warehouse.utils.RequestUtils;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -17,15 +17,6 @@ import java.io.IOException;
 @Component
 public class CustomLogoutSuccessHandler implements LogoutSuccessHandler {
 
-    private static final Logger logger = LoggerFactory.getLogger(CustomLogoutSuccessHandler.class);
-
-    private final AuditService auditService;
-
-    @Autowired
-    public CustomLogoutSuccessHandler(AuditService auditService) {
-        this.auditService = auditService;
-    }
-
     @Override
     public void onLogoutSuccess(HttpServletRequest request,
                                 HttpServletResponse response,
@@ -36,10 +27,7 @@ public class CustomLogoutSuccessHandler implements LogoutSuccessHandler {
             String ipAddress = RequestUtils.getClientIpAddress(request);
             String userAgent = request.getHeader("User-Agent");
 
-            logger.info("Успешен изход за потребител: {} от IP: {}", username, ipAddress);
 
-            // Audit log
-            auditService.logUserLogout(username, ipAddress, userAgent);
         }
 
         response.sendRedirect("/login?logout=true");

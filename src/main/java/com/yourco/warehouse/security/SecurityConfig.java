@@ -1,8 +1,7 @@
 package com.yourco.warehouse.security;
 
-import com.yourco.warehouse.components.CustomAuthenticationFailureHandler;
-import com.yourco.warehouse.components.CustomAuthenticationSuccessHandler;
-import com.yourco.warehouse.components.CustomLogoutSuccessHandler;
+
+import com.yourco.warehouse.repository.UserRepository;
 import com.yourco.warehouse.service.CustomUserDetailsService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,7 +16,6 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
@@ -30,14 +28,12 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http,
-                                           CustomAuthenticationSuccessHandler successHandler,
-                                           CustomAuthenticationFailureHandler failureHandler,
                                            LogoutSuccessHandler logoutSuccessHandler) throws Exception {
         http
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/css/**", "/js/**", "/img/**", "/favicon.ico").permitAll()
+                        .requestMatchers("/css/**", "/js/**", "/images/**", "/favicon.ico")
+                        .permitAll()
                         .requestMatchers("/", "/error").permitAll()
-                        .requestMatchers("/h2-console/**").permitAll() // Development only
                         .requestMatchers("/actuator/health").permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
@@ -47,8 +43,6 @@ public class SecurityConfig {
                         .loginProcessingUrl("/login")
                         .usernameParameter("username")
                         .passwordParameter("password")
-                        .successHandler(successHandler)
-                        .failureHandler(failureHandler)
                         .permitAll()
                 )
                 .logout(logout -> logout
@@ -79,13 +73,18 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder(12);
     }
 
-
     @Bean
-    public DaoAuthenticationProvider authProvider(UserDetailsService uds, PasswordEncoder encoder) {
+    public DaoAuthenticationProvider authProvider(CustomUserDetailsService uds, PasswordEncoder encoder) {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
         provider.setUserDetailsService(uds);
         provider.setPasswordEncoder(encoder);
         return provider;
+    }
+
+
+    @Bean
+    public UserDetailsService userDetailsService(UserRepository userRepository) {
+        return new CustomUserDetailsService(userRepository);
     }
 
 }
