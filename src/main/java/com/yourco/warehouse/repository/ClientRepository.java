@@ -1,7 +1,7 @@
 
 package com.yourco.warehouse.repository;
 
-import com.yourco.warehouse.domain.entity.Client;
+import com.yourco.warehouse.entity.Client;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

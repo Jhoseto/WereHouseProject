@@ -1,7 +1,7 @@
 
-package com.yourco.warehouse.domain.entity;
+package com.yourco.warehouse.entity;
 
-import com.yourco.warehouse.domain.enums.Role;
+import com.yourco.warehouse.entity.enums.Role;
 import jakarta.persistence.*;
 
 @Entity

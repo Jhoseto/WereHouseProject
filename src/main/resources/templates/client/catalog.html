@@ -1,32 +1,221 @@
-
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="bg" th:replace="layout/base :: content">
 <body>
 <section>
-  <h1>Каталог</h1>
-  <form method="get" th:action="@{/catalog}">
-    <input type="text" name="q" th:value="${q}" placeholder="Търси продукт..." />
-    <button type="submit">Търси</button>
-  </form>
-  <table class="table">
-    <thead><tr><th>SKU</th><th>Име</th><th>Ед.</th><th>Цена (лв)</th><th></th></tr></thead>
-    <tbody>
-    <tr th:each="p : ${products}">
-      <td th:text="${p.sku}">SKU</td>
-      <td th:text="${p.name}">Наименование</td>
-      <td th:text="${p.unit}">pcs</td>
-      <td th:text="${#numbers.formatDecimal(p.price,1,2)}">0.00</td>
-      <td>
-        <form method="post" th:action="@{/cart/add}">
-      <div th:replace="~{layout/fragments :: csrf}"></div>
-          <input type="hidden" name="sku" th:value="${p.sku}" />
-          <input type="number" name="qty" value="1" min="1" style="width:70px" />
-          <button type="submit">Добави</button>
+    <h1>📦 Каталог продукти</h1>
+
+    <!-- Search form -->
+    <div class="search-form">
+        <form method="get" th:action="@{/catalog}" class="search-form">
+            <input type="text"
+                   name="q"
+                   class="search-input"
+                   th:value="${q}"
+                   placeholder="Търси по име или SKU..."
+                   maxlength="100" />
+            <button type="submit" class="btn">
+                <span class="nav-icon">🔍</span> Търси
+            </button>
+            <a th:if="${hasQuery}" th:href="@{/catalog}" class="btn btn-secondary">
+                <span class="nav-icon">✖️</span> Изчисти
+            </a>
         </form>
-      </td>
-    </tr>
-    </tbody>
-  </table>
+    </div>
+
+    <!-- Search results info -->
+    <div th:if="${hasQuery}" class="search-results-info">
+        <p>
+            <strong>Резултати за "</strong><span th:text="${q}">query</span><strong>":</strong>
+            <span th:text="${resultCount}">0</span> продукта
+        </p>
+    </div>
+    <div th:unless="${hasQuery}" class="search-results-info">
+        <p>Показани са всички активни продукти: <strong th:text="${resultCount}">0</strong></p>
+    </div>
+
+    <!-- Products display -->
+    <div th:if="${resultCount > 0}">
+        <div class="product-grid">
+            <div th:each="p : ${products}" class="product-card">
+                <div class="product-sku" th:text="${p.sku}">SKU</div>
+                <div class="product-name" th:text="${p.name}">Product Name</div>
+
+                <div class="product-details">
+                    <div class="product-price">
+                        <span th:text="${#numbers.formatDecimal(p.price,1,2)}">0.00</span> лв
+                        <span class="product-unit" th:text="'/ ' + ${p.unit}">/ pcs</span>
+                    </div>
+
+                    <div th:if="${p.description}" class="product-description">
+                        <small th:text="${p.description}">Description</small>
+                    </div>
+
+                    <div th:if="${p.category}" class="product-category">
+                        <span class="category-badge" th:text="${p.category}">Category</span>
+                    </div>
+                </div>
+
+                <form method="post" th:action="@{/cart/add}" class="add-to-cart-form">
+                    <div th:replace="~{layout/fragments :: csrf}"></div>
+                    <input type="hidden" name="sku" th:value="${p.sku}" />
+
+                    <div class="quantity-controls">
+                        <button type="button" class="qty-btn qty-minus" onclick="updateQuantity(this, -1)">-</button>
+                        <input type="number"
+                               name="qty"
+                               value="1"
+                               min="1"
+                               max="9999"
+                               class="qty-input" />
+                        <button type="button" class="qty-btn qty-plus" onclick="updateQuantity(this, 1)">+</button>
+                    </div>
+
+                    <button type="submit" class="btn btn-success">
+                        <span class="nav-icon">🛒</span> Добави в кошницата
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Empty state -->
+    <div th:if="${resultCount == 0}" class="empty-state">
+        <div class="empty-state-icon">
+            <span th:if="${hasQuery}">🔍</span>
+            <span th:unless="${hasQuery}">📦</span>
+        </div>
+        <div class="empty-state-text">
+            <span th:if="${hasQuery}">Няма намерени продукти за "<strong th:text="${q}">query</strong>"</span>
+            <span th:unless="${hasQuery}">Няма активни продукти в каталога</span>
+        </div>
+        <div th:if="${hasQuery}">
+            <a th:href="@{/catalog}" class="btn">Покажи всички продукти</a>
+        </div>
+    </div>
+
+    <!-- Quick actions -->
+    <div class="quick-actions" style="margin-top: 30px; text-align: center;">
+        <a th:href="@{/cart}" class="btn btn-secondary">
+            <span class="nav-icon">🛒</span> Виж кошницата
+        </a>
+        <a th:href="@{/orders}" class="btn btn-secondary">
+            <span class="nav-icon">📋</span> Моите заявки
+        </a>
+    </div>
 </section>
+
+<style>
+    .search-results-info {
+        margin: 15px 0;
+        padding: 10px;
+        background: #f8f9fa;
+        border-radius: 6px;
+        color: #6c757d;
+    }
+
+    .product-details {
+        margin: 15px 0;
+    }
+
+    .product-description {
+        margin: 8px 0;
+        color: #6c757d;
+        line-height: 1.4;
+    }
+
+    .category-badge {
+        display: inline-block;
+        background: #e9ecef;
+        color: #495057;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .quantity-controls {
+        display: flex;
+        align-items: center;
+        gap: 0;
+        margin-bottom: 10px;
+    }
+
+    .qty-btn {
+        background: #e9ecef;
+        border: 1px solid #ced4da;
+        width: 30px;
+        height: 35px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-weight: bold;
+        transition: background 0.2s ease;
+    }
+
+    .qty-btn:hover {
+        background: #dee2e6;
+    }
+
+    .qty-minus {
+        border-radius: 4px 0 0 4px;
+    }
+
+    .qty-plus {
+        border-radius: 0 4px 4px 0;
+    }
+
+    .qty-input {
+        width: 60px;
+        text-align: center;
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+        margin: 0;
+    }
+
+    .quick-actions {
+        border-top: 1px solid #dee2e6;
+        padding-top: 20px;
+    }
+
+    @media (max-width: 768px) {
+        .quantity-controls {
+            justify-content: center;
+        }
+
+        .add-to-cart-form {
+            text-align: center;
+        }
+    }
+</style>
+
+<script>
+    function updateQuantity(button, change) {
+        const input = button.parentElement.querySelector('.qty-input');
+        const currentValue = parseInt(input.value);
+        const newValue = Math.max(1, Math.min(9999, currentValue + change));
+        input.value = newValue;
+    }
+
+    // Form submission feedback
+    document.addEventListener('DOMContentLoaded', function() {
+        const forms = document.querySelectorAll('.add-to-cart-form');
+        forms.forEach(form => {
+            form.addEventListener('submit', function(e) {
+                const button = this.querySelector('button[type="submit"]');
+                const originalText = button.innerHTML;
+                button.innerHTML = '<span class="loading"></span> Добавя...';
+                button.disabled = true;
+
+                // Re-enable after 2 seconds if form doesn't redirect
+                setTimeout(() => {
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                }, 2000);
+            });
+        });
+    });
+</script>
 </body>
 </html>

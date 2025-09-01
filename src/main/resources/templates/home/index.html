@@ -1,13 +1,715 @@
-
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="bg" th:replace="layout/base :: content">
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="bg"
+      th:replace="~{layout/base :: content}">
+
 <body>
 <section>
-  <h1>Добре дошли</h1>
-  <p>Това е минимален портал за заявки.</p>
-  <div>
-    <a th:href="@{/catalog}" class="btn">Към каталога</a>
-  </div>
+    <!-- Hero section -->
+    <div class="hero-section">
+        <div class="hero-content">
+            <h1 class="hero-title">
+                <span class="hero-icon">📦</span>
+                Добре дошли в складовия портал
+            </h1>
+            <p class="hero-subtitle">
+                Вашето надежно решение за управление на B2B заявки и складови операции
+            </p>
+
+            <!-- Anonymous user welcome -->
+            <div sec:authorize="!isAuthenticated()" class="hero-actions">
+                <a th:href="@{/login}" class="btn hero-btn">
+                    <span class="nav-icon">🔑</span> Влезте в системата
+                </a>
+                <div class="hero-features">
+                    <div class="feature-item">
+                        <span class="feature-icon">📋</span>
+                        <span>Лесно създаване на заявки</span>
+                    </div>
+                    <div class="feature-item">
+                        <span class="feature-icon">⚡</span>
+                        <span>Бърза обработка</span>
+                    </div>
+                    <div class="feature-item">
+                        <span class="feature-icon">📊</span>
+                        <span>Детайлно проследяване</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Authenticated user dashboard -->
+            <div sec:authorize="isAuthenticated()" class="user-dashboard">
+                <div class="welcome-message">
+                    <h2>
+                        <span sec:authorize="hasRole('ADMIN')">🛡️</span>
+                        <span sec:authorize="hasRole('CLIENT')">👋</span>
+                        Здравейте, <span sec:authentication="name" class="username">потребител</span>!
+                    </h2>
+                    <p class="user-role-desc">
+                        <span sec:authorize="hasRole('ADMIN')">Администраторски достъп - управлявайте заявки и системата</span>
+                        <span sec:authorize="hasRole('CLIENT')">Клиентски достъп - създавайте и проследявайте заявки</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- System stats for all users -->
+    <div class="stats-section">
+        <h3>📈 Статистики на системата</h3>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">📦</div>
+                <div class="stat-number" th:text="${activeProducts ?: 0}">0</div>
+                <div class="stat-label">Активни продукти</div>
+            </div>
+
+            <!-- Admin stats -->
+            <div sec:authorize="hasRole('ADMIN')" th:if="${showAdminStats}">
+                <div class="stat-card admin-stat">
+                    <div class="stat-icon">⏳</div>
+                    <div class="stat-number" th:text="${submittedOrders ?: 0}">0</div>
+                    <div class="stat-label">За потвърждение</div>
+                </div>
+                <div class="stat-card admin-stat">
+                    <div class="stat-icon">📋</div>
+                    <div class="stat-number" th:text="${totalOrders ?: 0}">0</div>
+                    <div class="stat-label">Общо заявки</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick actions -->
+    <div sec:authorize="isAuthenticated()" class="actions-section">
+        <h3>🚀 Бързи действия</h3>
+
+        <!-- Client actions -->
+        <div sec:authorize="hasRole('CLIENT')" class="actions-grid client-actions">
+            <a th:href="@{/catalog}" class="action-card primary">
+                <div class="action-icon">📦</div>
+                <div class="action-content">
+                    <h4>Разгледай каталога</h4>
+                    <p>Намери и добави продукти в кошницата</p>
+                </div>
+                <div class="action-arrow">→</div>
+            </a>
+
+            <a th:href="@{/cart}" class="action-card">
+                <div class="action-icon">🛒</div>
+                <div class="action-content">
+                    <h4>Кошницата</h4>
+                    <p>Прегледай и изпрати заявка</p>
+                </div>
+                <div class="action-badge" th:if="${session.CART != null and not #maps.isEmpty(session.CART)}"
+                     th:text="${#maps.size(session.CART)}">0</div>
+                <div class="action-arrow">→</div>
+            </a>
+
+            <a th:href="@{/orders}" class="action-card">
+                <div class="action-icon">📋</div>
+                <div class="action-content">
+                    <h4>Моите заявки</h4>
+                    <p>Проследи статуса на заявките</p>
+                </div>
+                <div class="action-arrow">→</div>
+            </a>
+        </div>
+
+        <!-- Admin actions -->
+        <div sec:authorize="hasRole('ADMIN')" class="actions-grid admin-actions">
+            <a th:href="@{/admin}" class="action-card primary">
+                <div class="action-icon">⚙️</div>
+                <div class="action-content">
+                    <h4>Админ панел</h4>
+                    <p>Преглед на статистики и управление</p>
+                </div>
+                <div class="action-arrow">→</div>
+            </a>
+
+            <a th:href="@{/admin/orders(status=SUBMITTED)}" class="action-card urgent"
+               th:if="${submittedOrders != null and submittedOrders > 0}">
+                <div class="action-icon">⚠️</div>
+                <div class="action-content">
+                    <h4>Заявки за потвърждение</h4>
+                    <p>Обработи чакащи заявки</p>
+                </div>
+                <div class="action-badge" th:text="${submittedOrders}">0</div>
+                <div class="action-arrow">→</div>
+            </a>
+
+            <a th:href="@{/admin/orders}" class="action-card">
+                <div class="action-icon">📋</div>
+                <div class="action-content">
+                    <h4>Всички заявки</h4>
+                    <p>Управление на всички заявки</p>
+                </div>
+                <div class="action-arrow">→</div>
+            </a>
+
+            <a th:href="@{/catalog}" class="action-card">
+                <div class="action-icon">📦</div>
+                <div class="action-content">
+                    <h4>Каталог</h4>
+                    <p>Преглед на продуктите</p>
+                </div>
+                <div class="action-arrow">→</div>
+            </a>
+        </div>
+    </div>
+
+    <!-- Features section -->
+    <div class="features-section">
+        <h3>✨ Възможности на системата</h3>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🔒</div>
+                <h4>Сигурност</h4>
+                <p>Защитени потребителски сесии и данни с модерни security стандарти</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">📱</div>
+                <h4>Адаптивен дизайн</h4>
+                <p>Оптимизиран за работа на всички устройства - компютър, таблет, телефон</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">⚡</div>
+                <h4>Бърза работа</h4>
+                <p>Оптимизирана производителност за гладко потребителско изживяване</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">📊</div>
+                <h4>Проследяване</h4>
+                <p>Пълна история и статус на всички заявки в реално време</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🎯</div>
+                <h4>Лесна употреба</h4>
+                <p>Интуитивен интерфейс създаден за ефективна работа</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🔧</div>
+                <h4>Надеждност</h4>
+                <p>Стабилна система с автоматични backup-и и мониторинг</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- System status -->
+    <div class="status-section">
+        <div class="status-indicator">
+            <div class="status-dot online"></div>
+            <div class="status-text">
+                <h4>Системата работи нормално</h4>
+                <p>Всички услуги са достъпни</p>
+            </div>
+        </div>
+        <div class="status-details">
+            <small class="text-muted">
+                Последно обновление: <span id="lastUpdate">зарежда се...</span>
+            </small>
+        </div>
+    </div>
 </section>
+
+<style>
+    /* Hero section */
+    .hero-section {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 60px 0;
+        margin: -20px -20px 40px -20px;
+        text-align: center;
+    }
+
+    .hero-content {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 0 20px;
+    }
+
+    .hero-title {
+        font-size: 3rem;
+        margin-bottom: 20px;
+        text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+    }
+
+    .hero-icon {
+        display: block;
+        font-size: 4rem;
+        margin-bottom: 20px;
+    }
+
+    .hero-subtitle {
+        font-size: 1.3rem;
+        margin-bottom: 40px;
+        opacity: 0.9;
+        line-height: 1.6;
+    }
+
+    .hero-actions {
+        margin-top: 40px;
+    }
+
+    .hero-btn {
+        background: rgba(255,255,255,0.2);
+        border: 2px solid rgba(255,255,255,0.3);
+        color: white;
+        padding: 15px 30px;
+        font-size: 1.1rem;
+        margin-bottom: 30px;
+        display: inline-block;
+        backdrop-filter: blur(10px);
+    }
+
+    .hero-btn:hover {
+        background: rgba(255,255,255,0.3);
+        border-color: rgba(255,255,255,0.5);
+        transform: translateY(-2px);
+    }
+
+    .hero-features {
+        display: flex;
+        justify-content: center;
+        gap: 30px;
+        flex-wrap: wrap;
+    }
+
+    .feature-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.95rem;
+        opacity: 0.9;
+    }
+
+    .feature-icon {
+        font-size: 1.2rem;
+    }
+
+    .user-dashboard {
+        margin-top: 20px;
+    }
+
+    .welcome-message h2 {
+        font-size: 2rem;
+        margin-bottom: 10px;
+    }
+
+    .username {
+        color: #ffd700;
+        font-weight: bold;
+    }
+
+    .user-role-desc {
+        font-size: 1.1rem;
+        opacity: 0.9;
+    }
+
+    /* Stats section */
+    .stats-section {
+        margin: 40px 0;
+        text-align: center;
+    }
+
+    .stats-section h3 {
+        margin-bottom: 30px;
+        color: #2c3e50;
+        font-size: 1.5rem;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 25px;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .stat-card {
+        background: white;
+        padding: 30px 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease;
+        border: 1px solid #f0f0f0;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+
+    .stat-card.admin-stat {
+        border-left: 4px solid #9b59b6;
+    }
+
+    .stat-icon {
+        font-size: 2.5rem;
+        margin-bottom: 15px;
+    }
+
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: #3498db;
+        margin-bottom: 8px;
+    }
+
+    .stat-label {
+        color: #7f8c8d;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 600;
+    }
+
+    /* Actions section */
+    .actions-section {
+        margin: 50px 0;
+    }
+
+    .actions-section h3 {
+        margin-bottom: 30px;
+        color: #2c3e50;
+        font-size: 1.5rem;
+        text-align: center;
+    }
+
+    .actions-grid {
+        display: grid;
+        gap: 20px;
+    }
+
+    .client-actions {
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    }
+
+    .admin-actions {
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    }
+
+    .action-card {
+        background: white;
+        padding: 25px;
+        border-radius: 10px;
+        box-shadow: 0 3px 15px rgba(0,0,0,0.1);
+        text-decoration: none;
+        color: inherit;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        border: 2px solid transparent;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .action-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 25px rgba(0,0,0,0.15);
+        border-color: #3498db;
+    }
+
+    .action-card.primary {
+        background: linear-gradient(135deg, #3498db, #2980b9);
+        color: white;
+    }
+
+    .action-card.primary:hover {
+        border-color: #2980b9;
+        box-shadow: 0 6px 25px rgba(52, 152, 219, 0.3);
+    }
+
+    .action-card.urgent {
+        background: linear-gradient(135deg, #f39c12, #e67e22);
+        color: white;
+    }
+
+    .action-card.urgent:hover {
+        border-color: #e67e22;
+        box-shadow: 0 6px 25px rgba(243, 156, 18, 0.3);
+    }
+
+    .action-icon {
+        font-size: 2.5rem;
+        flex-shrink: 0;
+    }
+
+    .action-content {
+        flex: 1;
+    }
+
+    .action-content h4 {
+        margin: 0 0 8px 0;
+        font-size: 1.2rem;
+        color: inherit;
+    }
+
+    .action-content p {
+        margin: 0;
+        opacity: 0.8;
+        font-size: 0.9rem;
+    }
+
+    .action-arrow {
+        font-size: 1.5rem;
+        opacity: 0.5;
+        transition: all 0.3s ease;
+    }
+
+    .action-card:hover .action-arrow {
+        opacity: 1;
+        transform: translateX(5px);
+    }
+
+    .action-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: #e74c3c;
+        color: white;
+        border-radius: 50%;
+        width: 28px;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+        font-weight: bold;
+    }
+
+    /* Features section */
+    .features-section {
+        margin: 50px 0;
+        text-align: center;
+    }
+
+    .features-section h3 {
+        margin-bottom: 40px;
+        color: #2c3e50;
+        font-size: 1.5rem;
+    }
+
+    .features-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 25px;
+    }
+
+    .feature-card {
+        background: white;
+        padding: 30px 20px;
+        border-radius: 10px;
+        box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+        transition: transform 0.3s ease;
+    }
+
+    .feature-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 6px 25px rgba(0,0,0,0.12);
+    }
+
+    .feature-card .feature-icon {
+        font-size: 2.2rem;
+        margin-bottom: 15px;
+        color: #3498db;
+    }
+
+    .feature-card h4 {
+        margin: 0 0 12px 0;
+        color: #2c3e50;
+        font-size: 1.1rem;
+    }
+
+    .feature-card p {
+        margin: 0;
+        color: #6c757d;
+        line-height: 1.6;
+        font-size: 0.9rem;
+    }
+
+    /* Status section */
+    .status-section {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 25px;
+        margin: 40px 0;
+        text-align: center;
+    }
+
+    .status-indicator {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 15px;
+        margin-bottom: 15px;
+    }
+
+    .status-dot {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        position: relative;
+    }
+
+    .status-dot.online {
+        background: #27ae60;
+    }
+
+    .status-dot.online::before {
+        content: '';
+        position: absolute;
+        top: -4px;
+        left: -4px;
+        right: -4px;
+        bottom: -4px;
+        border: 2px solid #27ae60;
+        border-radius: 50%;
+        opacity: 0.3;
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0% { transform: scale(1); opacity: 0.3; }
+        50% { transform: scale(1.1); opacity: 0.1; }
+        100% { transform: scale(1); opacity: 0.3; }
+    }
+
+    .status-text h4 {
+        margin: 0 0 5px 0;
+        color: #27ae60;
+        font-size: 1.1rem;
+    }
+
+    .status-text p {
+        margin: 0;
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+
+    .status-details {
+        opacity: 0.7;
+    }
+
+    .text-muted {
+        color: #6c757d;
+    }
+
+    /* Responsive design */
+    @media (max-width: 768px) {
+        .hero-title {
+            font-size: 2rem;
+        }
+
+        .hero-icon {
+            font-size: 3rem;
+        }
+
+        .hero-subtitle {
+            font-size: 1.1rem;
+        }
+
+        .hero-features {
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .stats-grid {
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        }
+
+        .actions-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .action-card {
+            padding: 20px;
+        }
+
+        .features-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .status-indicator {
+            flex-direction: column;
+            gap: 10px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .hero-section {
+            padding: 40px 0;
+        }
+
+        .action-card {
+            flex-direction: column;
+            text-align: center;
+            gap: 15px;
+        }
+
+        .action-arrow {
+            display: none;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Update last update time
+        document.getElementById('lastUpdate').textContent = new Date().toLocaleString('bg-BG');
+
+        // Animate stat numbers
+        const statNumbers = document.querySelectorAll('.stat-number');
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const target = entry.target;
+                    const finalValue = parseInt(target.textContent);
+                    if (finalValue > 0) {
+                        animateNumber(target, 0, finalValue, 1000);
+                    }
+                    observer.unobserve(target);
+                }
+            });
+        });
+
+        statNumbers.forEach(num => observer.observe(num));
+
+        function animateNumber(element, start, end, duration) {
+            const startTime = performance.now();
+
+            function updateNumber(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const current = Math.floor(start + (end - start) * progress);
+
+                element.textContent = current;
+
+                if (progress < 1) {
+                    requestAnimationFrame(updateNumber);
+                }
+            }
+
+            requestAnimationFrame(updateNumber);
+        }
+
+        // Add hover effects to action cards
+        const actionCards = document.querySelectorAll('.action-card');
+        actionCards.forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-5px) scale(1.02)';
+            });
+
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = '';
+            });
+        });
+    });
+</script>
 </body>
 </html>

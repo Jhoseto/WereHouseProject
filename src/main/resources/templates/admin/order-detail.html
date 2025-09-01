@@ -4,7 +4,9 @@
 <section th:object="${order}">
     <!-- Breadcrumbs -->
     <div class="breadcrumbs">
-        <a th:href="@{/orders}" class="breadcrumb-link">Моите заявки</a>
+        <a th:href="@{/admin}" class="breadcrumb-link">Админ панел</a>
+        <span class="breadcrumb-separator">/</span>
+        <a th:href="@{/admin/orders}" class="breadcrumb-link">Заявки</a>
         <span class="breadcrumb-separator">/</span>
         <span>Заявка #<span th:text="*{id}">0</span></span>
     </div>
@@ -17,7 +19,7 @@
         <div class="order-status-badge">
       <span th:class="'status-badge status-' + ${#strings.toLowerCase(order.status.name())}"
             th:text="*{status.name()}"
-            th:attr="data-tooltip=${order.status.name() == 'SUBMITTED' ? 'Очаква потвърждение от администратор' : 
+            th:attr="data-tooltip=${order.status.name() == 'SUBMITTED' ? 'Чака потвърждение от администратор' :
                                  (order.status.name() == 'CONFIRMED' ? 'Потвърдена и се обработва' :
                                  (order.status.name() == 'SHIPPED' ? 'Изпратена за доставка' :
                                  (order.status.name() == 'CANCELLED' ? 'Заявката е отменена' : order.status.name())))}">
@@ -26,8 +28,32 @@
         </div>
     </div>
 
-    <!-- Order information -->
+    <!-- Order and client information -->
     <div class="order-info-grid">
+        <div class="order-info-card">
+            <h3>👤 Информация за клиента</h3>
+            <div class="info-row">
+                <span class="info-label">Клиент:</span>
+                <span class="info-value client-name" th:text="*{client.name}">Client Name</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Код:</span>
+                <span class="info-value client-code" th:text="*{client.clientCode}">C001</span>
+            </div>
+            <div th:if="*{client.email}" class="info-row">
+                <span class="info-label">Email:</span>
+                <span class="info-value">
+          <a th:href="'mailto:' + *{client.email}" th:text="*{client.email}">email@example.com</a>
+        </span>
+            </div>
+            <div th:if="*{client.phone}" class="info-row">
+                <span class="info-label">Телефон:</span>
+                <span class="info-value">
+          <a th:href="'tel:' + *{client.phone}" th:text="*{client.phone}">+359888123456</a>
+        </span>
+            </div>
+        </div>
+
         <div class="order-info-card">
             <h3>📅 Информация за заявката</h3>
             <div class="info-row">
@@ -36,7 +62,7 @@
             </div>
             <div th:if="*{confirmedAt != null}" class="info-row">
                 <span class="info-label">Потвърдена на:</span>
-                <span class="info-value" th:text="${#temporals.format(order.confirmedAt, 'dd.MM.yyyy HH:mm:ss')}">01.01.2025 13:00:00</span>
+                <span class="info-value confirmed-date" th:text="${#temporals.format(order.confirmedAt, 'dd.MM.yyyy HH:mm:ss')}">01.01.2025 13:00:00</span>
             </div>
             <div th:if="*{notes != null and not #strings.isEmpty(notes)}" class="info-row">
                 <span class="info-label">Бележки:</span>
@@ -137,9 +163,75 @@
         </div>
     </div>
 
-    <!-- Actions -->
+    <!-- Admin actions -->
+    <div class="admin-actions-section">
+        <h3>🛠️ Административни действия</h3>
+
+        <div class="actions-grid">
+            <!-- Confirm order -->
+            <div th:if="${canConfirm}" class="action-card confirm-action">
+                <div class="action-header">
+                    <div class="action-icon">✅</div>
+                    <div class="action-title">Потвърди заявката</div>
+                </div>
+                <div class="action-content">
+                    <p>Потвърждаването означава, че заявката е одобрена и може да се обработи.</p>
+                    <form method="post" th:action="@{'/admin/orders/' + *{id} + '/confirm'}" class="action-form">
+                        <div th:replace="~{layout/fragments :: csrf}"></div>
+                        <button type="submit" class="btn btn-success" onclick="return confirmAction('потвърждаване', [[*{id}]])">
+                            <span class="nav-icon">✅</span> Потвърди заявката
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Cancel order -->
+            <div th:if="${canCancel}" class="action-card cancel-action">
+                <div class="action-header">
+                    <div class="action-icon">❌</div>
+                    <div class="action-title">Отмени заявката</div>
+                </div>
+                <div class="action-content">
+                    <p>Отмяната на заявката я маркира като неизпълнима.</p>
+                    <form method="post" th:action="@{'/admin/orders/' + *{id} + '/cancel'}" class="action-form">
+                        <div th:replace="~{layout/fragments :: csrf}"></div>
+                        <div class="form-group">
+                            <label for="cancelReason">Причина за отмяна:</label>
+                            <textarea id="cancelReason" name="reason" required rows="3" placeholder="Въведете причината за отмяната..."></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-danger" onclick="return confirmCancel()">
+                            <span class="nav-icon">❌</span> Отмени заявката
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Ship order -->
+            <div th:if="*{status.name() == 'CONFIRMED'}" class="action-card ship-action">
+                <div class="action-header">
+                    <div class="action-icon">🚚</div>
+                    <div class="action-title">Маркирай като изпратена</div>
+                </div>
+                <div class="action-content">
+                    <p>Маркирайте заявката като изпратена когато е готова за доставка.</p>
+                    <form method="post" th:action="@{'/admin/orders/' + *{id} + '/ship'}" class="action-form">
+                        <div th:replace="~{layout/fragments :: csrf}"></div>
+                        <div class="form-group">
+                            <label for="trackingNumber">Номер за проследяване (по желание):</label>
+                            <input type="text" id="trackingNumber" name="trackingNumber" placeholder="Въведете tracking номер..." />
+                        </div>
+                        <button type="submit" class="btn btn-success" onclick="return confirmAction('маркиране като изпратена', [[*{id}]])">
+                            <span class="nav-icon">🚚</span> Маркирай като изпратена
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation actions -->
     <div class="order-actions">
-        <a th:href="@{/orders}" class="btn btn-secondary">
+        <a th:href="@{/admin/orders}" class="btn btn-secondary">
             <span class="nav-icon">📋</span> Обратно към заявките
         </a>
 
@@ -147,8 +239,8 @@
             <span class="nav-icon">🖨️</span> Принтирай
         </button>
 
-        <a th:href="@{/catalog}" class="btn">
-            <span class="nav-icon">📦</span> Нова заявка
+        <a th:href="@{/admin}" class="btn btn-secondary">
+            <span class="nav-icon">⚙️</span> Админ панел
         </a>
     </div>
 </section>
@@ -174,7 +266,7 @@
 
     .order-info-grid {
         display: grid;
-        grid-template-columns: 2fr 1fr;
+        grid-template-columns: 1fr 1fr 1fr;
         gap: 25px;
         margin-bottom: 30px;
     }
@@ -209,6 +301,23 @@
     .info-value {
         color: #495057;
         flex: 1;
+    }
+
+    .client-name {
+        font-weight: 600;
+        color: #2c3e50;
+    }
+
+    .client-code {
+        font-family: monospace;
+        background: #f8f9fa;
+        padding: 2px 6px;
+        border-radius: 3px;
+    }
+
+    .confirmed-date {
+        color: #27ae60;
+        font-weight: 600;
     }
 
     .notes-content {
@@ -257,6 +366,127 @@
         padding-bottom: 10px;
     }
 
+    .admin-actions-section {
+        background: white;
+        padding: 25px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        margin-bottom: 25px;
+    }
+
+    .admin-actions-section h3 {
+        margin: 0 0 20px 0;
+        color: #2c3e50;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 10px;
+    }
+
+    .actions-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+    }
+
+    .action-card {
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        padding: 20px;
+        transition: all 0.3s ease;
+    }
+
+    .action-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+
+    .confirm-action {
+        border-color: #27ae60;
+        background: #f8fff9;
+    }
+
+    .confirm-action:hover {
+        border-color: #229954;
+    }
+
+    .cancel-action {
+        border-color: #e74c3c;
+        background: #fef9f9;
+    }
+
+    .cancel-action:hover {
+        border-color: #c0392b;
+    }
+
+    .ship-action {
+        border-color: #3498db;
+        background: #f8fcff;
+    }
+
+    .ship-action:hover {
+        border-color: #2980b9;
+    }
+
+    .action-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 15px;
+    }
+
+    .action-icon {
+        font-size: 1.5rem;
+    }
+
+    .action-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #2c3e50;
+    }
+
+    .action-content p {
+        color: #6c757d;
+        margin-bottom: 15px;
+        font-size: 0.9rem;
+    }
+
+    .action-form {
+        margin: 0;
+    }
+
+    .action-form .form-group {
+        margin-bottom: 15px;
+    }
+
+    .action-form label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 600;
+        color: #2c3e50;
+        font-size: 0.9rem;
+    }
+
+    .action-form input, .action-form textarea {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 0.9rem;
+    }
+
+    .action-form textarea {
+        resize: vertical;
+        min-height: 80px;
+    }
+
+    .order-actions {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        margin-top: 30px;
+        flex-wrap: wrap;
+    }
+
+    /* Inherit styles from client order detail */
     .order-items-table .sku-cell {
         font-family: monospace;
         background: #f8f9fa;
@@ -341,18 +571,15 @@
         font-size: 1.1rem;
     }
 
-    .order-actions {
-        display: flex;
-        gap: 15px;
-        justify-content: center;
-        margin-top: 30px;
-        flex-wrap: wrap;
+    .text-muted {
+        color: #6c757d;
     }
 
     /* Print styles */
     @media print {
         .breadcrumbs,
         .order-actions,
+        .admin-actions-section,
         .site-header,
         .site-footer,
         .flash-messages {
@@ -372,10 +599,6 @@
             box-shadow: none !important;
             border: 1px solid #ddd;
         }
-
-        .status-badge {
-            border: 1px solid #ddd !important;
-        }
     }
 
     /* Responsive design */
@@ -389,8 +612,8 @@
             grid-template-columns: 1fr;
         }
 
-        .order-items-table {
-            font-size: 0.85rem;
+        .actions-grid {
+            grid-template-columns: 1fr;
         }
 
         .info-row {
@@ -407,34 +630,42 @@
             flex-direction: column;
         }
     }
-
-    @media (max-width: 576px) {
-        .order-items-table th:nth-child(4),
-        .order-items-table td:nth-child(4),
-        .order-items-table th:nth-child(6),
-        .order-items-table td:nth-child(6) {
-            display: none; /* Hide unit price and notes on mobile */
-        }
-
-        .summary-row {
-            font-size: 0.9rem;
-        }
-    }
 </style>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Animate numbers on load
-        const numberElements = document.querySelectorAll('.total-amount, .grand-total');
-        numberElements.forEach(el => {
-            el.style.opacity = '0';
-            el.style.transform = 'translateY(20px)';
+    function confirmAction(action, orderId) {
+        return confirm(`Сигурни ли сте, че искате да извършите ${action} на заявка #${orderId}?`);
+    }
 
-            setTimeout(() => {
-                el.style.transition = 'all 0.5s ease';
-                el.style.opacity = '1';
-                el.style.transform = 'translateY(0)';
-            }, 100);
+    function confirmCancel() {
+        const reason = document.getElementById('cancelReason').value.trim();
+        if (!reason) {
+            alert('Моля въведете причина за отмяната.');
+            return false;
+        }
+        return confirm('Сигурни ли сте, че искате да отмените тази заявка?');
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add loading states to action buttons
+        const actionButtons = document.querySelectorAll('.action-form button[type="submit"]');
+        actionButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                const form = this.closest('form');
+                const action = form.getAttribute('action');
+
+                // Don't show loading if confirmation is cancelled
+                setTimeout(() => {
+                    if (this.getAttribute('onclick')) {
+                        const confirmed = eval(this.getAttribute('onclick'));
+                        if (confirmed) {
+                            const originalText = this.innerHTML;
+                            this.innerHTML = '<span class="loading"></span> Обработва...';
+                            this.disabled = true;
+                        }
+                    }
+                }, 100);
+            });
         });
     });
 </script>

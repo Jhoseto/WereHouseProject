@@ -1,5 +1,5 @@
 
-package com.yourco.warehouse.domain.entity;
+package com.yourco.warehouse.entity;
 
 import jakarta.persistence.*;
 

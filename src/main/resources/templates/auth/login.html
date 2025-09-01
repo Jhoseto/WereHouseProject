@@ -1,17 +1,144 @@
-
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="bg" th:replace="layout/base :: content">
 <body>
 <section>
-  <h1>Вход</h1>
-  <form method="post" th:action="@{/login}">
-      <div th:replace="~{layout/fragments :: csrf}"></div>
-    <div><label>Потребител: <input type="text" name="username" required /></label></div>
-    <div><label>Парола: <input type="password" name="password" required /></label></div>
-    <div><button type="submit">Влез</button></div>
-  </form>
-  <p th:if="${param.error}">Невалидни данни.</p>
-  <p th:if="${param.logout}">Излязохте успешно.</p>
+    <div class="card" style="max-width: 400px; margin: 0 auto;">
+        <div class="card-header">
+            <h1 class="card-title">🔑 Вход в системата</h1>
+        </div>
+
+        <!-- Error and logout messages -->
+        <div th:if="${errorMessage}" class="alert alert-error">
+            <span class="alert-icon">❌</span>
+            <span th:text="${errorMessage}">Error message</span>
+        </div>
+
+        <div th:if="${logoutMessage}" class="alert alert-info">
+            <span class="alert-icon">ℹ️</span>
+            <span th:text="${logoutMessage}">Logout message</span>
+        </div>
+
+        <form method="post" th:action="@{/login}" class="login-form">
+            <div th:replace="~{layout/fragments :: csrf}"></div>
+
+            <div class="form-group">
+                <label for="username">Потребителско име:</label>
+                <input type="text"
+                       id="username"
+                       name="username"
+                       required
+                       autofocus
+                       autocomplete="username"
+                       placeholder="Въведете потребителско име" />
+            </div>
+
+            <div class="form-group">
+                <label for="password">Парола:</label>
+                <input type="password"
+                       id="password"
+                       name="password"
+                       required
+                       autocomplete="current-password"
+                       placeholder="Въведете парола" />
+            </div>
+
+            <div class="form-group">
+                <button type="submit" class="btn" style="width: 100%;">
+                    <span class="nav-icon">🚀</span> Влез в системата
+                </button>
+            </div>
+        </form>
+
+        <!-- Demo credentials for development -->
+        <div th:if="${showDemoCredentials}" class="demo-credentials">
+            <hr style="margin: 20px 0;">
+            <h3 style="margin-bottom: 15px; color: #7f8c8d;">Демо креденциали:</h3>
+            <div class="demo-creds">
+                <div class="demo-cred-item">
+                    <strong>Администратор:</strong><br>
+                    <code>admin / admin123</code>
+                </div>
+                <div class="demo-cred-item">
+                    <strong>Клиент 1:</strong><br>
+                    <code>client1 / client123</code>
+                </div>
+                <div class="demo-cred-item">
+                    <strong>Клиент 2:</strong><br>
+                    <code>client2 / client456</code>
+                </div>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 20px; color: #7f8c8d; font-size: 0.9rem;">
+            <p>Нямате акаунт? Свържете се с администратора.</p>
+        </div>
+    </div>
 </section>
+
+<style>
+    .login-form {
+        margin: 0;
+    }
+
+    .demo-credentials {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 6px;
+        margin-top: 15px;
+    }
+
+    .demo-creds {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .demo-cred-item {
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+
+    .demo-cred-item code {
+        background: #e9ecef;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-family: 'Courier New', monospace;
+        color: #495057;
+        cursor: pointer;
+    }
+
+    .demo-cred-item code:hover {
+        background: #dee2e6;
+    }
+
+    @media (max-width: 480px) {
+        .card {
+            margin: 10px;
+        }
+    }
+</style>
+
+<script>
+    // Click to copy demo credentials
+    document.addEventListener('DOMContentLoaded', function() {
+        const codes = document.querySelectorAll('.demo-cred-item code');
+        codes.forEach(code => {
+            code.addEventListener('click', function() {
+                const text = this.textContent.trim();
+                const [username, password] = text.split(' / ');
+
+                // Fill form fields
+                document.getElementById('username').value = username;
+                document.getElementById('password').value = password;
+
+                // Visual feedback
+                this.style.background = '#d4edda';
+                setTimeout(() => {
+                    this.style.background = '#e9ecef';
+                }, 500);
+            });
+        });
+    });
+</script>
 </body>
 </html>

@@ -1,21 +1,311 @@
-
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="bg" th:replace="layout/base :: content">
 <body>
 <section>
-  <h1>Моите заявки</h1>
-  <table class="table">
-    <thead><tr><th>#</th><th>Статус</th><th>Подадена</th><th>Общо (с ДДС)</th><th></th></tr></thead>
-    <tbody>
-    <tr th:each="o : ${orders}">
-      <td th:text="${o.id}">1</td>
-      <td th:text="${o.status}">SUBMITTED</td>
-      <td th:text="${o.submittedAt}">2025-01-01</td>
-      <td th:text="${#numbers.formatDecimal(o.totalGross,1,2)}">0.00</td>
-      <td><a th:href="@{'/orders/' + ${o.id}}">Детайли</a></td>
-    </tr>
-    </tbody>
-  </table>
+    <h1>📋 Моите заявки</h1>
+
+    <div th:if="${#lists.isEmpty(orders) and totalElements == 0}" class="empty-state">
+        <div class="empty-state-icon">📋</div>
+        <div class="empty-state-text">Няmate подадени заявки</div>
+        <p>Започнете да пазарувате от каталога</p>
+        <a th:href="@{/catalog}" class="btn">
+            <span class="nav-icon">📦</span> Разгледай каталога
+        </a>
+    </div>
+
+    <div th:unless="${#lists.isEmpty(orders) and totalElements == 0}">
+        <!-- Orders summary -->
+        <div class="orders-summary">
+            <div class="summary-stats">
+                <div class="stat-item">
+                    <span class="stat-number" th:text="${totalElements ?: #lists.size(orders)}">0</span>
+                    <span class="stat-label">Общо заявки</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Orders table -->
+        <div class="table-responsive">
+            <table class="table orders-table">
+                <thead>
+                <tr>
+                    <th>№ Заявка</th>
+                    <th>Статус</th>
+                    <th>Подадена на</th>
+                    <th>Потвърдена на</th>
+                    <th>Стойност</th>
+                    <th>Действия</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="order : ${orders.hasContent() ? orders.content : orders}" class="order-row">
+                    <td class="order-id">
+                        <strong th:text="'#' + ${order.id}">1</strong>
+                    </td>
+                    <td class="status-cell">
+              <span th:class="'status-badge status-' + ${#strings.toLowerCase(order.status.name())}"
+                    th:text="${order.status.name()}"
+                    th:attr="data-tooltip=${order.status.name() == 'SUBMITTED' ? 'Очаква потвърждение' : 
+                                         (order.status.name() == 'CONFIRMED' ? 'Потвърдена за обработка' :
+                                         (order.status.name() == 'SHIPPED' ? 'Изпратена' :
+                                         (order.status.name() == 'CANCELLED' ? 'Отменена' : order.status.name())))}">
+                SUBMITTED
+              </span>
+                    </td>
+                    <td class="date-cell">
+                        <span th:text="${#temporals.format(order.submittedAt, 'dd.MM.yyyy HH:mm')}">01.01.2025 12:00</span>
+                    </td>
+                    <td class="date-cell">
+              <span th:if="${order.confirmedAt != null}"
+                    th:text="${#temporals.format(order.confirmedAt, 'dd.MM.yyyy HH:mm')}">01.01.2025 13:00</span>
+                        <span th:unless="${order.confirmedAt != null}" class="text-muted">—</span>
+                    </td>
+                    <td class="amount-cell">
+                        <strong class="amount" th:text="${#numbers.formatDecimal(order.totalGross,1,2)} + ' лв'">0.00 лв</strong>
+                        <div class="amount-breakdown">
+                            <small class="text-muted">
+                                (нето: <span th:text="${#numbers.formatDecimal(order.totalNet,1,2)}">0.00</span> +
+                                ДДС: <span th:text="${#numbers.formatDecimal(order.totalVat,1,2)}">0.00</span>)
+                            </small>
+                        </div>
+                    </td>
+                    <td class="actions-cell">
+                        <div class="actions">
+                            <a th:href="@{'/orders/' + ${order.id}}" class="btn btn-sm">
+                                <span class="nav-icon">👁️</span> Детайли
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        <div th:if="${orders.hasContent() and orders.totalPages > 1}" class="pagination-wrapper">
+            <nav class="pagination">
+                <!-- First page -->
+                <a th:if="${orders.number > 0}"
+                   th:href="@{/orders(page=0)}"
+                   class="page-link">
+                    ««
+                </a>
+
+                <!-- Previous page -->
+                <a th:if="${orders.hasPrevious()}"
+                   th:href="@{/orders(page=${orders.number - 1})}"
+                   class="page-link">
+                    ‹ Предишна
+                </a>
+
+                <!-- Page numbers -->
+                <span th:each="i : ${#numbers.sequence(T(java.lang.Math).max(0, orders.number - 2), T(java.lang.Math).min(orders.totalPages - 1, orders.number + 2))}">
+          <span th:if="${i == orders.number}" class="page-link current" th:text="${i + 1}">1</span>
+          <a th:unless="${i == orders.number}"
+             th:href="@{/orders(page=${i})}"
+             class="page-link"
+             th:text="${i + 1}">1</a>
+        </span>
+
+                <!-- Next page -->
+                <a th:if="${orders.hasNext()}"
+                   th:href="@{/orders(page=${orders.number + 1})}"
+                   class="page-link">
+                    Следваща ›
+                </a>
+
+                <!-- Last page -->
+                <a th:if="${orders.number < orders.totalPages - 1}"
+                   th:href="@{/orders(page=${orders.totalPages - 1})}"
+                   class="page-link">
+                    »»
+                </a>
+            </nav>
+
+            <div class="pagination-info">
+                Страница <strong th:text="${orders.number + 1}">1</strong> от
+                <strong th:text="${orders.totalPages}">1</strong>
+                (общо <strong th:text="${orders.totalElements}">0</strong> заявки)
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick actions -->
+    <div class="quick-actions">
+        <a th:href="@{/catalog}" class="btn btn-secondary">
+            <span class="nav-icon">📦</span> Нова заявка
+        </a>
+        <a th:href="@{/cart}" class="btn btn-secondary">
+            <span class="nav-icon">🛒</span> Кошница
+        </a>
+    </div>
 </section>
+
+<style>
+    .orders-summary {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        margin-bottom: 25px;
+    }
+
+    .summary-stats {
+        display: flex;
+        justify-content: space-around;
+        text-align: center;
+    }
+
+    .stat-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .stat-number {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #3498db;
+    }
+
+    .stat-label {
+        color: #7f8c8d;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .orders-table {
+        background: white;
+    }
+
+    .order-row:hover {
+        background: #f8f9fa;
+    }
+
+    .order-id {
+        font-family: monospace;
+        color: #2c3e50;
+    }
+
+    .status-cell {
+        text-align: center;
+    }
+
+    .date-cell {
+        font-family: monospace;
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+
+    .amount-cell {
+        text-align: right;
+    }
+
+    .amount {
+        color: #27ae60;
+        font-size: 1.1rem;
+        display: block;
+    }
+
+    .amount-breakdown {
+        margin-top: 2px;
+    }
+
+    .text-muted {
+        color: #6c757d;
+    }
+
+    .pagination-wrapper {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 15px;
+        margin: 30px 0;
+    }
+
+    .pagination {
+        display: flex;
+        gap: 5px;
+        align-items: center;
+    }
+
+    .page-link {
+        padding: 8px 12px;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        text-decoration: none;
+        color: #3498db;
+        transition: all 0.2s ease;
+    }
+
+    .page-link:hover:not(.current) {
+        background: #f8f9fa;
+        border-color: #adb5bd;
+    }
+
+    .page-link.current {
+        background: #3498db;
+        color: white;
+        border-color: #3498db;
+    }
+
+    .pagination-info {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+
+    @media (max-width: 768px) {
+        .orders-table {
+            font-size: 0.85rem;
+        }
+
+        .amount-breakdown {
+            display: none;
+        }
+
+        .date-cell {
+            font-size: 0.8rem;
+        }
+
+        .pagination {
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .page-link {
+            padding: 6px 10px;
+            font-size: 0.9rem;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .orders-table th, .orders-table td {
+            padding: 8px 6px;
+        }
+
+        .stat-number {
+            font-size: 1.5rem;
+        }
+
+        .orders-table th:nth-child(4),
+        .orders-table td:nth-child(4) {
+            display: none; /* Hide confirmed date on mobile */
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add loading state to detail buttons
+        const detailButtons = document.querySelectorAll('a[href*="/orders/"]');
+        detailButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const originalText = this.innerHTML;
+                this.innerHTML = '<span class="loading"></span> Зарежда...';
+            });
+        });
+    });
+</script>
 </body>
 </html>

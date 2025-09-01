@@ -1,5 +1,5 @@
 
-package com.yourco.warehouse.domain.enums;
+package com.yourco.warehouse.entity.enums;
 
 public enum Role {
     ADMIN,

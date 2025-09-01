@@ -1,7 +1,7 @@
 
-package com.yourco.warehouse.domain.entity;
+package com.yourco.warehouse.entity;
 
-import com.yourco.warehouse.domain.enums.OrderStatus;
+import com.yourco.warehouse.entity.enums.OrderStatus;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
