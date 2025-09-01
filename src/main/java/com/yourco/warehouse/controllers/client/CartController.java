@@ -2,7 +2,6 @@ package com.yourco.warehouse.controllers.client;
 
 import com.yourco.warehouse.entity.ProductEntity;
 import com.yourco.warehouse.repository.ProductRepository;
-import com.yourco.warehouse.service.OrderService;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -27,11 +26,9 @@ public class CartController {
     private static final String CART_SESSION_KEY = "CART";
 
     private final ProductRepository productRepository;
-    private final OrderService orderService;
 
-    public CartController(ProductRepository productRepository, OrderService orderService) {
+    public CartController(ProductRepository productRepository) {
         this.productRepository = productRepository;
-        this.orderService = orderService;
     }
 
     @SuppressWarnings("unchecked")
