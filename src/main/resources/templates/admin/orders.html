@@ -1,0 +1,32 @@
+
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="bg" th:replace="layout/base :: content">
+<body>
+<section>
+  <h1>Заявки</h1>
+  <form method="get">
+    <label>Статус:
+      <select name="status">
+        <option th:selected="${status == null}" value="">-- всички --</option>
+        <option th:selected="${status?.name() == 'SUBMITTED'}" value="SUBMITTED">SUBMITTED</option>
+        <option th:selected="${status?.name() == 'CONFIRMED'}" value="CONFIRMED">CONFIRMED</option>
+      </select>
+    </label>
+    <button type="submit">Филтър</button>
+  </form>
+  <table class="table">
+    <thead><tr><th>#</th><th>Клиент</th><th>Статус</th><th>Подадена</th><th>Общо</th><th></th></tr></thead>
+    <tbody>
+    <tr th:each="o : ${orders}">
+      <td th:text="${o.id}">1</td>
+      <td th:text="${o.client.name}">Client</td>
+      <td th:text="${o.status}">SUBMITTED</td>
+      <td th:text="${o.submittedAt}">2025-01-01</td>
+      <td th:text="${#numbers.formatDecimal(o.totalGross,1,2)}">0.00</td>
+      <td><a th:href="@{'/admin/orders/' + ${o.id}}">Потвърди</a></td>
+    </tr>
+    </tbody>
+  </table>
+</section>
+</body>
+</html>

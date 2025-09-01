@@ -1,0 +1,30 @@
+
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="bg" th:replace="layout/base :: content">
+<body>
+<section th:object="${order}">
+  <h1>Заявка № <span th:text="*{id}">0</span> — <span th:text="*{status}"></span></h1>
+  <p>Клиент: <b th:text="*{client.name}">Client</b></p>
+  <table class="table">
+    <thead><tr><th>SKU</th><th>Име</th><th>К-во</th><th>Ед. цена</th><th>Сума</th></tr></thead>
+    <tbody>
+    <tr th:each="i : *{items}">
+      <td th:text="${i.product.sku}">SKU</td>
+      <td th:text="${i.product.name}">Name</td>
+      <td th:text="${i.qty}">1</td>
+      <td th:text="${#numbers.formatDecimal(i.unitPrice,1,2)}">0.00</td>
+      <td th:text="${#numbers.formatDecimal(i.unitPrice.multiply(i.qty),1,2)}">0.00</td>
+    </tr>
+    </tbody>
+  </table>
+  <p>Крайна сума: <b th:text="*{#numbers.formatDecimal(totalGross,1,2)}">0.00</b> лв</p>
+
+  <div th:if="*{status.name() == 'SUBMITTED'}">
+    <form method="post" th:action="@{'/admin/orders/' + *{id} + '/confirm'}">
+      <div th:replace="~{layout/fragments :: csrf}"></div>
+      <button type="submit">Потвърди</button>
+    </form>
+  </div>
+</section>
+</body>
+</html>

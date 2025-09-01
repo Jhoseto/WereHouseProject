@@ -1,0 +1,14 @@
+
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="bg" th:replace="layout/base :: content">
+<body>
+<section>
+  <h1>Админ табло</h1>
+  <ul>
+    <li>Подадени за потвърждение: <b th:text="${submittedCount}">0</b></li>
+    <li>Потвърдени: <b th:text="${confirmedCount}">0</b></li>
+  </ul>
+  <a th:href="@{/admin/orders}">Всички заявки</a>
+</section>
+</body>
+</html>

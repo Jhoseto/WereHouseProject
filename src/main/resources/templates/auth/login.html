@@ -1,0 +1,17 @@
+
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="bg" th:replace="layout/base :: content">
+<body>
+<section>
+  <h1>Вход</h1>
+  <form method="post" th:action="@{/login}">
+      <div th:replace="~{layout/fragments :: csrf}"></div>
+    <div><label>Потребител: <input type="text" name="username" required /></label></div>
+    <div><label>Парола: <input type="password" name="password" required /></label></div>
+    <div><button type="submit">Влез</button></div>
+  </form>
+  <p th:if="${param.error}">Невалидни данни.</p>
+  <p th:if="${param.logout}">Излязохте успешно.</p>
+</section>
+</body>
+</html>

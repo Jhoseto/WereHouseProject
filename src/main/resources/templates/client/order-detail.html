@@ -1,0 +1,27 @@
+
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="bg" th:replace="layout/base :: content">
+<body>
+<section th:object="${order}">
+  <h1>Заявка № <span th:text="*{id}">0</span></h1>
+  <p>Статус: <b th:text="*{status}">SUBMITTED</b></p>
+  <p>Подадена: <span th:text="*{submittedAt}"></span></p>
+  <p>Бележки: <span th:text="*{notes}"></span></p>
+  <table class="table">
+    <thead><tr><th>SKU</th><th>Име</th><th>К-во</th><th>Ед. цена</th><th>Сума</th></tr></thead>
+    <tbody>
+    <tr th:each="i : *{items}">
+      <td th:text="${i.product.sku}">SKU</td>
+      <td th:text="${i.product.name}">Name</td>
+      <td th:text="${i.qty}">1</td>
+      <td th:text="${#numbers.formatDecimal(i.unitPrice,1,2)}">0.00</td>
+      <td th:text="${#numbers.formatDecimal(i.unitPrice.multiply(i.qty),1,2)}">0.00</td>
+    </tr>
+    </tbody>
+  </table>
+  <p>Нетo: <b th:text="*{#numbers.formatDecimal(totalNet,1,2)}">0.00</b> лв</p>
+  <p>ДДС: <b th:text="*{#numbers.formatDecimal(totalVat,1,2)}">0.00</b> лв</p>
+  <p>Крайна сума: <b th:text="*{#numbers.formatDecimal(totalGross,1,2)}">0.00</b> лв</p>
+</section>
+</body>
+</html>

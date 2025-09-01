@@ -1,0 +1,32 @@
+
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="bg" th:replace="layout/base :: content">
+<body>
+<section>
+  <h1>Каталог</h1>
+  <form method="get" th:action="@{/catalog}">
+    <input type="text" name="q" th:value="${q}" placeholder="Търси продукт..." />
+    <button type="submit">Търси</button>
+  </form>
+  <table class="table">
+    <thead><tr><th>SKU</th><th>Име</th><th>Ед.</th><th>Цена (лв)</th><th></th></tr></thead>
+    <tbody>
+    <tr th:each="p : ${products}">
+      <td th:text="${p.sku}">SKU</td>
+      <td th:text="${p.name}">Наименование</td>
+      <td th:text="${p.unit}">pcs</td>
+      <td th:text="${#numbers.formatDecimal(p.price,1,2)}">0.00</td>
+      <td>
+        <form method="post" th:action="@{/cart/add}">
+      <div th:replace="~{layout/fragments :: csrf}"></div>
+          <input type="hidden" name="sku" th:value="${p.sku}" />
+          <input type="number" name="qty" value="1" min="1" style="width:70px" />
+          <button type="submit">Добави</button>
+        </form>
+      </td>
+    </tr>
+    </tbody>
+  </table>
+</section>
+</body>
+</html>

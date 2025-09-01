@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="bg" th:fragment="content">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title th:text="#{app.title}">Складов портал</title>
+  <link rel="stylesheet" th:href="@{/css/main.css}" />
+</head>
+<body>
+<header class="site-header">
+  <nav class="nav">
+    <a th:href="@{/}">Начало</a>
+    <a th:href="@{/catalog}" th:if="${#authorization.expression('isAuthenticated()')}">Каталог</a>
+    <a th:href="@{/cart}" th:if="${#authorization.expression('hasRole(''CLIENT'')')}">Кошница</a>
+    <a th:href="@{/orders}" th:if="${#authorization.expression('hasRole(''CLIENT'')')}">Моите заявки</a>
+    <a th:href="@{/admin}" th:if="${#authorization.expression('hasRole(''ADMIN'')')}">Админ</a>
+  </nav>
+  <div class="auth">
+    <span th:if="${#authorization.expression('isAuthenticated()')}" th:text="${#authentication.name}">user</span>
+    <a th:if="${#authorization.expression('isAuthenticated()')}" th:href="@{/logout}">Изход</a>
+    <a th:if="${#authorization.expression('!isAuthenticated()')}" th:href="@{/login}">Вход</a>
+  </div>
+</header>
+<main class="container">
+  <div th:insert="~{::content}"></div>
+</main>
+<footer class="site-footer">
+  <small>&copy; 2025 Warehouse Portal</small>
+</footer>
+</body>
+</html>

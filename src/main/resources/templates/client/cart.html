@@ -1,0 +1,46 @@
+
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="bg" th:replace="layout/base :: content">
+<body>
+<section>
+  <h1>Кошница</h1>
+  <div th:if="${#lists.isEmpty(cart)}">Кошницата е празна.</div>
+  <div th:unless="${#lists.isEmpty(cart)}">
+    <table class="table">
+      <thead><tr><th>SKU</th><th>Име</th><th>Цена</th><th>К-во</th><th>Общо</th><th>Бележка</th><th></th></tr></thead>
+      <tbody>
+      <tr th:each="l : ${cart}">
+        <td th:text="${l.sku}">SKU</td>
+        <td th:text="${l.name}">Име</td>
+        <td th:text="${#numbers.formatDecimal(l.price,1,2)}">0.00</td>
+        <td th:text="${l.qty}">1</td>
+        <td th:text="${#numbers.formatDecimal(l.total(),1,2)}">0.00</td>
+        <td>
+          <form method="post" th:action="@{/cart/update}">
+      <div th:replace="~{layout/fragments :: csrf}"></div>
+            <input type="hidden" name="sku" th:value="${l.sku}" />
+            <input type="number" name="qty" th:value="${l.qty}" min="0" style="width:70px" />
+            <input type="text" name="note" th:value="${l.note}" placeholder="Замени с..." />
+            <button type="submit">Update</button>
+          </form>
+        </td>
+        <td>
+          <form method="post" th:action="@{/cart/update}">
+      <div th:replace="~{layout/fragments :: csrf}"></div>
+            <input type="hidden" name="sku" th:value="${l.sku}" />
+            <input type="hidden" name="qty" value="0" />
+            <button type="submit">Премахни</button>
+          </form>
+        </td>
+      </tr>
+      </tbody>
+    </table>
+    <form method="post" th:action="@{/cart/submit}">
+      <div th:replace="~{layout/fragments :: csrf}"></div>
+      <label>Бележки към заявката: <input type="text" name="notes" style="width:50%"/></label>
+      <button type="submit">Изпрати заявката</button>
+    </form>
+  </div>
+</section>
+</body>
+</html>

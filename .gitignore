@@ -1,0 +1,9 @@
+/target/
+/.idea/
+*.iml
+*.log
+*.DS_Store
+
+/build/
+.gradle/
+!gradle/wrapper/gradle-wrapper.properties
