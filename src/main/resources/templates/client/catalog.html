@@ -1,221 +1,122 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="bg">
+<html xmlns:th="http://www.thymeleaf.org" lang="bg" >
+<head>
+    <link rel="stylesheet" href="/css/catalog.css">
+</head>
 <body>
-<section>
-    <h1>📦 Каталог продукти</h1>
-
-    <!-- Search form -->
-    <div class="search-form">
-        <form method="get" th:action="@{/catalog}" class="search-form">
-            <input type="text"
-                   name="q"
-                   class="search-input"
-                   th:value="${q}"
-                   placeholder="Търси по име или SKU..."
-                   maxlength="100" />
-            <button type="submit" class="btn">
-                <span class="nav-icon">🔍</span> Търси
-            </button>
-            <a th:if="${hasQuery}" th:href="@{/catalog}" class="btn btn-secondary">
-                <span class="nav-icon">✖️</span> Изчисти
-            </a>
-        </form>
+<section class="catalog-section">
+    <div class="catalog-header">
+        <h1 class="catalog-title">📦 Каталог продукти</h1>
+        <div class="catalog-stats">
+            <span id="product-count">0</span> продукта
+            <span id="filtered-count" class="filtered-count hidden"></span>
+        </div>
     </div>
 
-    <!-- Search results info -->
-    <div th:if="${hasQuery}" class="search-results-info">
-        <p>
-            <strong>Резултати за "</strong><span th:text="${q}">query</span><strong>":</strong>
-            <span th:text="${resultCount}">0</span> продукта
-        </p>
-    </div>
-    <div th:unless="${hasQuery}" class="search-results-info">
-        <p>Показани са всички активни продукти: <strong th:text="${resultCount}">0</strong></p>
-    </div>
-
-    <!-- Products display -->
-    <div th:if="${resultCount > 0}">
-        <div class="product-grid">
-            <div th:each="p : ${products}" class="product-card">
-                <div class="product-sku" th:text="${p.sku}">SKU</div>
-                <div class="product-name" th:text="${p.name}">Product Name</div>
-
-                <div class="product-details">
-                    <div class="product-price">
-                        <span th:text="${#numbers.formatDecimal(p.price,1,2)}">0.00</span> лв
-                        <span class="product-unit" th:text="'/ ' + ${p.unit}">/ pcs</span>
-                    </div>
-
-                    <div th:if="${p.description}" class="product-description">
-                        <small th:text="${p.description}">Description</small>
-                    </div>
-
-                    <div th:if="${p.category}" class="product-category">
-                        <span class="category-badge" th:text="${p.category}">Category</span>
-                    </div>
-                </div>
-
-                <form method="post" th:action="@{/cart/add}" class="add-to-cart-form">
-                    <div th:replace="~{layout/fragments :: csrf}"></div>
-                    <input type="hidden" name="sku" th:value="${p.sku}" />
-
-                    <div class="quantity-controls">
-                        <button type="button" class="qty-btn qty-minus" onclick="updateQuantity(this, -1)">-</button>
-                        <input type="number"
-                               name="qty"
-                               value="1"
-                               min="1"
-                               max="9999"
-                               class="qty-input" />
-                        <button type="button" class="qty-btn qty-plus" onclick="updateQuantity(this, 1)">+</button>
-                    </div>
-
-                    <button type="submit" class="btn btn-success">
-                        <span class="nav-icon">🛒</span> Добави в кошницата
-                    </button>
-                </form>
+    <!-- Search & Filters -->
+    <div class="catalog-controls">
+        <div class="search-container">
+            <div class="search-box">
+                <input type="text"
+                       id="search-input"
+                       class="search-input"
+                       placeholder="Търси по име или SKU..."
+                       autocomplete="off">
+                <button type="button" id="clear-search" class="clear-search hidden">✕</button>
             </div>
         </div>
+
+        <div class="filters-container">
+            <div class="filter-group">
+                <label for="category-filter" class="filter-label">Категория:</label>
+                <select id="category-filter" class="filter-select">
+                    <option value="">Всички категории</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="price-min" class="filter-label">Цена от:</label>
+                <input type="number" id="price-min" class="filter-input" min="0" step="0.01" placeholder="0.00">
+            </div>
+
+            <div class="filter-group">
+                <label for="price-max" class="filter-label">до:</label>
+                <input type="number" id="price-max" class="filter-input" min="0" step="0.01" placeholder="999.99">
+            </div>
+
+            <div class="filter-group">
+                <label for="sort-by" class="filter-label">Сортиране:</label>
+                <select id="sort-by" class="filter-select">
+                    <option value="name">По име (А-Я)</option>
+                    <option value="name-desc">По име (Я-А)</option>
+                    <option value="price">По цена (ниски)</option>
+                    <option value="price-desc">По цена (високи)</option>
+                    <option value="category">По категория</option>
+                </select>
+            </div>
+
+            <button type="button" id="clear-filters" class="clear-filters-btn">
+                🗑️ Изчисти филтрите
+            </button>
+        </div>
     </div>
 
-    <!-- Empty state -->
-    <div th:if="${resultCount == 0}" class="empty-state">
-        <div class="empty-state-icon">
-            <span th:if="${hasQuery}">🔍</span>
-            <span th:unless="${hasQuery}">📦</span>
-        </div>
-        <div class="empty-state-text">
-            <span th:if="${hasQuery}">Няма намерени продукти за "<strong th:text="${q}">query</strong>"</span>
-            <span th:unless="${hasQuery}">Няма активни продукти в каталога</span>
-        </div>
-        <div th:if="${hasQuery}">
-            <a th:href="@{/catalog}" class="btn">Покажи всички продукти</a>
+    <!-- View Toggle -->
+    <div class="view-controls">
+        <div class="view-toggle">
+            <button type="button" id="grid-view" class="view-btn active" title="Мрежа">⊞</button>
+            <button type="button" id="list-view" class="view-btn" title="Списък">☰</button>
         </div>
     </div>
 
-    <!-- Quick actions -->
-    <div class="quick-actions" style="margin-top: 30px; text-align: center;">
-        <a th:href="@{/cart}" class="btn btn-secondary">
-            <span class="nav-icon">🛒</span> Виж кошницата
-        </a>
-        <a th:href="@{/orders}" class="btn btn-secondary">
-            <span class="nav-icon">📋</span> Моите заявки
-        </a>
+    <!-- Loading State -->
+    <div id="loading-state" class="loading-state">
+        <div class="loading-spinner"></div>
+        <p>Зареждам продуктите...</p>
+    </div>
+
+    <!-- Products Container -->
+    <div id="products-container" class="products-container hidden">
+        <!-- Products will be populated by JavaScript -->
+    </div>
+
+    <!-- Empty State -->
+    <div id="empty-state" class="empty-state hidden">
+        <div class="empty-icon">📦</div>
+        <h3>Няма намерени продукти</h3>
+        <p id="empty-message">Опитайте да промените филтрите си.</p>
+        <button type="button" id="reset-search" class="btn btn-secondary">Нулиране на търсенето</button>
+    </div>
+
+    <!-- No Results State -->
+    <div id="no-results" class="empty-state hidden">
+        <div class="empty-icon">🔍</div>
+        <h3>Няма резултати</h3>
+        <p>Не намерихме продукти съответстващи на вашето търсене.</p>
     </div>
 </section>
 
-<style>
-    .search-results-info {
-        margin: 15px 0;
-        padding: 10px;
-        background: #f8f9fa;
-        border-radius: 6px;
-        color: #6c757d;
-    }
+<!-- Cart Sidebar (Optional) -->
+<div id="cart-sidebar" class="cart-sidebar">
+    <div class="cart-header">
+        <h3>🛒 Кошница</h3>
+        <button id="close-cart" class="close-cart">✕</button>
+    </div>
+    <div class="cart-content">
+        <div id="cart-items"></div>
+        <div class="cart-total">
+            <div class="total-line">
+                Общо: <strong id="cart-total">0.00 лв</strong>
+            </div>
+        </div>
+        <div class="cart-actions">
+            <button id="checkout-btn" class="btn btn-primary btn-full">
+                Към поръчката
+            </button>
+        </div>
+    </div>
+</div>
 
-    .product-details {
-        margin: 15px 0;
-    }
-
-    .product-description {
-        margin: 8px 0;
-        color: #6c757d;
-        line-height: 1.4;
-    }
-
-    .category-badge {
-        display: inline-block;
-        background: #e9ecef;
-        color: #495057;
-        padding: 2px 8px;
-        border-radius: 12px;
-        font-size: 0.75rem;
-        font-weight: 600;
-    }
-
-    .quantity-controls {
-        display: flex;
-        align-items: center;
-        gap: 0;
-        margin-bottom: 10px;
-    }
-
-    .qty-btn {
-        background: #e9ecef;
-        border: 1px solid #ced4da;
-        width: 30px;
-        height: 35px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        font-weight: bold;
-        transition: background 0.2s ease;
-    }
-
-    .qty-btn:hover {
-        background: #dee2e6;
-    }
-
-    .qty-minus {
-        border-radius: 4px 0 0 4px;
-    }
-
-    .qty-plus {
-        border-radius: 0 4px 4px 0;
-    }
-
-    .qty-input {
-        width: 60px;
-        text-align: center;
-        border-radius: 0;
-        border-left: none;
-        border-right: none;
-        margin: 0;
-    }
-
-    .quick-actions {
-        border-top: 1px solid #dee2e6;
-        padding-top: 20px;
-    }
-
-    @media (max-width: 768px) {
-        .quantity-controls {
-            justify-content: center;
-        }
-
-        .add-to-cart-form {
-            text-align: center;
-        }
-    }
-</style>
-
-<script>
-    function updateQuantity(button, change) {
-        const input = button.parentElement.querySelector('.qty-input');
-        const currentValue = parseInt(input.value);
-        const newValue = Math.max(1, Math.min(9999, currentValue + change));
-        input.value = newValue;
-    }
-
-    // Form submission feedback
-    document.addEventListener('DOMContentLoaded', function() {
-        const forms = document.querySelectorAll('.add-to-cart-form');
-        forms.forEach(form => {
-            form.addEventListener('submit', function(e) {
-                const button = this.querySelector('button[type="submit"]');
-                const originalText = button.innerHTML;
-                button.innerHTML = '<span class="loading"></span> Добавя...';
-                button.disabled = true;
-
-                // Re-enable after 2 seconds if form doesn't redirect
-                setTimeout(() => {
-                    button.innerHTML = originalText;
-                    button.disabled = false;
-                }, 2000);
-            });
-        });
-    });
-</script>
+<script src="/js/catalog.js"></script>
 </body>
 </html>

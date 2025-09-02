@@ -52,44 +52,36 @@
                     Вашият надежден партньор за директен внос и дистрибуция на хранителни продукти от цяла Европа.
                 </p>
                 <div class="hero-cta">
-                    <button class="btn btn-primary btn-large" onclick="scrollToRegister()">
-                        <i class="bi bi-rocket-takeoff"></i>
-                        Започнете днес
-                    </button>
-                    <button class="btn btn-secondary btn-large" onclick="scrollToLogin()">
-                        <i class="bi bi-person-check"></i>
-                        Вече съм клиент
-                    </button>
+                    <a href="#login" class="btn btn-primary btn-large" onclick="scrollToLogin()">
+                        <i class="bi bi-box-arrow-in-right"></i>
+                        Влезте в системата
+                    </a>
+                    <a href="#register" class="btn btn-accent btn-large" onclick="scrollToRegister()">
+                        <i class="bi bi-person-plus"></i>
+                        Регистрация за бизнес
+                    </a>
                 </div>
             </div>
+
             <div class="hero-visual">
                 <div class="hero-card">
                     <div class="hero-card-header">
                         <div class="card-dots">
-                            <span class="dot dot-red"></span>
-                            <span class="dot dot-yellow"></span>
-                            <span class="dot dot-green"></span>
+                            <div class="dot dot-red"></div>
+                            <div class="dot dot-yellow"></div>
+                            <div class="dot dot-green"></div>
                         </div>
+                        <span class="card-title">Warehouse Portal</span>
                     </div>
                     <div class="hero-card-content">
-                        <div class="preview-interface">
-                            <div class="preview-header">Нова заявка</div>
-                            <div class="preview-items">
-                                <div class="preview-item">
-                                    <i class="bi bi-box"></i>
-                                    Замразени меса - 50кг
-                                </div>
-                                <div class="preview-item">
-                                    <i class="bi bi-basket"></i>
-                                    Зеленчукови консерви - 100бр
-                                </div>
-                                <div class="preview-item">
-                                    <i class="bi bi-egg"></i>
-                                    Млечни продукти и яйца - 20кг
-                                </div>
+                        <div class="preview-stats">
+                            <div class="stat-preview">
+                                <span class="stat-number">2500+</span>
+                                <span class="stat-label">Продукти</span>
                             </div>
-                            <div class="preview-actions">
-                                <div class="preview-btn">Изпрати заявка</div>
+                            <div class="stat-preview">
+                                <span class="stat-number">99.8%</span>
+                                <span class="stat-label">Uptime</span>
                             </div>
                         </div>
                     </div>
@@ -99,21 +91,38 @@
     </div>
 </header>
 
+<!-- Trust Section -->
+<section class="trust">
+    <div class="container">
+        <div class="trust-stats">
+            <div class="trust-stat">
+                <span class="stat-number">15+</span>
+                <span class="stat-label">години опит</span>
+            </div>
+            <div class="trust-stat">
+                <span class="stat-number">2500+</span>
+                <span class="stat-label">продукта</span>
+            </div>
+            <div class="trust-stat">
+                <span class="stat-number">500+</span>
+                <span class="stat-label">доволни клиенти</span>
+            </div>
+            <div class="trust-stat">
+                <span class="stat-number">99.8%</span>
+                <span class="stat-label">надеждност</span>
+            </div>
+        </div>
+    </div>
+</section>
+
 <!-- Features Section -->
 <section class="features">
     <div class="container">
-        <div class="features-header">
-            <h2 class="section-title">Защо да изберете нашата платформа?</h2>
-            <p class="section-subtitle">Професионални решения за бизнеса с над 20 години опит</p>
+        <div class="section-header">
+            <h2 class="section-title">Защо да изберете нас?</h2>
+            <p class="section-subtitle">Най-добри цени и свежи продукти.</p>
         </div>
         <div class="features-grid">
-            <div class="feature-card">
-                <div class="feature-icon">
-                    <i class="bi bi-lightning-charge"></i>
-                </div>
-                <h3 class="feature-title">Директен внос</h3>
-                <p class="feature-description">Директен внос от цяла Европа без междинни търговци. Най-добри цени и свежи продукти.</p>
-            </div>
             <div class="feature-card">
                 <div class="feature-icon">
                     <i class="bi bi-graph-up-arrow"></i>
@@ -148,18 +157,30 @@
                 <p class="login-subtitle">Изберете вашия тип акаунт</p>
             </div>
 
+            <!-- ✅ ПОПРАВЕНИ LOGIN MESSAGES - НЯМА ГРЕШКИ -->
+            <div th:if="${logoutMessage != null or errorMessage != null}" class="login-messages">
+                <div th:if="${logoutMessage != null}" class="alert alert-success">
+                    <i class="bi bi-check-circle"></i>
+                    <span th:text="${logoutMessage}">Logout съобщение</span>
+                </div>
+                <div th:if="${errorMessage != null}" class="alert alert-error">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <span th:text="${errorMessage}">Error съобщение</span>
+                </div>
+            </div>
+
             <div class="login-tabs">
                 <div class="tab-buttons">
                     <button class="tab-btn active" data-tab="clients" onclick="switchTab('clients')">
-                            <span class="tab-icon">
-                                <i class="bi bi-building"></i>
-                            </span>
+                        <span class="tab-icon">
+                            <i class="bi bi-building"></i>
+                        </span>
                         <span class="tab-text">Клиенти</span>
                     </button>
                     <button class="tab-btn" data-tab="employees" onclick="switchTab('employees')">
-                            <span class="tab-icon">
-                                <i class="bi bi-people"></i>
-                            </span>
+                        <span class="tab-icon">
+                            <i class="bi bi-people"></i>
+                        </span>
                         <span class="tab-text">Служители/Администратори</span>
                     </button>
                 </div>
@@ -198,13 +219,15 @@
                             </button>
                         </form>
                         <div class="login-help">
-                            <p class="help-text">Нов клиент? <a href="#register" class="help-link" onclick="scrollToRegister()">Регистрирайте се тук</a></p>
+                            <p class="help-text">Нов клиент?
+                                <a href="#register" class="help-link" onclick="scrollToRegister()">Регистрирайте се тук</a>
+                            </p>
                         </div>
                     </div>
 
                     <div class="tab-pane" id="employees">
                         <form class="login-form" method="post" action="/login">
-                            <input type="hidden" name="role" value="EMPLOYEE">
+                            <input type="hidden" name="role" value="EMPLOYER">
                             <div class="form-group">
                                 <label for="employee-username" class="form-label">Служебен акаунт</label>
                                 <input
@@ -252,25 +275,25 @@
                 <h2 class="cta-title">Готови за дигитална трансформация?</h2>
                 <p class="cta-subtitle">
                     Присъединете се към портала на Съни Комерс-Димо Пенев и открийте новото
-                    измерение на хранителната дистрибуция.
+                    измерение на хранителната дистрибуция. Най-добри цени и свежи продукти.
                 </p>
                 <ul class="cta-benefits">
                     <li class="cta-benefit">
-                            <span class="benefit-icon">
-                                <i class="bi bi-stars"></i>
-                            </span>
+                        <span class="benefit-icon">
+                            <i class="bi bi-stars"></i>
+                        </span>
                         Персонализирано портфолио според вашите нужди
                     </li>
                     <li class="cta-benefit">
-                            <span class="benefit-icon">
-                                <i class="bi bi-bar-chart"></i>
-                            </span>
+                        <span class="benefit-icon">
+                            <i class="bi bi-bar-chart"></i>
+                        </span>
                         Детайлни отчети за поръчки и доставки
                     </li>
                     <li class="cta-benefit">
-                            <span class="benefit-icon">
-                                <i class="bi bi-award"></i>
-                            </span>
+                        <span class="benefit-icon">
+                            <i class="bi bi-award"></i>
+                        </span>
                         Специални цени за регистрирани партньори
                     </li>
                 </ul>
@@ -315,39 +338,24 @@
                                     required
                             >
                         </div>
+                        <div class="form-group">
+                            <textarea
+                                    name="message"
+                                    class="form-input"
+                                    rows="3"
+                                    placeholder="Допълнителна информация (по избор)"
+                            ></textarea>
+                        </div>
                         <button type="submit" class="btn btn-accent btn-full">
                             <i class="bi bi-send"></i>
-                            Изпратете заявка
+                            Изпрати заявката
                         </button>
                     </form>
                     <p class="register-note">
-                        След обработка на заявката ще получите данни за достъп в рамките на 24 часа.
+                        След изпращане на заявката, нашият екип ще се свърже с вас в рамките на 24 часа
+                        за потвърждение и настройка на акаунта.
                     </p>
                 </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- Trust Section -->
-<section class="trust">
-    <div class="container">
-        <div class="trust-stats">
-            <div class="trust-stat">
-                <div class="stat-number" data-count="20">0</div>
-                <div class="stat-label">Години опит</div>
-            </div>
-            <div class="trust-stat">
-                <div class="stat-number" data-count="2500">0</div>
-                <div class="stat-label">Артикула в портфолио</div>
-            </div>
-            <div class="trust-stat">
-                <div class="stat-number" data-count="100">0</div>
-                <div class="stat-label">+ Доволни клиенти</div>
-            </div>
-            <div class="trust-stat">
-                <div class="stat-number" data-count="24">0</div>
-                <div class="stat-label">Часа поддръжка</div>
             </div>
         </div>
     </div>
@@ -360,66 +368,56 @@
             <div class="footer-section">
                 <img src="/images/logo1.png" alt="Съни Комерс-Димо Пенев" class="footer-logo">
                 <p class="footer-text">
-                    Директен внос и дистрибуция на хранителни продукти от цяла Европа за вашия успешен хорека бизнес.
+                    Водещ доставчик на хранителни продукти в региона с над 15 години опит
+                    в директния внос и дистрибуция.
                 </p>
             </div>
+
             <div class="footer-section">
-                <h4 class="footer-title">Контакти</h4>
+                <h3 class="footer-title">Контакти</h3>
                 <div class="contact-info">
-                    <p class="contact-item">
-                            <span class="contact-icon">
-                                <i class="bi bi-geo-alt"></i>
-                            </span>
-                        Община Несебър, България
-                    </p>
-                    <p class="contact-item">
-                            <span class="contact-icon">
-                                <i class="bi bi-telephone"></i>
-                            </span>
-                        +359 888 123 456
-                    </p>
-                    <p class="contact-item">
-                            <span class="contact-icon">
-                                <i class="bi bi-envelope"></i>
-                            </span>
-                        office@sunnycommerce.bg
-                    </p>
+                    <div class="contact-item">
+                        <span class="contact-icon">📍</span>
+                        <span>г. Несебър, България</span>
+                    </div>
+                    <div class="contact-item">
+                        <span class="contact-icon">📞</span>
+                        <span>+359 XXX XXX XXX</span>
+                    </div>
+                    <div class="contact-item">
+                        <span class="contact-icon">📧</span>
+                        <span>info@sunnyfood.bg</span>
+                    </div>
                 </div>
             </div>
+
             <div class="footer-section">
-                <h4 class="footer-title">Продукти</h4>
+                <h3 class="footer-title">Бързи връзки</h3>
                 <ul class="footer-links">
-                    <li><a href="#" class="footer-link">Замразени и охладени меса</a></li>
-                    <li><a href="#" class="footer-link">Зеленчукови консерви</a></li>
-                    <li><a href="#" class="footer-link">Риба и морски деликатеси</a></li>
-                    <li><a href="#" class="footer-link">Млечни продукти и яйца</a></li>
-                    <li><a href="#" class="footer-link">Подправки и сосове</a></li>
+                    <li><a href="#login" class="footer-link" onclick="scrollToLogin()">Вход</a></li>
+                    <li><a href="#register" class="footer-link" onclick="scrollToRegister()">Регистрация</a></li>
+                    <li><a href="/about" class="footer-link">За нас</a></li>
+                    <li><a href="#" class="footer-link">Условия</a></li>
                 </ul>
             </div>
         </div>
+
         <div class="footer-bottom">
             <p class="copyright">
-                © 2025 Съни Комерс-Димо Пенев ООД. Всички права запазени.
+                &copy; 2025 Съни Комерс-Димо Пенев ООД. Всички права запазени.
             </p>
         </div>
     </div>
 </footer>
 
-<!-- Success Modal -->
-<div class="modal" id="successModal">
-    <div class="modal-overlay" onclick="closeModal()"></div>
-    <div class="modal-content">
-        <div class="modal-icon">
-            <i class="bi bi-check-circle"></i>
-        </div>
-        <h3 class="modal-title">Заявката е изпратена успешно!</h3>
-        <p class="modal-text">
-            Благодарим ви за интереса! Ще се свържем с вас в рамките на 24 часа.
-        </p>
-        <button class="btn btn-primary" onclick="closeModal()">Разбрано</button>
-    </div>
-</div>
-
+<!-- Scripts -->
 <script src="/js/index.js"></script>
+
+<!-- CSRF Token (ако е нужен) -->
+<script th:if="${_csrf}">
+    window.csrfToken = /*[[${_csrf.token}]]*/ '';
+    window.csrfHeader = /*[[${_csrf.headerName}]]*/ '';
+</script>
+
 </body>
 </html>

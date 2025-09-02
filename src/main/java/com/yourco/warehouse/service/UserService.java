@@ -7,7 +7,7 @@ import org.springframework.security.core.Authentication;
 import java.util.List;
 import java.util.Optional;
 
-public interface userService {
+public interface UserService {
 
     Authentication authenticateUser(String email, String password);
 

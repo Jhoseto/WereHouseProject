@@ -35,7 +35,8 @@ public class SecurityConfig {
                         .permitAll()
                         .requestMatchers("/", "/error").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
+                        // ↓ ПОПРАВЕНО: И ADMIN и EMPLOYER могат да достъпват /admin/**
+                        .requestMatchers("/admin/**").hasAnyRole("ADMIN", "EMPLOYER")
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form
@@ -56,7 +57,6 @@ public class SecurityConfig {
                 .sessionManagement(session -> session
                         .sessionFixation().migrateSession()
                         .sessionCreationPolicy(SessionCreationPolicy.ALWAYS)
-
                 )
                 .headers(headers -> headers
                         .httpStrictTransportSecurity(HeadersConfigurer.HstsConfig::disable)
@@ -67,7 +67,6 @@ public class SecurityConfig {
                 );
         return http.build();
     }
-
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder(12);
