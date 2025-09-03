@@ -6,85 +6,19 @@
     <title>Съни Комерс-Димо Пенев - Дистрибуция на хранителни продукти</title>
     <meta name="description" content="Добре дошли в портала на Съни Комерс-Димо Пенев ООД. Директен внос и дистрибуция на хранителни продукти от Европа. Над 2500 артикула за хотели, ресторанти и хорека бизнес.">
 
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
-    <!-- Bootstrap Icons -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.css">
-
-    <!-- Styles -->
-    <link rel="stylesheet" href="/css/main.css">
+    <div th:replace="~{fragments/topHtmlImports :: topImports}"></div>
     <link rel="stylesheet" href="/css/index.css">
-    <link rel="stylesheet" href="/css/toastNotifications.css">
+
+
 </head>
 <body>
-<!-- TOAST NOTIFICATIONS CONTAINER -->
-<div class="toast-container">
-    <!-- Success Toast -->
-    <div th:if="${successMessage}" class="toast toast-success" id="successToast">
-        <div class="toast-icon">
-            <i class="bi bi-check-circle-fill"></i>
-        </div>
-        <div class="toast-content">
-            <div class="toast-title">Успешно!</div>
-            <div class="toast-message" th:text="${successMessage}"></div>
-        </div>
-        <button class="toast-close" onclick="closeToast('successToast')">
-            <i class="bi bi-x"></i>
-        </button>
-    </div>
 
-    <!-- Error Toast -->
-    <div th:if="${errorMessage}" class="toast toast-error" id="errorToast">
-        <div class="toast-icon">
-            <i class="bi bi-exclamation-triangle-fill"></i>
-        </div>
-        <div class="toast-content">
-            <div class="toast-title">Грешка!</div>
-            <div class="toast-message" th:text="${errorMessage}"></div>
-        </div>
-        <button class="toast-close" onclick="closeToast('errorToast')">
-            <i class="bi bi-x"></i>
-        </button>
-    </div>
+<!-- Навигация -->
+<div th:replace="~{fragments/navbar :: navbar}"></div>
 
-    <!-- Logout Toast -->
-    <div th:if="${logoutMessage}" class="toast toast-info" id="logoutToast">
-        <div class="toast-icon">
-            <i class="bi bi-info-circle-fill"></i>
-        </div>
-        <div class="toast-content">
-            <div class="toast-title">Изход</div>
-            <div class="toast-message" th:text="${logoutMessage}"></div>
-        </div>
-        <button class="toast-close" onclick="closeToast('logoutToast')">
-            <i class="bi bi-x"></i>
-        </button>
-    </div>
-</div>
 <!-- Hero Section -->
 <header class="hero">
     <div class="hero-bg"></div>
-    <nav class="top-nav">
-        <div class="nav-container">
-            <div class="logo-container">
-                <img src="/images/logo1.png" alt="Съни Комерс-Димо Пенев" class="logo">
-            </div>
-            <div class="nav-actions">
-                <a href="#login" class="nav-link" onclick="scrollToLogin()">
-                    <i class="bi bi-box-arrow-in-right"></i>
-                    <span>Вход</span>
-                </a>
-                <a href="#register" class="nav-link nav-link-primary" onclick="scrollToRegister()">
-                    <i class="bi bi-person-plus"></i>
-                    <span>Регистрация</span>
-                </a>
-            </div>
-        </div>
-    </nav>
-
     <div class="hero-content">
         <div class="hero-container">
             <div class="hero-text">
@@ -351,14 +285,14 @@
             </div>
             <div class="cta-form">
                 <div class="register-card">
-                    <h3 class="register-title">Заявка за регистрация</h3>
+                    <h3 class="register-title">Регистрация</h3>
                     <form class="register-form" onsubmit="handleRegistration(event)">
                         <div class="form-group">
                             <input
                                     type="text"
                                     name="company"
                                     class="form-input"
-                                    placeholder="Име на компанията"
+                                    placeholder="Потребителско име..."
                                     required
                             >
                         </div>
@@ -367,7 +301,7 @@
                                     type="text"
                                     name="contact_person"
                                     class="form-input"
-                                    placeholder="Контактно лице"
+                                    placeholder="Контактно лице..."
                                     required
                             >
                         </div>
@@ -376,7 +310,7 @@
                                     type="email"
                                     name="email"
                                     class="form-input"
-                                    placeholder="Email адрес"
+                                    placeholder="Email адрес..."
                                     required
                             >
                         </div>
@@ -385,7 +319,7 @@
                                     type="tel"
                                     name="phone"
                                     class="form-input"
-                                    placeholder="Телефон"
+                                    placeholder="Телефон..."
                                     required
                             >
                         </div>
@@ -403,73 +337,20 @@
                         </button>
                     </form>
                     <p class="register-note">
-                        След изпращане на заявката, нашият екип ще се свърже с вас в рамките на 24 часа
-                        за потвърждение и настройка на акаунта.
+                        С изпращане на заявката за регистрация, вие се съгласявате с нашата политика и условия
+                        за използване на портала !
                     </p>
                 </div>
             </div>
         </div>
     </div>
 </section>
-
-<!-- Footer -->
-<footer class="footer">
-    <div class="container">
-        <div class="footer-content">
-            <div class="footer-section">
-                <img src="/images/logo1.png" alt="Съни Комерс-Димо Пенев" class="footer-logo">
-                <p class="footer-text">
-                    Водещ доставчик на хранителни продукти в региона с над 20 години опит
-                    в директния внос и дистрибуция.
-                </p>
-            </div>
-
-            <div class="footer-section">
-                <h3 class="footer-title">Контакти</h3>
-                <div class="contact-info">
-                    <div class="contact-item">
-                        <span class="contact-icon">📍</span>
-                        <span>г. Несебър, България</span>
-                    </div>
-                    <div class="contact-item">
-                        <span class="contact-icon">📞</span>
-                        <span>+359 XXX XXX XXX</span>
-                    </div>
-                    <div class="contact-item">
-                        <span class="contact-icon">📧</span>
-                        <span>info@sunnyfood.bg</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="footer-section">
-                <h3 class="footer-title">Бързи връзки</h3>
-                <ul class="footer-links">
-                    <li><a href="#login" class="footer-link" onclick="scrollToLogin()">Вход</a></li>
-                    <li><a href="#register" class="footer-link" onclick="scrollToRegister()">Регистрация</a></li>
-                    <li><a href="/about" class="footer-link">За нас</a></li>
-                    <li><a href="#" class="footer-link">Условия</a></li>
-                </ul>
-            </div>
-        </div>
-
-        <div class="footer-bottom">
-            <p class="copyright">
-                &copy; 2025 Съни Комерс-Димо Пенев ООД. Всички права запазени.
-            </p>
-        </div>
-    </div>
-</footer>
+<!-- Include Footer Fragment -->
+<div th:replace="~{fragments/footer :: footer}"></div>
 
 <!-- Scripts -->
 <script src="/js/index.js"></script>
-<script src="/js/toastNotifications.js"></script>
-
-<!-- CSRF Token (ако е нужен) -->
-<script th:if="${_csrf}">
-    window.csrfToken = /*[[${_csrf.token}]]*/ '';
-    window.csrfHeader = /*[[${_csrf.headerName}]]*/ '';
-</script>
+<div th:replace="~{fragments/bottomHtmlImports :: bottomImports}"></div>
 
 </body>
 </html>

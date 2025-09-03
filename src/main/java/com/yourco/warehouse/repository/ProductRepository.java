@@ -1,6 +1,7 @@
 package com.yourco.warehouse.repository;
 
 import com.yourco.warehouse.entity.ProductEntity;
+import jakarta.persistence.QueryHint;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -9,7 +10,6 @@ import org.springframework.data.jpa.repository.QueryHints;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import jakarta.persistence.QueryHint;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
@@ -27,13 +27,19 @@ public interface ProductRepository extends JpaRepository<ProductEntity, Long> {
     boolean existsBySku(String sku);
     boolean existsBySkuAndActiveTrue(String sku);
 
+    // Изрично добавен за CatalogServiceImpl
+    List<ProductEntity> findAllByActiveTrue();
+
+    // Legacy поддръжка (оставяме и този, за да не счупим нищо)
+    List<ProductEntity> findByActiveTrue();
+
     // ==========================================
     // CATALOG OPTIMIZED QUERIES
     // ==========================================
 
     /**
-     * Получава всички активни продукти с оптимизирано сортиране
-     * Кешира се на ниво Service
+     * Всички активни продукти с оптимизирано сортиране
+     * Кеш/Read-Only подсказки за Hibernate
      */
     @Query("SELECT p FROM ProductEntity p WHERE p.active = true ORDER BY p.name ASC")
     @QueryHints({
@@ -43,7 +49,7 @@ public interface ProductRepository extends JpaRepository<ProductEntity, Long> {
     List<ProductEntity> findAllActiveProductsOptimized();
 
     /**
-     * Търсене по име и SKU - оптимизирано за каталог
+     * Оптимизирано търсене по име, SKU и описание
      */
     @Query("SELECT p FROM ProductEntity p WHERE p.active = true AND " +
             "(LOWER(p.name) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
@@ -61,7 +67,7 @@ public interface ProductRepository extends JpaRepository<ProductEntity, Long> {
     List<ProductEntity> searchActiveProductsOptimized(@Param("query") String query);
 
     /**
-     * Филтриране по категория
+     * Филтър по категория
      */
     @Query("SELECT p FROM ProductEntity p WHERE p.active = true AND p.category = :category ORDER BY p.name ASC")
     @QueryHints({
@@ -70,7 +76,7 @@ public interface ProductRepository extends JpaRepository<ProductEntity, Long> {
     List<ProductEntity> findActiveProductsByCategory(@Param("category") String category);
 
     /**
-     * Филтриране по ценови диапазон
+     * Филтър по ценови диапазон
      */
     @Query("SELECT p FROM ProductEntity p WHERE p.active = true AND " +
             "p.price >= :minPrice AND p.price <= :maxPrice ORDER BY p.price ASC")
@@ -83,7 +89,8 @@ public interface ProductRepository extends JpaRepository<ProductEntity, Long> {
     );
 
     /**
-     * Комбинирано филтриране - категория и ценови диапазон
+     * Комбинирано филтриране – категория и ценови диапазон
+     * Използва се директно от сервиса (НЕ пипай името)
      */
     @Query("SELECT p FROM ProductEntity p WHERE p.active = true AND " +
             "(:category IS NULL OR p.category = :category) AND " +
@@ -100,20 +107,22 @@ public interface ProductRepository extends JpaRepository<ProductEntity, Long> {
     );
 
     /**
-     * Получава всички категории за филтър dropdown
+     * Категории за dropdown – използва се от сервиса като findDistinctCategories()
      */
-    @Query("SELECT DISTINCT p.category FROM ProductEntity p WHERE p.active = true AND p.category IS NOT NULL ORDER BY p.category")
+    @Query("SELECT DISTINCT p.category FROM ProductEntity p WHERE p.active = true AND p.category IS NOT NULL")
     @QueryHints({
-            @QueryHint(name = "org.hibernate.cacheable", value = "true")
+            @QueryHint(name = "org.hibernate.cacheable", value = "true"),
+            @QueryHint(name = "org.hibernate.readOnly", value = "true")
     })
-    List<String> findAllActiveCategories();
+    List<String> findDistinctCategories();
 
     /**
-     * Получава всички units за филтър dropdown
+     * Всички units за dropdown (оставяме за UI филтри)
      */
     @Query("SELECT DISTINCT p.unit FROM ProductEntity p WHERE p.active = true AND p.unit IS NOT NULL ORDER BY p.unit")
     @QueryHints({
-            @QueryHint(name = "org.hibernate.cacheable", value = "true")
+            @QueryHint(name = "org.hibernate.cacheable", value = "true"),
+            @QueryHint(name = "org.hibernate.readOnly", value = "true")
     })
     List<String> findAllActiveUnits();
 
@@ -124,20 +133,23 @@ public interface ProductRepository extends JpaRepository<ProductEntity, Long> {
     @Query("SELECT COUNT(p) FROM ProductEntity p WHERE p.active = true")
     long countByActiveProducts();
 
-    @Query("SELECT COUNT(p) FROM ProductEntity p WHERE p.active = true AND p.category = :category")
-    long countActiveProductsByCategory(@Param("category") String category);
+    // За да съвпадне с CatalogServiceImpl.countActiveProductsByCategory(...)
+    long countByCategoryAndActiveTrue(String category);
 
     @Query("SELECT p.category, COUNT(p) FROM ProductEntity p WHERE p.active = true AND p.category IS NOT NULL GROUP BY p.category ORDER BY p.category")
     List<Object[]> countProductsByCategory();
 
+    /**
+     * Използва се от сервиса за price stats
+     * Индексите: [0]=MIN, [1]=MAX, [2]=AVG
+     */
     @Query("SELECT MIN(p.price), MAX(p.price), AVG(p.price) FROM ProductEntity p WHERE p.active = true")
     Object[] getPriceStatistics();
 
     // ==========================================
-    // LEGACY SUPPORT (за съвместимост)
+    // LEGACY SUPPORT (оставени за съвместимост)
     // ==========================================
 
-    List<ProductEntity> findByActiveTrue();
     Page<ProductEntity> findByActiveTrueOrderByName(Pageable pageable);
 
     List<ProductEntity> findByActiveTrueAndNameContainingIgnoreCase(String query);
@@ -146,13 +158,13 @@ public interface ProductRepository extends JpaRepository<ProductEntity, Long> {
     long countByActiveTrue();
 
     /**
-     * Legacy search method
+     * Legacy search method – използва се от сервиса (НЕ променяй името)
      */
-    @Query("SELECT p FROM ProductEntity p WHERE p.active = true AND (p.name LIKE %?1% OR p.sku LIKE %?1%)")
+    @Query("SELECT p FROM ProductEntity p WHERE p.active = true AND (LOWER(p.name) LIKE LOWER(CONCAT('%', ?1, '%')) OR LOWER(p.sku) LIKE LOWER(CONCAT('%', ?1, '%')))")
     List<ProductEntity> searchActiveProducts(String query);
 
     /**
-     * Legacy method за валидни цени
+     * Продукти с валидна цена (полезно за справки)
      */
     @Query("SELECT p FROM ProductEntity p WHERE p.active = true AND p.price > 0 ORDER BY p.name")
     List<ProductEntity> findActiveProductsWithValidPrice();

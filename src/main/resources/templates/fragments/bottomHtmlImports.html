@@ -1,0 +1,10 @@
+<div th:fragment="bottomImports">
+    <script src="/js/toastNotifications.js"></script>
+    <script src="/js/navbar.js"></script>
+
+    <!-- CSRF Token -->
+    <script th:if="${_csrf}">
+        window.csrfToken = /*[[${_csrf.token}]]*/ '';
+        window.csrfHeader = /*[[${_csrf.headerName}]]*/ '';
+    </script>
+</div>

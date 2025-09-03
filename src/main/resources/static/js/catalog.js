@@ -135,52 +135,54 @@ class CatalogManager {
         this.applyFilters(false); // Don't reset search when applying other filters
     }
 
-    applyFilters(resetSearch = true) {
-        let products = resetSearch ? [...this.products] : [...this.filteredProducts];
+    applyFilters() {
+        let products = [...this.products];
 
-        // Category filter
+        // --- Search ---
+        const query = this.searchInput.value.trim().toLowerCase();
+        if (query) {
+            products = products.filter(product =>
+                product.name.toLowerCase().includes(query) ||
+                product.sku.toLowerCase().includes(query) ||
+                (product.description && product.description.toLowerCase().includes(query))
+            );
+            this.clearSearch.classList.remove('hidden');
+        } else {
+            this.clearSearch.classList.add('hidden');
+        }
+
+        // --- Category filter ---
         const selectedCategory = this.categoryFilter.value;
         if (selectedCategory) {
             products = products.filter(p => p.category === selectedCategory);
         }
 
-        // Price filters
+        // --- Price filters ---
         const minPrice = parseFloat(this.priceMin.value) || 0;
         const maxPrice = parseFloat(this.priceMax.value) || Infinity;
-
         products = products.filter(p => {
             const price = parseFloat(p.price);
             return price >= minPrice && price <= maxPrice;
         });
 
-        // Sort
+        // --- Sorting ---
         const sortBy = this.sortBy.value;
         products.sort((a, b) => {
             switch (sortBy) {
-                case 'name':
-                    return a.name.localeCompare(b.name, 'bg');
-                case 'name-desc':
-                    return b.name.localeCompare(a.name, 'bg');
-                case 'price':
-                    return parseFloat(a.price) - parseFloat(b.price);
-                case 'price-desc':
-                    return parseFloat(b.price) - parseFloat(a.price);
-                case 'category':
-                    return (a.category || '').localeCompare(b.category || '', 'bg');
-                default:
-                    return 0;
+                case 'name': return a.name.localeCompare(b.name, 'bg');
+                case 'name-desc': return b.name.localeCompare(a.name, 'bg');
+                case 'price': return parseFloat(a.price) - parseFloat(b.price);
+                case 'price-desc': return parseFloat(b.price) - parseFloat(a.price);
+                case 'category': return (a.category || '').localeCompare(b.category || '', 'bg');
+                default: return 0;
             }
         });
 
-        if (!resetSearch) {
-            this.filteredProducts = products;
-        } else {
-            this.filteredProducts = products;
-        }
-
+        this.filteredProducts = products;
         this.renderProducts();
         this.updateProductCount();
     }
+
 
     renderProducts() {
         if (this.filteredProducts.length === 0) {
@@ -194,69 +196,83 @@ class CatalogManager {
         const isGridView = this.currentView === 'grid';
         this.productsContainer.className = `products-container ${isGridView ? 'products-grid' : 'products-list'}`;
 
-        this.productsContainer.innerHTML = this.filteredProducts.map(product =>
-            this.createProductCard(product, isGridView)
-        ).join('');
+        // Изчистваме контейнера
+        this.productsContainer.innerHTML = '';
 
-        // Add event listeners to quantity controls and add to cart buttons
+        // Създаваме fragment за по-бързо рендиране
+        const fragment = document.createDocumentFragment();
+
+        this.filteredProducts.forEach(product => {
+            const wrapper = document.createElement('div');
+            wrapper.innerHTML = this.createProductCard(product, isGridView);
+            fragment.appendChild(wrapper.firstElementChild);
+        });
+
+        this.productsContainer.appendChild(fragment);
+
+        // Добавяне на събития към бутоните
         this.bindProductEvents();
 
-        // Add fade in animation
+        // Reset и добавяне на fade-in за анимация
+        this.productsContainer.classList.remove('fade-in');
+        void this.productsContainer.offsetWidth; // trigger reflow
         this.productsContainer.classList.add('fade-in');
     }
 
     createProductCard(product, isGrid) {
+        const safeName = this.escapeHtml(product.name);
+        const safeDesc = product.description ? this.escapeHtml(product.description) : '';
+        const safeSku = this.escapeHtml(product.sku);
+        const safeCategory = product.category ? this.escapeHtml(product.category) : '';
         const priceWithVat = (parseFloat(product.price) * (1 + product.vatRate / 100)).toFixed(2);
         const cardClass = isGrid ? 'product-card' : 'product-card list-item';
 
         return `
-            <div class="${cardClass}" data-product-id="${product.id}">
-                ${isGrid ? `
-                    <div class="product-header">
-                        <div class="product-sku">${product.sku}</div>
-                        ${product.category ? `<div class="product-category">${product.category}</div>` : ''}
-                    </div>
-                ` : ''}
+        <div class="${cardClass}" data-product-id="${product.id}">
+            ${isGrid ? `
+                <div class="product-header">
+                    <div class="product-sku">${safeSku}</div>
+                    ${safeCategory ? `<div class="product-category">${safeCategory}</div>` : ''}
+                </div>
+            ` : ''}
+            
+            <div class="product-content">
+                <div class="product-info">
+                    ${!isGrid ? `
+                        <div class="product-header">
+                            <div class="product-sku">${safeSku}</div>
+                            ${safeCategory ? `<div class="product-category">${safeCategory}</div>` : ''}
+                        </div>
+                    ` : ''}
+                    
+                    <h3 class="product-name">${safeName}</h3>
+                    
+                    ${safeDesc ? `<p class="product-description">${safeDesc}</p>` : ''}
+                </div>
                 
-                <div class="product-content">
-                    <div class="product-info">
-                        ${!isGrid ? `
-                            <div class="product-header">
-                                <div class="product-sku">${product.sku}</div>
-                                ${product.category ? `<div class="product-category">${product.category}</div>` : ''}
-                            </div>
-                        ` : ''}
-                        
-                        <h3 class="product-name">${this.escapeHtml(product.name)}</h3>
-                        
-                        ${product.description ? `
-                            <p class="product-description">${this.escapeHtml(product.description)}</p>
-                        ` : ''}
+                <div class="product-footer">
+                    <div class="product-price">
+                        <div class="price-without-vat">
+                            ${parseFloat(product.price).toFixed(2)} лв
+                            <span class="unit-label">/ ${product.unit}</span>
+                        </div>
+                        <div class="price-with-vat">с ДДС: ${priceWithVat} лв</div>
                     </div>
                     
-                    <div class="product-footer">
-                        <div class="product-price">
-                            <div class="price-without-vat">
-                                ${parseFloat(product.price).toFixed(2)} лв
-                                <span class="unit-label">/ ${product.unit}</span>
-                            </div>
-                            <div class="price-with-vat">с ДДС: ${priceWithVat} лв</div>
+                    <div class="add-to-cart-section">
+                        <div class="quantity-controls">
+                            <button type="button" class="qty-btn qty-minus" data-sku="${safeSku}">−</button>
+                            <input type="number" class="qty-input" value="1" min="1" max="999" data-sku="${safeSku}">
+                            <button type="button" class="qty-btn qty-plus" data-sku="${safeSku}">+</button>
                         </div>
-                        
-                        <div class="add-to-cart-section">
-                            <div class="quantity-controls">
-                                <button type="button" class="qty-btn qty-minus" data-sku="${product.sku}">−</button>
-                                <input type="number" class="qty-input" value="1" min="1" max="999" data-sku="${product.sku}">
-                                <button type="button" class="qty-btn qty-plus" data-sku="${product.sku}">+</button>
-                            </div>
-                            <button type="button" class="add-to-cart-btn" data-sku="${product.sku}">
-                                🛒 Добави
-                            </button>
-                        </div>
+                        <button type="button" class="add-to-cart-btn" data-sku="${safeSku}">
+                            🛒 Добави
+                        </button>
                     </div>
                 </div>
             </div>
-        `;
+        </div>
+    `;
     }
 
     bindProductEvents() {

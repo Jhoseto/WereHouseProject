@@ -1,9 +1,21 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="bg" >
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Съни Комерс-Димо Пенев - Дистрибуция на хранителни продукти</title>
+    <meta name="description" content="Добре дошли в портала на Съни Комерс-Димо Пенев ООД. Директен внос и дистрибуция на хранителни продукти от Европа. Над 2500 артикула за хотели, ресторанти и хорека бизнес.">
+
+    <th:block th:replace="~{fragments/topHtmlImports :: topImports}"></th:block>
     <link rel="stylesheet" href="/css/catalog.css">
+
+
 </head>
 <body>
+
+<!-- Навигация -->
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+
 <section class="catalog-section">
     <div class="catalog-header">
         <h1 class="catalog-title">📦 Каталог продукти</h1>
@@ -116,7 +128,11 @@
         </div>
     </div>
 </div>
+<!-- Include Footer Fragment -->
+<div th:replace="~{fragments/footer :: footer}"></div>
 
+<!-- Scripts -->
 <script src="/js/catalog.js"></script>
+<th:block th:replace="~{fragments/bottomHtmlImports :: bottomImports}"></th:block>
 </body>
 </html>

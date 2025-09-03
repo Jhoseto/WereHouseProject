@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<!-- Footer Fragment -->
+<footer th:fragment="footer" class="footer">
+    <div class="container">
+        <div class="footer-content">
+            <!-- Company Info Section -->
+            <div class="footer-section">
+                <img src="/images/logo1.png" alt="Съни Комерс-Димо Пенев" class="footer-logo">
+                <p class="footer-text">
+                    Водещ доставчик на хранителни продукти в региона с над 20 години опит
+                    в директния внос и дистрибуция.
+                </p>
+            </div>
+
+            <!-- Contact Info Section -->
+            <div class="footer-section">
+                <h3 class="footer-title">Контакти</h3>
+                <div class="contact-info">
+                    <div class="contact-item">
+                        <span class="contact-icon">📍</span>
+                        <span>г. Несебър, България</span>
+                    </div>
+                    <div class="contact-item">
+                        <span class="contact-icon">📞</span>
+                        <span>+359 XXX XXX XXX</span>
+                    </div>
+                    <div class="contact-item">
+                        <span class="contact-icon">📧</span>
+                        <span>info@sunnyfood.bg</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Links Section -->
+            <div class="footer-section">
+                <h3 class="footer-title">Бързи връзки</h3>
+                <ul class="footer-links">
+                    <!-- Условни връзки според автентикацията -->
+                    <div sec:authorize="!isAuthenticated()">
+                        <li><a href="#login" class="footer-link" onclick="scrollToLogin()">Вход</a></li>
+                        <li><a href="#register" class="footer-link" onclick="scrollToRegister()">Регистрация</a></li>
+                    </div>
+
+                    <div sec:authorize="isAuthenticated()">
+                        <!-- Връзки за ADMIN и EMPLOYER -->
+                        <div sec:authorize="hasAnyRole('ADMIN', 'EMPLOYER')">
+                            <li><a th:href="@{/admin/dashboard}" class="footer-link">Админ панел</a></li>
+                            <li><a th:href="@{/admin/orders}" class="footer-link">Поръчки</a></li>
+                        </div>
+
+                        <!-- Връзки за CLIENT -->
+                        <div sec:authorize="hasRole('CLIENT')">
+                            <li><a th:href="@{/catalog}" class="footer-link">Каталог</a></li>
+                            <li><a th:href="@{/client/orders}" class="footer-link">Моите поръчки</a></li>
+                        </div>
+                    </div>
+
+                    <!-- Общи връзки -->
+                    <li><a th:href="@{/about}" class="footer-link">За нас</a></li>
+                    <li><a href="#" class="footer-link">Условия</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Footer Bottom -->
+        <div class="footer-bottom">
+            <p class="copyright">
+                &copy; 2025 Съни Комерс-Димо Пенев ООД. Всички права запазени.
+            </p>
+        </div>
+    </div>
+</footer>
+
+</html>

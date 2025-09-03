@@ -51,77 +51,131 @@ public class ProductCatalogDTO {
 
     public ProductCatalogDTO(ProductEntity entity) {
         this.id = entity.getId();
-        this.sku = entity.getSku();
-        this.name = entity.getName();
-        this.description = entity.getDescription();
-        this.category = entity.getCategory();
-        this.unit = entity.getUnit();
-        this.price = entity.getPrice();
-        this.vatRate = entity.getVatRate();
+        this.sku = nvl(entity.getSku(), "");
+        this.name = nvl(entity.getName(), "");
+        this.description = nvl(entity.getDescription(), "");
+        this.category = nvl(entity.getCategory(), "");
+        this.unit = nvl(entity.getUnit(), "бр.");
+        this.price = nvl(entity.getPrice(), BigDecimal.ZERO);
+        this.vatRate = entity.getVatRate() >= 0 ? entity.getVatRate() : 0;
         this.active = entity.isActive();
 
         // Calculated fields
-        this.priceWithVat = calculatePriceWithVat(entity.getPrice(), entity.getVatRate());
+        this.priceWithVat = calculatePriceWithVat(this.price, this.vatRate);
         this.vatAmount = this.priceWithVat.subtract(this.price);
     }
 
-    /**
-     * Factory method за създаване от entity
-     */
+    // Factory
     public static ProductCatalogDTO from(ProductEntity entity) {
         return new ProductCatalogDTO(entity);
     }
 
-    /**
-     * Factory method за batch conversion
-     */
     public static List<ProductCatalogDTO> from(List<ProductEntity> entities) {
         return entities.stream()
                 .map(ProductCatalogDTO::from)
                 .toList();
     }
 
-    // Utility methods
+    // Utils
     private BigDecimal calculatePriceWithVat(BigDecimal price, int vatRate) {
-        if (price == null) return BigDecimal.ZERO;
-
         BigDecimal vatMultiplier = BigDecimal.ONE.add(
-                BigDecimal.valueOf(vatRate).divide(BigDecimal.valueOf(100))
+                BigDecimal.valueOf(vatRate).divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP)
         );
         return price.multiply(vatMultiplier).setScale(2, RoundingMode.HALF_UP);
     }
 
-    // Getters and Setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    private static <T> T nvl(T value, T def) {
+        return value != null ? value : def;
+    }
 
-    public String getSku() { return sku; }
-    public void setSku(String sku) { this.sku = sku; }
+    // Getters & setters ...
 
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
 
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
+    public Long getId() {
+        return id;
+    }
 
-    public String getCategory() { return category; }
-    public void setCategory(String category) { this.category = category; }
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-    public String getUnit() { return unit; }
-    public void setUnit(String unit) { this.unit = unit; }
+    public String getSku() {
+        return sku;
+    }
 
-    public BigDecimal getPrice() { return price; }
-    public void setPrice(BigDecimal price) { this.price = price; }
+    public void setSku(String sku) {
+        this.sku = sku;
+    }
 
-    public BigDecimal getPriceWithVat() { return priceWithVat; }
-    public void setPriceWithVat(BigDecimal priceWithVat) { this.priceWithVat = priceWithVat; }
+    public String getName() {
+        return name;
+    }
 
-    public int getVatRate() { return vatRate; }
-    public void setVatRate(int vatRate) { this.vatRate = vatRate; }
+    public void setName(String name) {
+        this.name = name;
+    }
 
-    public BigDecimal getVatAmount() { return vatAmount; }
-    public void setVatAmount(BigDecimal vatAmount) { this.vatAmount = vatAmount; }
+    public String getDescription() {
+        return description;
+    }
 
-    public boolean isActive() { return active; }
-    public void setActive(boolean active) { this.active = active; }
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
+    }
+
+    public String getUnit() {
+        return unit;
+    }
+
+    public void setUnit(String unit) {
+        this.unit = unit;
+    }
+
+    public BigDecimal getPrice() {
+        return price;
+    }
+
+    public void setPrice(BigDecimal price) {
+        this.price = price;
+    }
+
+    public BigDecimal getPriceWithVat() {
+        return priceWithVat;
+    }
+
+    public void setPriceWithVat(BigDecimal priceWithVat) {
+        this.priceWithVat = priceWithVat;
+    }
+
+    public int getVatRate() {
+        return vatRate;
+    }
+
+    public void setVatRate(int vatRate) {
+        this.vatRate = vatRate;
+    }
+
+    public BigDecimal getVatAmount() {
+        return vatAmount;
+    }
+
+    public void setVatAmount(BigDecimal vatAmount) {
+        this.vatAmount = vatAmount;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
+    }
 }
