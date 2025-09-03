@@ -40,7 +40,7 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form
-                        .loginPage("/login")
+                        .loginPage("/index")
                         .loginProcessingUrl("/login")
                         .usernameParameter("username")
                         .passwordParameter("password")
@@ -78,12 +78,6 @@ public class SecurityConfig {
         provider.setUserDetailsService(uds);
         provider.setPasswordEncoder(encoder);
         return provider;
-    }
-
-
-    @Bean
-    public UserDetailsService userDetailsService(UserRepository userRepository) {
-        return new CustomUserDetailsService(userRepository);
     }
 
 }

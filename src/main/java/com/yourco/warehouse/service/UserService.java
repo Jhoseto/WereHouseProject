@@ -9,7 +9,7 @@ import java.util.Optional;
 
 public interface UserService {
 
-    Authentication authenticateUser(String email, String password);
+    Authentication authenticateUser(String username, String password);
 
     Optional<UserEntity> findUserByEmail(String email);
 

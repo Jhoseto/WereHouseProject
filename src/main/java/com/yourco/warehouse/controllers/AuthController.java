@@ -1,20 +1,28 @@
 package com.yourco.warehouse.controllers;
 
+import com.yourco.warehouse.dto.UserLoginDto;
 import com.yourco.warehouse.entity.UserEntity;
+import com.yourco.warehouse.entity.enums.Role;
 import com.yourco.warehouse.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.WebAttributes;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.time.Instant;
 import java.util.Optional;
 
 @Controller
@@ -30,32 +38,43 @@ public class AuthController {
     }
 
     @GetMapping("/login")
-    public String login(@RequestParam(value = "error", required = false) String error,
-                        @RequestParam(value = "logout", required = false) String logout,
-                        @RequestParam(value = "message", required = false) String message,
-                        @RequestParam(value = "username", required = false) String username,
-                        Authentication auth,
-                        Model model,
+    public String login(@Valid @ModelAttribute("userModel") UserLoginDto userModel,
+                        RedirectAttributes redirectAttributes,
+                        HttpServletResponse response,
                         HttpServletRequest request) {
 
-        // Ако потребителят вече е влязъл, пренасочваме го
-        if (auth != null && auth.isAuthenticated()) {
-            return redirectAuthenticatedUser(auth);
+        Optional<UserEntity> userOptional = userService.findUserByUsername(userModel.getUsername());
+
+        if (userOptional.isEmpty()) {
+            redirectAttributes.addFlashAttribute("error", "Невалидено Име ! : " + userModel.getUsername());
+            return "redirect:/index";
         }
 
-        // Обработка на грешки при неуспешно влизане
-        if (error != null) {
-            handleLoginError(username, message, model, request);
+        UserEntity user = userOptional.get();
+
+        if (!userService.checkPassword(user, userModel.getPassword())) {
+            redirectAttributes.addFlashAttribute("error", "Грешна парола!");
+            return "redirect:/index";
         }
 
-        // Съобщение при излизане
-        if (logout != null) {
-            model.addAttribute("logoutMessage", "Излязохте успешно от системата");
+        Authentication authentication = userService.authenticateUser(userModel.getUsername(), userModel.getPassword());
+
+        if (authentication != null) {
+            // 1. Set в SecurityContextHolder
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+
+            request.getSession().setAttribute(
+                    HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY,
+                    SecurityContextHolder.getContext()
+            );
+
+
+            if (user.getRole().equals(Role.ADMIN) || user.getRole().equals(Role.EMPLOYER)) {
+                return "redirect:/admin/dashboard";
+            } else {
+                return "redirect:/catalog";
+            }
         }
-
-        // Демо креденциали за development
-        model.addAttribute("showDemoCredentials", isDevelopmentMode());
-
         return "index";
     }
 

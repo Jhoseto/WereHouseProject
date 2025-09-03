@@ -1,5 +1,7 @@
 package com.yourco.warehouse.service.Impl;
 
+import com.yourco.warehouse.dto.UserProfileViewModel;
+import com.yourco.warehouse.entity.UserEntity;
 import com.yourco.warehouse.repository.UserRepository;
 import com.yourco.warehouse.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,14 +13,9 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 /**
  * Implementation of the UserService interface.
@@ -27,5 +24,84 @@ import java.util.UUID;
 public class UserServiceImpl implements UserService {
 
 
+    private final UserRepository userRepository;
+    private final UserDetailsService userDetailsService;
+    private final PasswordEncoder passwordEncoder;
 
+    @Autowired
+    public UserServiceImpl(UserRepository userRepository,
+                           UserDetailsService userDetailsService,
+                           PasswordEncoder passwordEncoder) {
+        this.userRepository = userRepository;
+        this.userDetailsService = userDetailsService;
+        this.passwordEncoder = passwordEncoder;
+    }
+
+    @Transactional
+
+    public Authentication authenticateUser(String username, String password) {
+        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+
+        if (userDetails != null && passwordEncoder.matches(password, userDetails.getPassword())) {
+            Authentication authentication = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+
+            return authentication;
+        }
+        return null;
+    }
+
+    @Override
+    public Optional<UserEntity> findUserByEmail(String email) {
+        UserEntity user = userRepository.findByEmail(email);
+
+        return Optional.ofNullable(user);
+    }
+
+    @Override
+    public Optional<UserEntity> findUserByUsername(String username) {
+        return Optional.empty();
+    }
+
+    @Override
+    public boolean checkPassword(UserEntity user, String rawPassword) {
+        return false;
+    }
+
+    @Override
+    public List<UserProfileViewModel> getAllUsers() {
+        return List.of();
+    }
+
+    @Transactional
+    public UserEntity getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.isAuthenticated()) {
+            String username = authentication.getName();
+            Optional<UserEntity> userOptional = userRepository.findByUsername(username);
+            if (userOptional.isPresent()) {
+                return userOptional.get();
+            } else {
+                // The user not found by userName, then find by Email
+                Optional<UserEntity> userByEmailOptional = Optional.ofNullable(userRepository.findByEmail(username));
+                return userByEmailOptional.orElse(null);
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public void deleteUser(Long userId) {
+
+    }
+
+    @Override
+    public UserProfileViewModel getUserByUsername(String userName) {
+        return null;
+    }
+
+    @Override
+    public void createNewUser(UserEntity userEntity) {
+
+    }
 }
