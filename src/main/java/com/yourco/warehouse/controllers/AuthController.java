@@ -121,6 +121,7 @@ public class AuthController {
                     return "redirect:/catalog";
                 }
             } else {
+                // ПРИ НЕУСПЕШНА АВТЕНТИКАЦИЯ - връщаме към login с грешка
                 redirectAttributes.addFlashAttribute("errorMessage",
                         "Грешка при автентикация. Моля опитайте отново или се свържете с администратор");
                 return "redirect:/";

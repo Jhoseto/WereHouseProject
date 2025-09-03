@@ -33,19 +33,13 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/css/**", "/js/**", "/images/**", "/favicon.ico")
                         .permitAll()
-                        .requestMatchers("/", "/error").permitAll()
+                        .requestMatchers("/", "/login", "/error").permitAll() // Добавен /login
                         .requestMatchers("/actuator/health").permitAll()
-                        // ↓ ПОПРАВЕНО: И ADMIN и EMPLOYER могат да достъпват /admin/**
                         .requestMatchers("/admin/**").hasAnyRole("ADMIN", "EMPLOYER")
+                        .requestMatchers("/catalog", "/api/**").hasRole("CLIENT") // CLIENT endpoints
                         .anyRequest().authenticated()
                 )
-                .formLogin(form -> form
-                        .loginPage("/index")
-                        .loginProcessingUrl("/login")
-                        .usernameParameter("username")
-                        .passwordParameter("password")
-                        .permitAll()
-                )
+                // ПРЕМАХНАТО: .formLogin() конфигурацията за да работи custom AuthController
                 .logout(logout -> logout
                         .logoutRequestMatcher(new AntPathRequestMatcher("/logout"))
                         .logoutSuccessHandler(logoutSuccessHandler)
@@ -67,6 +61,8 @@ public class SecurityConfig {
                 );
         return http.build();
     }
+
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder(12);

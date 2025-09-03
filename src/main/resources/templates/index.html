@@ -17,8 +17,53 @@
     <!-- Styles -->
     <link rel="stylesheet" href="/css/main.css">
     <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/toastNotifications.css">
 </head>
 <body>
+<!-- TOAST NOTIFICATIONS CONTAINER -->
+<div class="toast-container">
+    <!-- Success Toast -->
+    <div th:if="${successMessage}" class="toast toast-success" id="successToast">
+        <div class="toast-icon">
+            <i class="bi bi-check-circle-fill"></i>
+        </div>
+        <div class="toast-content">
+            <div class="toast-title">Успешно!</div>
+            <div class="toast-message" th:text="${successMessage}"></div>
+        </div>
+        <button class="toast-close" onclick="closeToast('successToast')">
+            <i class="bi bi-x"></i>
+        </button>
+    </div>
+
+    <!-- Error Toast -->
+    <div th:if="${errorMessage}" class="toast toast-error" id="errorToast">
+        <div class="toast-icon">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+        </div>
+        <div class="toast-content">
+            <div class="toast-title">Грешка!</div>
+            <div class="toast-message" th:text="${errorMessage}"></div>
+        </div>
+        <button class="toast-close" onclick="closeToast('errorToast')">
+            <i class="bi bi-x"></i>
+        </button>
+    </div>
+
+    <!-- Logout Toast -->
+    <div th:if="${logoutMessage}" class="toast toast-info" id="logoutToast">
+        <div class="toast-icon">
+            <i class="bi bi-info-circle-fill"></i>
+        </div>
+        <div class="toast-content">
+            <div class="toast-title">Изход</div>
+            <div class="toast-message" th:text="${logoutMessage}"></div>
+        </div>
+        <button class="toast-close" onclick="closeToast('logoutToast')">
+            <i class="bi bi-x"></i>
+        </button>
+    </div>
+</div>
 <!-- Hero Section -->
 <header class="hero">
     <div class="hero-bg"></div>
@@ -172,17 +217,6 @@
                 <p class="login-subtitle">Изберете вашия тип акаунт</p>
             </div>
 
-            <!-- ✅ ПОПРАВЕНИ LOGIN MESSAGES - НЯМА ГРЕШКИ -->
-            <div th:if="${logoutMessage != null or errorMessage != null}" class="login-messages">
-                <div th:if="${logoutMessage != null}" class="alert alert-success">
-                    <i class="bi bi-check-circle"></i>
-                    <span th:text="${logoutMessage}">Logout съобщение</span>
-                </div>
-                <div th:if="${errorMessage != null}" class="alert alert-error">
-                    <i class="bi bi-exclamation-triangle"></i>
-                    <span th:text="${errorMessage}">Error съобщение</span>
-                </div>
-            </div>
 
             <div class="login-tabs">
                 <div class="tab-buttons">
@@ -429,6 +463,7 @@
 
 <!-- Scripts -->
 <script src="/js/index.js"></script>
+<script src="/js/toastNotifications.js"></script>
 
 <!-- CSRF Token (ако е нужен) -->
 <script th:if="${_csrf}">
