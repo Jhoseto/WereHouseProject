@@ -203,6 +203,7 @@
                 <div class="tab-content">
                     <div class="tab-pane active" id="clients">
                         <form class="login-form" method="post" action="/login">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
                             <input type="hidden" name="role" value="CLIENT">
                             <div class="form-group">
                                 <label for="client-username" class="form-label">Потребителско име</label>
@@ -242,6 +243,7 @@
 
                     <div class="tab-pane" id="employees">
                         <form class="login-form" method="post" action="/login">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
                             <input type="hidden" name="role" value="EMPLOYER">
                             <div class="form-group">
                                 <label for="employee-username" class="form-label">Служебен акаунт</label>
