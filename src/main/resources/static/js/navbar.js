@@ -146,7 +146,7 @@ class ToastManager {
 }
 
 // Глобален instance на ToastManager
-const toastManager = new ToastManager();
+let toastManager;
 
 // ==========================================
 // HELPER FUNCTIONS
@@ -191,10 +191,8 @@ function scrollToRegister() {
 // ==========================================
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Проверяваме за Flash съобщения от сървъра
+    toastManager = new ToastManager();
     checkForFlashMessages();
-
-    // Проверяваме за URL параметри за показване на съобщения
     checkUrlParams();
 });
 

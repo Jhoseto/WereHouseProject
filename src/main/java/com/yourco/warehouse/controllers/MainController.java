@@ -6,13 +6,44 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.support.RequestContextUtils;
+
+import java.util.Map;
 
 @Controller
 public class MainController {
 
 
     @GetMapping("/")
-    public String home(Model model, Authentication auth) {
+    public String home(Model model, Authentication auth, HttpServletRequest request,
+                       @RequestParam(value = "error", required = false) String error,
+                       @RequestParam(value = "logout", required = false) String logout) {
+
+        // Обработваме flash атрибутите от AuthController
+        Map<String, ?> flashMap = RequestContextUtils.getInputFlashMap(request);
+        if (flashMap != null) {
+            for (Map.Entry<String, ?> entry : flashMap.entrySet()) {
+                model.addAttribute(entry.getKey(), entry.getValue());
+            }
+        }
+
+        // Обработваме URL параметрите
+        if (error != null) {
+            if ("unauthorized".equals(error)) {
+                model.addAttribute("errorMessage", "Трябва да влезете в системата за да достъпите тази страница.");
+                model.addAttribute("errorTitle", "Необходима е автентикация");
+            } else {
+                model.addAttribute("errorMessage", "Възникна грешка при влизане в системата. Моля опитайте отново.");
+                model.addAttribute("errorTitle", "Грешка при вход");
+            }
+        }
+
+        if (logout != null) {
+            model.addAttribute("successMessage", "Успешно излязохте от системата. До скоро!");
+            model.addAttribute("successTitle", "Довиждане");
+        }
+
         return "index";
     }
 

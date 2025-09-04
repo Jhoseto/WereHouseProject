@@ -1,10 +1,12 @@
+/* src/main/resources/static/css/toastNotifications.css */
+
 /* ==========================================
    TOAST CONTAINER - ПОД NAVBAR В ДЯСНО
    ========================================== */
 
 .toast-container {
     position: fixed;
-    top: 85px;                    /* Под navbar (навлий ако navbar е по-висок) */
+    top: 85px;                    /* Под navbar */
     right: 20px;                  /* В дясно */
     z-index: 9999;                /* Над всичко останало */
     display: flex;
@@ -14,6 +16,119 @@
     width: auto;
     pointer-events: none;         /* Контейнерът не блокира други елементи */
 }
+
+.toast {
+    background: var(--color-white);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--color-border-light);
+    padding: var(--space-4) var(--space-5);
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+    transform: translateX(100%);
+    opacity: 0;
+    transition: all var(--transition-normal);
+    backdrop-filter: blur(10px);
+    position: relative;
+    overflow: hidden;
+    pointer-events: auto;         /* Toast-овете приемат кликове */
+}
+
+.toast.show {
+    transform: translateX(0);
+    opacity: 1;
+}
+
+.toast::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: var(--color-accent);
+}
+
+.toast.success::before {
+    background: var(--color-success);
+}
+
+.toast.error::before {
+    background: var(--color-danger);
+}
+
+.toast.warning::before {
+    background: var(--color-warning);
+}
+
+.toast.info::before {
+    background: var(--color-info);
+}
+
+.toast-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    font-size: var(--font-size-sm);
+    color: white;
+    background: var(--color-accent);
+}
+
+.toast.success .toast-icon {
+    background: var(--color-success);
+}
+
+.toast.error .toast-icon {
+    background: var(--color-danger);
+}
+
+.toast.warning .toast-icon {
+    background: var(--color-warning);
+}
+
+.toast.info .toast-icon {
+    background: var(--color-info);
+}
+
+.toast-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.toast-title {
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text);
+    font-size: var(--font-size-sm);
+    margin-bottom: 2px;
+}
+
+.toast-message {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+    line-height: var(--line-height-relaxed);
+}
+
+.toast-close {
+    background: none;
+    border: none;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    padding: 2px;
+    line-height: 1;
+    font-size: var(--font-size-lg);
+    opacity: 0.5;
+    transition: opacity var(--transition-fast);
+}
+
+.toast-close:hover {
+    opacity: 1;
+}
+
 .toast-icon i {
     font-size: 20px;
     font-weight: 600;
@@ -44,6 +159,7 @@
 .toast-close:hover i {
     color: #2c3e50;
 }
+
 /* Responsive - на мобилни устройства */
 @media (max-width: 768px) {
     .toast-container {
@@ -54,7 +170,6 @@
     }
 }
 
-/* Ако navbar-ът е sticky/fixed, може да се нуждаеш от adjust */
 @media (max-width: 576px) {
     .toast-container {
         top: 60px;
