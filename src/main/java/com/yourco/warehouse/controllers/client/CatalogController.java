@@ -10,7 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -18,7 +17,6 @@ import java.util.*;
 
 @RestController
 @RequestMapping
-@Validated
 public class CatalogController {
 
     private final CatalogService catalogService;
@@ -50,8 +48,10 @@ public class CatalogController {
     @ResponseBody
     public ResponseEntity<List<ProductCatalogDTO>> searchProducts(
             @RequestParam(value = "q", required = false)
-            @Size(max = 100, message = "Заявката не може да бъде по-дълга от 100 символа")
             String query) {
+        if (query != null && query.length() > 100) {
+            return ResponseEntity.badRequest().body(Collections.emptyList());
+        }
         try {
             List<ProductCatalogDTO> productDTOs = catalogService.searchActive(query);
             return ResponseEntity.ok()
@@ -68,12 +68,12 @@ public class CatalogController {
     @ResponseBody
     public ResponseEntity<?> filterProducts(
             @RequestParam(value = "category", required = false) String category,
-            @RequestParam(value = "minPrice", required = false)
-            @DecimalMin(value = "0.0", message = "Минималната цена трябва да бъде положителна")
-            BigDecimal minPrice,
-            @RequestParam(value = "maxPrice", required = false)
-            @DecimalMin(value = "0.0", message = "Максималната цена трябва да бъде положителна")
-            BigDecimal maxPrice) {
+            @RequestParam(value = "minPrice", required = false) BigDecimal minPrice,
+            @RequestParam(value = "maxPrice", required = false) BigDecimal maxPrice) {
+        if ((minPrice != null && minPrice.compareTo(BigDecimal.ZERO) < 0) ||
+                (maxPrice != null && maxPrice.compareTo(BigDecimal.ZERO) < 0)) {
+            return ResponseEntity.badRequest().body(Collections.emptyList());
+        }
         try {
             // Логиката за валидност на ценови диапазон е в сервиза или може да се провери тук
             if (minPrice != null && maxPrice != null && minPrice.compareTo(maxPrice) > 0) {

@@ -19,7 +19,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 @Controller
-@Validated
 public class CartController {
 
     private static final Logger logger = LoggerFactory.getLogger(CartController.class);

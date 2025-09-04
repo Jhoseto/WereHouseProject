@@ -1,9 +1,10 @@
 package com.yourco.warehouse.config;
 
-import com.yourco.warehouse.components.PerformanceInterceptor;
+import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Role;
 import org.springframework.context.support.ReloadableResourceBundleMessageSource;
 import org.springframework.format.FormatterRegistry;
 import org.springframework.http.MediaType;
@@ -16,13 +17,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 
 @Configuration
+@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 public class WebConfig implements WebMvcConfigurer {
 
-    private final PerformanceInterceptor performanceInterceptor;
-
-    public WebConfig(PerformanceInterceptor performanceInterceptor) {
-        this.performanceInterceptor = performanceInterceptor;
-    }
 
     /**
      * Configure static resource handling with caching
@@ -45,20 +42,6 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addResourceHandler("/favicon.ico")
                 .addResourceLocations("classpath:/static/")
                 .setCachePeriod(0);
-    }
-
-    /**
-     * Configure interceptors
-     */
-    @Override
-    public void addInterceptors(InterceptorRegistry registry) {
-        // Locale change interceptor
-        registry.addInterceptor(localeChangeInterceptor());
-
-        // Performance monitoring interceptor
-        registry.addInterceptor(performanceInterceptor)
-                .addPathPatterns("/**")
-                .excludePathPatterns("/css/**", "/js/**", "/img/**", "/favicon.ico");
     }
 
     /**
@@ -119,6 +102,7 @@ public class WebConfig implements WebMvcConfigurer {
      * Message source for internationalization
      */
     @Bean
+    @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
     public MessageSource messageSource() {
         ReloadableResourceBundleMessageSource messageSource = new ReloadableResourceBundleMessageSource();
         messageSource.setBasename("classpath:messages");
@@ -132,6 +116,7 @@ public class WebConfig implements WebMvcConfigurer {
      * Locale resolver for internationalization
      */
     @Bean
+    @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
     public LocaleResolver localeResolver() {
         SessionLocaleResolver localeResolver = new SessionLocaleResolver();
         localeResolver.setDefaultLocale(new Locale("bg", "BG"));
@@ -142,6 +127,7 @@ public class WebConfig implements WebMvcConfigurer {
      * Locale change interceptor
      */
     @Bean
+    @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
     public LocaleChangeInterceptor localeChangeInterceptor() {
         LocaleChangeInterceptor interceptor = new LocaleChangeInterceptor();
         interceptor.setParamName("lang");
