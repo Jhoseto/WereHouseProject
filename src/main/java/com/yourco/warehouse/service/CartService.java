@@ -2,7 +2,6 @@ package com.yourco.warehouse.service;
 
 import com.yourco.warehouse.dto.CartDTO;
 import com.yourco.warehouse.dto.CartItemDTO;
-import com.yourco.warehouse.entity.UserEntity;
 
 import java.util.List;
 
@@ -10,13 +9,14 @@ public interface CartService {
 
     /**
      * Добавя продукт в кошницата на потребител
-     * @param userId ID на потребителя
+     *
+     * @param userId    ID на потребителя
      * @param productId ID на продукта
-     * @param quantity количество за добавяне
+     * @param quantity  количество за добавяне
      * @return true ако е успешно добавен
      * @throws IllegalArgumentException ако няма достатъчно наличност
      */
-    boolean addToCart(Long userId, Long productId, Integer quantity);
+    String addToCart(Long userId, Long productId, Integer quantity);
 
     /**
      * Обновява количеството на артикул в кошницата

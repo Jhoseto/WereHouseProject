@@ -38,7 +38,7 @@ public class CartServiceImpl implements CartService {
     }
 
     @Override
-    public boolean addToCart(Long userId, Long productId, Integer quantity) {
+    public String addToCart(Long userId, Long productId, Integer quantity) {
         if (quantity == null || quantity <= 0) {
             throw new IllegalArgumentException("Количеството трябва да бъде положително число");
         }
@@ -53,37 +53,32 @@ public class CartServiceImpl implements CartService {
             throw new IllegalArgumentException("Продуктът не е активен");
         }
 
-        // Проверяваме дали има наличност
         if (!product.hasAvailableQuantity(quantity)) {
-            log.warn("Няма достатъчно наличност за продукт {} - искано: {}, налично: {}",
-                    product.getSku(), quantity, product.getQuantityAvailable());
-            throw new IllegalArgumentException("Няма достатъчно наличност. Налично: " + product.getQuantityAvailable());
+            throw new IllegalArgumentException(
+                    "Няма достатъчно наличност. Налично: " + product.getQuantityAvailable()
+            );
         }
 
-        // Проверяваме дали вече има този артикул в кошницата
         Optional<CartItem> existingItem = cartItemRepository.findByUserIdAndProductId(userId, productId);
 
         if (existingItem.isPresent()) {
-            // Обновяваме количеството
             CartItem item = existingItem.get();
-            Integer newQuantity = item.getQuantity() + quantity;
+            int newQuantity = item.getQuantity() + quantity;
 
             if (!product.hasAvailableQuantity(newQuantity)) {
-                throw new IllegalArgumentException("Няма достатъчно наличност за общо количество: " + newQuantity);
+                throw new IllegalArgumentException(
+                        "Няма достатъчно наличност за общо количество: " + newQuantity
+                );
             }
 
             item.setQuantity(newQuantity);
             cartItemRepository.save(item);
-            log.info("Обновено количество в кошницата: {} за продукт {}", newQuantity, product.getSku());
+            return "Обновено количество: " + newQuantity;
         } else {
-            // Създаваме нов артикул в кошницата
             CartItem newItem = new CartItem(user, product, quantity);
             cartItemRepository.save(newItem);
-            log.info("Добавен нов артикул в кошницата: {} x {} за потребител {}",
-                    quantity, product.getSku(), user.getUsername());
+            return "Добавен нов артикул: " + product.getName();
         }
-
-        return true;
     }
 
     @Override

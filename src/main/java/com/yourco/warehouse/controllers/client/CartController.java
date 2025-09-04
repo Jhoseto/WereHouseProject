@@ -49,20 +49,38 @@ public class CartController {
     @PostMapping(value = "/add", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Map<String, Object>> addToCart(
             @RequestParam Long productId,
-            @RequestParam Integer quantity,
+            @RequestParam(defaultValue = "1") Integer quantity,
             Authentication authentication) {
 
         Map<String, Object> response = new HashMap<>();
-        response.put("success", true);
-        response.put("message", "Продуктът е добавен успешно");
 
-        Map<String, Object> cart = new HashMap<>();
-        cart.put("totalItems", 1);
-        cart.put("totalQuantity", quantity);
-        response.put("cart", cart);
+        try {
+            Long userId = userService.getCurrentUser().getId();
 
-        return ResponseEntity.ok(response);
+            // Сервизът връща съобщение при успех
+            String message = cartService.addToCart(userId, productId, quantity);
+
+            response.put("success", true);
+            response.put("message", message);
+
+            // Връщаме информация за количката
+            Map<String, Object> cart = new HashMap<>();
+            cart.put("totalItems", cartService.getCartItemCount(userId));
+            cart.put("totalQuantity", cartService.getCartItems(userId)
+                    .stream()
+                    .mapToInt(i -> i.getQuantity())
+                    .sum());
+            response.put("cart", cart);
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
     }
+
 
     @PutMapping(value = "/update", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Map<String, Object>> updateQuantity(

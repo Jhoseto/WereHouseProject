@@ -179,7 +179,7 @@
     cursor: pointer;
     transition: all var(--transition-normal);
     backdrop-filter: blur(10px);
-    min-width: 180px; /* По-малка ширина без cart */
+    min-width: 260px; /* По-малка ширина без cart */
 }
 
 .user-profile-card:hover {
