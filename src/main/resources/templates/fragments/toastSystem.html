@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="">
+
+<!-- Toast Container Fragment -->
+<div th:fragment="toastContainer"
+     id="toastContainer"
+     class="toast-container">
+</div>
+
+<!-- Extended Flash Messages Data Fragment -->
+<div th:fragment="flashData"
+     id="flashDataContainer"
+     th:attr="data-success-message=${successMessage != null ? successMessage : ''},
+              data-success-title=${successTitle != null ? successTitle : ''},
+              data-error-message=${errorMessage != null ? errorMessage : ''},
+              data-error-title=${errorTitle != null ? errorTitle : ''},
+              data-warning-message=${warningMessage != null ? warningMessage : ''},
+              data-warning-title=${warningTitle != null ? warningTitle : ''},
+              data-info-message=${infoMessage != null ? infoMessage : ''},
+              data-info-title=${infoTitle != null ? infoTitle : ''},
+              data-toast-data=${toastData != null ? toastData : ''}"
+     style="display: none;">
+</div>
+
+</html>

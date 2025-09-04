@@ -12,9 +12,24 @@
 
 </head>
 <body>
+<!-- Flash Messages Data (скрит за JavaScript) -->
+<div id="flashDataContainer"
+     th:attr="data-success-message=${successMessage != null ? successMessage : ''},
+              data-success-title=${successTitle != null ? successTitle : ''},
+              data-error-message=${errorMessage != null ? errorMessage : ''},
+              data-error-title=${errorTitle != null ? errorTitle : ''},
+              data-warning-message=${warningMessage != null ? warningMessage : ''},
+              data-warning-title=${warningTitle != null ? warningTitle : ''},
+              data-info-message=${infoMessage != null ? infoMessage : ''},
+              data-info-title=${infoTitle != null ? infoTitle : ''}"
+     style="display: none;">
+</div>
 
 <!-- Навигация -->
 <div th:replace="~{fragments/navbar :: navbar}"></div>
+<div th:replace="~{fragments/toastSystem.html :: toastContainer}"></div>
+<!-- Toast Container (под navbar) -->
+<div id="toastContainer" class="toast-container"></div>
 
 <!-- Hero Section -->
 <header class="hero">
@@ -197,6 +212,17 @@
                                         autocomplete="current-password"
                                 >
                             </div>
+                            <div class="form-group">
+                                <div class="form-check">
+                                    <input type="checkbox"
+                                           id="client-remember-me"
+                                           name="remember-me"
+                                           class="form-check-input">
+                                    <label for="client-remember-me" class="form-check-label">
+                                        Запомни ме за 30 дни
+                                    </label>
+                                </div>
+                            </div>
                             <button type="submit" class="btn btn-primary btn-full">
                                 <i class="bi bi-box-arrow-in-right"></i>
                                 Влезте в системата
@@ -236,6 +262,17 @@
                                         required
                                         autocomplete="current-password"
                                 >
+                            </div>
+                            <div class="form-group">
+                                <div class="form-check">
+                                    <input type="checkbox"
+                                           id="employee-remember-me"
+                                           name="remember-me"
+                                           class="form-check-input">
+                                    <label for="employee-remember-me" class="form-check-label">
+                                        Запомни ме за 30 дни
+                                    </label>
+                                </div>
                             </div>
                             <button type="submit" class="btn btn-primary btn-full">
                                 <i class="bi bi-key"></i>

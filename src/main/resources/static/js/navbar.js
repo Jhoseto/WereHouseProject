@@ -79,10 +79,10 @@ class ToastManager {
         toast.dataset.toastId = id;
 
         const iconMap = {
-            success: 'bi-check-circle',
-            error: 'bi-x-circle',
-            warning: 'bi-exclamation-triangle',
-            info: 'bi-info-circle'
+            success: 'bi-check-circle-fill',        // ✓ в кръг
+            error: 'bi-exclamation-triangle-fill',  // ! в триъгълник
+            warning: 'bi-exclamation-triangle',     // ! в празен триъгълник
+            info: 'bi-info-circle-fill'             // i в кръг
         };
 
         const titleMap = {
@@ -93,17 +93,17 @@ class ToastManager {
         };
 
         toast.innerHTML = `
-            <div class="toast-icon">
-                <i class="bi ${iconMap[type] || iconMap.info}"></i>
-            </div>
-            <div class="toast-content">
-                <div class="toast-title">${titleMap[type]}</div>
-                <div class="toast-message">${message}</div>
-            </div>
-            <button class="toast-close" onclick="toastManager.hide(${id})">
-                <i class="bi bi-x"></i>
-            </button>
-        `;
+        <div class="toast-icon">
+            <i class="bi ${iconMap[type] || iconMap.info}"></i>
+        </div>
+        <div class="toast-content">
+            <div class="toast-title">${titleMap[type]}</div>
+            <div class="toast-message">${message}</div>
+        </div>
+        <button class="toast-close" onclick="toastManager.hide(${id})">
+            <i class="bi bi-x"></i>
+        </button>
+    `;
 
         return toast;
     }
@@ -198,32 +198,72 @@ document.addEventListener('DOMContentLoaded', function() {
     checkUrlParams();
 });
 
-// Функция за проверка на Flash съобщения
+// Функция за проверка на Flash съобщения - EXTENDED VERSION
 function checkForFlashMessages() {
-    // Тези атрибути ще бъдат сетнати от Thymeleaf
-    const successMessage = document.body.dataset.successMessage;
-    const errorMessage = document.body.dataset.errorMessage;
-    const warningMessage = document.body.dataset.warningMessage;
-    const infoMessage = document.body.dataset.infoMessage;
+    const flashDiv = document.getElementById('flashDataContainer');
+    if (!flashDiv) return;
 
-    if (successMessage) {
-        toastManager.success(successMessage);
-        delete document.body.dataset.successMessage;
+    // Стандартни съобщения с custom заглавия
+    const successMessage = flashDiv.getAttribute('data-success-message');
+    const successTitle = flashDiv.getAttribute('data-success-title');
+    const errorMessage = flashDiv.getAttribute('data-error-message');
+    const errorTitle = flashDiv.getAttribute('data-error-title');
+    const warningMessage = flashDiv.getAttribute('data-warning-message');
+    const warningTitle = flashDiv.getAttribute('data-warning-title');
+    const infoMessage = flashDiv.getAttribute('data-info-message');
+    const infoTitle = flashDiv.getAttribute('data-info-title');
+
+    // JSON данни за сложни случаи
+    const toastData = flashDiv.getAttribute('data-toast-data');
+
+    // Показваме стандартните съобщения
+    if (successMessage && successMessage.trim()) {
+        toastManager.success(
+            successMessage,
+            successTitle || 'Успех',
+            5000
+        );
     }
 
-    if (errorMessage) {
-        toastManager.error(errorMessage);
-        delete document.body.dataset.errorMessage;
+    if (errorMessage && errorMessage.trim()) {
+        toastManager.error(
+            errorMessage,
+            errorTitle || 'Грешка',
+            0  // Errors не се скриват автоматично
+        );
     }
 
-    if (warningMessage) {
-        toastManager.warning(warningMessage);
-        delete document.body.dataset.warningMessage;
+    if (warningMessage && warningMessage.trim()) {
+        toastManager.warning(
+            warningMessage,
+            warningTitle || 'Внимание',
+            6000
+        );
     }
 
-    if (infoMessage) {
-        toastManager.info(infoMessage);
-        delete document.body.dataset.infoMessage;
+    if (infoMessage && infoMessage.trim()) {
+        toastManager.info(
+            infoMessage,
+            infoTitle || 'Информация',
+            5000
+        );
+    }
+
+    // Обработваме JSON данни за сложни случаи
+    if (toastData && toastData.trim()) {
+        try {
+            const toasts = JSON.parse(toastData);
+            if (Array.isArray(toasts)) {
+                toasts.forEach(toast => {
+                    const { type, message, title, duration } = toast;
+                    if (message && toastManager[type]) {
+                        toastManager[type](message, title, duration);
+                    }
+                });
+            }
+        } catch (e) {
+            console.error('Грешка при обработване на toast данни:', e);
+        }
     }
 }
 
@@ -247,6 +287,15 @@ function checkUrlParams() {
         window.history.replaceState({}, document.title, newUrl);
     }
 }
+
+// Unified Toast API за лесно използване навсякъде
+window.Toast = {
+    success: (message, title = 'Успех', duration = 5000) => toastManager.success(message, title, duration),
+    error: (message, title = 'Грешка', duration = 0) => toastManager.error(message, title, duration),
+    warning: (message, title = 'Внимание', duration = 6000) => toastManager.warning(message, title, duration),
+    info: (message, title = 'Информация', duration = 5000) => toastManager.info(message, title, duration),
+    clear: () => toastManager.clear()
+};
 
 // ==========================================
 // EXPORT FOR OTHER SCRIPTS

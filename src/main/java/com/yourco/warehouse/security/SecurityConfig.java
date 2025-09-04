@@ -1,17 +1,20 @@
 package com.yourco.warehouse.security;
 
-
 import com.yourco.warehouse.service.CustomUserDetailsService;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -23,7 +26,12 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 @EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
 
+    private final UserDetailsService customUserDetailsService;
 
+    @Autowired
+    public SecurityConfig(UserDetailsService customUserDetailsService) {
+        this.customUserDetailsService = customUserDetailsService;
+    }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http,
@@ -32,7 +40,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/css/**", "/js/**", "/images/**", "/favicon.ico")
                         .permitAll()
-                        .requestMatchers("/", "/login", "/error").permitAll() // Добавен /login
+                        .requestMatchers("/", "/login", "/error").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
                         .requestMatchers("/admin/**").hasAnyRole("ADMIN", "EMPLOYER")
                         .requestMatchers("/catalog", "/api/**").authenticated()
@@ -51,17 +59,25 @@ public class SecurityConfig {
                             }
                         })
                 )
+                .rememberMe(remember -> remember
+                        .key("SmolyanVoteSecretKey2025")         // Consistent key
+                        .tokenValiditySeconds(86400 * 30)       // 30 дни
+                        .userDetailsService(customUserDetailsService)
+                        .rememberMeParameter("remember-me")
+                )
+                .sessionManagement(session -> session
+                        .sessionFixation().migrateSession()
+                        .sessionCreationPolicy(SessionCreationPolicy.ALWAYS)
+                        .maximumSessions(3)                      // Максимум 3 сесии на потребител
+                        .maxSessionsPreventsLogin(false)         // Новите сесии изхвърлят старите
+                )
                 .logout(logout -> logout
                         .logoutRequestMatcher(new AntPathRequestMatcher("/logout"))
                         .logoutSuccessHandler(logoutSuccessHandler)
                         .invalidateHttpSession(true)
                         .clearAuthentication(true)
-                        .deleteCookies("JSESSIONID")
+                        .deleteCookies("JSESSIONID", "remember-me")  // Изтрий и remember-me cookie
                         .permitAll()
-                )
-                .sessionManagement(session -> session
-                        .sessionFixation().migrateSession()
-                        .sessionCreationPolicy(SessionCreationPolicy.ALWAYS)
                 )
                 .headers(headers -> headers
                         .httpStrictTransportSecurity(HeadersConfigurer.HstsConfig::disable)
@@ -73,18 +89,16 @@ public class SecurityConfig {
         return http.build();
     }
 
-
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder(12);
     }
 
-    @Bean
-    public DaoAuthenticationProvider authProvider(CustomUserDetailsService uds, PasswordEncoder encoder) {
-        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
-        provider.setUserDetailsService(uds);
-        provider.setPasswordEncoder(encoder);
-        return provider;
-    }
+    // AuthenticationProvider се създава автоматично от Spring Security
+    // чрез CustomUserDetailsService и PasswordEncoder beans
 
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+        return config.getAuthenticationManager();
+    }
 }
