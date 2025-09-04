@@ -1,7 +1,6 @@
 package com.yourco.warehouse.security;
 
 
-import com.yourco.warehouse.repository.UserRepository;
 import com.yourco.warehouse.service.CustomUserDetailsService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -12,7 +11,6 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -36,7 +34,7 @@ public class SecurityConfig {
                         .requestMatchers("/", "/login", "/error").permitAll() // Добавен /login
                         .requestMatchers("/actuator/health").permitAll()
                         .requestMatchers("/admin/**").hasAnyRole("ADMIN", "EMPLOYER")
-                        .requestMatchers("/catalog", "/api/**").hasRole("CLIENT") // CLIENT endpoints
+                        .requestMatchers("/catalog", "/api/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 // ПРЕМАХНАТО: .formLogin() конфигурацията за да работи custom AuthController

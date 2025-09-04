@@ -15,7 +15,7 @@ public class ValidationConfig {
      * Custom validator factory with message source integration
      */
     @Bean
-    public LocalValidatorFactoryBean validator(MessageSource messageSource) {
+    public static  LocalValidatorFactoryBean validator(MessageSource messageSource) {
         LocalValidatorFactoryBean validatorFactory = new LocalValidatorFactoryBean();
         validatorFactory.setValidationMessageSource(messageSource);
         return validatorFactory;
@@ -25,7 +25,7 @@ public class ValidationConfig {
      * Enable method-level validation
      */
     @Bean
-    public MethodValidationPostProcessor methodValidationPostProcessor(Validator validator) {
+    public static MethodValidationPostProcessor methodValidationPostProcessor(Validator validator) {
         MethodValidationPostProcessor processor = new MethodValidationPostProcessor();
         processor.setValidator(validator);
         return processor;

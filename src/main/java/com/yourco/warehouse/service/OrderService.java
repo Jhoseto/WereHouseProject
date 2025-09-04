@@ -18,7 +18,7 @@
 //import java.util.Map;
 //
 //@Service
-//public class OrderService {
+//public interface OrderService {
 //    private static final Logger logger = LoggerFactory.getLogger(OrderService.class);
 //
 //    private final OrderRepository orderRepository;

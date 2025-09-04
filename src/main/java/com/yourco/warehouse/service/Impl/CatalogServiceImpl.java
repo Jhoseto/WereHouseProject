@@ -7,11 +7,11 @@ import com.yourco.warehouse.repository.ProductRepository;
 import com.yourco.warehouse.service.CatalogService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.text.Collator;
 import java.util.*;
 
@@ -87,7 +87,8 @@ public class CatalogServiceImpl implements CatalogService {
     @Override
     public List<ProductCatalogDTO> filterProducts(String category, BigDecimal minPrice, BigDecimal maxPrice) {
         try {
-            String normalizedCategory = (category != null && !category.trim().isEmpty()) ? category.trim() : null;
+            String normalizedCategory = (category != null && !category.trim().isEmpty()) ?
+                    category.trim() : null;
             List<ProductEntity> results = productRepository.findActiveProductsWithFilters(normalizedCategory, minPrice, maxPrice);
             return ProductCatalogDTO.from(results);
         } catch (Exception e) {
@@ -142,34 +143,29 @@ public class CatalogServiceImpl implements CatalogService {
             Object[] stats = productRepository.getPriceStatistics();
             BigDecimal min = (stats != null && stats.length > 0 && stats[0] != null) ? (BigDecimal) stats[0] : BigDecimal.ZERO;
             BigDecimal max = (stats != null && stats.length > 1 && stats[1] != null) ? (BigDecimal) stats[1] : BigDecimal.ZERO;
-            BigDecimal avg = (stats != null && stats.length > 2 && stats[2] != null) ? (BigDecimal) stats[2] : BigDecimal.ZERO;
+            BigDecimal avg = (stats != null && stats.length > 2 && stats[2] != null) ?
+                    ((BigDecimal) stats[2]).setScale(2, RoundingMode.HALF_UP) : BigDecimal.ZERO;
 
-            return Map.of(
-                    "minPrice", min,
-                    "maxPrice", max,
-                    "avgPrice", avg
-            );
+            Map<String, BigDecimal> result = new HashMap<>();
+            result.put("min", min);
+            result.put("max", max);
+            result.put("avg", avg);
+            return result;
         } catch (Exception e) {
-            log.error("Error fetching price statistics", e);
-            return Map.of(
-                    "minPrice", BigDecimal.ZERO,
-                    "maxPrice", BigDecimal.ZERO,
-                    "avgPrice", BigDecimal.ZERO
-            );
+            log.error("Error getting price statistics", e);
+            Map<String, BigDecimal> fallback = new HashMap<>();
+            fallback.put("min", BigDecimal.ZERO);
+            fallback.put("max", BigDecimal.ZERO);
+            fallback.put("avg", BigDecimal.ZERO);
+            return fallback;
         }
     }
 
-    // ---- Utility ----
-
+    // Helper method за sanitizing на search query
     private String sanitizeSearchQuery(String query) {
-        String cleaned = query.replaceAll("[^a-zA-Z0-9А-Яа-я\s]", "");
-        return cleaned.length() > 50 ? cleaned.substring(0, 50) : cleaned;
-    }
-
-    // ---- Cache Eviction hooks (примерно при update/delete) ----
-
-    @CacheEvict(value = {CacheConfig.PRODUCTS_CACHE, CacheConfig.STATISTICS_CACHE}, allEntries = true)
-    public void evictAllCaches() {
-        log.info("Manually evicted all catalog caches");
+        if (query == null) return "";
+        return query.trim()
+                .replaceAll("[<>\"'%;()&+]", "") // Remove dangerous chars
+                .substring(0, Math.min(query.length(), 100)); // Limit length
     }
 }

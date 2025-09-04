@@ -6,7 +6,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
-import java.util.Map;
 
 /**
  * DTO за продукти в каталога - оптимизирано за JSON response
@@ -84,98 +83,42 @@ public class ProductCatalogDTO {
         return price.multiply(vatMultiplier).setScale(2, RoundingMode.HALF_UP);
     }
 
+    // ПОПРАВЕН nvl метод
     private static <T> T nvl(T value, T def) {
         return value != null ? value : def;
     }
 
-    // Getters & setters ...
+    // Getters and Setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
+    public String getSku() { return sku; }
+    public void setSku(String sku) { this.sku = sku; }
 
-    public Long getId() {
-        return id;
-    }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
 
-    public String getSku() {
-        return sku;
-    }
+    public String getCategory() { return category; }
+    public void setCategory(String category) { this.category = category; }
 
-    public void setSku(String sku) {
-        this.sku = sku;
-    }
+    public String getUnit() { return unit; }
+    public void setUnit(String unit) { this.unit = unit; }
 
-    public String getName() {
-        return name;
-    }
+    public BigDecimal getPrice() { return price; }
+    public void setPrice(BigDecimal price) { this.price = price; }
 
-    public void setName(String name) {
-        this.name = name;
-    }
+    public BigDecimal getPriceWithVat() { return priceWithVat; }
+    public void setPriceWithVat(BigDecimal priceWithVat) { this.priceWithVat = priceWithVat; }
 
-    public String getDescription() {
-        return description;
-    }
+    public int getVatRate() { return vatRate; }
+    public void setVatRate(int vatRate) { this.vatRate = vatRate; }
 
-    public void setDescription(String description) {
-        this.description = description;
-    }
+    public BigDecimal getVatAmount() { return vatAmount; }
+    public void setVatAmount(BigDecimal vatAmount) { this.vatAmount = vatAmount; }
 
-    public String getCategory() {
-        return category;
-    }
-
-    public void setCategory(String category) {
-        this.category = category;
-    }
-
-    public String getUnit() {
-        return unit;
-    }
-
-    public void setUnit(String unit) {
-        this.unit = unit;
-    }
-
-    public BigDecimal getPrice() {
-        return price;
-    }
-
-    public void setPrice(BigDecimal price) {
-        this.price = price;
-    }
-
-    public BigDecimal getPriceWithVat() {
-        return priceWithVat;
-    }
-
-    public void setPriceWithVat(BigDecimal priceWithVat) {
-        this.priceWithVat = priceWithVat;
-    }
-
-    public int getVatRate() {
-        return vatRate;
-    }
-
-    public void setVatRate(int vatRate) {
-        this.vatRate = vatRate;
-    }
-
-    public BigDecimal getVatAmount() {
-        return vatAmount;
-    }
-
-    public void setVatAmount(BigDecimal vatAmount) {
-        this.vatAmount = vatAmount;
-    }
-
-    public boolean isActive() {
-        return active;
-    }
-
-    public void setActive(boolean active) {
-        this.active = active;
-    }
+    public boolean isActive() { return active; }
+    public void setActive(boolean active) { this.active = active; }
 }

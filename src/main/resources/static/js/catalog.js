@@ -3,7 +3,8 @@ class CatalogManager {
         this.products = [];
         this.filteredProducts = [];
         this.currentView = 'grid';
-        this.cart = JSON.parse(localStorage.getItem('cart') || '{}');
+        // Remove localStorage usage per Claude.ai restrictions
+        this.cart = {};
 
         // DOM Elements
         this.searchInput = document.getElementById('search-input');
@@ -81,7 +82,14 @@ class CatalogManager {
         try {
             this.showLoading(true);
 
-            const response = await fetch('/api/products');
+            const response = await fetch('/api/products', {
+                method: 'GET',
+                credentials: 'include',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            });
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
@@ -183,7 +191,6 @@ class CatalogManager {
         this.updateProductCount();
     }
 
-
     renderProducts() {
         if (this.filteredProducts.length === 0) {
             this.showEmptyState();
@@ -252,45 +259,41 @@ class CatalogManager {
                 
                 <div class="product-footer">
                     <div class="product-price">
-                        <div class="price-without-vat">
-                            ${parseFloat(product.price).toFixed(2)} лв
-                            <span class="unit-label">/ ${product.unit}</span>
-                        </div>
+                        <div class="price-without-vat">${parseFloat(product.price).toFixed(2)} лв</div>
                         <div class="price-with-vat">с ДДС: ${priceWithVat} лв</div>
                     </div>
                     
                     <div class="add-to-cart-section">
                         <div class="quantity-controls">
-                            <button type="button" class="qty-btn qty-minus" data-sku="${safeSku}">−</button>
-                            <input type="number" class="qty-input" value="1" min="1" max="999" data-sku="${safeSku}">
-                            <button type="button" class="qty-btn qty-plus" data-sku="${safeSku}">+</button>
+                            <button type="button" class="qty-btn qty-minus">−</button>
+                            <input type="number" class="qty-input" value="1" min="1" max="999">
+                            <button type="button" class="qty-btn qty-plus">+</button>
                         </div>
-                        <button type="button" class="add-to-cart-btn" data-sku="${safeSku}">
-                            🛒 Добави
+                        <button type="button" class="btn btn-primary add-to-cart" data-sku="${safeSku}">
+                            Добави в кошницата
                         </button>
                     </div>
                 </div>
             </div>
-        </div>
-    `;
+        </div>`;
     }
 
     bindProductEvents() {
         // Quantity controls
-        document.querySelectorAll('.qty-minus').forEach(btn => {
+        this.productsContainer.querySelectorAll('.qty-minus').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                const input = e.target.parentNode.querySelector('.qty-input');
-                const currentValue = parseInt(input.value);
+                const input = e.target.parentElement.querySelector('.qty-input');
+                const currentValue = parseInt(input.value) || 1;
                 if (currentValue > 1) {
                     input.value = currentValue - 1;
                 }
             });
         });
 
-        document.querySelectorAll('.qty-plus').forEach(btn => {
+        this.productsContainer.querySelectorAll('.qty-plus').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                const input = e.target.parentNode.querySelector('.qty-input');
-                const currentValue = parseInt(input.value);
+                const input = e.target.parentElement.querySelector('.qty-input');
+                const currentValue = parseInt(input.value) || 1;
                 if (currentValue < 999) {
                     input.value = currentValue + 1;
                 }
@@ -298,57 +301,33 @@ class CatalogManager {
         });
 
         // Add to cart buttons
-        document.querySelectorAll('.add-to-cart-btn').forEach(btn => {
+        this.productsContainer.querySelectorAll('.add-to-cart').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const sku = e.target.dataset.sku;
-                const qtyInput = e.target.parentNode.querySelector('.qty-input');
-                const quantity = parseInt(qtyInput.value);
+                const qtyInput = e.target.parentElement.querySelector('.qty-input');
+                const quantity = parseInt(qtyInput.value) || 1;
                 this.addToCart(sku, quantity);
             });
         });
     }
 
     addToCart(sku, quantity) {
-        const product = this.products.find(p => p.sku === sku);
-        if (!product) return;
-
-        if (this.cart[sku]) {
-            this.cart[sku].quantity += quantity;
-        } else {
-            this.cart[sku] = {
-                product: product,
-                quantity: quantity
-            };
+        // Simple in-memory cart (no localStorage)
+        if (!this.cart[sku]) {
+            this.cart[sku] = 0;
         }
+        this.cart[sku] += quantity;
 
-        // Save to localStorage
-        localStorage.setItem('cart', JSON.stringify(this.cart));
-
-        // Update display
         this.updateCartDisplay();
-
-        // Show success message
-        this.showSuccessMessage(`${product.name} е добавен в кошницата!`);
-
-        // Reset quantity to 1
-        document.querySelector(`input[data-sku="${sku}"]`).value = 1;
+        this.showSuccessMessage(`Добавено в кошницата: ${quantity} бр.`);
     }
 
     updateCartDisplay() {
-        const cartItemsCount = Object.values(this.cart).reduce((sum, item) => sum + item.quantity, 0);
-        const cartTotal = Object.values(this.cart).reduce((sum, item) =>
-            sum + (parseFloat(item.product.price) * item.quantity), 0
-        );
-
-        if (this.cartTotal) {
-            this.cartTotal.textContent = `${cartTotal.toFixed(2)} лв`;
-        }
-
-        // Update cart icon with count (if exists)
-        const cartIcon = document.querySelector('.cart-icon-count');
-        if (cartIcon) {
-            cartIcon.textContent = cartItemsCount;
-            cartIcon.style.display = cartItemsCount > 0 ? 'block' : 'none';
+        const totalItems = Object.values(this.cart).reduce((sum, qty) => sum + qty, 0);
+        const cartBadge = document.querySelector('.cart-badge');
+        if (cartBadge) {
+            cartBadge.textContent = totalItems;
+            cartBadge.style.display = totalItems > 0 ? 'block' : 'none';
         }
     }
 
@@ -361,9 +340,6 @@ class CatalogManager {
 
         // Re-render products
         this.renderProducts();
-
-        // Save preference
-        localStorage.setItem('catalog-view', viewType);
     }
 
     clearAllFilters() {
@@ -436,11 +412,11 @@ class CatalogManager {
             position: fixed;
             top: 20px;
             right: 20px;
-            background: var(--color-success);
+            background: var(--color-success, #28a745);
             color: white;
             padding: 12px 20px;
             border-radius: 8px;
-            box-shadow: var(--shadow-lg);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             z-index: 10000;
             opacity: 0;
             transform: translateX(100%);
@@ -460,7 +436,9 @@ class CatalogManager {
             toast.style.opacity = '0';
             toast.style.transform = 'translateX(100%)';
             setTimeout(() => {
-                document.body.removeChild(toast);
+                if (document.body.contains(toast)) {
+                    document.body.removeChild(toast);
+                }
             }, 300);
         }, 3000);
     }

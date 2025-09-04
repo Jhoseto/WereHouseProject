@@ -1,12 +1,12 @@
 package com.yourco.warehouse.config;
 
-
 import com.yourco.warehouse.components.PerformanceInterceptor;
 import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.support.ReloadableResourceBundleMessageSource;
 import org.springframework.format.FormatterRegistry;
+import org.springframework.http.MediaType;
 import org.springframework.web.servlet.LocaleResolver;
 import org.springframework.web.servlet.config.annotation.*;
 import org.springframework.web.servlet.i18n.LocaleChangeInterceptor;
@@ -18,11 +18,9 @@ import java.util.Locale;
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
-
     private final PerformanceInterceptor performanceInterceptor;
 
     public WebConfig(PerformanceInterceptor performanceInterceptor) {
-
         this.performanceInterceptor = performanceInterceptor;
     }
 
@@ -69,7 +67,6 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addInterceptor(performanceInterceptor)
                 .addPathPatterns("/**")
                 .excludePathPatterns("/css/**", "/js/**", "/img/**", "/favicon.ico");
-        
     }
 
     /**
@@ -86,17 +83,17 @@ public class WebConfig implements WebMvcConfigurer {
     }
 
     /**
-     * Configure content negotiation
+     * Configure content negotiation - ПОПРАВЕНО!
      */
     @Override
     public void configureContentNegotiation(ContentNegotiationConfigurer configurer) {
         configurer
-                .defaultContentType(org.springframework.http.MediaType.TEXT_HTML)
+                .defaultContentType(MediaType.TEXT_HTML)
                 .favorParameter(false)
                 .ignoreAcceptHeader(false)
                 .useRegisteredExtensionsOnly(false)
-                .mediaType("html", org.springframework.http.MediaType.TEXT_HTML)
-                .mediaType("json", org.springframework.http.MediaType.APPLICATION_JSON);
+                .mediaType("html", MediaType.TEXT_HTML)
+                .mediaType("json", MediaType.APPLICATION_JSON);
     }
 
     /**
@@ -143,7 +140,7 @@ public class WebConfig implements WebMvcConfigurer {
      * Locale resolver for internationalization
      */
     @Bean
-    public LocaleResolver myLocaleResolver() {
+    public LocaleResolver localeResolver() {
         SessionLocaleResolver localeResolver = new SessionLocaleResolver();
         localeResolver.setDefaultLocale(new Locale("bg", "BG"));
         return localeResolver;

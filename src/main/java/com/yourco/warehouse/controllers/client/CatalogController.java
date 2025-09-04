@@ -28,7 +28,6 @@ public class CatalogController {
         this.catalogService = catalogService;
     }
 
-
     // ==========================================
     // JSON API ENDPOINTS
     // ==========================================
@@ -64,6 +63,7 @@ public class CatalogController {
         }
     }
 
+    // ПОПРАВЕН filterProducts метод
     @GetMapping(value = "/api/products/filter", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
     public ResponseEntity<?> filterProducts(
