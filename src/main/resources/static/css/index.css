@@ -53,7 +53,7 @@
 
 .hero-container {
     max-width: 1200px;
-    margin: 0 auto;
+    margin: 40px auto auto;
     padding: 0 var(--space-4);
     display: grid;
     grid-template-columns: 1.2fr 1fr;

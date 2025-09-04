@@ -1,5 +1,5 @@
 /* ==========================================
-   NAVBAR STYLES
+   NAVBAR STYLES - ОБНОВЕН С STANDALONE CART
    ========================================== */
 
 /* Navigation */
@@ -8,9 +8,9 @@
     z-index: 10;
     padding: var(--space-5) 0;
     backdrop-filter: blur(20px);
-    background: rgba(44, 62, 80, 0.9);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    background: rgba(44, 62, 80, 0.9) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1) !important;
 }
 
 .nav-container {
@@ -42,7 +42,7 @@
 .auth-buttons {
     display: flex;
     align-items: center;
-    gap: var(--space-3); /* разстояние между бутоните */
+    gap: var(--space-3);
 }
 
 .nav-link {
@@ -84,7 +84,86 @@
     font-size: var(--font-size-base);
 }
 
-/* User Profile Section */
+/* ==========================================
+   AUTHENTICATED ACTIONS - НОВА СЕКЦИЯ
+   ========================================== */
+
+.authenticated-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+}
+
+/* ==========================================
+   STANDALONE CART ICON - ГЛАВНО НОВОВЪВЕДЕНИЕ
+   ========================================== */
+
+.standalone-cart-icon {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 50px;
+    height: 50px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    backdrop-filter: blur(10px);
+}
+
+.standalone-cart-icon:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.standalone-cart-icon i {
+    font-size: 20px;
+    color: var(--color-white);
+    transition: all var(--transition-fast);
+}
+
+.standalone-cart-icon:hover i {
+    color: var(--color-accent-light);
+}
+
+/* Cart Badge - ПРЕМЯСТЕН КЪМ STANDALONE */
+.cart-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 7px;
+    border-radius: 12px;
+    min-width: 20px;
+    height: 20px;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--color-white);
+    box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3);
+}
+
+.cart-badge.show {
+    display: flex;
+    animation: cartBadgeBounce 0.4s ease;
+}
+
+@keyframes cartBadgeBounce {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.3); }
+}
+
+/* ==========================================
+   USER PROFILE SECTION - ОБНОВЕНА БЕЗ CART
+   ========================================== */
+
 .user-profile-section {
     position: relative;
 }
@@ -100,7 +179,7 @@
     cursor: pointer;
     transition: all var(--transition-normal);
     backdrop-filter: blur(10px);
-    min-width: 200px;
+    min-width: 180px; /* По-малка ширина без cart */
 }
 
 .user-profile-card:hover {
@@ -179,12 +258,15 @@
     transform: rotate(180deg);
 }
 
-/* Profile Dropdown */
+/* ==========================================
+   PROFILE DROPDOWN - БЕЗ ПРОМЕНИ
+   ========================================== */
+
 .profile-dropdown {
     position: absolute;
-    top: calc(100% + 8px);
-    right: 0;
-    min-width: 280px;
+    top: calc(100% + 12px);
+    right: -30px;
+    min-width: 230px;
     background: var(--color-white);
     border-radius: var(--radius-xl);
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
@@ -273,65 +355,23 @@
 }
 
 /* ==========================================
-   CART ICON STYLES IN PROFILE CARD
-   ========================================== */
-
-.cart-icon {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    background: rgba(255, 255, 255, 0.15);
-    border-radius: 50%;
-    cursor: pointer;
-    transition: all var(--transition-normal);
-    margin-right: 12px;
-}
-
-.cart-icon:hover {
-    background: rgba(255, 255, 255, 0.25);
-    transform: scale(1.05);
-}
-
-.cart-icon i {
-    font-size: 18px;
-    color: var(--color-white);
-}
-
-.cart-badge {
-    position: absolute;
-    top: -5px;
-    right: -5px;
-    background: #e74c3c;
-    color: white;
-    font-size: 10px;
-    font-weight: 600;
-    padding: 2px 5px;
-    border-radius: 8px;
-    min-width: 16px;
-    height: 16px;
-    display: none;
-    align-items: center;
-    justify-content: center;
-}
-
-.cart-badge.show {
-    display: flex;
-    animation: bounce 0.3s ease;
-}
-
-@keyframes bounce {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.2); }
-}
-
-/* ==========================================
    RESPONSIVE DESIGN
    ========================================== */
 
 @media (max-width: 768px) {
+    .authenticated-actions {
+        gap: var(--space-3);
+    }
+
+    .standalone-cart-icon {
+        width: 45px;
+        height: 45px;
+    }
+
+    .standalone-cart-icon i {
+        font-size: 18px;
+    }
+
     .user-profile-card {
         min-width: 160px;
         padding: var(--space-2) var(--space-3);
@@ -345,12 +385,6 @@
         min-width: 250px;
         right: -20px;
     }
-
-    .toast-container {
-        left: var(--space-4);
-        right: var(--space-4);
-        max-width: none;
-    }
 }
 
 @media (max-width: 480px) {
@@ -358,8 +392,21 @@
         padding: 0 var(--space-3);
     }
 
+    .authenticated-actions {
+        gap: var(--space-2);
+    }
+
+    .standalone-cart-icon {
+        width: 40px;
+        height: 40px;
+    }
+
+    .standalone-cart-icon i {
+        font-size: 16px;
+    }
+
     .user-profile-card {
-        min-width: 140px;
+        min-width: 120px;
     }
 
     .user-info {

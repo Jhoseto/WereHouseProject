@@ -1,8 +1,14 @@
-package com.yourco.warehouse.controllers.api;
+package com.yourco.warehouse.controllers.client;
 
+import com.yourco.warehouse.dto.CartDTO;
+import com.yourco.warehouse.service.Impl.CartServiceImpl;
+import com.yourco.warehouse.service.UserService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -11,6 +17,26 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/cart")
 public class CartController {
+
+
+    private final CartServiceImpl cartService;
+    private final UserService userService;
+
+    @Autowired
+    public CartController(CartServiceImpl cartService, UserService userService) {
+        this.cartService = cartService;
+        this.userService = userService;
+    }
+
+    @GetMapping("/items")
+    public ResponseEntity<CartDTO> getCartItems(@AuthenticationPrincipal UserDetails userDetails) {
+        if (userDetails == null) {
+            return ResponseEntity.status(401).build();
+        }
+        Long userId = userService.getCurrentUser().getId();
+        CartDTO cart = cartService.getCart(userId);
+        return ResponseEntity.ok(cart);
+    }
 
     @GetMapping(value = "/count", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Map<String, Object>> getCartCount(Authentication authentication) {

@@ -70,11 +70,6 @@ public class MainController {
         }
     }
 
-    @GetMapping("/cart")
-    public String cartPage() {
-        return "client/cart";
-    }
-
 
     @GetMapping("/about")
     public String about(Model model) {

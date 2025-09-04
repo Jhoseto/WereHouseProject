@@ -1,5 +1,5 @@
 // ==========================================
-// NAVBAR FUNCTIONALITY
+// NAVBAR FUNCTIONALITY - ОБНОВЕН
 // ==========================================
 
 // Profile dropdown functionality
@@ -36,7 +36,67 @@ document.addEventListener('keydown', function(event) {
 });
 
 // ==========================================
-// TOAST NOTIFICATIONS
+// CART PANEL INTEGRATION
+// ==========================================
+
+/**
+ * Отваря/затваря cart панела - глобална функция за HTML onclick
+ */
+function toggleCartPanel() {
+    if (window.cartPanel) {
+        if (window.cartPanel.isOpen) {
+            window.cartPanel.close();
+        } else {
+            window.cartPanel.open();
+        }
+    }
+}
+
+/**
+ * Затваря cart панела - глобална функция за HTML onclick
+ */
+function closeCartPanel() {
+    window.cartPanel?.close();
+}
+
+// ==========================================
+// SCROLL FUNCTIONS FOR INDEX PAGE
+// ==========================================
+
+function scrollToLogin() {
+    const loginSection = document.getElementById('login');
+    if (loginSection) {
+        loginSection.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center'
+        });
+
+        // Focus на първия input
+        setTimeout(() => {
+            const usernameInput = loginSection.querySelector('input[name="username"]');
+            usernameInput?.focus();
+        }, 500);
+    }
+}
+
+function scrollToRegister() {
+    const registerSection = document.getElementById('register');
+    if (registerSection) {
+        registerSection.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center'
+        });
+
+        // Focus на първия input
+        setTimeout(() => {
+            const usernameInput = registerSection.querySelector('input[name="username"]');
+            usernameInput?.focus();
+        }, 500);
+    }
+}
+
+// ==========================================
+// TOAST NOTIFICATIONS - БЕЗ ПРОМЕНИ
 // ==========================================
 
 class ToastManager {
@@ -81,29 +141,25 @@ class ToastManager {
         const iconMap = {
             success: 'bi-check-circle-fill',        // ✓ в кръг
             error: 'bi-exclamation-triangle-fill',  // ! в триъгълник
-            warning: 'bi-exclamation-triangle',     // ! в празен триъгълник
+            warning: 'bi-exclamation-triangle',     // ! в триъгълник (по-светъл)
             info: 'bi-info-circle-fill'             // i в кръг
         };
 
-        const titleMap = {
-            success: title || 'Успех',
-            error: title || 'Грешка',
-            warning: title || 'Внимание',
-            info: title || 'Информация'
-        };
+        const icon = iconMap[type] || iconMap.info;
+        const titleHtml = title ? `<div class="toast-title">${this.escapeHtml(title)}</div>` : '';
 
         toast.innerHTML = `
-        <div class="toast-icon">
-            <i class="bi ${iconMap[type] || iconMap.info}"></i>
-        </div>
-        <div class="toast-content">
-            <div class="toast-title">${titleMap[type]}</div>
-            <div class="toast-message">${message}</div>
-        </div>
-        <button class="toast-close" onclick="toastManager.hide(${id})">
-            <i class="bi bi-x"></i>
-        </button>
-    `;
+            <div class="toast-icon">
+                <i class="${icon}"></i>
+            </div>
+            <div class="toast-content">
+                ${titleHtml}
+                <div class="toast-message">${this.escapeHtml(message)}</div>
+            </div>
+            <button class="toast-close" onclick="window.toastManager.hide(${id})">
+                <i class="bi bi-x"></i>
+            </button>
+        `;
 
         return toast;
     }
@@ -112,6 +168,7 @@ class ToastManager {
         const toast = this.toasts.get(toastId);
         if (toast) {
             toast.classList.remove('show');
+            toast.classList.add('hiding');
 
             setTimeout(() => {
                 if (toast.parentNode) {
@@ -122,67 +179,26 @@ class ToastManager {
         }
     }
 
-    success(message, title = '', duration = 5000) {
-        return this.show(message, 'success', title, duration);
+    success(message, title = '') {
+        return this.show(message, 'success', title);
     }
 
-    error(message, title = '', duration = 0) { // Errors не се скриват автоматично
-        return this.show(message, 'error', title, duration);
+    error(message, title = '') {
+        return this.show(message, 'error', title);
     }
 
-    warning(message, title = '', duration = 6000) {
-        return this.show(message, 'warning', title, duration);
+    warning(message, title = '') {
+        return this.show(message, 'warning', title);
     }
 
-    info(message, title = '', duration = 5000) {
-        return this.show(message, 'info', title, duration);
+    info(message, title = '') {
+        return this.show(message, 'info', title);
     }
 
-    clear() {
-        this.toasts.forEach((toast, id) => {
-            this.hide(id);
-        });
-    }
-}
-
-// Глобален instance на ToastManager
-let toastManager;
-
-// ==========================================
-// HELPER FUNCTIONS
-// ==========================================
-
-// Функция за scroll до login секцията (за index страницата)
-function scrollToLogin() {
-    const loginSection = document.getElementById('auth-section');
-    if (loginSection) {
-        loginSection.scrollIntoView({
-            behavior: 'smooth',
-            block: 'start'
-        });
-
-        // Активираме login tab-а
-        const loginTab = document.querySelector('[data-tab="login"]');
-        if (loginTab) {
-            loginTab.click();
-        }
-    }
-}
-
-// Функция за scroll до register секцията (за index страницата)
-function scrollToRegister() {
-    const registerSection = document.getElementById('auth-section');
-    if (registerSection) {
-        registerSection.scrollIntoView({
-            behavior: 'smooth',
-            block: 'start'
-        });
-
-        // Активираме register tab-а
-        const registerTab = document.querySelector('[data-tab="register"]');
-        if (registerTab) {
-            registerTab.click();
-        }
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
 }
 
@@ -191,116 +207,105 @@ function scrollToRegister() {
 // ==========================================
 
 document.addEventListener('DOMContentLoaded', function() {
-    toastManager = new ToastManager();
-    checkForFlashMessages();
-    checkUrlParams();
+    // Инициализира toast manager
+    window.toastManager = new ToastManager();
+
+    // Проверява дали има flash съобщения и ги показва
+    const flashMessages = document.querySelectorAll('.alert[data-auto-dismiss="true"]');
+    flashMessages.forEach(alert => {
+        const type = alert.classList.contains('alert-success') ? 'success' :
+            alert.classList.contains('alert-danger') ? 'error' :
+                alert.classList.contains('alert-warning') ? 'warning' : 'info';
+
+        const message = alert.textContent.trim();
+        if (message) {
+            window.toastManager.show(message, type);
+        }
+
+        // Премахва оригиналния alert
+        alert.remove();
+    });
+
+    // Auto-hide за останалите alerts
+    const autoHideAlerts = document.querySelectorAll('.alert[data-auto-hide="true"]');
+    autoHideAlerts.forEach(alert => {
+        setTimeout(() => {
+            alert.style.opacity = '0';
+            setTimeout(() => alert.remove(), 300);
+        }, 5000);
+    });
 });
 
-// Функция за проверка на Flash съобщения - EXTENDED VERSION
-function checkForFlashMessages() {
-    const flashDiv = document.getElementById('flashDataContainer');
-    if (!flashDiv) return;
+// ==========================================
+// NAVBAR SCROLL EFFECTS (ако е нужно)
+// ==========================================
 
-    // Стандартни съобщения с custom заглавия
-    const successMessage = flashDiv.getAttribute('data-success-message');
-    const successTitle = flashDiv.getAttribute('data-success-title');
-    const errorMessage = flashDiv.getAttribute('data-error-message');
-    const errorTitle = flashDiv.getAttribute('data-error-title');
-    const warningMessage = flashDiv.getAttribute('data-warning-message');
-    const warningTitle = flashDiv.getAttribute('data-warning-title');
-    const infoMessage = flashDiv.getAttribute('data-info-message');
-    const infoTitle = flashDiv.getAttribute('data-info-title');
-
-    // JSON данни за сложни случаи
-    const toastData = flashDiv.getAttribute('data-toast-data');
-
-    // Показваме стандартните съобщения
-    if (successMessage && successMessage.trim()) {
-        toastManager.success(
-            successMessage,
-            successTitle || 'Успех',
-            5000
-        );
-    }
-
-    if (errorMessage && errorMessage.trim()) {
-        toastManager.error(
-            errorMessage,
-            errorTitle || 'Грешка',
-            0  // Errors не се скриват автоматично
-        );
-    }
-
-    if (warningMessage && warningMessage.trim()) {
-        toastManager.warning(
-            warningMessage,
-            warningTitle || 'Внимание',
-            6000
-        );
-    }
-
-    if (infoMessage && infoMessage.trim()) {
-        toastManager.info(
-            infoMessage,
-            infoTitle || 'Информация',
-            5000
-        );
-    }
-
-    // Обработваме JSON данни за сложни случаи
-    if (toastData && toastData.trim()) {
-        try {
-            const toasts = JSON.parse(toastData);
-            if (Array.isArray(toasts)) {
-                toasts.forEach(toast => {
-                    const { type, message, title, duration } = toast;
-                    if (message && toastManager[type]) {
-                        toastManager[type](message, title, duration);
-                    }
-                });
-            }
-        } catch (e) {
-            console.error('Грешка при обработване на toast данни:', e);
+// Добавя scroll ефект към navbar ако е нужно
+window.addEventListener('scroll', function() {
+    const navbar = document.querySelector('.top-nav');
+    if (navbar) {
+        if (window.scrollY > 50) {
+            navbar.style.background = 'rgba(44, 62, 80, 0.95)';
+            navbar.style.boxShadow = '0 4px 30px rgba(0, 0, 0, 0.15)';
+        } else {
+            navbar.style.background = 'rgba(44, 62, 80, 0.9)';
+            navbar.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.1)';
         }
     }
-}
-
-// Функция за проверка на URL параметри
-function checkUrlParams() {
-    const urlParams = new URLSearchParams(window.location.search);
-
-    if (urlParams.get('logout') === 'true') {
-        toastManager.success('Успешно излязохте от системата', 'Изход');
-
-        // Премахваме параметъра от URL-а без да презареждаме страницата
-        const newUrl = window.location.pathname;
-        window.history.replaceState({}, document.title, newUrl);
-    }
-
-    if (urlParams.get('error') === 'true') {
-        toastManager.error('Възникна грешка при влизане', 'Грешка при вход');
-
-        // Премахваме параметъра от URL-а
-        const newUrl = window.location.pathname;
-        window.history.replaceState({}, document.title, newUrl);
-    }
-}
-
-// Unified Toast API за лесно използване навсякъде
-window.Toast = {
-    success: (message, title = 'Успех', duration = 5000) => toastManager.success(message, title, duration),
-    error: (message, title = 'Грешка', duration = 0) => toastManager.error(message, title, duration),
-    warning: (message, title = 'Внимание', duration = 6000) => toastManager.warning(message, title, duration),
-    info: (message, title = 'Информация', duration = 5000) => toastManager.info(message, title, duration),
-    clear: () => toastManager.clear()
-};
+});
 
 // ==========================================
-// EXPORT FOR OTHER SCRIPTS
+// ACCESSIBILITY IMPROVEMENTS
 // ==========================================
 
-// Правим toastManager достъпен глобално
-window.toastManager = toastManager;
-window.toggleProfileDropdown = toggleProfileDropdown;
-window.scrollToLogin = scrollToLogin;
-window.scrollToRegister = scrollToRegister;
+// Keyboard navigation за dropdowns
+document.addEventListener('keydown', function(event) {
+    // ESC затваря всички отворени панели
+    if (event.key === 'Escape') {
+        // Затваря profile dropdown
+        const dropdown = document.getElementById('profileDropdown');
+        const profileCard = document.querySelector('.user-profile-card');
+        dropdown?.classList.remove('show');
+        profileCard?.classList.remove('active');
+
+        // Затваря cart panel
+        window.cartPanel?.close();
+    }
+
+    // Enter на cart иконата отваря панела
+    if (event.key === 'Enter' && event.target.classList.contains('standalone-cart-icon')) {
+        toggleCartPanel();
+    }
+});
+
+// Focus management за accessibility
+function focusFirstInput(container) {
+    const firstInput = container.querySelector('input, button, select, textarea');
+    if (firstInput) {
+        firstInput.focus();
+    }
+}
+
+// ==========================================
+// PERFORMANCE OPTIMIZATION
+// ==========================================
+
+// Debounce функция за performance
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+// Throttle scroll events за по-добра performance
+const throttledScrollHandler = debounce(function() {
+    // Scroll logic тук ако е нужно
+}, 100);
+
+window.addEventListener('scroll', throttledScrollHandler);
