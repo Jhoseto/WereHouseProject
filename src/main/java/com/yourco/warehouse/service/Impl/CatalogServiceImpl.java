@@ -7,7 +7,6 @@ import com.yourco.warehouse.repository.ProductRepository;
 import com.yourco.warehouse.service.CatalogService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -26,7 +25,6 @@ public class CatalogServiceImpl implements CatalogService {
         this.productRepository = productRepository;
     }
 
-    @Cacheable(value = CacheConfig.PRODUCTS_CACHE, key = "'all_active'")
     @Override
     public List<ProductCatalogDTO> getAllActiveProducts() {
         try {
@@ -39,7 +37,6 @@ public class CatalogServiceImpl implements CatalogService {
         }
     }
 
-    @Cacheable(value = CacheConfig.PRODUCTS_CACHE, key = "'categories'")
     @Override
     public List<String> getAllCategories() {
         try {
@@ -53,7 +50,6 @@ public class CatalogServiceImpl implements CatalogService {
         }
     }
 
-    @Cacheable(value = CacheConfig.PRODUCTS_CACHE, key = "#id")
     @Override
     public Optional<ProductCatalogDTO> getProductById(Long id) {
         if (id == null) return Optional.empty();
@@ -136,7 +132,6 @@ public class CatalogServiceImpl implements CatalogService {
         }
     }
 
-    @Cacheable(value = CacheConfig.STATISTICS_CACHE, key = "'price_stats'")
     @Override
     public Map<String, BigDecimal> getPriceStatistics() {
         try {
@@ -147,17 +142,17 @@ public class CatalogServiceImpl implements CatalogService {
                     ((BigDecimal) stats[2]).setScale(2, RoundingMode.HALF_UP) : BigDecimal.ZERO;
 
             Map<String, BigDecimal> result = new HashMap<>();
-            result.put("min", min);
-            result.put("max", max);
-            result.put("avg", avg);
+            result.put("minPrice", min);
+            result.put("maxPrice", max);
+            result.put("avgPrice", avg);
             return result;
         } catch (Exception e) {
-            log.error("Error getting price statistics", e);
-            Map<String, BigDecimal> fallback = new HashMap<>();
-            fallback.put("min", BigDecimal.ZERO);
-            fallback.put("max", BigDecimal.ZERO);
-            fallback.put("avg", BigDecimal.ZERO);
-            return fallback;
+            log.error("Error fetching price statistics", e);
+            Map<String, BigDecimal> empty = new HashMap<>();
+            empty.put("minPrice", BigDecimal.ZERO);
+            empty.put("maxPrice", BigDecimal.ZERO);
+            empty.put("avgPrice", BigDecimal.ZERO);
+            return empty;
         }
     }
 

@@ -1,69 +1,86 @@
+/**
+ * CATALOG.JS - ОБНОВЕН ЗА НОВИТЕ CSS КЛАСОВЕ
+ * ==========================================
+ */
+
 class CatalogManager {
     constructor() {
         this.products = [];
         this.filteredProducts = [];
         this.currentView = 'grid';
-        // Remove localStorage usage per Claude.ai restrictions
         this.cart = {};
 
-        // DOM Elements
+        // DOM елементи
         this.searchInput = document.getElementById('search-input');
         this.clearSearch = document.getElementById('clear-search');
         this.categoryFilter = document.getElementById('category-filter');
         this.priceMin = document.getElementById('price-min');
         this.priceMax = document.getElementById('price-max');
         this.sortBy = document.getElementById('sort-by');
-        this.clearFilters = document.getElementById('clear-filters');
-
         this.gridViewBtn = document.getElementById('grid-view');
         this.listViewBtn = document.getElementById('list-view');
+        this.clearFilters = document.getElementById('clear-filters');
 
-        this.loadingState = document.getElementById('loading-state');
         this.productsContainer = document.getElementById('products-container');
-        this.emptyState = document.getElementById('empty-state');
-        this.noResults = document.getElementById('no-results');
-
         this.productCount = document.getElementById('product-count');
         this.filteredCount = document.getElementById('filtered-count');
 
+        this.loadingState = document.getElementById('loading-state');
+        this.emptyState = document.getElementById('empty-state');
+        this.noResults = document.getElementById('no-results');
+
         this.cartSidebar = document.getElementById('cart-sidebar');
         this.closeCart = document.getElementById('close-cart');
-        this.cartTotal = document.getElementById('cart-total');
 
         this.init();
     }
 
     async init() {
-        this.bindEvents();
-        await this.loadProducts();
-        this.updateCartDisplay();
+        try {
+            this.setupEventListeners();
+            await this.loadProducts();
+        } catch (error) {
+            console.error('Initialization error:', error);
+            this.showError('Грешка при инициализация на каталога');
+        }
     }
 
-    bindEvents() {
-        // Search
+    setupEventListeners() {
+        // Search functionality
         this.searchInput.addEventListener('input', this.debounce(() => {
             this.handleSearch();
+            this.applyFilters();
         }, 300));
 
         this.clearSearch.addEventListener('click', () => {
             this.searchInput.value = '';
-            this.handleSearch();
+            this.clearSearch.classList.add('hidden');
+            this.applyFilters();
         });
 
         // Filters
         this.categoryFilter.addEventListener('change', () => this.applyFilters());
         this.priceMin.addEventListener('input', this.debounce(() => this.applyFilters(), 500));
         this.priceMax.addEventListener('input', this.debounce(() => this.applyFilters(), 500));
-        this.sortBy.addEventListener('change', () => this.applyFilters());
 
-        this.clearFilters.addEventListener('click', () => this.clearAllFilters());
+        if (this.sortBy) {
+            this.sortBy.addEventListener('change', () => this.applyFilters());
+        }
+
+        if (this.clearFilters) {
+            this.clearFilters.addEventListener('click', () => this.clearAllFilters());
+        }
 
         // View toggle
-        this.gridViewBtn.addEventListener('click', () => this.setView('grid'));
-        this.listViewBtn.addEventListener('click', () => this.setView('list'));
+        if (this.gridViewBtn && this.listViewBtn) {
+            this.gridViewBtn.addEventListener('click', () => this.setView('grid'));
+            this.listViewBtn.addEventListener('click', () => this.setView('list'));
+        }
 
         // Cart
-        this.closeCart.addEventListener('click', () => this.toggleCart(false));
+        if (this.closeCart) {
+            this.closeCart.addEventListener('click', () => this.toggleCart(false));
+        }
 
         // Reset search
         document.getElementById('reset-search')?.addEventListener('click', () => {
@@ -85,11 +102,13 @@ class CatalogManager {
             const response = await fetch('/api/products', {
                 method: 'GET',
                 credentials: 'include',
+                cache: 'no-store',
                 headers: {
                     'Accept': 'application/json',
-                    'Content-Type': 'application/json'
+                    'Cache-Control': 'no-cache'
                 }
             });
+
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
@@ -100,7 +119,6 @@ class CatalogManager {
             this.populateCategories();
             this.applyFilters();
             this.updateProductCount();
-
             this.showLoading(false);
 
         } catch (error) {
@@ -139,56 +157,68 @@ class CatalogManager {
             this.clearSearch.classList.add('hidden');
             this.filteredProducts = [...this.products];
         }
-
-        this.applyFilters(false); // Don't reset search when applying other filters
     }
 
     applyFilters() {
-        let products = [...this.products];
+        let filtered = [...this.products];
 
-        // --- Search ---
+        // Search filter
         const query = this.searchInput.value.trim().toLowerCase();
         if (query) {
-            products = products.filter(product =>
-                product.name.toLowerCase().includes(query) ||
-                product.sku.toLowerCase().includes(query) ||
-                (product.description && product.description.toLowerCase().includes(query))
-            );
-            this.clearSearch.classList.remove('hidden');
-        } else {
-            this.clearSearch.classList.add('hidden');
+            filtered = filtered.filter(product => {
+                return product.name.toLowerCase().includes(query) ||
+                    product.sku.toLowerCase().includes(query) ||
+                    (product.description && product.description.toLowerCase().includes(query));
+            });
         }
 
-        // --- Category filter ---
+        // Category filter
         const selectedCategory = this.categoryFilter.value;
         if (selectedCategory) {
-            products = products.filter(p => p.category === selectedCategory);
+            filtered = filtered.filter(product => product.category === selectedCategory);
         }
 
-        // --- Price filters ---
-        const minPrice = parseFloat(this.priceMin.value) || 0;
-        const maxPrice = parseFloat(this.priceMax.value) || Infinity;
-        products = products.filter(p => {
-            const price = parseFloat(p.price);
-            return price >= minPrice && price <= maxPrice;
-        });
+        // Price filter
+        const minPrice = parseFloat(this.priceMin.value);
+        const maxPrice = parseFloat(this.priceMax.value);
 
-        // --- Sorting ---
-        const sortBy = this.sortBy.value;
-        products.sort((a, b) => {
-            switch (sortBy) {
-                case 'name': return a.name.localeCompare(b.name, 'bg');
-                case 'name-desc': return b.name.localeCompare(a.name, 'bg');
-                case 'price': return parseFloat(a.price) - parseFloat(b.price);
-                case 'price-desc': return parseFloat(b.price) - parseFloat(a.price);
-                case 'category': return (a.category || '').localeCompare(b.category || '', 'bg');
-                default: return 0;
-            }
-        });
+        if (minPrice && !isNaN(minPrice)) {
+            filtered = filtered.filter(product => parseFloat(product.price) >= minPrice);
+        }
 
-        this.filteredProducts = products;
+        if (maxPrice && !isNaN(maxPrice)) {
+            filtered = filtered.filter(product => parseFloat(product.price) <= maxPrice);
+        }
+
+        // Sort
+        if (this.sortBy) {
+            const sortValue = this.sortBy.value;
+            this.sortProducts(filtered, sortValue);
+        }
+
+        this.filteredProducts = filtered;
         this.renderProducts();
         this.updateProductCount();
+    }
+
+    sortProducts(products, sortBy) {
+        switch (sortBy) {
+            case 'price-asc':
+                products.sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
+                break;
+            case 'price-desc':
+                products.sort((a, b) => parseFloat(b.price) - parseFloat(a.price));
+                break;
+            case 'name-asc':
+                products.sort((a, b) => a.name.localeCompare(b.name, 'bg'));
+                break;
+            case 'name-desc':
+                products.sort((a, b) => b.name.localeCompare(a.name, 'bg'));
+                break;
+            default:
+                // Default sort by name ascending
+                products.sort((a, b) => a.name.localeCompare(b.name, 'bg'));
+        }
     }
 
     renderProducts() {
@@ -232,45 +262,45 @@ class CatalogManager {
         const safeSku = this.escapeHtml(product.sku);
         const safeCategory = product.category ? this.escapeHtml(product.category) : '';
         const priceWithVat = (parseFloat(product.price) * (1 + product.vatRate / 100)).toFixed(2);
-        const cardClass = isGrid ? 'product-card' : 'product-card list-item';
+        const cardClass = isGrid ? 'catalog-product-card' : 'catalog-product-card list-item';
 
         return `
         <div class="${cardClass}" data-product-id="${product.id}">
             ${isGrid ? `
-                <div class="product-header">
-                    <div class="product-sku">${safeSku}</div>
-                    ${safeCategory ? `<div class="product-category">${safeCategory}</div>` : ''}
+                <div class="catalog-product-header">
+                    <div class="catalog-product-sku">${safeSku}</div>
+                    ${safeCategory ? `<div class="catalog-product-category">${safeCategory}</div>` : ''}
                 </div>
             ` : ''}
             
-            <div class="product-content">
-                <div class="product-info">
+            <div class="catalog-product-content">
+                <div class="catalog-product-info">
                     ${!isGrid ? `
-                        <div class="product-header">
-                            <div class="product-sku">${safeSku}</div>
-                            ${safeCategory ? `<div class="product-category">${safeCategory}</div>` : ''}
+                        <div class="catalog-product-header">
+                            <div class="catalog-product-sku">${safeSku}</div>
+                            ${safeCategory ? `<div class="catalog-product-category">${safeCategory}</div>` : ''}
                         </div>
                     ` : ''}
                     
-                    <h3 class="product-name">${safeName}</h3>
+                    <h3 class="catalog-product-name">${safeName}</h3>
                     
-                    ${safeDesc ? `<p class="product-description">${safeDesc}</p>` : ''}
+                    ${safeDesc ? `<p class="catalog-product-description">${safeDesc}</p>` : ''}
                 </div>
                 
-                <div class="product-footer">
-                    <div class="product-price">
-                        <div class="price-without-vat">${parseFloat(product.price).toFixed(2)} лв</div>
-                        <div class="price-with-vat">с ДДС: ${priceWithVat} лв</div>
+                <div class="catalog-product-footer">
+                    <div class="catalog-product-price">
+                        <div class="catalog-price-without-vat">${parseFloat(product.price).toFixed(2)} лв</div>
+                        <div class="catalog-price-with-vat">с ДДС: ${priceWithVat} лв</div>
                     </div>
                     
-                    <div class="add-to-cart-section">
-                        <div class="quantity-controls">
-                            <button type="button" class="qty-btn qty-minus">−</button>
-                            <input type="number" class="qty-input" value="1" min="1" max="999">
-                            <button type="button" class="qty-btn qty-plus">+</button>
+                    <div class="catalog-add-to-cart-section">
+                        <div class="catalog-quantity-controls">
+                            <button type="button" class="catalog-qty-btn qty-decrease" data-sku="${safeSku}">−</button>
+                            <input type="number" class="catalog-qty-input" value="1" min="1" max="999" data-sku="${safeSku}">
+                            <button type="button" class="catalog-qty-btn qty-increase" data-sku="${safeSku}">+</button>
                         </div>
-                        <button type="button" class="btn btn-primary add-to-cart" data-sku="${safeSku}">
-                            Добави в кошницата
+                        <button type="button" class="catalog-add-to-cart-btn add-to-cart" data-sku="${safeSku}">
+                            🛒 Добави
                         </button>
                     </div>
                 </div>
@@ -280,9 +310,10 @@ class CatalogManager {
 
     bindProductEvents() {
         // Quantity controls
-        this.productsContainer.querySelectorAll('.qty-minus').forEach(btn => {
+        this.productsContainer.querySelectorAll('.qty-decrease').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                const input = e.target.parentElement.querySelector('.qty-input');
+                const sku = e.target.dataset.sku;
+                const input = this.productsContainer.querySelector(`.catalog-qty-input[data-sku="${sku}"]`);
                 const currentValue = parseInt(input.value) || 1;
                 if (currentValue > 1) {
                     input.value = currentValue - 1;
@@ -290,9 +321,10 @@ class CatalogManager {
             });
         });
 
-        this.productsContainer.querySelectorAll('.qty-plus').forEach(btn => {
+        this.productsContainer.querySelectorAll('.qty-increase').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                const input = e.target.parentElement.querySelector('.qty-input');
+                const sku = e.target.dataset.sku;
+                const input = this.productsContainer.querySelector(`.catalog-qty-input[data-sku="${sku}"]`);
                 const currentValue = parseInt(input.value) || 1;
                 if (currentValue < 999) {
                     input.value = currentValue + 1;
@@ -304,7 +336,7 @@ class CatalogManager {
         this.productsContainer.querySelectorAll('.add-to-cart').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const sku = e.target.dataset.sku;
-                const qtyInput = e.target.parentElement.querySelector('.qty-input');
+                const qtyInput = this.productsContainer.querySelector(`.catalog-qty-input[data-sku="${sku}"]`);
                 const quantity = parseInt(qtyInput.value) || 1;
                 this.addToCart(sku, quantity);
             });
@@ -312,7 +344,7 @@ class CatalogManager {
     }
 
     addToCart(sku, quantity) {
-        // Simple in-memory cart (no localStorage)
+        // Simple in-memory cart (no localStorage due to artifacts restriction)
         if (!this.cart[sku]) {
             this.cart[sku] = 0;
         }
@@ -335,8 +367,10 @@ class CatalogManager {
         this.currentView = viewType;
 
         // Update buttons
-        this.gridViewBtn.classList.toggle('active', viewType === 'grid');
-        this.listViewBtn.classList.toggle('active', viewType === 'list');
+        if (this.gridViewBtn && this.listViewBtn) {
+            this.gridViewBtn.classList.toggle('active', viewType === 'grid');
+            this.listViewBtn.classList.toggle('active', viewType === 'list');
+        }
 
         // Re-render products
         this.renderProducts();
@@ -347,7 +381,9 @@ class CatalogManager {
         this.categoryFilter.value = '';
         this.priceMin.value = '';
         this.priceMax.value = '';
-        this.sortBy.value = 'name';
+        if (this.sortBy) {
+            this.sortBy.value = 'name-asc';
+        }
 
         this.clearSearch.classList.add('hidden');
         this.filteredProducts = [...this.products];
@@ -412,15 +448,20 @@ class CatalogManager {
             position: fixed;
             top: 20px;
             right: 20px;
-            background: var(--color-success, #28a745);
+            background: linear-gradient(135deg, #e1942b 0%, #ffbe31 100%);
             color: white;
             padding: 12px 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(225, 148, 43, 0.3);
             z-index: 10000;
             opacity: 0;
             transform: translateX(100%);
-            transition: all 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            display: flex;
+            align-items: center;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-weight: 500;
+            font-size: 0.9rem;
         `;
 
         document.body.appendChild(toast);
@@ -444,7 +485,9 @@ class CatalogManager {
     }
 
     toggleCart(show) {
-        this.cartSidebar.classList.toggle('open', show);
+        if (this.cartSidebar) {
+            this.cartSidebar.classList.toggle('open', show);
+        }
     }
 
     escapeHtml(text) {

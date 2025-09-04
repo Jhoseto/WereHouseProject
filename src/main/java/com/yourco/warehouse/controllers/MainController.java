@@ -13,8 +13,9 @@ public class MainController {
 
     @GetMapping("/")
     public String home(Model model, Authentication auth) {
-        return "/index";
+        return "index";
     }
+
 
 // ==========================================
     // HTML TEMPLATE ENDPOINTS

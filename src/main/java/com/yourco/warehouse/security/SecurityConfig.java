@@ -2,6 +2,7 @@ package com.yourco.warehouse.security;
 
 
 import com.yourco.warehouse.service.CustomUserDetailsService;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -37,7 +38,19 @@ public class SecurityConfig {
                         .requestMatchers("/catalog", "/api/**").authenticated()
                         .anyRequest().authenticated()
                 )
-                // ПРЕМАХНАТО: .formLogin() конфигурацията за да работи custom AuthController
+                .exceptionHandling(exceptions -> exceptions
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            if (request.getRequestURI().startsWith("/api/")) {
+                                // За API заявки - върни JSON грешка
+                                response.setContentType("application/json");
+                                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                                response.getWriter().write("{\"error\":\"Unauthorized\",\"message\":\"Моля влезте в системата\"}");
+                            } else {
+                                // За HTML страници - пренасочи към login
+                                response.sendRedirect("/");
+                            }
+                        })
+                )
                 .logout(logout -> logout
                         .logoutRequestMatcher(new AntPathRequestMatcher("/logout"))
                         .logoutSuccessHandler(logoutSuccessHandler)

@@ -5,9 +5,11 @@ import com.yourco.warehouse.entity.UserEntity;
 import com.yourco.warehouse.entity.enums.Role;
 import com.yourco.warehouse.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.stereotype.Controller;
@@ -101,14 +103,13 @@ public class AuthController {
             Authentication authentication = userService.authenticateUser(username, password);
 
             if (authentication != null) {
-                // Задаване на автентикацията в SecurityContext
-                SecurityContextHolder.getContext().setAuthentication(authentication);
 
-                // Запазване в сесията
-                request.getSession().setAttribute(
-                        HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY,
-                        SecurityContextHolder.getContext()
-                );
+                SecurityContext context = SecurityContextHolder.createEmptyContext();
+                context.setAuthentication(authentication);
+                SecurityContextHolder.setContext(context);
+
+                HttpSession session = request.getSession(true);
+                session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context);
 
                 // Съобщение за успешно влизане
                 redirectAttributes.addFlashAttribute("successMessage",

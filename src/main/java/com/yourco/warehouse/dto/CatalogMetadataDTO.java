@@ -9,7 +9,7 @@ import java.util.Map;
 /**
  * DTO за метаданни на каталога
  */
-class CatalogMetadataDTO {
+public class CatalogMetadataDTO {
 
     @JsonProperty("totalProducts")
     private long totalProducts;

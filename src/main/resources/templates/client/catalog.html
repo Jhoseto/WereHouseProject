@@ -1,15 +1,13 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="bg" >
+<html xmlns:th="http://www.thymeleaf.org" lang="bg">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Съни Комерс-Каталог Клиенти</title>
-    <meta name="description" content="Добре дошли в портала на Съни Комерс-Димо Пенев ООД. Директен внос и дистрибуция на хранителни продукти от Европа. Над 2500 артикула за хотели, ресторанти и хорека бизнес.">
+    <meta name="description" content="Каталог с продукти от Съни Комерс-Димо Пенев ООД. Над 2500 артикула за хотели, ресторанти и хорека бизнес.">
 
     <th:block th:replace="~{fragments/topHtmlImports :: topImports}"></th:block>
     <link rel="stylesheet" href="/css/catalog.css">
-
-
 </head>
 <body>
 
@@ -17,117 +15,112 @@
 <div th:replace="~{fragments/navbar :: navbar}"></div>
 
 <section class="catalog-section">
-    <div class="catalog-header">
-        <h1 class="catalog-title">📦 Каталог продукти</h1>
-        <div class="catalog-stats">
-            <span id="product-count">0</span> продукта
-            <span id="filtered-count" class="filtered-count hidden"></span>
-        </div>
-    </div>
-
-    <!-- Search & Filters -->
-    <div class="catalog-controls">
-        <div class="search-container">
-            <div class="search-box">
-                <input type="text"
-                       id="search-input"
-                       class="search-input"
-                       placeholder="Търси по име или SKU..."
-                       autocomplete="off">
-                <button type="button" id="clear-search" class="clear-search hidden">✕</button>
+    <div class="container">
+        <!-- Header -->
+        <div class="catalog-header">
+            <h1 class="catalog-title">
+                <i class="bi bi-archive"></i>
+                Каталог продукти
+            </h1>
+            <div class="catalog-stats">
+                <span><span id="product-count">0</span> продукта</span>
+                <span id="filtered-count" class="filtered-count hidden"></span>
             </div>
         </div>
 
-        <div class="filters-container">
-            <div class="filter-group">
-                <label for="category-filter" class="filter-label">Категория:</label>
-                <select id="category-filter" class="filter-select">
-                    <option value="">Всички категории</option>
-                </select>
+        <!-- Search & Filters -->
+        <div class="catalog-controls">
+            <div class="search-container">
+                <div class="search-box">
+                    <input type="text"
+                           id="search-input"
+                           class="search-input"
+                           placeholder="Търси по име или SKU..."
+                           autocomplete="off">
+                    <button type="button" id="clear-search" class="clear-search hidden">
+                        <i class="bi bi-x"></i>
+                    </button>
+                </div>
             </div>
 
-            <div class="filter-group">
-                <label for="price-min" class="filter-label">Цена от:</label>
-                <input type="number" id="price-min" class="filter-input" min="0" step="0.01" placeholder="0.00">
+            <div class="filters-container">
+                <div class="filter-group">
+                    <label for="category-filter" class="filter-label">Категория</label>
+                    <select id="category-filter" class="filter-select">
+                        <option value="">Всички категории</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="price-min" class="filter-label">Минимална цена</label>
+                    <input type="number" id="price-min" class="filter-input"
+                           placeholder="0.00" step="0.01" min="0">
+                </div>
+
+                <div class="filter-group">
+                    <label for="price-max" class="filter-label">Максимална цена</label>
+                    <input type="number" id="price-max" class="filter-input"
+                           placeholder="999.99" step="0.01" min="0">
+                </div>
+
+                <div class="filter-group">
+                    <label for="sort-by" class="filter-label">Сортиране</label>
+                    <select id="sort-by" class="filter-select">
+                        <option value="name-asc">Име А-Я</option>
+                        <option value="name-desc">Име Я-А</option>
+                        <option value="price-asc">Цена възходящо</option>
+                        <option value="price-desc">Цена низходящо</option>
+                    </select>
+                </div>
             </div>
 
-            <div class="filter-group">
-                <label for="price-max" class="filter-label">до:</label>
-                <input type="number" id="price-max" class="filter-input" min="0" step="0.01" placeholder="999.99">
+            <div class="view-controls">
+                <button type="button" id="grid-view" class="view-btn active">
+                    <i class="bi bi-grid-3x2"></i>
+                    Мрежа
+                </button>
+                <button type="button" id="list-view" class="view-btn">
+                    <i class="bi bi-list-task"></i>
+                    Списък
+                </button>
+                <button type="button" id="clear-filters" class="view-btn">
+                    <i class="bi bi-arrow-counterclockwise"></i>
+                    Изчисти
+                </button>
             </div>
+        </div>
 
-            <div class="filter-group">
-                <label for="sort-by" class="filter-label">Сортиране:</label>
-                <select id="sort-by" class="filter-select">
-                    <option value="name">По име (А-Я)</option>
-                    <option value="name-desc">По име (Я-А)</option>
-                    <option value="price">По цена (ниски)</option>
-                    <option value="price-desc">По цена (високи)</option>
-                    <option value="category">По категория</option>
-                </select>
-            </div>
+        <!-- Loading State -->
+        <div id="loading-state" class="loading-state">
+            <div class="loading-spinner"></div>
+            <p>Зареждане на продуктите...</p>
+        </div>
 
-            <button type="button" id="clear-filters" class="clear-filters-btn">
-                🗑️ Изчисти филтрите
+        <!-- Products Container -->
+        <div id="products-container" class="products-container hidden">
+            <!-- Products will be populated by JavaScript -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="empty-state" class="empty-state hidden">
+            <h3>Няма продукти</h3>
+            <p id="empty-message">Няма налични продукти в каталога в момента.</p>
+            <button type="button" id="reset-search" class="view-btn">
+                Опресни
             </button>
         </div>
-    </div>
 
-    <!-- View Toggle -->
-    <div class="view-controls">
-        <div class="view-toggle">
-            <button type="button" id="grid-view" class="view-btn active" title="Мрежа">⊞</button>
-            <button type="button" id="list-view" class="view-btn" title="Списък">☰</button>
+        <!-- No Results State -->
+        <div id="no-results" class="empty-state hidden">
+            <h3>Няма резултати</h3>
+            <p>Не бяха намерени продукти отговарящи на търсенето.</p>
+            <button type="button" class="view-btn" onclick="window.catalogManager.clearAllFilters()">
+                Изчисти филтрите
+            </button>
         </div>
-    </div>
-
-    <!-- Loading State -->
-    <div id="loading-state" class="loading-state">
-        <div class="loading-spinner"></div>
-        <p>Зареждам продуктите...</p>
-    </div>
-
-    <!-- Products Container -->
-    <div id="products-container" class="products-container hidden">
-        <!-- Products will be populated by JavaScript -->
-    </div>
-
-    <!-- Empty State -->
-    <div id="empty-state" class="empty-state hidden">
-        <div class="empty-icon">📦</div>
-        <h3>Няма намерени продукти</h3>
-        <p id="empty-message">Опитайте да промените филтрите си.</p>
-        <button type="button" id="reset-search" class="btn btn-secondary">Нулиране на търсенето</button>
-    </div>
-
-    <!-- No Results State -->
-    <div id="no-results" class="empty-state hidden">
-        <div class="empty-icon">🔍</div>
-        <h3>Няма резултати</h3>
-        <p>Не намерихме продукти съответстващи на вашето търсене.</p>
     </div>
 </section>
 
-<!-- Cart Sidebar (Optional) -->
-<div id="cart-sidebar" class="cart-sidebar">
-    <div class="cart-header">
-        <h3>🛒 Кошница</h3>
-        <button id="close-cart" class="close-cart">✕</button>
-    </div>
-    <div class="cart-content">
-        <div id="cart-items"></div>
-        <div class="cart-total">
-            <div class="total-line">
-                Общо: <strong id="cart-total">0.00 лв</strong>
-            </div>
-        </div>
-        <div class="cart-actions">
-            <button id="checkout-btn" class="btn btn-primary btn-full">
-                Към поръчката
-            </button>
-        </div>
-    </div>
-</div>
 <!-- Include Footer Fragment -->
 <div th:replace="~{fragments/footer :: footer}"></div>
 

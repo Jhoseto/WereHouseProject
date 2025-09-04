@@ -3,6 +3,7 @@ package com.yourco.warehouse.entity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 @Entity
 @Table(name = "products")
@@ -93,7 +94,7 @@ public class ProductEntity {
         if (price != null && price.compareTo(BigDecimal.ZERO) < 0) {
             throw new IllegalArgumentException("Цената не може да бъде отрицателна");
         }
-        this.price = price != null ? price : BigDecimal.ZERO;
+        this.price = price != null ? price.setScale(2, RoundingMode.HALF_UP) : BigDecimal.ZERO;
     }
 
     public int getVatRate() {

@@ -8,7 +8,7 @@ import java.util.Map;
 /**
  * DTO за статистика на цени
  */
-class PriceStatsDTO {
+public class PriceStatsDTO {
 
     @JsonProperty("minPrice")
     private BigDecimal minPrice;

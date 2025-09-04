@@ -29,30 +29,22 @@ public class WebConfig implements WebMvcConfigurer {
      */
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        // Static resources with long cache period for production
+        // БЕЗ КЕШИРАНЕ И RESOURCE CHAINS
         registry.addResourceHandler("/css/**")
                 .addResourceLocations("classpath:/static/css/")
-                .setCachePeriod(31536000) // 1 year
-                .resourceChain(true)
-                .addResolver(new org.springframework.web.servlet.resource.VersionResourceResolver()
-                        .addContentVersionStrategy("/**"));
+                .setCachePeriod(0);
 
         registry.addResourceHandler("/js/**")
                 .addResourceLocations("classpath:/static/js/")
-                .setCachePeriod(31536000) // 1 year
-                .resourceChain(true)
-                .addResolver(new org.springframework.web.servlet.resource.VersionResourceResolver()
-                        .addContentVersionStrategy("/**"));
+                .setCachePeriod(0);
 
         registry.addResourceHandler("/img/**")
                 .addResourceLocations("classpath:/static/img/")
-                .setCachePeriod(31536000) // 1 year
-                .resourceChain(true);
+                .setCachePeriod(0);
 
-        // Favicon with shorter cache
         registry.addResourceHandler("/favicon.ico")
                 .addResourceLocations("classpath:/static/")
-                .setCachePeriod(86400); // 1 day
+                .setCachePeriod(0);
     }
 
     /**
@@ -77,7 +69,7 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addMapping("/api/**")
                 .allowedOriginPatterns("*")
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-                .allowedHeaders("*")
+                .allowedHeaders("*") // Позволява всички заглавки - za produkcia triabva da se izbroiat konkretni domeini
                 .allowCredentials(true)
                 .maxAge(3600);
     }
@@ -88,7 +80,7 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void configureContentNegotiation(ContentNegotiationConfigurer configurer) {
         configurer
-                .defaultContentType(MediaType.TEXT_HTML)
+                .defaultContentType(MediaType.APPLICATION_JSON)  // JSON first!
                 .favorParameter(false)
                 .ignoreAcceptHeader(false)
                 .useRegisteredExtensionsOnly(false)
@@ -154,15 +146,6 @@ public class WebConfig implements WebMvcConfigurer {
         LocaleChangeInterceptor interceptor = new LocaleChangeInterceptor();
         interceptor.setParamName("lang");
         return interceptor;
-    }
-
-    /**
-     * Configure view controllers for simple mappings
-     */
-    @Override
-    public void addViewControllers(ViewControllerRegistry registry) {
-        registry.addViewController("/").setViewName("redirect:/home");
-        registry.addRedirectViewController("/home", "/");
     }
 
     /**
