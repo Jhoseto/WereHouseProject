@@ -272,6 +272,60 @@
     color: var(--color-danger);
 }
 
+/* ==========================================
+   CART ICON STYLES IN PROFILE CARD
+   ========================================== */
+
+.cart-icon {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    margin-right: 12px;
+}
+
+.cart-icon:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: scale(1.05);
+}
+
+.cart-icon i {
+    font-size: 18px;
+    color: var(--color-white);
+}
+
+.cart-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #e74c3c;
+    color: white;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 5px;
+    border-radius: 8px;
+    min-width: 16px;
+    height: 16px;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+.cart-badge.show {
+    display: flex;
+    animation: bounce 0.3s ease;
+}
+
+@keyframes bounce {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+}
 
 /* ==========================================
    RESPONSIVE DESIGN

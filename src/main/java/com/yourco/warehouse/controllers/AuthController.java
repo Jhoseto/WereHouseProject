@@ -43,11 +43,6 @@ public class AuthController {
                                HttpServletResponse response,
                                RedirectAttributes redirectAttributes) {
 
-        System.out.println("=== CUSTOM LOGIN ATTEMPT ===");
-        System.out.println("Username: " + username);
-        System.out.println("Role: " + role);
-        System.out.println("Remember-me: " + rememberMe);
-
         // 1. ВАЛИДАЦИЯ НА INPUT
         if (username == null || username.trim().isEmpty()) {
             redirectAttributes.addFlashAttribute("errorMessage", "Моля въведете потребителското си име за да продължите.");

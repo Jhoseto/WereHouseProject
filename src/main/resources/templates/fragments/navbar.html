@@ -28,8 +28,13 @@
 
             <!-- Показва се само когато потребителят Е логнат -->
             <div sec:authorize="isAuthenticated()" class="user-profile-section">
-                <!-- User Profile Card -->
+                <!-- User Profile Card with Cart -->
                 <div class="user-profile-card" onclick="toggleProfileDropdown()">
+                    <!-- Cart Icon в profile card -->
+                    <div class="cart-icon" onclick="event.stopPropagation(); window.location.href='/cart'">
+                        <i class="bi bi-cart3"></i>
+                        <span class="cart-badge" id="cart-badge">0</span>
+                    </div>
                     <div class="user-avatar">
                         <i class="bi bi-person-circle"></i>
                     </div>

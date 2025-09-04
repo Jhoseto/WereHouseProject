@@ -46,6 +46,13 @@ public class ProductEntity {
     @Column(length = 100)
     private String category;
 
+    @Column(name = "quantity_available", nullable = false)
+    private Integer quantityAvailable = 0;
+
+    @Column(name = "quantity_reserved", nullable = false)
+    private Integer quantityReserved = 0;
+
+
     // Конструктор
     public ProductEntity() {}
 
@@ -132,7 +139,61 @@ public class ProductEntity {
         this.category = category != null ? category.trim() : null;
     }
 
-    // Business логика методи
+    public Integer getQuantityAvailable() {
+        return quantityAvailable;
+    }
+
+    public void setQuantityAvailable(Integer quantityAvailable) {
+        if (quantityAvailable != null && quantityAvailable < 0) {
+            throw new IllegalArgumentException("Наличното количество не може да бъде отрицателно");
+        }
+        this.quantityAvailable = quantityAvailable != null ? quantityAvailable : 0;
+    }
+
+    public Integer getQuantityReserved() {
+        return quantityReserved;
+    }
+
+    public void setQuantityReserved(Integer quantityReserved) {
+        if (quantityReserved != null && quantityReserved < 0) {
+            throw new IllegalArgumentException("Резервираното количество не може да бъде отрицателно");
+        }
+        this.quantityReserved = quantityReserved != null ? quantityReserved : 0;
+    }
+
+    public Integer getQuantityTotal() {
+        return quantityAvailable + quantityReserved;
+    }
+
+    public boolean hasAvailableQuantity(Integer requestedQuantity) {
+        return requestedQuantity != null &&
+                requestedQuantity > 0 &&
+                quantityAvailable >= requestedQuantity;
+    }
+
+    public void reserveQuantity(Integer quantity) {
+        if (!hasAvailableQuantity(quantity)) {
+            throw new IllegalStateException("Няма достатъчно налично количество за резервация");
+        }
+        this.quantityAvailable -= quantity;
+        this.quantityReserved += quantity;
+    }
+
+    public void releaseReservation(Integer quantity) {
+        if (quantity > quantityReserved) {
+            throw new IllegalStateException("Не може да се освободи повече от резервираното количество");
+        }
+        this.quantityReserved -= quantity;
+        this.quantityAvailable += quantity;
+    }
+
+    public void sellQuantity(Integer quantity) {
+        if (quantity > quantityReserved) {
+            throw new IllegalStateException("Не може да се продаде повече от резервираното количество");
+        }
+        this.quantityReserved -= quantity;
+    }
+
     public BigDecimal getPriceWithVat() {
         BigDecimal vatMultiplier = BigDecimal.ONE.add(
                 BigDecimal.valueOf(vatRate).divide(BigDecimal.valueOf(100))

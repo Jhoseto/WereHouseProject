@@ -1,6 +1,6 @@
 /**
- * CATALOG.JS - ОБНОВЕН ЗА НОВИТЕ CSS КЛАСОВЕ
- * ==========================================
+ * CATALOG.JS - ОБНОВЕН С CART API
+ * ===============================
  */
 
 class CatalogManager {
@@ -8,7 +8,6 @@ class CatalogManager {
         this.products = [];
         this.filteredProducts = [];
         this.currentView = 'grid';
-        this.cart = {};
 
         // DOM елементи
         this.searchInput = document.getElementById('search-input');
@@ -29,9 +28,6 @@ class CatalogManager {
         this.emptyState = document.getElementById('empty-state');
         this.noResults = document.getElementById('no-results');
 
-        this.cartSidebar = document.getElementById('cart-sidebar');
-        this.closeCart = document.getElementById('close-cart');
-
         this.init();
     }
 
@@ -41,7 +37,7 @@ class CatalogManager {
             await this.loadProducts();
         } catch (error) {
             console.error('Initialization error:', error);
-            this.showError('Грешка при инициализация на каталога');
+            window.toastManager.error('Грешка при инициализация на каталога');
         }
     }
 
@@ -77,21 +73,9 @@ class CatalogManager {
             this.listViewBtn.addEventListener('click', () => this.setView('list'));
         }
 
-        // Cart
-        if (this.closeCart) {
-            this.closeCart.addEventListener('click', () => this.toggleCart(false));
-        }
-
         // Reset search
         document.getElementById('reset-search')?.addEventListener('click', () => {
             this.clearAllFilters();
-        });
-
-        // Escape key to close cart
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                this.toggleCart(false);
-            }
         });
     }
 
@@ -123,18 +107,26 @@ class CatalogManager {
 
         } catch (error) {
             console.error('Error loading products:', error);
-            this.showError('Грешка при зареждане на продуктите. Моля, опресняте страницата.');
-            this.showLoading(false);
+            window.toastManager.error('Грешка при зареждане на продуктите. Моля, опресняте страницата.');
+            this.showError();
         }
     }
 
     populateCategories() {
-        const categories = [...new Set(this.products
-            .map(p => p.category)
-            .filter(c => c && c.trim()))
-        ].sort();
+        if (!this.categoryFilter) return;
 
-        this.categoryFilter.innerHTML = '<option value="">Всички категории</option>';
+        const categories = [...new Set(this.products
+            .filter(p => p.category && p.category.trim())
+            .map(p => p.category.trim())
+        )].sort();
+
+        // Clear existing options except "Всички"
+        const firstOption = this.categoryFilter.firstElementChild;
+        this.categoryFilter.innerHTML = '';
+        if (firstOption) {
+            this.categoryFilter.appendChild(firstOption);
+        }
+
         categories.forEach(category => {
             const option = document.createElement('option');
             option.value = category;
@@ -144,122 +136,85 @@ class CatalogManager {
     }
 
     handleSearch() {
-        const query = this.searchInput.value.trim().toLowerCase();
-
-        if (query) {
-            this.clearSearch.classList.remove('hidden');
-            this.filteredProducts = this.products.filter(product => {
-                return product.name.toLowerCase().includes(query) ||
-                    product.sku.toLowerCase().includes(query) ||
-                    (product.description && product.description.toLowerCase().includes(query));
-            });
-        } else {
-            this.clearSearch.classList.add('hidden');
-            this.filteredProducts = [...this.products];
-        }
+        const query = this.searchInput.value.trim();
+        this.clearSearch.classList.toggle('hidden', !query);
     }
 
     applyFilters() {
-        let filtered = [...this.products];
+        const searchQuery = this.searchInput.value.trim().toLowerCase();
+        const selectedCategory = this.categoryFilter?.value || '';
+        const minPrice = parseFloat(this.priceMin?.value) || 0;
+        const maxPrice = parseFloat(this.priceMax?.value) || Infinity;
+        const sortBy = this.sortBy?.value || 'name';
 
-        // Search filter
-        const query = this.searchInput.value.trim().toLowerCase();
-        if (query) {
-            filtered = filtered.filter(product => {
-                return product.name.toLowerCase().includes(query) ||
-                    product.sku.toLowerCase().includes(query) ||
-                    (product.description && product.description.toLowerCase().includes(query));
-            });
-        }
+        // Filter products
+        this.filteredProducts = this.products.filter(product => {
+            // Search filter
+            const matchesSearch = !searchQuery ||
+                product.name.toLowerCase().includes(searchQuery) ||
+                product.sku.toLowerCase().includes(searchQuery) ||
+                (product.description && product.description.toLowerCase().includes(searchQuery));
 
-        // Category filter
-        const selectedCategory = this.categoryFilter.value;
-        if (selectedCategory) {
-            filtered = filtered.filter(product => product.category === selectedCategory);
-        }
+            // Category filter
+            const matchesCategory = !selectedCategory || product.category === selectedCategory;
 
-        // Price filter
-        const minPrice = parseFloat(this.priceMin.value);
-        const maxPrice = parseFloat(this.priceMax.value);
+            // Price filter
+            const price = parseFloat(product.price) || 0;
+            const matchesPrice = price >= minPrice && price <= maxPrice;
 
-        if (minPrice && !isNaN(minPrice)) {
-            filtered = filtered.filter(product => parseFloat(product.price) >= minPrice);
-        }
+            return matchesSearch && matchesCategory && matchesPrice;
+        });
 
-        if (maxPrice && !isNaN(maxPrice)) {
-            filtered = filtered.filter(product => parseFloat(product.price) <= maxPrice);
-        }
-
-        // Sort
-        if (this.sortBy) {
-            const sortValue = this.sortBy.value;
-            this.sortProducts(filtered, sortValue);
-        }
-
-        this.filteredProducts = filtered;
-        this.renderProducts();
+        // Sort products
+        this.sortProducts(sortBy);
         this.updateProductCount();
+        this.renderProducts();
+        this.updateFiltersState();
     }
 
-    sortProducts(products, sortBy) {
-        switch (sortBy) {
-            case 'price-asc':
-                products.sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
-                break;
-            case 'price-desc':
-                products.sort((a, b) => parseFloat(b.price) - parseFloat(a.price));
-                break;
-            case 'name-asc':
-                products.sort((a, b) => a.name.localeCompare(b.name, 'bg'));
-                break;
-            case 'name-desc':
-                products.sort((a, b) => b.name.localeCompare(a.name, 'bg'));
-                break;
-            default:
-                // Default sort by name ascending
-                products.sort((a, b) => a.name.localeCompare(b.name, 'bg'));
-        }
+    sortProducts(sortBy) {
+        this.filteredProducts.sort((a, b) => {
+            switch (sortBy) {
+                case 'name':
+                    return a.name.localeCompare(b.name, 'bg');
+                case 'price-asc':
+                    return parseFloat(a.price) - parseFloat(b.price);
+                case 'price-desc':
+                    return parseFloat(b.price) - parseFloat(a.price);
+                case 'sku':
+                    return a.sku.localeCompare(b.sku);
+                default:
+                    return 0;
+            }
+        });
     }
 
     renderProducts() {
+        if (!this.productsContainer) return;
+
+        this.hideAllStates();
+
         if (this.filteredProducts.length === 0) {
             this.showEmptyState();
             return;
         }
 
-        this.hideAllStates();
-        this.productsContainer.classList.remove('hidden');
-
-        const isGridView = this.currentView === 'grid';
-        this.productsContainer.className = `products-container ${isGridView ? 'products-grid' : 'products-list'}`;
-
-        // Изчистваме контейнера
         this.productsContainer.innerHTML = '';
-
-        // Създаваме fragment за по-бързо рендиране
-        const fragment = document.createDocumentFragment();
+        this.productsContainer.className = `products-container ${this.currentView === 'list' ? 'products-list' : 'products-grid'}`;
 
         this.filteredProducts.forEach(product => {
-            const wrapper = document.createElement('div');
-            wrapper.innerHTML = this.createProductCard(product, isGridView);
-            fragment.appendChild(wrapper.firstElementChild);
+            const productHTML = this.createProductCard(product, this.currentView === 'grid');
+            this.productsContainer.insertAdjacentHTML('beforeend', productHTML);
         });
 
-        this.productsContainer.appendChild(fragment);
-
-        // Добавяне на събития към бутоните
         this.bindProductEvents();
-
-        // Reset и добавяне на fade-in за анимация
-        this.productsContainer.classList.remove('fade-in');
-        void this.productsContainer.offsetWidth; // trigger reflow
-        this.productsContainer.classList.add('fade-in');
+        this.productsContainer.classList.remove('hidden');
     }
 
     createProductCard(product, isGrid) {
-        const safeName = this.escapeHtml(product.name);
+        const safeName = this.escapeHtml(product.name || 'Без име');
+        const safeSku = this.escapeHtml(product.sku || '');
         const safeDesc = product.description ? this.escapeHtml(product.description) : '';
-        const safeSku = this.escapeHtml(product.sku);
         const safeCategory = product.category ? this.escapeHtml(product.category) : '';
         const priceWithVat = (parseFloat(product.price) * (1 + product.vatRate / 100)).toFixed(2);
         const cardClass = isGrid ? 'catalog-product-card' : 'catalog-product-card list-item';
@@ -295,11 +250,11 @@ class CatalogManager {
                     
                     <div class="catalog-add-to-cart-section">
                         <div class="catalog-quantity-controls">
-                            <button type="button" class="catalog-qty-btn qty-decrease" data-sku="${safeSku}">−</button>
-                            <input type="number" class="catalog-qty-input" value="1" min="1" max="999" data-sku="${safeSku}">
-                            <button type="button" class="catalog-qty-btn qty-increase" data-sku="${safeSku}">+</button>
+                            <button type="button" class="catalog-qty-btn qty-decrease" data-product-id="${product.id}">−</button>
+                            <input type="number" class="catalog-qty-input" value="1" min="1" max="999" data-product-id="${product.id}">
+                            <button type="button" class="catalog-qty-btn qty-increase" data-product-id="${product.id}">+</button>
                         </div>
-                        <button type="button" class="catalog-add-to-cart-btn add-to-cart" data-sku="${safeSku}">
+                        <button type="button" class="catalog-add-to-cart-btn add-to-cart" data-product-id="${product.id}">
                             🛒 Добави
                         </button>
                     </div>
@@ -312,8 +267,8 @@ class CatalogManager {
         // Quantity controls
         this.productsContainer.querySelectorAll('.qty-decrease').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                const sku = e.target.dataset.sku;
-                const input = this.productsContainer.querySelector(`.catalog-qty-input[data-sku="${sku}"]`);
+                const productId = e.target.dataset.productId;
+                const input = this.productsContainer.querySelector(`.catalog-qty-input[data-product-id="${productId}"]`);
                 const currentValue = parseInt(input.value) || 1;
                 if (currentValue > 1) {
                     input.value = currentValue - 1;
@@ -323,8 +278,8 @@ class CatalogManager {
 
         this.productsContainer.querySelectorAll('.qty-increase').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                const sku = e.target.dataset.sku;
-                const input = this.productsContainer.querySelector(`.catalog-qty-input[data-sku="${sku}"]`);
+                const productId = e.target.dataset.productId;
+                const input = this.productsContainer.querySelector(`.catalog-qty-input[data-product-id="${productId}"]`);
                 const currentValue = parseInt(input.value) || 1;
                 if (currentValue < 999) {
                     input.value = currentValue + 1;
@@ -332,99 +287,92 @@ class CatalogManager {
             });
         });
 
-        // Add to cart buttons
+        // Add to cart buttons - ИЗПОЛЗВА CART API
         this.productsContainer.querySelectorAll('.add-to-cart').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                const sku = e.target.dataset.sku;
-                const qtyInput = this.productsContainer.querySelector(`.catalog-qty-input[data-sku="${sku}"]`);
+                const productId = e.target.dataset.productId;
+                const qtyInput = this.productsContainer.querySelector(`.catalog-qty-input[data-product-id="${productId}"]`);
                 const quantity = parseInt(qtyInput.value) || 1;
-                this.addToCart(sku, quantity);
+
+                // Използва глобалния cartManager
+                window.cartManager.add(productId, quantity);
             });
         });
     }
 
-    addToCart(sku, quantity) {
-        // Simple in-memory cart (no localStorage due to artifacts restriction)
-        if (!this.cart[sku]) {
-            this.cart[sku] = 0;
-        }
-        this.cart[sku] += quantity;
-
-        this.updateCartDisplay();
-        this.showSuccessMessage(`Добавено в кошницата: ${quantity} бр.`);
-    }
-
-    updateCartDisplay() {
-        const totalItems = Object.values(this.cart).reduce((sum, qty) => sum + qty, 0);
-        const cartBadge = document.querySelector('.cart-badge');
-        if (cartBadge) {
-            cartBadge.textContent = totalItems;
-            cartBadge.style.display = totalItems > 0 ? 'block' : 'none';
-        }
-    }
-
-    setView(viewType) {
-        this.currentView = viewType;
-
-        // Update buttons
-        if (this.gridViewBtn && this.listViewBtn) {
-            this.gridViewBtn.classList.toggle('active', viewType === 'grid');
-            this.listViewBtn.classList.toggle('active', viewType === 'list');
-        }
-
-        // Re-render products
+    // View and state management
+    setView(view) {
+        this.currentView = view;
         this.renderProducts();
+
+        if (this.gridViewBtn && this.listViewBtn) {
+            this.gridViewBtn.classList.toggle('active', view === 'grid');
+            this.listViewBtn.classList.toggle('active', view === 'list');
+        }
+    }
+
+    updateProductCount() {
+        if (this.productCount) {
+            this.productCount.textContent = this.products.length;
+        }
+
+        if (this.filteredCount) {
+            const isFiltered = this.filteredProducts.length !== this.products.length;
+            this.filteredCount.textContent = isFiltered ?
+                `(показани ${this.filteredProducts.length})` : '';
+            this.filteredCount.classList.toggle('hidden', !isFiltered);
+        }
+    }
+
+    updateFiltersState() {
+        const hasFilters = this.searchInput.value.trim() ||
+            this.categoryFilter?.value ||
+            this.priceMin?.value ||
+            this.priceMax?.value;
+
+        if (this.clearFilters) {
+            this.clearFilters.style.display = hasFilters ? 'flex' : 'none';
+        }
     }
 
     clearAllFilters() {
         this.searchInput.value = '';
-        this.categoryFilter.value = '';
-        this.priceMin.value = '';
-        this.priceMax.value = '';
-        if (this.sortBy) {
-            this.sortBy.value = 'name-asc';
-        }
+        if (this.categoryFilter) this.categoryFilter.value = '';
+        if (this.priceMin) this.priceMin.value = '';
+        if (this.priceMax) this.priceMax.value = '';
+        if (this.sortBy) this.sortBy.value = 'name';
 
         this.clearSearch.classList.add('hidden');
-        this.filteredProducts = [...this.products];
-
         this.applyFilters();
     }
 
-    updateProductCount() {
-        const totalCount = this.products.length;
-        const filteredCount = this.filteredProducts.length;
-
-        this.productCount.textContent = totalCount;
-
-        if (filteredCount < totalCount) {
-            this.filteredCount.textContent = `(показани ${filteredCount})`;
-            this.filteredCount.classList.remove('hidden');
-        } else {
-            this.filteredCount.classList.add('hidden');
-        }
-    }
-
     showLoading(show) {
-        this.loadingState.classList.toggle('hidden', !show);
-        this.productsContainer.classList.toggle('hidden', show);
-        this.emptyState.classList.add('hidden');
-        this.noResults.classList.add('hidden');
+        if (show) {
+            this.hideAllStates();
+            this.loadingState.classList.remove('hidden');
+        } else {
+            this.loadingState.classList.add('hidden');
+        }
     }
 
     showEmptyState() {
         this.hideAllStates();
 
         const hasFilters = this.searchInput.value.trim() ||
-            this.categoryFilter.value ||
-            this.priceMin.value ||
-            this.priceMax.value;
+            this.categoryFilter?.value ||
+            this.priceMin?.value ||
+            this.priceMax?.value;
 
         if (hasFilters) {
             this.noResults.classList.remove('hidden');
         } else {
             this.emptyState.classList.remove('hidden');
         }
+    }
+
+    showError() {
+        this.hideAllStates();
+        this.emptyState.classList.remove('hidden');
     }
 
     hideAllStates() {
@@ -434,68 +382,7 @@ class CatalogManager {
         this.noResults.classList.add('hidden');
     }
 
-    showError(message) {
-        // Simple error display - could be enhanced with a proper modal
-        alert(message);
-    }
-
-    showSuccessMessage(message) {
-        // Create and show success toast
-        const toast = document.createElement('div');
-        toast.className = 'success-toast';
-        toast.textContent = message;
-        toast.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: linear-gradient(135deg, #e1942b 0%, #ffbe31 100%);
-            color: white;
-            padding: 12px 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 20px rgba(225, 148, 43, 0.3);
-            z-index: 10000;
-            opacity: 0;
-            transform: translateX(100%);
-            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            display: flex;
-            align-items: center;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            font-weight: 500;
-            font-size: 0.9rem;
-        `;
-
-        document.body.appendChild(toast);
-
-        // Animate in
-        setTimeout(() => {
-            toast.style.opacity = '1';
-            toast.style.transform = 'translateX(0)';
-        }, 100);
-
-        // Remove after 3 seconds
-        setTimeout(() => {
-            toast.style.opacity = '0';
-            toast.style.transform = 'translateX(100%)';
-            setTimeout(() => {
-                if (document.body.contains(toast)) {
-                    document.body.removeChild(toast);
-                }
-            }, 300);
-        }, 3000);
-    }
-
-    toggleCart(show) {
-        if (this.cartSidebar) {
-            this.cartSidebar.classList.toggle('open', show);
-        }
-    }
-
-    escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
-
+    // Utility methods
     debounce(func, wait) {
         let timeout;
         return function executedFunction(...args) {
@@ -507,19 +394,15 @@ class CatalogManager {
             timeout = setTimeout(later, wait);
         };
     }
+
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
 }
 
-// Initialize when DOM is loaded
+// Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
     window.catalogManager = new CatalogManager();
 });
-
-// Handle page visibility change to refresh cart state
-document.addEventListener('visibilitychange', () => {
-    if (!document.hidden && window.catalogManager) {
-        window.catalogManager.updateCartDisplay();
-    }
-});
-
-// Export for potential use in other scripts
-window.CatalogManager = CatalogManager;
