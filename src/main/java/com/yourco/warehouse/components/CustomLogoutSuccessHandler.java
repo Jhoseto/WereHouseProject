@@ -1,13 +1,10 @@
 package com.yourco.warehouse.components;
 
-
-import com.yourco.warehouse.utils.RequestUtils;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
 import org.springframework.stereotype.Component;
@@ -22,14 +19,28 @@ public class CustomLogoutSuccessHandler implements LogoutSuccessHandler {
                                 HttpServletResponse response,
                                 Authentication authentication) throws IOException, ServletException {
 
-        if (authentication != null) {
-            String username = authentication.getName();
-            String ipAddress = RequestUtils.getClientIpAddress(request);
-            String userAgent = request.getHeader("User-Agent");
-
-
+        // Clear session
+        HttpSession session = request.getSession(false);
+        if (session != null) {
+            try {
+                session.invalidate();
+            } catch (IllegalStateException ignored) {}
         }
 
-        response.sendRedirect("/?logout=true");
+        // Clear cookies
+        clearCookie(response, "JSESSIONID");
+        clearCookie(response, "remember-me");
+        clearCookie(response, "XSRF-TOKEN");
+
+        // Redirect
+        response.sendRedirect("/?logout=success");
+    }
+
+    private void clearCookie(HttpServletResponse response, String name) {
+        Cookie cookie = new Cookie(name, null);
+        cookie.setMaxAge(0);
+        cookie.setPath("/");
+        cookie.setHttpOnly(!name.equals("XSRF-TOKEN"));
+        response.addCookie(cookie);
     }
 }

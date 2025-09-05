@@ -24,8 +24,17 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
     <link rel="manifest" href="/images/site.webmanifest">
 
-    <script>
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+
+    <script th:inline="javascript">
         window.csrfToken = /*[[${_csrf.token}]]*/ '';
-        window.csrfHeader = /*[[${_csrf.headerName}]]*/ '';
+        window.csrfHeader = /*[[${_csrf.headerName}]]*/ 'X-XSRF-TOKEN';
+
+        if (!window.csrfToken) {
+            const meta = document.querySelector('meta[name="_csrf"]');
+            window.csrfToken = meta ? meta.getAttribute('content') : '';
+        }
     </script>
+
 </div>

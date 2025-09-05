@@ -219,26 +219,61 @@ class CatalogManager {
         const priceWithVat = (parseFloat(product.price) * (1 + product.vatRate / 100)).toFixed(2);
         const cardClass = isGrid ? 'catalog-product-card' : 'catalog-product-card list-item';
 
+        const inventory = this.getInventoryData(product);
+        const available = inventory.available;
+        const reserved = inventory.reserved;
+        const actualAvailable = inventory.actualAvailable;
+
+
+        const availableClass = actualAvailable > 10 ? 'catalog-inventory-available' :
+            actualAvailable > 0 ? 'catalog-inventory-low' : 'catalog-inventory-none';
+        const reservedClass = 'catalog-inventory-reserved';
+
         return `
         <div class="${cardClass}" data-product-id="${product.id}">
-            ${isGrid ? `
-                <div class="catalog-product-header">
+            <div class="catalog-product-header">
+                <div class="catalog-product-header-left">
+                    <div class="catalog-product-id">ID: ${product.id}</div>
                     <div class="catalog-product-sku">${safeSku}</div>
+                </div>
+                <div class="catalog-product-header-right">
                     ${safeCategory ? `<div class="catalog-product-category">${safeCategory}</div>` : ''}
+                </div>
+            </div>
+
+            ${isGrid ? `
+                <div class="catalog-inventory-info">
+                    <div class="catalog-inventory-item">
+                        <span class="catalog-inventory-label">Налични:</span>
+                        <span class="catalog-inventory-value ${availableClass}">${actualAvailable} бр.</span>
+                    </div>
+                    ${reserved > 0 ? `
+                        <div class="catalog-inventory-item">
+                            <span class="catalog-inventory-label">Запазени:</span>
+                            <span class="catalog-inventory-value ${reservedClass}">${reserved} бр.</span>
+                        </div>
+                    ` : ''}
                 </div>
             ` : ''}
             
             <div class="catalog-product-content">
                 <div class="catalog-product-info">
                     ${!isGrid ? `
-                        <div class="catalog-product-header">
-                            <div class="catalog-product-sku">${safeSku}</div>
-                            ${safeCategory ? `<div class="catalog-product-category">${safeCategory}</div>` : ''}
+                        <div class="catalog-inventory-info">
+                            <div class="catalog-inventory-item">
+                                <span class="catalog-inventory-label">Налични:</span>
+                                <span class="catalog-inventory-value ${availableClass}">${actualAvailable} бр.</span>
+                            </div>
+                            ${reserved > 0 ? `
+                                <div class="catalog-inventory-item">
+                                    <span class="catalog-inventory-label">Запазени:</span>
+                                    <span class="catalog-inventory-value ${reservedClass}">${reserved} бр.</span>
+                                </div>
+                            ` : ''}
                         </div>
                     ` : ''}
                     
                     <h3 class="catalog-product-name">${safeName}</h3>
-                    
                     ${safeDesc ? `<p class="catalog-product-description">${safeDesc}</p>` : ''}
                 </div>
                 
@@ -250,12 +285,12 @@ class CatalogManager {
                     
                     <div class="catalog-add-to-cart-section">
                         <div class="catalog-quantity-controls">
-                            <button type="button" class="catalog-qty-btn qty-decrease" data-product-id="${product.id}">−</button>
-                            <input type="number" class="catalog-qty-input" value="1" min="1" max="999" data-product-id="${product.id}">
-                            <button type="button" class="catalog-qty-btn qty-increase" data-product-id="${product.id}">+</button>
+                            <button type="button" class="catalog-qty-btn qty-decrease" data-product-id="${product.id}" ${actualAvailable === 0 ? 'disabled' : ''}>−</button>
+                            <input type="number" class="catalog-qty-input" value="1" min="1" max="${actualAvailable}" data-product-id="${product.id}" ${actualAvailable === 0 ? 'disabled' : ''}>
+                            <button type="button" class="catalog-qty-btn qty-increase" data-product-id="${product.id}" ${actualAvailable === 0 ? 'disabled' : ''}>+</button>
                         </div>
-                        <button type="button" class="catalog-add-to-cart-btn add-to-cart" data-product-id="${product.id}">
-                            🛒 Добави
+                        <button type="button" class="catalog-add-to-cart-btn add-to-cart" data-product-id="${product.id}" ${actualAvailable === 0 ? 'disabled' : ''}>
+                             ${actualAvailable === 0 ? '<i class="bi bi-exclamation-triangle"></i> Няма налични' : '<i class="bi bi-cart3 me-1"></i>Добави'}
                         </button>
                     </div>
                 </div>
@@ -380,6 +415,14 @@ class CatalogManager {
         this.productsContainer.classList.add('hidden');
         this.emptyState.classList.add('hidden');
         this.noResults.classList.add('hidden');
+    }
+
+    getInventoryData(product) {
+        return {
+            available: product.quantityAvailable || 0,
+            reserved: product.quantityReserved || 0,
+            actualAvailable: product.actualAvailable || 0
+        };
     }
 
     // Utility methods

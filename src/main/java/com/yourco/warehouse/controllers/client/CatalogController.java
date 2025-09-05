@@ -4,7 +4,6 @@ import com.yourco.warehouse.dto.ProductCatalogDTO;
 import com.yourco.warehouse.service.CatalogService;
 
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Size;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -142,6 +141,53 @@ public class CatalogController {
     }
 
     // ==========================================
+// INVENTORY ENDPOINTS
+// ==========================================
+
+    @GetMapping(value = "/api/inventory/{productId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> getProductInventory(@PathVariable Long productId) {
+        try {
+            // Използваме CatalogService за да вземем продукта
+            Optional<ProductCatalogDTO> productOpt = catalogService.getProductById(productId);
+
+            if (productOpt.isEmpty()) {
+                Map<String, Object> errorData = new HashMap<>();
+                errorData.put("productId", productId);
+                errorData.put("available", 0);
+                errorData.put("reserved", 0);
+                errorData.put("actualAvailable", 0);
+                errorData.put("error", "Product not found");
+                return ResponseEntity.ok(errorData);
+            }
+
+            ProductCatalogDTO product = productOpt.get();
+            Map<String, Object> inventoryData = new HashMap<>();
+
+            inventoryData.put("productId", productId);
+            inventoryData.put("available", product.getQuantityAvailable());
+            inventoryData.put("reserved", product.getQuantityReserved());
+            inventoryData.put("actualAvailable", product.getActualAvailable());
+            inventoryData.put("lastUpdated", System.currentTimeMillis());
+
+            return ResponseEntity.ok()
+                    .header("Cache-Control", "public, max-age=60")
+                    .body(inventoryData);
+
+        } catch (Exception e) {
+            Map<String, Object> errorData = new HashMap<>();
+            errorData.put("productId", productId);
+            errorData.put("available", 0);
+            errorData.put("reserved", 0);
+            errorData.put("actualAvailable", 0);
+            errorData.put("error", "Unable to fetch inventory data");
+
+            return ResponseEntity.ok(errorData);
+        }
+    }
+
+
+    // ==========================================
     // ERROR HANDLING
     // ==========================================
 
@@ -166,6 +212,8 @@ public class CatalogController {
         error.put("error", "INTERNAL_SERVER_ERROR");
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
     }
+
+
 
     // ==========================================
     // UTILITY METHODS

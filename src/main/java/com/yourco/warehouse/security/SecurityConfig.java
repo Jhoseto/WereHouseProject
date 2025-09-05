@@ -20,6 +20,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
 import org.springframework.security.web.authentication.rememberme.TokenBasedRememberMeServices;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 
 import java.util.Collection;
 
@@ -86,9 +87,13 @@ public class SecurityConfig {
                         .httpStrictTransportSecurity(HeadersConfigurer.HstsConfig::disable)
                         .contentTypeOptions(Customizer.withDefaults())
                 )
-                .csrf(csrf -> csrf
-                        .ignoringRequestMatchers("/images/**", "/css/**", "/js/**")
-                );
+                .csrf(csrf -> {
+                    CookieCsrfTokenRepository tokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
+                    tokenRepository.setCookieName("XSRF-TOKEN");
+                    tokenRepository.setHeaderName("X-XSRF-TOKEN");
+                    csrf.csrfTokenRepository(tokenRepository)
+                            .ignoringRequestMatchers("/images/**", "/css/**", "/js/**");
+                });
         return http.build();
     }
 

@@ -438,10 +438,10 @@
 }
 
 .catalog-add-to-cart-btn {
-    background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
     color: white;
     border: none;
-    padding: 10px 20px;
+    padding: 10px 18px;
     border-radius: 8px;
     font-size: 0.9rem;
     font-weight: 600;
@@ -450,11 +450,20 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    box-shadow: 0 2px 10px rgba(52, 152, 219, 0.2);
 }
 
 .catalog-add-to-cart-btn:hover {
+    background: linear-gradient(135deg, #2980b9 0%, #1f5582 100%);
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(39, 174, 96, 0.3);
+    box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
+}
+
+.catalog-add-to-cart-btn:disabled {
+    background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
 }
 
 /* ==========================================
@@ -500,6 +509,87 @@
     align-items: center;
     justify-content: flex-end;
     gap: 15px;
+}
+
+/* ==========================================
+   ENHANCED PRODUCT CARDS - Обогатена информация
+   ========================================== */
+
+/* PRODUCT HEADER - Разширен с ID и инвентарна информация */
+.catalog-product-header-left {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.catalog-product-header-right {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: flex-end;
+}
+
+/* ID Badge - нов елемент */
+.catalog-product-id {
+    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+    color: white;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+/* INVENTORY INFO - нова секция */
+.catalog-inventory-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 15px;
+}
+
+.catalog-inventory-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85rem;
+    padding: 3px 0;
+}
+
+.catalog-inventory-label {
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.catalog-inventory-value {
+    font-family: 'Courier New', monospace;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+}
+
+/* Наличност стилове */
+.catalog-inventory-available {
+    background: #d4edda;
+    color: #155724;
+}
+
+.catalog-inventory-low {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.catalog-inventory-none {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+/* Запазени стилове */
+.catalog-inventory-reserved {
+    background: #d1ecf1;
+    color: #0c5460;
 }
 
 /* ==========================================

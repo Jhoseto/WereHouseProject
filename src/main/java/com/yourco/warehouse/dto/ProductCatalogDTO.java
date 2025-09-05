@@ -45,6 +45,15 @@ public class ProductCatalogDTO {
     @JsonProperty("active")
     private boolean active;
 
+    @JsonProperty("quantityAvailable")
+    private Integer quantityAvailable;
+
+    @JsonProperty("quantityReserved")
+    private Integer quantityReserved;
+
+    @JsonProperty("actualAvailable")
+    private Integer actualAvailable;
+
     // Constructors
     public ProductCatalogDTO() {}
 
@@ -58,6 +67,11 @@ public class ProductCatalogDTO {
         this.price = nvl(entity.getPrice(), BigDecimal.ZERO);
         this.vatRate = entity.getVatRate() >= 0 ? entity.getVatRate() : 0;
         this.active = entity.isActive();
+
+        // НОВИ РЕДОВЕ - добави ги:
+        this.quantityAvailable = nvl(entity.getQuantityAvailable(), 0);
+        this.quantityReserved = nvl(entity.getQuantityReserved(), 0);
+        this.actualAvailable = Math.max(0, this.quantityAvailable - this.quantityReserved);
 
         // Calculated fields
         this.priceWithVat = calculatePriceWithVat(this.price, this.vatRate);
@@ -121,4 +135,13 @@ public class ProductCatalogDTO {
 
     public boolean isActive() { return active; }
     public void setActive(boolean active) { this.active = active; }
+
+    public Integer getQuantityAvailable() { return quantityAvailable; }
+    public void setQuantityAvailable(Integer quantityAvailable) { this.quantityAvailable = quantityAvailable; }
+
+    public Integer getQuantityReserved() { return quantityReserved; }
+    public void setQuantityReserved(Integer quantityReserved) { this.quantityReserved = quantityReserved; }
+
+    public Integer getActualAvailable() { return actualAvailable; }
+    public void setActualAvailable(Integer actualAvailable) { this.actualAvailable = actualAvailable; }
 }
