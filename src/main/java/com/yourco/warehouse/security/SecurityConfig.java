@@ -70,7 +70,10 @@ public class SecurityConfig {
                 .sessionManagement(session -> session
                         .sessionFixation().migrateSession()
                         .sessionCreationPolicy(SessionCreationPolicy.ALWAYS)
-
+                        .invalidSessionUrl("/")
+                        .maximumSessions(1)
+                        .maxSessionsPreventsLogin(false)
+                        .expiredUrl("/")
                 )
                 .logout(logout -> logout
                         .logoutUrl("/logout")

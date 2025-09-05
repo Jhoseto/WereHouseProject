@@ -55,7 +55,10 @@ public class CartServiceImpl implements CartService {
 
         if (!product.hasAvailableQuantity(quantity)) {
             throw new IllegalArgumentException(
-                    "Няма достатъчно наличност. Налично: " + product.getQuantityAvailable()
+                    String.format("Продуктът '%s' няма достатъчно наличност. Налично: %d, поискано: %d",
+                            product.getName(),
+                            product.getQuantityAvailable(),
+                            quantity)
             );
         }
 

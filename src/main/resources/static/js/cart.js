@@ -1,6 +1,6 @@
 /**
- * CART MANAGER - ОБНОВЕН С PANEL ИНТЕГРАЦИЯ
- * ==========================================
+ * CART MANAGER - ОБНОВЕН С PANEL ИНТЕГРАЦИЯ И CSRF PROTECTION
+ * ===========================================================
  */
 class CartManager {
     constructor() {
@@ -31,6 +31,38 @@ class CartManager {
     }
 
     /**
+     * Получава CSRF токена от глобалните JavaScript променливи
+     * @returns {Object} - {token: string, header: string}
+     */
+    getCsrfToken() {
+        const token = window.csrfToken || '';
+        const header = window.csrfHeader || 'X-CSRF-TOKEN';
+
+        if (!token) {
+            console.warn('CSRF токен не е намерен в window.csrfToken');
+        }
+
+        return { token, header };
+    }
+
+    /**
+     * Създава headers за POST заявки с CSRF защита
+     * @returns {Object} - Headers обект с CSRF токен
+     */
+    getPostHeaders() {
+        const csrf = this.getCsrfToken();
+        const headers = {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        };
+
+        if (csrf.token) {
+            headers[csrf.header] = csrf.token;
+        }
+
+        return headers;
+    }
+
+    /**
      * Добавя продукт в кошницата
      * @param {string|number} productId - ID на продукта
      * @param {number} quantity - Количество за добавяне
@@ -40,7 +72,7 @@ class CartManager {
         try {
             const response = await fetch(this.apiEndpoints.add, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                headers: this.getPostHeaders(),
                 body: `productId=${productId}&quantity=${quantity}`,
                 credentials: 'include'
             });
@@ -70,7 +102,12 @@ class CartManager {
                     return false;
                 }
             } else {
-                window.toastManager?.error('Грешка при добавяне в кошницата');
+                // Проверява за 403 CSRF грешка
+                if (response.status === 403) {
+                    window.toastManager?.error('Сесията ви е изтекла. Моля, презаредете страницата.');
+                } else {
+                    window.toastManager?.error('Грешка при добавяне в кошницата');
+                }
                 return false;
             }
         } catch (error) {
@@ -90,7 +127,7 @@ class CartManager {
         try {
             const response = await fetch(this.apiEndpoints.update, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                headers: this.getPostHeaders(),
                 body: `productId=${productId}&quantity=${newQuantity}`,
                 credentials: 'include'
             });
@@ -112,7 +149,12 @@ class CartManager {
                     return false;
                 }
             } else {
-                window.toastManager?.error('Грешка при обновяване на количеството');
+                // Проверява за 403 CSRF грешка
+                if (response.status === 403) {
+                    window.toastManager?.error('Сесията ви е изтекла. Моля, презаредете страницата.');
+                } else {
+                    window.toastManager?.error('Грешка при обновяване на количеството');
+                }
                 return false;
             }
         } catch (error) {
@@ -131,7 +173,7 @@ class CartManager {
         try {
             const response = await fetch(this.apiEndpoints.remove, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                headers: this.getPostHeaders(),
                 body: `productId=${productId}`,
                 credentials: 'include'
             });
@@ -153,7 +195,12 @@ class CartManager {
                     return false;
                 }
             } else {
-                window.toastManager?.error('Грешка при премахване от кошницата');
+                // Проверява за 403 CSRF грешка
+                if (response.status === 403) {
+                    window.toastManager?.error('Сесията ви е изтекла. Моля, презаредете страницата.');
+                } else {
+                    window.toastManager?.error('Грешка при премахване от кошницата');
+                }
                 return false;
             }
         } catch (error) {
@@ -171,7 +218,7 @@ class CartManager {
         try {
             const response = await fetch(this.apiEndpoints.clear, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                headers: this.getPostHeaders(),
                 credentials: 'include'
             });
 
@@ -192,7 +239,12 @@ class CartManager {
                     return false;
                 }
             } else {
-                window.toastManager?.error('Грешка при изчистване на кошницата');
+                // Проверява за 403 CSRF грешка
+                if (response.status === 403) {
+                    window.toastManager?.error('Сесията ви е изтекла. Моля, презаредете страницата.');
+                } else {
+                    window.toastManager?.error('Грешка при изчистване на кошницата');
+                }
                 return false;
             }
         } catch (error) {
@@ -376,4 +428,3 @@ document.addEventListener('DOMContentLoaded', function() {
 
     console.log('CartManager инициализиран успешно');
 });
-

@@ -22,13 +22,9 @@ class CartPanelManager {
             }
         });
 
-        // Предотвратява scrolling на body когато панела е отворен
-        this.panel?.addEventListener('transitionend', () => {
-            if (this.isOpen) {
-                document.body.style.overflow = 'hidden';
-            } else {
-                document.body.style.overflow = '';
-            }
+        // Event listeners за затваряне с overlay click
+        this.overlay?.addEventListener('click', () => {
+            this.close();
         });
     }
 
@@ -49,13 +45,9 @@ class CartPanelManager {
         if (!this.isOpen || !this.panel || !this.overlay) return;
 
         this.isOpen = false;
-
         // Скрива panel и overlay
         this.panel.classList.remove('show');
         this.overlay.classList.remove('show');
-
-        // Премахва body scroll lock
-        document.body.style.overflow = '';
     }
 
     async loadCartContent() {

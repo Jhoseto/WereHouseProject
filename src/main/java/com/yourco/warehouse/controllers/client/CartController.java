@@ -18,7 +18,6 @@ import java.util.Map;
 @RequestMapping("/api/cart")
 public class CartController {
 
-
     private final CartServiceImpl cartService;
     private final UserService userService;
 
@@ -41,9 +40,28 @@ public class CartController {
     @GetMapping(value = "/count", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Map<String, Object>> getCartCount(Authentication authentication) {
         Map<String, Object> response = new HashMap<>();
-        response.put("count", 0);
-        response.put("hasItems", false);
-        return ResponseEntity.ok(response);
+
+        // Проверка за authentication
+        if (authentication == null || !authentication.isAuthenticated()) {
+            response.put("count", 0);
+            response.put("hasItems", false);
+            return ResponseEntity.ok(response);
+        }
+
+        try {
+            Long userId = userService.getCurrentUser().getId();
+            Integer count = cartService.getCartItemCount(userId);
+            boolean hasItems = cartService.hasItems(userId);
+
+            response.put("count", count != null ? count : 0);
+            response.put("hasItems", hasItems);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("count", 0);
+            response.put("hasItems", false);
+            return ResponseEntity.ok(response);
+        }
     }
 
     @PostMapping(value = "/add", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -55,6 +73,13 @@ public class CartController {
         Map<String, Object> response = new HashMap<>();
 
         try {
+            // Проверка за authentication
+            if (authentication == null || !authentication.isAuthenticated()) {
+                response.put("success", false);
+                response.put("error", "Моля, влезте в профила си");
+                return ResponseEntity.status(401).body(response);
+            }
+
             Long userId = userService.getCurrentUser().getId();
 
             // Сервизът връща съобщение при успех
@@ -74,34 +99,151 @@ public class CartController {
 
             return ResponseEntity.ok(response);
 
-        } catch (Exception e) {
+        } catch (IllegalArgumentException e) {
+            // БИЗНЕС ЛОГИКА ГРЕШКИ - връщаме 200 OK с error съобщение
             response.put("success", false);
             response.put("error", e.getMessage());
-            return ResponseEntity.badRequest().body(response);
+            response.put("errorType", "business"); // Маркираме като бизнес грешка
+
+            // Добавяме информация за количката дори при грешка
+            try {
+                Long userId = userService.getCurrentUser().getId();
+                Map<String, Object> cart = new HashMap<>();
+                cart.put("totalItems", cartService.getCartItemCount(userId));
+                response.put("cart", cart);
+            } catch (Exception ignored) {
+                // Игнорираме грешки при извличане на cart info
+            }
+
+            return ResponseEntity.ok(response); // 200 OK вместо 400 Bad Request
+        } catch (Exception e) {
+            // ТЕХНИЧЕСКИ ГРЕШКИ - връщаме 500
+            response.put("success", false);
+            response.put("error", "Възникна техническа грешка при добавяне в количката");
+            response.put("errorType", "technical");
+            return ResponseEntity.status(500).body(response);
         }
     }
 
-
-    @PutMapping(value = "/update", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = "/update", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Map<String, Object>> updateQuantity(
             @RequestParam Long productId,
             @RequestParam Integer quantity,
             Authentication authentication) {
 
         Map<String, Object> response = new HashMap<>();
-        response.put("success", true);
-        response.put("message", "Количеството е обновено успешно");
-        return ResponseEntity.ok(response);
+
+        try {
+            // Проверка за authentication
+            if (authentication == null || !authentication.isAuthenticated()) {
+                response.put("success", false);
+                response.put("error", "Моля, влезте в профила си");
+                return ResponseEntity.status(401).body(response);
+            }
+
+            Long userId = userService.getCurrentUser().getId();
+            boolean success = cartService.updateQuantity(userId, productId, quantity);
+
+            if (success) {
+                response.put("success", true);
+                response.put("message", "Количеството е обновено успешно");
+
+                // Връщаме актуална информация за количката
+                Map<String, Object> cart = new HashMap<>();
+                cart.put("totalItems", cartService.getCartItemCount(userId));
+                response.put("cart", cart);
+            } else {
+                response.put("success", false);
+                response.put("error", "Неуспешно обновяване на количеството");
+            }
+
+            return ResponseEntity.ok(response);
+
+        } catch (IllegalArgumentException e) {
+            response.put("success", false);
+            response.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("error", "Възникна грешка при обновяване на количеството");
+            return ResponseEntity.status(500).body(response);
+        }
     }
 
-    @DeleteMapping(value = "/remove", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = "/remove", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Map<String, Object>> removeFromCart(
             @RequestParam Long productId,
             Authentication authentication) {
 
         Map<String, Object> response = new HashMap<>();
-        response.put("success", true);
-        response.put("message", "Артикулът е премахнат успешно");
-        return ResponseEntity.ok(response);
+
+        try {
+            // Проверка за authentication
+            if (authentication == null || !authentication.isAuthenticated()) {
+                response.put("success", false);
+                response.put("error", "Моля, влезте в профила си");
+                return ResponseEntity.status(401).body(response);
+            }
+
+            Long userId = userService.getCurrentUser().getId();
+            boolean success = cartService.removeFromCart(userId, productId);
+
+            if (success) {
+                response.put("success", true);
+                response.put("message", "Артикулът е премахнат успешно");
+
+                // Връщаме актуална информация за количката
+                Map<String, Object> cart = new HashMap<>();
+                cart.put("totalItems", cartService.getCartItemCount(userId));
+                response.put("cart", cart);
+            } else {
+                response.put("success", false);
+                response.put("error", "Неуспешно премахване на артикула");
+            }
+
+            return ResponseEntity.ok(response);
+
+        } catch (IllegalArgumentException e) {
+            response.put("success", false);
+            response.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("error", "Възникна грешка при премахване от количката");
+            return ResponseEntity.status(500).body(response);
+        }
+    }
+
+    @PostMapping(value = "/clear", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Map<String, Object>> clearCart(Authentication authentication) {
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            // Проверка за authentication
+            if (authentication == null || !authentication.isAuthenticated()) {
+                response.put("success", false);
+                response.put("error", "Моля, влезте в профила си");
+                return ResponseEntity.status(401).body(response);
+            }
+
+            Long userId = userService.getCurrentUser().getId();
+            int removedCount = cartService.clearCart(userId);
+
+            response.put("success", true);
+            response.put("message", "Количката е изчистена успешно");
+            response.put("removedItems", removedCount);
+
+            // Връщаме актуална информация за количката
+            Map<String, Object> cart = new HashMap<>();
+            cart.put("totalItems", 0);
+            response.put("cart", cart);
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("error", "Възникна грешка при изчистване на количката");
+            return ResponseEntity.status(500).body(response);
+        }
     }
 }
