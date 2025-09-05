@@ -449,7 +449,7 @@
 }
 
 .stat-label {
-    font-size: 0.9rem;
+    font-size: 0.7rem;
     color: var(--color-text-secondary);
     font-weight: var(--font-weight-medium);
     text-transform: uppercase;

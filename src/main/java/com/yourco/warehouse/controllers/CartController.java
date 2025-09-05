@@ -1,8 +1,11 @@
 package com.yourco.warehouse.controllers;
 
 import com.yourco.warehouse.dto.CartDTO;
+import com.yourco.warehouse.entity.Order;
+import com.yourco.warehouse.entity.UserEntity;
 import com.yourco.warehouse.service.impl.CartServiceImpl;
 import com.yourco.warehouse.service.UserService;
+import com.yourco.warehouse.service.impl.OrderServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -20,11 +23,15 @@ public class CartController {
 
     private final CartServiceImpl cartService;
     private final UserService userService;
+    private final OrderServiceImpl orderService;
 
     @Autowired
-    public CartController(CartServiceImpl cartService, UserService userService) {
+    public CartController(CartServiceImpl cartService,
+                          UserService userService,
+                          OrderServiceImpl orderService) {
         this.cartService = cartService;
         this.userService = userService;
+        this.orderService = orderService;
     }
 
     @GetMapping("/items")
@@ -245,5 +252,43 @@ public class CartController {
             response.put("error", "Възникна грешка при изчистване на количката");
             return ResponseEntity.status(500).body(response);
         }
+    }
+
+    /**
+     * API endpoint за създаване на поръчка от количката
+     */
+    @PostMapping("/checkout")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> checkoutCart(@RequestParam(required = false) String notes,
+                                                            Authentication authentication) {
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            if (authentication == null || !authentication.isAuthenticated()) {
+                response.put("success", false);
+                response.put("message", "Трябва да сте влезли в системата");
+                return ResponseEntity.status(401).body(response);
+            }
+
+            UserEntity currentUser = userService.getCurrentUser();
+            Order order = orderService.createOrderFromCart(currentUser.getId(), notes);
+
+            response.put("success", true);
+            response.put("message", "Поръчката е създадена успешно");
+            response.put("orderId", order.getId());
+            response.put("redirectUrl", "/orders/" + order.getId());
+
+
+        } catch (IllegalArgumentException e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Възникна грешка при създаването на поръчката");
+            return ResponseEntity.status(500).body(response);
+        }
+
+        return ResponseEntity.ok(response);
     }
 }

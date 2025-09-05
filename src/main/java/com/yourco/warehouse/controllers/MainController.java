@@ -1,5 +1,9 @@
 package com.yourco.warehouse.controllers;
 
+import com.yourco.warehouse.entity.Order;
+import com.yourco.warehouse.entity.UserEntity;
+import com.yourco.warehouse.service.UserService;
+import com.yourco.warehouse.service.impl.OrderServiceImpl;
 import com.yourco.warehouse.utils.RequestUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.security.core.Authentication;
@@ -9,11 +13,21 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.support.RequestContextUtils;
 
+import java.util.List;
 import java.util.Map;
 
 @Controller
 public class MainController {
 
+
+    private final UserService userService;
+    private final OrderServiceImpl orderService;
+
+    public MainController(UserService userService,
+                          OrderServiceImpl orderService) {
+        this.userService = userService;
+        this.orderService = orderService;
+    }
 
     @GetMapping("/")
     public String home(Model model, Authentication auth, HttpServletRequest request,
@@ -69,6 +83,57 @@ public class MainController {
             return "error/general";
         }
     }
+
+
+    /**
+     * Страница със списък на поръчките на клиента
+     */
+    @GetMapping("/orders")
+    public String listOrders(Model model, Authentication authentication) {
+        try {
+            if (authentication == null || !authentication.isAuthenticated()) {
+                return "redirect:/";
+            }
+
+            UserEntity currentUser = userService.getCurrentUser();
+            if (currentUser == null) {
+                return "redirect:/";
+            }
+
+            List<Order> orders = orderService.getOrdersForClient(currentUser.getId());
+            model.addAttribute("orders", orders);
+            model.addAttribute("pageTitle", "Моите поръчки");
+
+            // ✅ Логика за броячи на статуси
+            long submittedCount = orders.stream()
+                    .filter(o -> o.getStatus() != null && o.getStatus().name().equals("SUBMITTED"))
+                    .count();
+
+            long confirmedCount = orders.stream()
+                    .filter(o -> o.getStatus() != null && o.getStatus().name().equals("CONFIRMED"))
+                    .count();
+
+            long shippedCount = orders.stream()
+                    .filter(o -> o.getStatus() != null && o.getStatus().name().equals("SHIPPED"))
+                    .count();
+
+            long cancelledCount = orders.stream()
+                    .filter(o -> o.getStatus() != null && o.getStatus().name().equals("CANCELLED"))
+                    .count();
+
+            // ✅ Добавяме в модела
+            model.addAttribute("submittedCount", submittedCount);
+            model.addAttribute("confirmedCount", confirmedCount);
+            model.addAttribute("shippedCount", shippedCount);
+            model.addAttribute("cancelledCount", cancelledCount);
+
+            return "order";
+        } catch (Exception e) {
+            model.addAttribute("error", "Възникна грешка при зареждане на поръчките");
+            return "error/general";
+        }
+    }
+
 
 
     @GetMapping("/about")

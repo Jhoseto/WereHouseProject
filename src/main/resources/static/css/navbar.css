@@ -265,8 +265,8 @@
 .profile-dropdown {
     position: absolute;
     top: calc(100% + 12px);
-    right: -30px;
-    min-width: 230px;
+    right: 0;
+    min-width: 260px;
     background: var(--color-white);
     border-radius: var(--radius-xl);
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);

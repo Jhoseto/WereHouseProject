@@ -118,8 +118,15 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional(readOnly = true)
     public Optional<Order> getOrderByIdForClient(Long orderId, Long clientId) {
-        return orderRepository.findById(orderId)
+        Optional<Order> orderOpt = orderRepository.findById(orderId)
                 .filter(order -> order.getClient().getId().equals(clientId));
+
+        // Eager load items колекцията ако поръчката съществува
+        if (orderOpt.isPresent() && orderOpt.get().getItems() != null) {
+            orderOpt.get().getItems().size(); // Принуждава зареждането
+        }
+
+        return orderOpt;
     }
 
     @Override
@@ -127,7 +134,17 @@ public class OrderServiceImpl implements OrderService {
     public List<Order> getOrdersForClient(Long clientId) {
         UserEntity client = userRepository.findById(clientId)
                 .orElseThrow(() -> new IllegalArgumentException("Клиентът не съществува"));
-        return orderRepository.findByClientOrderBySubmittedAtDesc(client);
+
+        List<Order> orders = orderRepository.findByClientOrderBySubmittedAtDesc(client);
+
+        // Eager load всички items колекции докато сесията е активна
+        for (Order order : orders) {
+            if (order.getItems() != null) {
+                order.getItems().size(); // Това принуждава Hibernate да зареди колекцията
+            }
+        }
+
+        return orders;
     }
 
     @Override

@@ -13,7 +13,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.HashMap;
 import java.util.List;
@@ -34,69 +33,9 @@ public class OrderController {
         this.userService = userService;
     }
 
-    /**
-     * API endpoint за създаване на поръчка от количката
-     */
-    @PostMapping("/api/cart/checkout")
-    @ResponseBody
-    public ResponseEntity<Map<String, Object>> checkoutCart(@RequestParam(required = false) String notes,
-                                                            Authentication authentication) {
-        Map<String, Object> response = new HashMap<>();
 
-        try {
-            if (authentication == null || !authentication.isAuthenticated()) {
-                response.put("success", false);
-                response.put("message", "Трябва да сте влезли в системата");
-                return ResponseEntity.status(401).body(response);
-            }
 
-            UserEntity currentUser = userService.getCurrentUser();
-            Order order = orderService.createOrderFromCart(currentUser.getId(), notes);
 
-            response.put("success", true);
-            response.put("message", "Поръчката е създадена успешно");
-            response.put("orderId", order.getId());
-            response.put("redirectUrl", "/orders/" + order.getId());
-
-            log.info("Клиент {} създаде поръчка #{}", currentUser.getUsername(), order.getId());
-
-        } catch (IllegalArgumentException e) {
-            response.put("success", false);
-            response.put("message", e.getMessage());
-            return ResponseEntity.badRequest().body(response);
-        } catch (Exception e) {
-            log.error("Грешка при създаване на поръчка: {}", e.getMessage(), e);
-            response.put("success", false);
-            response.put("message", "Възникна грешка при създаването на поръчката");
-            return ResponseEntity.status(500).body(response);
-        }
-
-        return ResponseEntity.ok(response);
-    }
-
-    /**
-     * Страница със списък на поръчките на клиента
-     */
-    @GetMapping("/orders")
-    public String listOrders(Model model, Authentication authentication) {
-        try {
-            if (authentication == null || !authentication.isAuthenticated()) {
-                return "redirect:/";
-            }
-
-            UserEntity currentUser = userService.getCurrentUser();
-            List<Order> orders = orderService.getOrdersForClient(currentUser.getId());
-
-            model.addAttribute("orders", orders);
-            model.addAttribute("pageTitle", "Моите поръчки");
-
-            return "client/orders";
-        } catch (Exception e) {
-            log.error("Грешка при зареждане на поръчки: {}", e.getMessage(), e);
-            model.addAttribute("error", "Възникна грешка при зареждане на поръчките");
-            return "error/general";
-        }
-    }
 
     /**
      * Детайлна страница за конкретна поръчка
@@ -123,7 +62,7 @@ public class OrderController {
             model.addAttribute("canEdit", orderService.canEditOrder(order));
             model.addAttribute("pageTitle", "Поръчка №" + order.getId());
 
-            return "client/order-detail";
+            return "order-detail";
         } catch (Exception e) {
             log.error("Грешка при зареждане на поръчка {}: {}", orderId, e.getMessage(), e);
             model.addAttribute("error", "Възникна грешка при зареждане на поръчката");

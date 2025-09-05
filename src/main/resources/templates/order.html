@@ -122,7 +122,7 @@
                                                     (order.status.name() == 'CONFIRMED' ? 'bi bi-check-circle' :
                                                     (order.status.name() == 'SHIPPED' ? 'bi bi-truck' :
                                                     (order.status.name() == 'CANCELLED' ? 'bi bi-x-circle' : 'bi bi-question-circle')))}"></i>
-                                        <span th:text="${order.status.name() == 'SUBMITTED' ? 'Подадена' :
+                                        <span th:text="${order.status.name() == 'SUBMITTED' ? 'Изчакваща' :
                                                      (order.status.name() == 'CONFIRMED' ? 'Потвърдена' :
                                                      (order.status.name() == 'SHIPPED' ? 'Изпратена' :
                                                      (order.status.name() == 'CANCELLED' ? 'Отменена' : order.status.name())))}">Подадена</span>
@@ -173,6 +173,7 @@
                     </h3>
                 </div>
                 <div class="stats-grid">
+                    <!-- Общо -->
                     <div class="stat-card">
                         <div class="stat-icon">
                             <i class="bi bi-collection"></i>
@@ -183,33 +184,47 @@
                         </div>
                     </div>
 
+                    <!-- Подадени -->
                     <div class="stat-card stat-pending">
                         <div class="stat-icon">
                             <i class="bi bi-hourglass-split"></i>
                         </div>
                         <div class="stat-content">
-                            <div class="stat-number" th:text="${#lists.size(#lists.select(orders, order.status.name() == 'SUBMITTED'))}">0</div>
+                            <div class="stat-number" th:text="${submittedCount}">0</div>
                             <div class="stat-label">Чакащи потвърждение</div>
                         </div>
                     </div>
 
+                    <!-- Потвърдени -->
                     <div class="stat-card stat-confirmed">
                         <div class="stat-icon">
                             <i class="bi bi-check-circle"></i>
                         </div>
                         <div class="stat-content">
-                            <div class="stat-number" th:text="${#lists.size(#lists.select(orders, order.status.name() == 'CONFIRMED'))}">0</div>
+                            <div class="stat-number" th:text="${confirmedCount}">0</div>
                             <div class="stat-label">Потвърдени</div>
                         </div>
                     </div>
 
+                    <!-- Изпратени -->
                     <div class="stat-card stat-shipped">
                         <div class="stat-icon">
                             <i class="bi bi-truck"></i>
                         </div>
                         <div class="stat-content">
-                            <div class="stat-number" th:text="${#lists.size(#lists.select(orders, order.status.name() == 'SHIPPED'))}">0</div>
+                            <div class="stat-number" th:text="${shippedCount}">0</div>
                             <div class="stat-label">Изпратени</div>
+                        </div>
+                    </div>
+
+                    <!-- Отменени -->
+                    <div class="stat-card stat-cancelled">
+                        <div class="stat-icon">
+                            <i class="bi bi-x-circle"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-number" th:text="${cancelledCount}">0</div>
+                            <div class="stat-label">Отменени</div>
                         </div>
                     </div>
                 </div>

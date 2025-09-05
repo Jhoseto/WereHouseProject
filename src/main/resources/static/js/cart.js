@@ -1,6 +1,6 @@
 /**
- * CART MANAGER - ОБНОВЕН С PANEL ИНТЕГРАЦИЯ И CSRF PROTECTION
- * ===========================================================
+ * CART MANAGER - FIXED VERSION WITH PROPER CSRF AND SYNC
+ * ======================================================
  */
 class CartManager {
     constructor() {
@@ -22,13 +22,12 @@ class CartManager {
     }
 
     setupEventListeners() {
-        // Слуша за промени в localStorage от други табове (ако е нужно)
+        // Слуша за промени в localStorage от други табове
         window.addEventListener('storage', (e) => {
             if (e.key === 'cart_updated') {
                 this.updateBadge();
             }
         });
-        this.setupCheckoutHandlers();
     }
 
     /**
@@ -87,11 +86,6 @@ class CartManager {
                     // Обновява badge
                     await this.updateBadge();
 
-                    // Обновява cart panel ако е отворен
-                    if (window.cartPanel?.isOpen) {
-                        await window.cartPanel.loadCartContent();
-                    }
-
                     // Автоматично отваря панела след кратко забавяне
                     setTimeout(() => {
                         window.cartPanel?.open();
@@ -138,12 +132,6 @@ class CartManager {
                 if (data.success) {
                     window.toastManager?.success('Количеството е обновено');
                     await this.updateBadge();
-
-                    // Обновява cart panel ако е отворен
-                    if (window.cartPanel?.isOpen) {
-                        await window.cartPanel.loadCartContent();
-                    }
-
                     return true;
                 } else {
                     window.toastManager?.error(data.error || 'Грешка при обновяване на количеството');
@@ -184,12 +172,6 @@ class CartManager {
                 if (data.success) {
                     window.toastManager?.success('Продуктът е премахнат от кошницата');
                     await this.updateBadge();
-
-                    // Обновява cart panel ако е отворен
-                    if (window.cartPanel?.isOpen) {
-                        await window.cartPanel.loadCartContent();
-                    }
-
                     return true;
                 } else {
                     window.toastManager?.error(data.error || 'Грешка при премахване от кошницата');
@@ -228,12 +210,6 @@ class CartManager {
                 if (data.success) {
                     window.toastManager?.success('Кошницата е изчистена');
                     await this.updateBadge();
-
-                    // Обновява cart panel ако е отворен
-                    if (window.cartPanel?.isOpen) {
-                        await window.cartPanel.loadCartContent();
-                    }
-
                     return true;
                 } else {
                     window.toastManager?.error(data.error || 'Грешка при изчистване на кошницата');
@@ -278,7 +254,7 @@ class CartManager {
     }
 
     /**
-     * Обновява badge с броя артикули
+     * Обновява badge с броя артикули - FIXED VERSION
      */
     async updateBadge() {
         try {
@@ -290,7 +266,7 @@ class CartManager {
                 const data = await response.json();
                 this.setBadge(data.count || 0);
 
-                // Уведомява други табове за промяната (ако е нужно)
+                // FIXED: Уведомява други табове за промяната, БЕЗ рекурсивно извикване
                 localStorage.setItem('cart_updated', Date.now().toString());
                 localStorage.removeItem('cart_updated');
             }
@@ -420,12 +396,11 @@ async function clearCart() {
 }
 
 /**
- * INITIALIZATION
- * ==============
+ * INITIALIZATION - САМО CART MANAGER
+ * =================================
  */
 document.addEventListener('DOMContentLoaded', function() {
     // Създава глобалния cart manager
     window.cartManager = new CartManager();
-
     console.log('CartManager инициализиран успешно');
 });
