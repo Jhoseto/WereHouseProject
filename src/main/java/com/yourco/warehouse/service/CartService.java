@@ -8,95 +8,62 @@ import java.util.List;
 public interface CartService {
 
     /**
-     * Добавя продукт в кошницата на потребител
-     *
-     * @param userId    ID на потребителя
-     * @param productId ID на продукта
-     * @param quantity  количество за добавяне
-     * @return true ако е успешно добавен
-     * @throws IllegalArgumentException ако няма достатъчно наличност
+     * Добавя продукт в количката
      */
     String addToCart(Long userId, Long productId, Integer quantity);
 
     /**
-     * Обновява количеството на артикул в кошницата
-     * @param userId ID на потребителя
-     * @param productId ID на продукта
-     * @param newQuantity новото количество
-     * @return true ако е успешно обновен
-     * @throws IllegalArgumentException ако няма достатъчно наличност
+     * Обновява количеството на артикул
      */
     boolean updateQuantity(Long userId, Long productId, Integer newQuantity);
 
     /**
-     * Премахва артикул от кошницата
-     * @param userId ID на потребителя
-     * @param productId ID на продукта
-     * @return true ако е успешно премахнат
+     * Премахва артикул от количката
      */
     boolean removeFromCart(Long userId, Long productId);
 
     /**
-     * Изчиства цялата кошница на потребител
-     * @param userId ID на потребителя
-     * @return брой изтрити артикули
+     * Изчиства цялата количка
      */
     int clearCart(Long userId);
 
     /**
-     * Получава всички артикули в кошницата на потребител
-     * @param userId ID на потребителя
-     * @return списък с артикули в кошницата
-     */
-    List<CartItemDTO> getCartItems(Long userId);
-
-    /**
-     * Получава пълна информация за кошницата
-     * @param userId ID на потребителя
-     * @return DTO с пълна информация за кошницата
+     * Получава пълна информация за количката (с изчислени суми)
      */
     CartDTO getCart(Long userId);
 
     /**
-     * Връща общия брой артикули в кошницата
-     * @param userId ID на потребителя
-     * @return общ брой артикули
+     * Получава само списъка с артикули (без суми)
+     */
+    List<CartItemDTO> getCartItems(Long userId);
+
+    /**
+     * Връща общия брой артикули
      */
     Integer getCartItemCount(Long userId);
 
     /**
-     * Проверява дали потребител има артикули в кошницата
-     * @param userId ID на потребителя
-     * @return true ако има артикули
+     * Проверява дали има артикули
      */
     boolean hasItems(Long userId);
 
     /**
-     * Резервира количествата в кошницата при подаване на заявка
-     * @param userId ID на потребителя
-     * @return true ако всички количества са успешно резервирани
-     * @throws IllegalStateException ако няма достатъчно наличност
+     * Резервира количествата при подаване на поръчка
      */
     boolean reserveCartItems(Long userId);
 
     /**
-     * Освобождава резервираните количества (при отказ от заявка)
-     * @param userId ID на потребителя
-     * @return true ако резервациите са освободени
+     * Освобождава резервираните количества
      */
     boolean releaseCartReservations(Long userId);
 
     /**
-     * Финализира продажбата - извадя количествата от склада
-     * @param userId ID на потребителя
-     * @return true ако продажбата е финализирана
+     * Финализира продажбата
      */
     boolean finalizeCartSale(Long userId);
 
     /**
-     * Валидира наличността на всички артикули в кошницата
-     * @param userId ID на потребителя
-     * @return true ако всички артикули имат достатъчна наличност
+     * Валидира наличността на артикулите
      */
     boolean validateCartStock(Long userId);
 }

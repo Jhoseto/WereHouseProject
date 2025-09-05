@@ -1,6 +1,5 @@
-package com.yourco.warehouse.service.Impl;
+package com.yourco.warehouse.service.impl;
 
-import com.yourco.warehouse.config.CacheConfig;
 import com.yourco.warehouse.dto.ProductCatalogDTO;
 import com.yourco.warehouse.entity.ProductEntity;
 import com.yourco.warehouse.repository.ProductRepository;

@@ -1,6 +1,5 @@
 package com.yourco.warehouse.dto;
 
-import com.yourco.warehouse.entity.CartItem;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.math.BigDecimal;
@@ -17,11 +16,14 @@ public class CartDTO {
     @JsonProperty("totalQuantity")
     private Integer totalQuantity;
 
-    @JsonProperty("totalPrice")
-    private BigDecimal totalPrice;
+    @JsonProperty("totalWithoutVat")
+    private BigDecimal totalWithoutVat;
 
-    @JsonProperty("totalPriceWithVat")
-    private BigDecimal totalPriceWithVat;
+    @JsonProperty("totalWithVat")
+    private BigDecimal totalWithVat;
+
+    @JsonProperty("vatAmount")
+    private BigDecimal vatAmount;
 
     @JsonProperty("isEmpty")
     private boolean isEmpty;
@@ -29,66 +31,33 @@ public class CartDTO {
     // Constructors
     public CartDTO() {}
 
-    public CartDTO(List<CartItemDTO> items) {
-        this.items = items;
-        calculateTotals();
+    // Factory method БЕЗ логика - всичко се подава отвън
+    public static CartDTO create(
+            List<CartItemDTO> items,
+            Integer totalItems,
+            Integer totalQuantity,
+            BigDecimal totalWithoutVat,
+            BigDecimal totalWithVat,
+            BigDecimal vatAmount) {
+
+        CartDTO dto = new CartDTO();
+        dto.items = items;
+        dto.totalItems = totalItems;
+        dto.totalQuantity = totalQuantity;
+        dto.totalWithoutVat = totalWithoutVat;
+        dto.totalWithVat = totalWithVat;
+        dto.vatAmount = vatAmount;
+        dto.isEmpty = items == null || items.isEmpty();
+
+        return dto;
     }
 
-    // Factory method
-    public static CartDTO from(List<CartItem> cartItems) {
-        List<CartItemDTO> itemDTOs = cartItems.stream()
-                .map(CartItemDTO::from)
-                .toList();
-
-        return new CartDTO(itemDTOs);
-    }
-
-    // Calculate totals
-    private void calculateTotals() {
-        if (items == null || items.isEmpty()) {
-            this.totalItems = 0;
-            this.totalQuantity = 0;
-            this.totalPrice = BigDecimal.ZERO;
-            this.totalPriceWithVat = BigDecimal.ZERO;
-            this.isEmpty = true;
-            return;
-        }
-
-        this.totalItems = items.size();
-        this.totalQuantity = items.stream()
-                .mapToInt(CartItemDTO::getQuantity)
-                .sum();
-
-        this.totalPrice = items.stream()
-                .map(CartItemDTO::getTotalPrice)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        this.totalPriceWithVat = items.stream()
-                .map(CartItemDTO::getTotalPriceWithVat)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        this.isEmpty = false;
-    }
-
-    // Getters and Setters
+    // Getters only - NO setters, NO business logic
     public List<CartItemDTO> getItems() { return items; }
-    public void setItems(List<CartItemDTO> items) {
-        this.items = items;
-        calculateTotals();
-    }
-
     public Integer getTotalItems() { return totalItems; }
-    public void setTotalItems(Integer totalItems) { this.totalItems = totalItems; }
-
     public Integer getTotalQuantity() { return totalQuantity; }
-    public void setTotalQuantity(Integer totalQuantity) { this.totalQuantity = totalQuantity; }
-
-    public BigDecimal getTotalPrice() { return totalPrice; }
-    public void setTotalPrice(BigDecimal totalPrice) { this.totalPrice = totalPrice; }
-
-    public BigDecimal getTotalPriceWithVat() { return totalPriceWithVat; }
-    public void setTotalPriceWithVat(BigDecimal totalPriceWithVat) { this.totalPriceWithVat = totalPriceWithVat; }
-
+    public BigDecimal getTotalWithoutVat() { return totalWithoutVat; }
+    public BigDecimal getTotalWithVat() { return totalWithVat; }
+    public BigDecimal getVatAmount() { return vatAmount; }
     public boolean isEmpty() { return isEmpty; }
-    public void setEmpty(boolean empty) { isEmpty = empty; }
 }

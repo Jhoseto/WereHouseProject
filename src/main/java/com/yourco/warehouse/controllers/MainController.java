@@ -63,7 +63,7 @@ public class MainController {
             model.addAttribute("username", username);
             model.addAttribute("isAuthenticated", auth != null && auth.isAuthenticated());
 
-            return "client/catalog";
+            return "catalog";
         } catch (Exception e) {
             model.addAttribute("error", "Възникна грешка при зареждане на каталога");
             return "error/general";

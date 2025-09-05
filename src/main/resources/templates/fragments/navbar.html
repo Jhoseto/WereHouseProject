@@ -94,14 +94,15 @@
                         <!-- Опции за CLIENT -->
                         <div sec:authorize="hasRole('CLIENT')">
                             <a th:href="@{/catalog}" class="dropdown-item">
-                                <i class="bi bi-grid"></i>
+                                <i class="bi bi-grid-3x3-gap"></i>
                                 Каталог продукти
                             </a>
-                            <a th:href="@{/client/orders}" class="dropdown-item">
-                                <i class="bi bi-bag"></i>
+                            <a th:href="@{/orders}" class="dropdown-item">
+                                <i class="bi bi-bag-check"></i>
                                 Моите поръчки
                             </a>
-                            <a th:href="@{/client/profile}" class="dropdown-item">
+                            <div class="dropdown-divider"></div>
+                            <a th:href="@{/profile}" class="dropdown-item">
                                 <i class="bi bi-person-gear"></i>
                                 Профил настройки
                             </a>

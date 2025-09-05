@@ -1,4 +1,4 @@
-package com.yourco.warehouse.service.Impl;
+package com.yourco.warehouse.service.impl;
 
 import com.yourco.warehouse.dto.UserProfileViewModel;
 import com.yourco.warehouse.entity.UserEntity;

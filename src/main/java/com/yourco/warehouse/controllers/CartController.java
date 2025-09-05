@@ -1,7 +1,7 @@
-package com.yourco.warehouse.controllers.client;
+package com.yourco.warehouse.controllers;
 
 import com.yourco.warehouse.dto.CartDTO;
-import com.yourco.warehouse.service.Impl.CartServiceImpl;
+import com.yourco.warehouse.service.impl.CartServiceImpl;
 import com.yourco.warehouse.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;

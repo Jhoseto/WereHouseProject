@@ -1,4 +1,4 @@
-package com.yourco.warehouse.controllers.client;
+package com.yourco.warehouse.controllers;
 
 import com.yourco.warehouse.dto.ProductCatalogDTO;
 import com.yourco.warehouse.service.CatalogService;

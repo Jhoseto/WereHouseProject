@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="bg">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Моите поръчки - Съни Комерс</title>
+    <meta name="description" content="Преглед на всички ваши поръчки и техният статус в системата на Съни Комерс.">
+
+    <th:block th:replace="~{fragments/topHtmlImports :: topImports}"></th:block>
+    <link rel="stylesheet" href="/css/orders.css">
+</head>
+<body>
+
+<!-- Flash Messages Data -->
+<div th:replace="~{fragments/toastSystem :: flashData}"></div>
+
+<!-- Навигация -->
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+
+<!-- Toast Container -->
+<div th:replace="~{fragments/toastSystem :: toastContainer}"></div>
+
+<section class="orders-section">
+    <div class="container">
+        <!-- Breadcrumbs -->
+        <div class="breadcrumbs">
+            <a href="/" class="breadcrumb-link">
+                <i class="bi bi-house"></i>
+                Начало
+            </a>
+            <i class="bi bi-chevron-right breadcrumb-separator"></i>
+            <span class="breadcrumb-current">Моите поръчки</span>
+        </div>
+
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="header-content">
+                <h1 class="page-title">
+                    <i class="bi bi-bag-check"></i>
+                    Моите поръчки
+                </h1>
+                <p class="page-description">Преглед на всички ваши поръчки и техният статус</p>
+            </div>
+
+            <div class="header-actions">
+                <a href="/catalog" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i>
+                    Нова поръчка
+                </a>
+            </div>
+        </div>
+
+        <!-- Orders Content -->
+        <div class="orders-container">
+            <!-- Empty State -->
+            <div th:if="${orders.isEmpty()}" class="empty-state">
+                <div class="empty-content">
+                    <div class="empty-icon">
+                        <i class="bi bi-inbox"></i>
+                    </div>
+                    <h3 class="empty-title">Нямате направени поръчки</h3>
+                    <p class="empty-description">Когато направите първата си поръчка, тя ще се появи тук.</p>
+                    <a href="/catalog" class="btn btn-primary btn-large">
+                        <i class="bi bi-bag-plus"></i>
+                        Разгледай каталога
+                    </a>
+                </div>
+            </div>
+
+            <!-- Orders Table -->
+            <div th:unless="${orders.isEmpty()}" class="orders-table-wrapper">
+                <div class="table-container">
+                    <table class="orders-table">
+                        <thead class="table-header">
+                        <tr>
+                            <th class="col-order">
+                                <i class="bi bi-hash"></i>
+                                Поръчка
+                            </th>
+                            <th class="col-status">
+                                <i class="bi bi-flag"></i>
+                                Статус
+                            </th>
+                            <th class="col-date">
+                                <i class="bi bi-calendar-date"></i>
+                                Дата
+                            </th>
+                            <th class="col-amount">
+                                <i class="bi bi-currency-exchange"></i>
+                                Общо
+                            </th>
+                            <th class="col-actions">
+                                <i class="bi bi-gear"></i>
+                                Действия
+                            </th>
+                        </tr>
+                        </thead>
+                        <tbody class="table-body">
+                        <tr th:each="order : ${orders}"
+                            class="order-row"
+                            th:classappend="${order.status.name() == 'SUBMITTED' ? 'row-pending' : ''}">
+
+                            <!-- Order ID -->
+                            <td class="order-id-cell">
+                                <div class="order-info">
+                                    <span class="order-number">#<span th:text="${order.id}">1</span></span>
+                                    <span class="order-items-count">
+                                            <i class="bi bi-box"></i>
+                                            <span th:text="${order.items.size()}">3</span> артикула
+                                        </span>
+                                </div>
+                            </td>
+
+                            <!-- Status -->
+                            <td class="status-cell">
+                                    <span th:class="'status-badge status-' + ${#strings.toLowerCase(order.status.name())}"
+                                          th:attr="title=${order.status.name() == 'SUBMITTED' ? 'Очаква потвърждение от администратор' :
+                                                       (order.status.name() == 'CONFIRMED' ? 'Потвърдена и се обработва' :
+                                                       (order.status.name() == 'SHIPPED' ? 'Изпратена за доставка' :
+                                                       (order.status.name() == 'CANCELLED' ? 'Поръчката е отменена' : order.status.name())))}">
+                                        <i th:class="${order.status.name() == 'SUBMITTED' ? 'bi bi-clock' :
+                                                    (order.status.name() == 'CONFIRMED' ? 'bi bi-check-circle' :
+                                                    (order.status.name() == 'SHIPPED' ? 'bi bi-truck' :
+                                                    (order.status.name() == 'CANCELLED' ? 'bi bi-x-circle' : 'bi bi-question-circle')))}"></i>
+                                        <span th:text="${order.status.name() == 'SUBMITTED' ? 'Подадена' :
+                                                     (order.status.name() == 'CONFIRMED' ? 'Потвърдена' :
+                                                     (order.status.name() == 'SHIPPED' ? 'Изпратена' :
+                                                     (order.status.name() == 'CANCELLED' ? 'Отменена' : order.status.name())))}">Подадена</span>
+                                    </span>
+                            </td>
+
+                            <!-- Date -->
+                            <td class="date-cell">
+                                <div class="date-info">
+                                    <span class="date-primary" th:text="${#temporals.format(order.submittedAt, 'dd.MM.yyyy')}">01.01.2025</span>
+                                    <span class="date-secondary" th:text="${#temporals.format(order.submittedAt, 'HH:mm')}">12:00</span>
+                                </div>
+                            </td>
+
+                            <!-- Total Amount -->
+                            <td class="amount-cell">
+                                <div class="amount-info">
+                                    <span class="amount-primary" th:text="${#numbers.formatDecimal(order.totalGross,1,2)} + ' лв'">0.00 лв</span>
+                                    <span class="amount-secondary">
+                                            <small class="text-muted">
+                                                нето: <span th:text="${#numbers.formatDecimal(order.totalNet,1,2)}">0.00</span> лв
+                                            </small>
+                                        </span>
+                                </div>
+                            </td>
+
+                            <!-- Actions -->
+                            <td class="actions-cell">
+                                <div class="action-buttons">
+                                    <a th:href="@{'/orders/' + ${order.id}}" class="btn btn-sm btn-outline">
+                                        <i class="bi bi-eye"></i>
+                                        Детайли
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Quick Stats -->
+            <div th:unless="${orders.isEmpty()}" class="orders-stats">
+                <div class="stats-header">
+                    <h3>
+                        <i class="bi bi-graph-up"></i>
+                        Статистика
+                    </h3>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="bi bi-collection"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-number" th:text="${orders.size()}">0</div>
+                            <div class="stat-label">Общо поръчки</div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card stat-pending">
+                        <div class="stat-icon">
+                            <i class="bi bi-hourglass-split"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-number" th:text="${#lists.size(#lists.select(orders, order.status.name() == 'SUBMITTED'))}">0</div>
+                            <div class="stat-label">Чакащи потвърждение</div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card stat-confirmed">
+                        <div class="stat-icon">
+                            <i class="bi bi-check-circle"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-number" th:text="${#lists.size(#lists.select(orders, order.status.name() == 'CONFIRMED'))}">0</div>
+                            <div class="stat-label">Потвърдени</div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card stat-shipped">
+                        <div class="stat-icon">
+                            <i class="bi bi-truck"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-number" th:text="${#lists.size(#lists.select(orders, order.status.name() == 'SHIPPED'))}">0</div>
+                            <div class="stat-label">Изпратени</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Include Footer Fragment -->
+<div th:replace="~{fragments/footer :: footer}"></div>
+
+<!-- Scripts -->
+<th:block th:replace="~{fragments/bottomHtmlImports :: bottomImports}"></th:block>
+
+</body>
+</html>
