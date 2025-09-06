@@ -1,6 +1,5 @@
 package com.yourco.warehouse.service;
 
-import com.yourco.warehouse.config.CacheConfig;
 import com.yourco.warehouse.dto.ProductCatalogDTO;
 import org.springframework.cache.annotation.Cacheable;
 
@@ -25,6 +24,5 @@ public interface CatalogService {
 
     long countActiveProductsByCategory(String category);
 
-    @Cacheable(value = CacheConfig.STATISTICS_CACHE, key = "'price_stats'")
     Map<String, BigDecimal> getPriceStatistics();
 }

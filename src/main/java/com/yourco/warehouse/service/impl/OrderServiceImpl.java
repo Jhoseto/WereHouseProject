@@ -118,15 +118,8 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional(readOnly = true)
     public Optional<Order> getOrderByIdForClient(Long orderId, Long clientId) {
-        Optional<Order> orderOpt = orderRepository.findById(orderId)
+        return orderRepository.findByIdWithItems(orderId)
                 .filter(order -> order.getClient().getId().equals(clientId));
-
-        // Eager load items колекцията ако поръчката съществува
-        if (orderOpt.isPresent() && orderOpt.get().getItems() != null) {
-            orderOpt.get().getItems().size(); // Принуждава зареждането
-        }
-
-        return orderOpt;
     }
 
     @Override

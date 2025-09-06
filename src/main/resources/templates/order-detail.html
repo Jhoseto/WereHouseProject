@@ -55,7 +55,7 @@
                                         (order.status.name() == 'CONFIRMED' ? 'bi bi-check-circle' :
                                         (order.status.name() == 'SHIPPED' ? 'bi bi-truck' :
                                         (order.status.name() == 'CANCELLED' ? 'bi bi-x-circle' : 'bi bi-question-circle')))}"></i>
-                            <span th:text="${order.status.name() == 'SUBMITTED' ? 'Подадена' :
+                            <span th:text="${order.status.name() == 'SUBMITTED' ? 'Изчакваща' :
                                          (order.status.name() == 'CONFIRMED' ? 'Потвърдена' :
                                          (order.status.name() == 'SHIPPED' ? 'Изпратена' :
                                          (order.status.name() == 'CANCELLED' ? 'Отменена' : order.status.name())))}">Подадена</span>
@@ -140,21 +140,21 @@
                             <i class="bi bi-cash"></i>
                             Нето сума:
                         </span>
-                        <span class="summary-amount" id="totalNet" th:text="${#numbers.formatDecimal(order.totalNet,1,2)} + ' лв'">0.00 лв</span>
+                        <span class="summary-amount" id="totalNet" th:text="|${#numbers.formatDecimal(order.totalNet,1,2)} лв|">0.00 лв</span>
                     </div>
                     <div class="summary-row">
                         <span class="summary-label">
                             <i class="bi bi-percent"></i>
                             ДДС:
                         </span>
-                        <span class="summary-amount" id="totalVat" th:text="${#numbers.formatDecimal(order.totalVat,1,2)} + ' лв'">0.00 лв</span>
+                        <span class="summary-amount" id="totalVat" th:text="|${#numbers.formatDecimal(order.totalVat,1,2)} лв|">0.00 лв</span>
                     </div>
                     <div class="summary-row total-row">
                         <span class="summary-label">
                             <i class="bi bi-currency-dollar"></i>
                             Крайна сума:
                         </span>
-                        <strong class="total-amount" id="totalGross" th:text="${#numbers.formatDecimal(order.totalGross,1,2)} + ' лв'">0.00 лв</strong>
+                        <strong class="total-amount" id="totalGross" th:text="|${#numbers.formatDecimal(order.totalGross,1,2)} лв|">0.00 лв</strong>
                     </div>
                 </div>
             </div>
@@ -255,12 +255,12 @@
 
                             <!-- Unit Price -->
                             <td class="price-cell">
-                                <span class="unit-price" th:text="${#numbers.formatDecimal(item.unitPrice,1,2)} + ' лв'">0.00 лв</span>
+                                <span class="unit-price" th:text="|${#numbers.formatDecimal(item.unitPrice,1,2)} лв|">0.00 лв</span>
                             </td>
 
                             <!-- Total Price -->
                             <td class="total-cell">
-                                <strong class="item-total" th:text="${#numbers.formatDecimal(item.unitPrice * item.qty,1,2)} + ' лв'">0.00 лв</strong>
+                                <strong class="item-total" th:text="|${#numbers.formatDecimal(item.unitPrice * item.qty,1,2)} лв|">0.00 лв</strong>
                             </td>
 
                             <!-- Actions (only in edit mode) -->
