@@ -9,17 +9,27 @@ import com.yourco.warehouse.service.impl.OrderServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.CacheControl;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
+/**
+ * OPTIMIZED CART CONTROLLER - ПРОИЗВОДИТЕЛНОСТ И CACHE
+ * ==================================================
+ */
 @RestController
 @RequestMapping("/api/cart")
 public class CartController {
+
+    private static final Logger log = LoggerFactory.getLogger(CartController.class);
 
     private final CartServiceImpl cartService;
     private final UserService userService;
@@ -34,43 +44,78 @@ public class CartController {
         this.orderService = orderService;
     }
 
+    /**
+     * Получава всички артикули в количката с CACHE headers
+     */
     @GetMapping("/items")
     public ResponseEntity<CartDTO> getCartItems(@AuthenticationPrincipal UserDetails userDetails) {
         if (userDetails == null) {
             return ResponseEntity.status(401).build();
         }
-        Long userId = userService.getCurrentUser().getId();
-        CartDTO cart = cartService.getCart(userId);
-        return ResponseEntity.ok(cart);
+
+        try {
+            Long userId = userService.getCurrentUser().getId();
+            CartDTO cart = cartService.getCart(userId);
+
+            // Cache-контрол - не кешира ако има артикули (за актуални данни)
+            CacheControl cacheControl = cart.getItems().isEmpty()
+                    ? CacheControl.maxAge(30, TimeUnit.SECONDS)
+                    : CacheControl.noCache();
+
+            return ResponseEntity.ok()
+                    .cacheControl(cacheControl)
+                    .body(cart);
+
+        } catch (Exception e) {
+            log.error("Грешка при получаване на cart items за user: {}", userDetails.getUsername(), e);
+            return ResponseEntity.status(500).build();
+        }
     }
 
+    /**
+     * Получава броя артикули с агресивен cache
+     */
     @GetMapping(value = "/count", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Map<String, Object>> getCartCount(Authentication authentication) {
         Map<String, Object> response = new HashMap<>();
 
-        // Проверка за authentication
+        // За non-authenticated users връща 0 с дълъг cache
         if (authentication == null || !authentication.isAuthenticated()) {
             response.put("count", 0);
             response.put("hasItems", false);
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok()
+                    .cacheControl(CacheControl.maxAge(1, TimeUnit.HOURS))
+                    .body(response);
         }
 
         try {
             Long userId = userService.getCurrentUser().getId();
-            Integer count = cartService.getCartItemCount(userId);
+
+            // ПОПРАВКА: Връща брой различни артикули, не общо количество
+            Integer uniqueItemsCount = cartService.getCartItems(userId).size();
             boolean hasItems = cartService.hasItems(userId);
 
-            response.put("count", count != null ? count : 0);
+            response.put("count", uniqueItemsCount);
             response.put("hasItems", hasItems);
 
-            return ResponseEntity.ok(response);
+            // Кратък cache за count endpoint
+            return ResponseEntity.ok()
+                    .cacheControl(CacheControl.maxAge(10, TimeUnit.SECONDS))
+                    .body(response);
+
         } catch (Exception e) {
+            log.error("Грешка при получаване на cart count", e);
             response.put("count", 0);
             response.put("hasItems", false);
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok()
+                    .cacheControl(CacheControl.noCache())
+                    .body(response);
         }
     }
 
+    /**
+     * OPTIMIZED добавяне в количката с batch support
+     */
     @PostMapping(value = "/add", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Map<String, Object>> addToCart(
             @RequestParam Long productId,
@@ -80,6 +125,21 @@ public class CartController {
         Map<String, Object> response = new HashMap<>();
 
         try {
+            // Валидация на входните данни
+            if (productId == null || productId <= 0) {
+                response.put("success", false);
+                response.put("error", "Невалиден продукт");
+                response.put("errorType", "validation");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            if (quantity == null || quantity <= 0 || quantity > 999) {
+                response.put("success", false);
+                response.put("error", "Невалидно количество (1-999)");
+                response.put("errorType", "validation");
+                return ResponseEntity.badRequest().body(response);
+            }
+
             // Проверка за authentication
             if (authentication == null || !authentication.isAuthenticated()) {
                 response.put("success", false);
@@ -95,7 +155,7 @@ public class CartController {
             response.put("success", true);
             response.put("message", message);
 
-            // Връщаме информация за количката
+            // OPTIMIZED: Връщаме актуални данни в един response
             Map<String, Object> cart = new HashMap<>();
             cart.put("totalItems", cartService.getCartItemCount(userId));
             cart.put("totalQuantity", cartService.getCartItems(userId)
@@ -104,15 +164,20 @@ public class CartController {
                     .sum());
             response.put("cart", cart);
 
-            return ResponseEntity.ok(response);
+            log.debug("Успешно добавяне в количката: productId={}, quantity={}, userId={}",
+                    productId, quantity, userId);
+
+            return ResponseEntity.ok()
+                    .cacheControl(CacheControl.noCache())
+                    .body(response);
 
         } catch (IllegalArgumentException e) {
             // БИЗНЕС ЛОГИКА ГРЕШКИ - връщаме 200 OK с error съобщение
             response.put("success", false);
             response.put("error", e.getMessage());
-            response.put("errorType", "business"); // Маркираме като бизнес грешка
+            response.put("errorType", "business");
 
-            // Добавяме информация за количката дори при грешка
+            // Добавяме актуална информация за количката дори при грешка
             try {
                 Long userId = userService.getCurrentUser().getId();
                 Map<String, Object> cart = new HashMap<>();
@@ -122,9 +187,12 @@ public class CartController {
                 // Игнорираме грешки при извличане на cart info
             }
 
-            return ResponseEntity.ok(response); // 200 OK вместо 400 Bad Request
+            log.warn("Бизнес грешка при добавяне в количката: {}", e.getMessage());
+            return ResponseEntity.ok(response);
+
         } catch (Exception e) {
             // ТЕХНИЧЕСКИ ГРЕШКИ - връщаме 500
+            log.error("Техническа грешка при добавяне в количката", e);
             response.put("success", false);
             response.put("error", "Възникна техническа грешка при добавяне в количката");
             response.put("errorType", "technical");
@@ -132,6 +200,9 @@ public class CartController {
         }
     }
 
+    /**
+     * OPTIMIZED обновяване на количество
+     */
     @PostMapping(value = "/update", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Map<String, Object>> updateQuantity(
             @RequestParam Long productId,
@@ -141,6 +212,19 @@ public class CartController {
         Map<String, Object> response = new HashMap<>();
 
         try {
+            // Валидация
+            if (productId == null || productId <= 0) {
+                response.put("success", false);
+                response.put("error", "Невалиден продукт");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            if (quantity == null || quantity <= 0 || quantity > 999) {
+                response.put("success", false);
+                response.put("error", "Невалидно количество (1-999)");
+                return ResponseEntity.badRequest().body(response);
+            }
+
             // Проверка за authentication
             if (authentication == null || !authentication.isAuthenticated()) {
                 response.put("success", false);
@@ -159,24 +243,35 @@ public class CartController {
                 Map<String, Object> cart = new HashMap<>();
                 cart.put("totalItems", cartService.getCartItemCount(userId));
                 response.put("cart", cart);
+
+                log.debug("Успешно обновяване на количество: productId={}, quantity={}, userId={}",
+                        productId, quantity, userId);
             } else {
                 response.put("success", false);
                 response.put("error", "Неуспешно обновяване на количеството");
             }
 
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok()
+                    .cacheControl(CacheControl.noCache())
+                    .body(response);
 
         } catch (IllegalArgumentException e) {
             response.put("success", false);
             response.put("error", e.getMessage());
+            log.warn("Валидационна грешка при обновяване: {}", e.getMessage());
             return ResponseEntity.badRequest().body(response);
+
         } catch (Exception e) {
+            log.error("Грешка при обновяване на количество", e);
             response.put("success", false);
             response.put("error", "Възникна грешка при обновяване на количеството");
             return ResponseEntity.status(500).body(response);
         }
     }
 
+    /**
+     * OPTIMIZED премахване от количката
+     */
     @PostMapping(value = "/remove", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Map<String, Object>> removeFromCart(
             @RequestParam Long productId,
@@ -185,6 +280,13 @@ public class CartController {
         Map<String, Object> response = new HashMap<>();
 
         try {
+            // Валидация
+            if (productId == null || productId <= 0) {
+                response.put("success", false);
+                response.put("error", "Невалиден продукт");
+                return ResponseEntity.badRequest().body(response);
+            }
+
             // Проверка за authentication
             if (authentication == null || !authentication.isAuthenticated()) {
                 response.put("success", false);
@@ -203,24 +305,35 @@ public class CartController {
                 Map<String, Object> cart = new HashMap<>();
                 cart.put("totalItems", cartService.getCartItemCount(userId));
                 response.put("cart", cart);
+
+                log.debug("Успешно премахване от количката: productId={}, userId={}",
+                        productId, userId);
             } else {
                 response.put("success", false);
                 response.put("error", "Неуспешно премахване на артикула");
             }
 
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok()
+                    .cacheControl(CacheControl.noCache())
+                    .body(response);
 
         } catch (IllegalArgumentException e) {
             response.put("success", false);
             response.put("error", e.getMessage());
+            log.warn("Валидационна грешка при премахване: {}", e.getMessage());
             return ResponseEntity.badRequest().body(response);
+
         } catch (Exception e) {
+            log.error("Грешка при премахване от количката", e);
             response.put("success", false);
             response.put("error", "Възникна грешка при премахване от количката");
             return ResponseEntity.status(500).body(response);
         }
     }
 
+    /**
+     * OPTIMIZED изчистване на количката
+     */
     @PostMapping(value = "/clear", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Map<String, Object>> clearCart(Authentication authentication) {
         Map<String, Object> response = new HashMap<>();
@@ -245,11 +358,47 @@ public class CartController {
             cart.put("totalItems", 0);
             response.put("cart", cart);
 
-            return ResponseEntity.ok(response);
+            log.info("Успешно изчистване на количката: userId={}, removedItems={}",
+                    userId, removedCount);
+
+            return ResponseEntity.ok()
+                    .cacheControl(CacheControl.noCache())
+                    .body(response);
 
         } catch (Exception e) {
+            log.error("Грешка при изчистване на количката", e);
             response.put("success", false);
             response.put("error", "Възникна грешка при изчистване на количката");
+            return ResponseEntity.status(500).body(response);
+        }
+    }
+
+    /**
+     * Health check endpoint за cart service
+     */
+    @GetMapping("/health")
+    public ResponseEntity<Map<String, Object>> healthCheck(Authentication authentication) {
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            if (authentication != null && authentication.isAuthenticated()) {
+                Long userId = userService.getCurrentUser().getId();
+                Integer count = cartService.getCartItemCount(userId);
+                response.put("status", "healthy");
+                response.put("cartItems", count);
+            } else {
+                response.put("status", "healthy");
+                response.put("cartItems", 0);
+            }
+
+            return ResponseEntity.ok()
+                    .cacheControl(CacheControl.maxAge(30, TimeUnit.SECONDS))
+                    .body(response);
+
+        } catch (Exception e) {
+            log.error("Cart health check failed", e);
+            response.put("status", "unhealthy");
+            response.put("error", e.getMessage());
             return ResponseEntity.status(500).body(response);
         }
     }

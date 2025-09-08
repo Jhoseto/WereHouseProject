@@ -1,13 +1,67 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="bg">
+
+<!--
+  BOTTOM HTML IMPORTS - ОПТИМИЗИРАН ЗА ПО-ДОБРА ПРОИЗВОДИТЕЛНОСТ
+  ============================================================
+-->
+
 <div th:fragment="bottomImports">
 
-    <!-- Cart Manager -->
+    <!-- TOAST STYLES - За уведомления (зарежда се първо) -->
+    <link rel="stylesheet" href="/css/toastNotifications.css">
+
+    <!-- CORE SCRIPTS - Основни функционалности -->
+
+    <!-- Navbar functionality (включва ToastManager) -->
+    <script src="/js/navbar.js"></script>
+
+    <!-- Cart functionality (зарежда се след navbar) -->
     <script src="/js/cart.js"></script>
     <script src="/js/cartPanel.js"></script>
 
-    <!-- Navbar functionality -->
-    <script src="/js/navbar.js"></script>
     <!-- Order Management Scripts -->
     <script src="/js/order-detail.js"></script>
     <script src="/js/orders-nav.js"></script>
 
+    <!-- INITIALIZATION SCRIPT -->
+    <script>
+        // Проверява дали всички необходими обекти са инициализирани
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('=== SYSTEM INITIALIZATION ===');
+
+            // Проверка за ToastManager
+            if (window.toastManager) {
+                console.log('✓ ToastManager инициализиран');
+            } else {
+                console.warn('✗ ToastManager не е инициализиран');
+            }
+
+            // Проверка за CartManager
+            if (window.cartManager) {
+                console.log('✓ CartManager инициализиран');
+            } else {
+                console.warn('✗ CartManager не е инициализиран');
+            }
+
+            // Проверка за CartPanel
+            if (window.cartPanel) {
+                console.log('✓ CartPanel инициализиран');
+            } else {
+                console.warn('✗ CartPanel не е инициализиран');
+            }
+
+            // Проверка за CSRF токен
+            if (window.csrfToken) {
+                console.log('✓ CSRF токен настроен');
+            } else {
+                console.warn('✗ CSRF токен не е настроен');
+            }
+
+            console.log('=== INITIALIZATION COMPLETE ===');
+        });
+    </script>
+
 </div>
+
+</html>

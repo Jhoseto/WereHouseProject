@@ -1,6 +1,6 @@
 /**
- * CART MANAGER - FIXED VERSION WITH PROPER CSRF AND SYNC
- * ======================================================
+ * OPTIMIZED CART MANAGER - ПРОИЗВОДИТЕЛНОСТ И CACHE
+ * ===============================================
  */
 class CartManager {
     constructor() {
@@ -13,6 +13,19 @@ class CartManager {
             count: '/api/cart/count',
             items: '/api/cart/items'
         };
+
+        // CACHE за по-бърза работа
+        this.cache = {
+            count: 0,
+            hasItems: false,
+            items: null,
+            lastUpdate: 0
+        };
+
+        // DEBOUNCE за batch операции
+        this.pendingOperations = new Map();
+        this.operationTimeout = null;
+
         this.init();
     }
 
@@ -25,9 +38,31 @@ class CartManager {
         // Слуша за промени в localStorage от други табове
         window.addEventListener('storage', (e) => {
             if (e.key === 'cart_updated') {
+                this.invalidateCache();
                 this.updateBadge();
             }
         });
+
+        // Слуша за visibility change за refresh при връщане към таба
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden && this.isCacheStale()) {
+                this.updateBadge();
+            }
+        });
+    }
+
+    /**
+     * Проверява дали cache-а е остарял (над 30 секунди)
+     */
+    isCacheStale() {
+        return Date.now() - this.cache.lastUpdate > 30000;
+    }
+
+    /**
+     * Инвалидира cache-а
+     */
+    invalidateCache() {
+        this.cache.lastUpdate = 0;
     }
 
     /**
@@ -63,53 +98,88 @@ class CartManager {
     }
 
     /**
-     * Добавя продукт в кошницата
+     * DEBOUNCED добавяне - групира бързи заявки
      * @param {string|number} productId - ID на продукта
      * @param {number} quantity - Количество за добавяне
      * @returns {Promise<boolean>} - true ако е успешно
      */
     async add(productId, quantity = 1) {
-        try {
-            const response = await fetch(this.apiEndpoints.add, {
-                method: 'POST',
-                headers: this.getPostHeaders(),
-                body: `productId=${productId}&quantity=${quantity}`,
-                credentials: 'include'
-            });
+        // Добавя в pending операции
+        const existingQty = this.pendingOperations.get(productId) || 0;
+        this.pendingOperations.set(productId, existingQty + quantity);
 
-            if (response.ok) {
-                const data = await response.json();
-                if (data.success) {
-                    // Показва toast notification
-                    window.toastManager?.success(data.message || 'Продуктът е добавен в кошницата');
-
-                    // Обновява badge
-                    await this.updateBadge();
-
-                    // Автоматично отваря панела след кратко забавяне
-                    setTimeout(() => {
-                        window.cartPanel?.open();
-                    }, 300);
-
-                    return true;
-                } else {
-                    window.toastManager?.error(data.error || 'Грешка при добавяне в кошницата');
-                    return false;
-                }
-            } else {
-                // Проверява за 403 CSRF грешка
-                if (response.status === 403) {
-                    window.toastManager?.error('Сесията ви е изтекла. Моля, презаредете страницата.');
-                } else {
-                    window.toastManager?.error('Грешка при добавяне в кошницата');
-                }
-                return false;
-            }
-        } catch (error) {
-            console.error('Cart add error:', error);
-            window.toastManager?.error('Грешка при добавяне в кошницата');
-            return false;
+        // Отменя предишния timeout
+        if (this.operationTimeout) {
+            clearTimeout(this.operationTimeout);
         }
+
+        // Чака 300ms за още операции
+        return new Promise((resolve) => {
+            this.operationTimeout = setTimeout(async () => {
+                const success = await this.flushPendingOperations();
+                resolve(success);
+            }, 300);
+        });
+    }
+
+    /**
+     * Изпълнява всички pending операции наведнъж
+     */
+    async flushPendingOperations() {
+        if (this.pendingOperations.size === 0) return true;
+
+        const operations = Array.from(this.pendingOperations.entries());
+        this.pendingOperations.clear();
+
+        let allSuccess = true;
+
+        for (const [productId, quantity] of operations) {
+            try {
+                const response = await fetch(this.apiEndpoints.add, {
+                    method: 'POST',
+                    headers: this.getPostHeaders(),
+                    body: `productId=${productId}&quantity=${quantity}`,
+                    credentials: 'include'
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        // Обновява cache веднага
+                        if (data.cart && data.cart.totalItems !== undefined) {
+                            this.updateCacheCount(data.cart.totalItems);
+                        }
+
+                        window.toastManager?.success(data.message || 'Продуктът е добавен в кошницата');
+                    } else {
+                        window.toastManager?.error(data.error || 'Грешка при добавяне в кошницата');
+                        allSuccess = false;
+                    }
+                } else {
+                    if (response.status === 403) {
+                        window.toastManager?.error('Сесията ви е изтекла. Моля, презаредете страницата.');
+                    } else {
+                        window.toastManager?.error('Грешка при добавяне в кошницата');
+                    }
+                    allSuccess = false;
+                }
+            } catch (error) {
+                console.error('Cart add error:', error);
+                window.toastManager?.error('Грешка при добавяне в кошницата');
+                allSuccess = false;
+            }
+        }
+
+        // Обновява badge и отваря панела
+        await this.updateBadge();
+
+        if (allSuccess) {
+            setTimeout(() => {
+                window.cartPanel?.open();
+            }, 200);
+        }
+
+        return allSuccess;
     }
 
     /**
@@ -130,15 +200,18 @@ class CartManager {
             if (response.ok) {
                 const data = await response.json();
                 if (data.success) {
-                    window.toastManager?.success('Количеството е обновено');
-                    await this.updateBadge();
+                    // Обновява cache
+                    if (data.cart && data.cart.totalItems !== undefined) {
+                        this.updateCacheCount(data.cart.totalItems);
+                    }
+
+                    // Не показва toast - cartPanel.js ще покаже
                     return true;
                 } else {
                     window.toastManager?.error(data.error || 'Грешка при обновяване на количеството');
                     return false;
                 }
             } else {
-                // Проверява за 403 CSRF грешка
                 if (response.status === 403) {
                     window.toastManager?.error('Сесията ви е изтекла. Моля, презаредете страницата.');
                 } else {
@@ -170,15 +243,19 @@ class CartManager {
             if (response.ok) {
                 const data = await response.json();
                 if (data.success) {
-                    window.toastManager?.success('Продуктът е премахнат от кошницата');
+                    // Обновява cache
+                    if (data.cart && data.cart.totalItems !== undefined) {
+                        this.updateCacheCount(data.cart.totalItems);
+                    }
+
+                    window.toastManager?.success(data.message || 'Артикулът е премахнат');
                     await this.updateBadge();
                     return true;
                 } else {
-                    window.toastManager?.error(data.error || 'Грешка при премахване от кошницата');
+                    window.toastManager?.error(data.error || 'Грешка при премахване');
                     return false;
                 }
             } else {
-                // Проверява за 403 CSRF грешка
                 if (response.status === 403) {
                     window.toastManager?.error('Сесията ви е изтекла. Моля, презаредете страницата.');
                 } else {
@@ -208,15 +285,17 @@ class CartManager {
             if (response.ok) {
                 const data = await response.json();
                 if (data.success) {
-                    window.toastManager?.success('Кошницата е изчистена');
+                    // Изчиства cache
+                    this.updateCacheCount(0);
+
+                    window.toastManager?.success(data.message || 'Количката е изчистена');
                     await this.updateBadge();
                     return true;
                 } else {
-                    window.toastManager?.error(data.error || 'Грешка при изчистване на кошницата');
+                    window.toastManager?.error(data.error || 'Грешка при изчистване');
                     return false;
                 }
             } else {
-                // Проверява за 403 CSRF грешка
                 if (response.status === 403) {
                     window.toastManager?.error('Сесията ви е изтекла. Моля, презаредете страницата.');
                 } else {
@@ -232,17 +311,27 @@ class CartManager {
     }
 
     /**
-     * Получава всички артикули в кошницата
+     * Получава всички артикули в кошницата с CACHE
      * @returns {Promise<Object|null>} - Данни за кошницата или null при грешка
      */
     async getCartData() {
+        // Използва cache ако е свеж
+        if (this.cache.items && !this.isCacheStale()) {
+            return this.cache.items;
+        }
+
         try {
             const response = await fetch(this.apiEndpoints.items, {
                 credentials: 'include'
             });
 
             if (response.ok) {
-                return await response.json();
+                const data = await response.json();
+                // Обновява cache
+                this.cache.items = data;
+                this.cache.lastUpdate = Date.now();
+                this.updateCacheCount(data.totalItems || 0);
+                return data;
             } else {
                 console.error('Failed to fetch cart data');
                 return null;
@@ -254,9 +343,15 @@ class CartManager {
     }
 
     /**
-     * Обновява badge с броя артикули - FIXED VERSION
+     * Обновява badge с броя артикули - OPTIMIZED с cache
      */
     async updateBadge() {
+        // Използва cache ако е свеж
+        if (!this.isCacheStale() && this.cache.count !== undefined) {
+            this.setBadge(this.cache.count);
+            return;
+        }
+
         try {
             const response = await fetch(this.apiEndpoints.count, {
                 credentials: 'include'
@@ -264,15 +359,38 @@ class CartManager {
 
             if (response.ok) {
                 const data = await response.json();
-                this.setBadge(data.count || 0);
+                const count = data.count || 0;
 
-                // FIXED: Уведомява други табове за промяната, БЕЗ рекурсивно извикване
-                localStorage.setItem('cart_updated', Date.now().toString());
-                localStorage.removeItem('cart_updated');
+                this.updateCacheCount(count);
+                this.setBadge(count);
+
+                // Уведомява други табове БЕЗ рекурсивно извикване
+                this.notifyOtherTabs();
             }
         } catch (error) {
             console.error('Badge update error:', error);
             // Тихо fail за badge update - не пречи на UX
+        }
+    }
+
+    /**
+     * Обновява cache count и hasItems
+     */
+    updateCacheCount(count) {
+        this.cache.count = count;
+        this.cache.hasItems = count > 0;
+        this.cache.lastUpdate = Date.now();
+    }
+
+    /**
+     * Уведомява други табове за промяна
+     */
+    notifyOtherTabs() {
+        try {
+            localStorage.setItem('cart_updated', Date.now().toString());
+            localStorage.removeItem('cart_updated');
+        } catch (error) {
+            // Игнорира localStorage грешки
         }
     }
 
@@ -289,104 +407,55 @@ class CartManager {
         this.badge.textContent = numCount > 99 ? '99+' : numCount.toString();
 
         // Показва/скрива badge
-        this.badge.classList.toggle('show', numCount > 0);
-
-        // Добавя animation при промяна
         if (numCount > 0) {
-            this.badge.style.animation = 'none';
-            setTimeout(() => {
-                this.badge.style.animation = '';
-            }, 10);
+            this.badge.classList.add('show');
+        } else {
+            this.badge.classList.remove('show');
         }
     }
 
     /**
-     * Utility методи
+     * Връща дали има артикули в кошницата
+     * @returns {boolean}
      */
-    formatPrice(price) {
-        return parseFloat(price || 0).toFixed(2);
+    hasItems() {
+        return this.cache.hasItems;
     }
 
     /**
-     * Проверява дали има артикули в кошницата
-     * @returns {Promise<boolean>}
+     * Връща cached count
+     * @returns {number}
      */
-    async hasItems() {
-        const cartData = await this.getCartData();
-        return cartData && cartData.items && cartData.items.length > 0;
-    }
-
-    /**
-     * Получава общия брой артикули
-     * @returns {Promise<number>}
-     */
-    async getTotalQuantity() {
-        try {
-            const response = await fetch(this.apiEndpoints.count, {
-                credentials: 'include'
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                return data.count || 0;
-            }
-            return 0;
-        } catch (error) {
-            console.error('Get total quantity error:', error);
-            return 0;
-        }
+    getCount() {
+        return this.cache.count;
     }
 }
 
 /**
- * GLOBAL CART FUNCTIONS
- * =====================
+ * ГЛОБАЛНИ ФУНКЦИИ ЗА СЪВМЕСТИМОСТ
+ * ===============================
  */
 
 /**
- * Глобална функция за добавяне в кошница - за HTML onclick events
+ * Добавя продукт в кошницата - глобална функция за HTML onclick
  * @param {string|number} productId - ID на продукта
  * @param {number} quantity - Количество
  */
 async function addToCart(productId, quantity = 1) {
     if (window.cartManager) {
-        await window.cartManager.add(productId, quantity);
+        return await window.cartManager.add(productId, quantity);
     } else {
         console.error('CartManager не е инициализиран');
+        return false;
     }
 }
 
 /**
- * Глобална функция за промяна на количество - за HTML events
- * @param {string|number} productId - ID на продукта
- * @param {number} newQuantity - Ново количество
- */
-async function updateCartQuantity(productId, newQuantity) {
-    if (window.cartManager) {
-        await window.cartManager.updateQuantity(productId, newQuantity);
-    } else {
-        console.error('CartManager не е инициализиран');
-    }
-}
-
-/**
- * Глобална функция за премахване от кошница - за HTML onclick events
- * @param {string|number} productId - ID на продукта
- */
-async function removeFromCart(productId) {
-    if (window.cartManager) {
-        await window.cartManager.remove(productId);
-    } else {
-        console.error('CartManager не е инициализиран');
-    }
-}
-
-/**
- * Глобална функция за изчистване на кошницата - за HTML onclick events
+ * Изчиства количката след потвърждение
  */
 async function clearCart() {
     if (window.cartManager) {
-        const confirmed = confirm('Сигурни ли сте, че искате да изчистите кошницата?');
+        const confirmed = confirm('Сигурни ли сте, че искате да изчистите количката?');
         if (confirmed) {
             await window.cartManager.clear();
         }
@@ -396,8 +465,8 @@ async function clearCart() {
 }
 
 /**
- * INITIALIZATION - САМО CART MANAGER
- * =================================
+ * INITIALIZATION
+ * =============
  */
 document.addEventListener('DOMContentLoaded', function() {
     // Създава глобалния cart manager

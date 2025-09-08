@@ -65,12 +65,10 @@ public class CartServiceImpl implements CartService {
             CartItem item = existingItem.get();
             item.setQuantity(totalQuantityNeeded);
             cartItemRepository.save(item);
-            log.info("Обновено количество в количката: {} -> {}", product.getSku(), totalQuantityNeeded);
             return String.format("Обновено количество: %d", totalQuantityNeeded);
         } else {
             CartItem newItem = new CartItem(user, product, quantity);
             cartItemRepository.save(newItem);
-            log.info("Добавен нов артикул в количката: {} x {}", product.getSku(), quantity);
             return String.format("Добавен: %s", product.getName());
         }
     }
@@ -93,7 +91,6 @@ public class CartServiceImpl implements CartService {
         cartItem.setQuantity(newQuantity);
         cartItemRepository.save(cartItem);
 
-        log.info("Обновено количество: {} -> {}", product.getSku(), newQuantity);
         return true;
     }
 
@@ -109,7 +106,6 @@ public class CartServiceImpl implements CartService {
         String productSku = cartItem.getProduct().getSku();
         cartItemRepository.delete(cartItem);
 
-        log.info("Премахнат артикул от количката: {}", productSku);
         return true;
     }
 
@@ -124,7 +120,6 @@ public class CartServiceImpl implements CartService {
 
         if (count > 0) {
             cartItemRepository.deleteAllByUserId(userId);
-            log.info("Изчистена количка за потребител {} - премахнати {} артикула", userId, count);
         }
 
         return count;
@@ -198,7 +193,6 @@ public class CartServiceImpl implements CartService {
             productRepository.save(product);
         }
 
-        log.info("Резервирани количества за {} артикула", items.size());
         return true;
     }
 
@@ -217,7 +211,6 @@ public class CartServiceImpl implements CartService {
             }
         }
 
-        log.info("Освободени резервации за {} артикула", items.size());
         return true;
     }
 
@@ -238,7 +231,6 @@ public class CartServiceImpl implements CartService {
         }
 
         clearCart(userId);
-        log.info("Финализирана продажба за {} артикула", items.size());
         return true;
     }
 

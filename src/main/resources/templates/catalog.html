@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="bg">
+<html xmlns:th="http://www.thymeleaf.org" lang="bg"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -123,6 +124,8 @@
         </div>
     </div>
 </section>
+<!-- CART PANEL FRAGMENT - Зарежда се само когато е нужно -->
+<div sec:authorize="isAuthenticated()" th:replace="~{fragments/cartFragment :: cartPanel}"></div>
 
 <!-- Include Footer Fragment -->
 <div th:replace="~{fragments/footer :: footer}"></div>

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="bg">
+
+<!--
+  CART FRAGMENT - ОТДЕЛЕН ОТ NAVBAR ЗА ПО-ДОБРА ПРОИЗВОДИТЕЛНОСТ
+  ==============================================================
+-->
+
+<!-- SLIDE-OUT CART PANEL -->
+<div th:fragment="cartPanel" id="cartPanelContainer">
+    <!-- Overlay за затваряне при клик извън панела -->
+    <div class="cart-panel-overlay" id="cartPanelOverlay"></div>
+
+    <!-- Основния cart panel -->
+    <div class="cart-panel" id="cartPanel">
+        <!-- Cart Panel Header -->
+        <div class="cart-panel-header">
+            <h3 class="d-flex align-items-center mb-0">
+                <i class="bi bi-cart3 me-2"></i>
+                Моята количка
+            </h3>
+            <button class="cart-panel-close" onclick="closeCartPanel()" aria-label="Затвори количката">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+        <!-- Cart Panel Content - Динамично съдържание -->
+        <div class="cart-panel-content" id="cartPanelContent">
+            <!-- Loading state по подразбиране -->
+            <div class="cart-loading">
+                <div class="cart-spinner"></div>
+                <p>Зареждане на количката...</p>
+            </div>
+        </div>
+
+        <!-- Cart Panel Footer - Динамично съдържание -->
+        <div class="cart-panel-footer" id="cartPanelFooter">
+            <!-- Footer се зарежда динамично -->
+        </div>
+    </div>
+</div>
+
+<!-- CART STYLES - Включени в fragment-a за оптимизация -->
+<div th:fragment="cartStyles">
+    <link rel="stylesheet" href="/css/cartPanel.css">
+</div>
+
+<!-- CART SCRIPTS - Включени в fragment-a за оптимизация -->
+<div th:fragment="cartScripts">
+    <!-- Cart Manager трябва да се зареди преди cartPanel -->
+    <script src="/js/cart.js"></script>
+    <script src="/js/cartPanel.js"></script>
+</div>
+
+<!-- TOAST CONTAINER - За уведомления -->
+<div th:fragment="toastContainer" id="toastContainer" class="toast-container">
+    <!-- Toast-овете се създават динамично -->
+</div>
+
+<!-- CSRF TOKEN SETUP - За JavaScript заявки -->
+<div th:fragment="csrfSetup">
+    <script th:inline="javascript">
+        // Глобални CSRF променливи за JavaScript
+        window.csrfToken = /*[[${_csrf.token}]]*/ '';
+        window.csrfHeader = /*[[${_csrf.headerName}]]*/ 'X-CSRF-TOKEN';
+    </script>
+</div>
+
+</html>
