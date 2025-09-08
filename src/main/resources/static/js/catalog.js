@@ -27,6 +27,10 @@ class CatalogManager {
         this.loadingState = document.getElementById('loading-state');
         this.emptyState = document.getElementById('empty-state');
         this.noResults = document.getElementById('no-results');
+        this.currentPage = 1;
+        this.perPage = 24; // default стойност
+        this.perPageSelect = document.getElementById('per-page');
+        this.paginationContainer = document.getElementById('pagination-container');
 
         this.init();
     }
@@ -71,6 +75,14 @@ class CatalogManager {
         if (this.gridViewBtn && this.listViewBtn) {
             this.gridViewBtn.addEventListener('click', () => this.setView('grid'));
             this.listViewBtn.addEventListener('click', () => this.setView('list'));
+        }
+
+        if (this.perPageSelect) {
+            this.perPageSelect.addEventListener('change', () => {
+                this.perPage = parseInt(this.perPageSelect.value);
+                this.currentPage = 1;
+                this.renderProducts();
+            });
         }
 
         // Reset search
@@ -199,17 +211,100 @@ class CatalogManager {
             return;
         }
 
+        // изчисляване на продукти за текущата страница
+        const start = (this.currentPage - 1) * this.perPage;
+        const end = start + this.perPage;
+        const productsToShow = this.filteredProducts.slice(start, end);
+
         this.productsContainer.innerHTML = '';
         this.productsContainer.className = `products-container ${this.currentView === 'list' ? 'products-list' : 'products-grid'}`;
 
-        this.filteredProducts.forEach(product => {
+        productsToShow.forEach(product => {
             const productHTML = this.createProductCard(product, this.currentView === 'grid');
             this.productsContainer.insertAdjacentHTML('beforeend', productHTML);
         });
 
         this.bindProductEvents();
         this.productsContainer.classList.remove('hidden');
+
+        // рисуване на страниците
+        this.renderPagination();
     }
+
+    renderPagination() {
+        if (!this.paginationContainer) return;
+
+        const totalPages = Math.ceil(this.filteredProducts.length / this.perPage);
+        if (totalPages <= 1) {
+            this.paginationContainer.innerHTML = '';
+            return;
+        }
+
+        let html = `
+    <div class="pagination-wrapper">
+        <div class="pagination-info">
+            Страница ${this.currentPage} от ${totalPages}
+        </div>
+        <div class="pagination">
+    `;
+
+        // бутон "Назад"
+        html += `
+        <button class="pagination-btn pagination-prev ${this.currentPage === 1 ? 'disabled' : ''}" data-page="${this.currentPage - 1}">
+            <i class="bi bi-chevron-left"></i>
+        </button>
+    `;
+
+        // страници
+        const startPage = Math.max(1, this.currentPage - 2);
+        const endPage = Math.min(totalPages, this.currentPage + 2);
+
+        if (startPage > 1) {
+            html += `<button class="pagination-btn" data-page="1">1</button>`;
+            if (startPage > 2) {
+                html += `<span class="pagination-ellipsis">…</span>`;
+            }
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
+            html += `
+            <button class="pagination-btn ${i === this.currentPage ? 'active' : ''}" data-page="${i}">${i}</button>
+        `;
+        }
+
+        if (endPage < totalPages) {
+            if (endPage < totalPages - 1) {
+                html += `<span class="pagination-ellipsis">…</span>`;
+            }
+            html += `<button class="pagination-btn" data-page="${totalPages}">${totalPages}</button>`;
+        }
+
+        // бутон "Напред"
+        html += `
+        <button class="pagination-btn pagination-next ${this.currentPage === totalPages ? 'disabled' : ''}" data-page="${this.currentPage + 1}">
+            <i class="bi bi-chevron-right"></i>
+        </button>
+    `;
+
+        html += `</div></div>`;
+        this.paginationContainer.innerHTML = html;
+
+        // обработка на клик
+        this.paginationContainer.querySelectorAll('.pagination-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const page = parseInt(btn.dataset.page);
+                if (page > 0 && page <= totalPages && !btn.classList.contains('disabled')) {
+                    this.currentPage = page;
+                    this.renderProducts();
+                    this.renderPagination();
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            });
+        });
+    }
+
+
 
     createProductCard(product, isGrid) {
         const safeName = this.escapeHtml(product.name || 'Без име');

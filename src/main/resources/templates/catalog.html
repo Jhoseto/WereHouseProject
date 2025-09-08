@@ -76,6 +76,15 @@
                         <option value="price-desc">Цена низходящо</option>
                     </select>
                 </div>
+                <div class="filter-group">
+                    <label for="per-page" class="filter-label">Показвай</label>
+                    <select id="per-page" class="filter-select">
+                        <option value="12">12 на страница</option>
+                        <option value="24" selected>24 на страница</option>
+                        <option value="48">48 на страница</option>
+                        <option value="96">96 на страница</option>
+                    </select>
+                </div>
             </div>
 
             <div class="view-controls">
@@ -123,7 +132,21 @@
             </button>
         </div>
     </div>
+    <!-- Pagination Container - НОВА СЕКЦИЯ -->
+    <div id="pagination-container" class="pagination-container"></div>
 </section>
+
+
+<!-- FLOATING CART ICON - САМО ЗА КАТАЛОЖНАТА СТРАНИЦА -->
+<div sec:authorize="isAuthenticated()" class="floating-cart-container">
+    <span class="floating-cart-badge" id="cart-badge">0</span>
+    <div class="floating-cart-icon" onclick="toggleCartPanel()"
+         title="Отвори количката">
+        <i class="bi bi-cart3"></i>
+        <div class="floating-cart-ripple"></div>
+    </div>
+</div>
+
 <!-- CART PANEL FRAGMENT - Зарежда се само когато е нужно -->
 <div sec:authorize="isAuthenticated()" th:replace="~{fragments/cartFragment :: cartPanel}"></div>
 
