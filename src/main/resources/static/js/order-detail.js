@@ -1,349 +1,467 @@
 /**
- * ФИНАЛЕН ORDER DETAIL MANAGER - БЕЗ ГРЕШКИ
- * ========================================
+ * НОВ ORDER DETAIL MANAGER - ОПРОСТЕНА ЛОГИКА
+ * ============================================
  */
-
 class OrderDetailManager {
     constructor() {
-        this.isEditMode = false;
-        this.csrfToken = window.csrfToken || '';
-        this.csrfHeader = window.csrfHeader || 'X-CSRF-TOKEN';
+        this.orderId = this.getOrderId();
+        this.originalData = new Map(); // За съхранение на оригиналните стойности
+        this.hasChanges = false;
+
+        // Елементи
+        this.saveBtn = document.getElementById('saveChanges');
+        this.resetBtn = document.getElementById('resetChanges');
+        this.loadingOverlay = document.getElementById('loadingOverlay');
+
+        // CSRF token
+        this.csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
+        this.csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content');
+
         this.init();
     }
 
     init() {
-        this.setupEventListeners();
-        console.log('Order Detail Manager initialized');
-    }
+        console.log('Инициализиране на OrderDetailManager за поръчка:', this.orderId);
 
-    setupEventListeners() {
-        // Edit mode toggle
-        const editToggle = document.getElementById('editModeToggle');
-        if (editToggle) {
-            editToggle.addEventListener('click', () => this.toggleEditMode());
-        }
+        // Запазваме оригиналните стойности
+        this.saveOriginalData();
 
-        // Exit edit mode
-        const exitEditMode = document.getElementById('exitEditMode');
-        if (exitEditMode) {
-            exitEditMode.addEventListener('click', () => this.exitEditMode());
-        }
-
-        // Save/Cancel buttons
-        const saveBtn = document.getElementById('saveAllChanges');
-        const cancelBtn = document.getElementById('cancelAllChanges');
-
-        if (saveBtn) {
-            saveBtn.addEventListener('click', () => this.exitEditMode());
-        }
-
-        if (cancelBtn) {
-            cancelBtn.addEventListener('click', () => this.exitEditMode());
-        }
-
-        // Quantity controls
+        // Setup event listeners
         this.setupQuantityControls();
-
-        // Remove item buttons
+        this.setupActionButtons();
         this.setupRemoveButtons();
+
+        console.log('OrderDetailManager инициализиран успешно');
     }
 
-    toggleEditMode() {
-        if (this.isEditMode) {
-            this.exitEditMode();
-        } else {
-            this.enterEditMode();
-        }
+    /**
+     * Запазва оригиналните количества за всички артикули
+     */
+    saveOriginalData() {
+        const rows = document.querySelectorAll('.item-row');
+        rows.forEach(row => {
+            const productId = row.dataset.productId;
+            const originalQuantity = parseInt(row.dataset.originalQuantity);
+            const unitPrice = parseFloat(row.dataset.unitPrice);
+
+            this.originalData.set(productId, {
+                quantity: originalQuantity,
+                unitPrice: unitPrice
+            });
+        });
+
+        console.log('Запазени оригинални данни:', this.originalData);
     }
 
-    enterEditMode() {
-        this.isEditMode = true;
+    /**
+     * Запазва актуалните стойности от DOM-а като нови "оригинални" стойности
+     * Използва се след успешно запазване
+     */
+    saveOriginalDataFromDOM() {
+        const rows = document.querySelectorAll('.item-row:not(.marked-for-removal)');
+        this.originalData.clear();
 
-        // Update UI elements
-        const editToggle = document.getElementById('editModeToggle');
-        const editNotice = document.getElementById('editModeNotice');
-        const saveSection = document.getElementById('saveChangesSection');
+        rows.forEach(row => {
+            const productId = row.dataset.productId;
+            const quantityInput = row.querySelector('.quantity-input');
+            const currentQuantity = quantityInput ? parseInt(quantityInput.value) : parseInt(row.dataset.originalQuantity);
+            const unitPrice = parseFloat(row.dataset.unitPrice);
 
-        if (editToggle) {
-            editToggle.classList.add('active');
-            editToggle.querySelector('.edit-text').textContent = 'Изход';
-            editToggle.querySelector('i').className = 'bi bi-x-circle';
-        }
+            this.originalData.set(productId, {
+                quantity: currentQuantity,
+                unitPrice: unitPrice
+            });
 
-        if (editNotice) {
-            editNotice.style.display = 'block';
-        }
-
-        if (saveSection) {
-            saveSection.style.display = 'flex';
-        }
-
-        // Show edit controls
-        document.querySelectorAll('.edit-column').forEach(col => {
-            col.style.display = 'table-cell';
+            // Обновяваме и data атрибута
+            row.dataset.originalQuantity = currentQuantity;
         });
 
-        document.querySelectorAll('.item-actions').forEach(actions => {
-            actions.style.display = 'flex';
-        });
-
-        this.showToast('info', 'Режим на редактиране', 'Можете да променяте количествата и да премахвате артикули');
+        console.log('Запазени нови оригинални данни:', this.originalData);
     }
 
-    exitEditMode() {
-        this.isEditMode = false;
-
-        // Update UI elements
-        const editToggle = document.getElementById('editModeToggle');
-        const editNotice = document.getElementById('editModeNotice');
-        const saveSection = document.getElementById('saveChangesSection');
-
-        if (editToggle) {
-            editToggle.classList.remove('active');
-            editToggle.querySelector('.edit-text').textContent = 'Редактирай';
-            editToggle.querySelector('i').className = 'bi bi-pencil-square';
-        }
-
-        if (editNotice) {
-            editNotice.style.display = 'none';
-        }
-
-        if (saveSection) {
-            saveSection.style.display = 'none';
-        }
-
-        // Hide edit controls
-        document.querySelectorAll('.edit-column').forEach(col => {
-            col.style.display = 'none';
-        });
-
-        document.querySelectorAll('.quantity-edit-panel').forEach(panel => {
-            panel.style.display = 'none';
-        });
-
-        document.querySelectorAll('.quantity-display').forEach(display => {
-            display.style.display = 'flex';
-        });
-    }
-
+    /**
+     * Setup за quantity контролите
+     */
     setupQuantityControls() {
-        // Edit quantity buttons
-        document.addEventListener('click', (e) => {
-            if (e.target.closest('.edit-quantity-btn')) {
-                const row = e.target.closest('.item-row');
-                this.showQuantityEdit(row);
+        // Quantity input промени
+        document.addEventListener('input', (e) => {
+            if (e.target.matches('.quantity-input')) {
+                this.handleQuantityChange(e.target);
             }
         });
 
-        // Quantity +/- buttons
+        // Quantity бутони (+/-)
         document.addEventListener('click', (e) => {
-            if (e.target.closest('.quantity-increase')) {
-                const input = e.target.closest('.quantity-controls').querySelector('.quantity-input');
-                input.value = Math.min(parseInt(input.value) + 1, 999);
-            }
-
             if (e.target.closest('.quantity-decrease')) {
-                const input = e.target.closest('.quantity-controls').querySelector('.quantity-input');
-                input.value = Math.max(parseInt(input.value) - 1, 1);
+                const input = e.target.closest('.quantity-input-wrapper').querySelector('.quantity-input');
+                const currentValue = parseInt(input.value) || 1;
+                if (currentValue > 1) {
+                    input.value = currentValue - 1;
+                    this.handleQuantityChange(input);
+                }
             }
-        });
 
-        // Update quantity button
-        document.addEventListener('click', (e) => {
-            if (e.target.closest('.update-quantity-btn')) {
-                const row = e.target.closest('.item-row');
-                this.updateQuantity(row);
-            }
-        });
-
-        // Cancel quantity edit
-        document.addEventListener('click', (e) => {
-            if (e.target.closest('.cancel-quantity-btn')) {
-                const row = e.target.closest('.item-row');
-                this.cancelQuantityEdit(row);
-            }
-        });
-
-        // Enter key to save
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && e.target.classList.contains('quantity-input')) {
-                e.preventDefault();
-                const row = e.target.closest('.item-row');
-                this.updateQuantity(row);
+            if (e.target.closest('.quantity-increase')) {
+                const input = e.target.closest('.quantity-input-wrapper').querySelector('.quantity-input');
+                const currentValue = parseInt(input.value) || 1;
+                if (currentValue < 999) {
+                    input.value = currentValue + 1;
+                    this.handleQuantityChange(input);
+                }
             }
         });
     }
 
-    showQuantityEdit(row) {
-        const quantityDisplay = row.querySelector('.quantity-display');
-        const quantityEdit = row.querySelector('.quantity-edit-panel');
-        const quantityInput = quantityEdit.querySelector('.quantity-input');
-        const currentValue = row.querySelector('.quantity-value').textContent.trim();
+    /**
+     * Обработва промяна в количеството
+     */
+    handleQuantityChange(input) {
+        const row = input.closest('.item-row');
+        const productId = row.dataset.productId;
+        const newQuantity = parseInt(input.value) || 1;
+        const originalQuantity = this.originalData.get(productId).quantity;
 
-        quantityDisplay.style.display = 'none';
-        quantityEdit.style.display = 'block';
-        quantityInput.value = currentValue;
-
-        setTimeout(() => {
-            quantityInput.focus();
-            quantityInput.select();
-        }, 100);
-    }
-
-    cancelQuantityEdit(row) {
-        const quantityDisplay = row.querySelector('.quantity-display');
-        const quantityEdit = row.querySelector('.quantity-edit-panel');
-
-        quantityDisplay.style.display = 'flex';
-        quantityEdit.style.display = 'none';
-    }
-
-    async updateQuantity(row) {
-        const productId = row.getAttribute('data-product-id');
-        const quantityInput = row.querySelector('.quantity-input');
-        const newQuantity = parseInt(quantityInput.value);
-        const originalQuantity = parseInt(row.querySelector('.quantity-value').textContent);
-
-        if (!newQuantity || newQuantity < 1) {
-            this.showToast('error', 'Грешка', 'Количеството трябва да бъде поне 1');
+        // Валидация
+        if (newQuantity < 1) {
+            input.value = 1;
+            return;
+        }
+        if (newQuantity > 999) {
+            input.value = 999;
             return;
         }
 
-        const orderId = this.getOrderId();
-        const updateBtn = row.querySelector('.update-quantity-btn');
+        // Обновяване на общата цена за реда
+        this.updateRowTotal(row, newQuantity);
+
+        // Проверка за промени
+        const hasChanged = newQuantity !== originalQuantity;
+        row.classList.toggle('changed', hasChanged);
+
+        // Проверка дали има общи промени
+        this.checkForChanges();
+    }
+
+    /**
+     * Обновява общата цена за даден ред
+     */
+    updateRowTotal(row, quantity) {
+        const productId = row.dataset.productId;
+        const unitPrice = this.originalData.get(productId).unitPrice;
+        const totalPrice = (unitPrice * quantity).toFixed(2);
+
+        const totalElement = row.querySelector('.item-total');
+        totalElement.textContent = totalPrice + ' лв.';
+    }
+
+    /**
+     * Setup за action бутоните
+     */
+    setupActionButtons() {
+        // Запази промените
+        if (this.saveBtn) {
+            this.saveBtn.addEventListener('click', () => {
+                this.saveChanges();
+            });
+        }
+
+        // Върни оригиналните стойности
+        if (this.resetBtn) {
+            this.resetBtn.addEventListener('click', () => {
+                this.resetChanges();
+            });
+        }
+    }
+
+    /**
+     * Setup за бутоните за премахване
+     */
+    setupRemoveButtons() {
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('.remove-item-btn')) {
+                const row = e.target.closest('.item-row');
+                this.removeItem(row);
+            }
+        });
+    }
+
+    /**
+     * Премахва артикул (маркира за премахване)
+     */
+    /**
+     * Премахва артикул (маркира за премахване)
+     */
+    removeItem(row) {
+        const productName = row.querySelector('.product-name').textContent;
+
+        if (confirm(`Сигурни ли сте, че искате да премахнете "${productName}" от поръчката?`)) {
+            row.style.opacity = '0.5';
+            row.style.textDecoration = 'line-through';
+            row.classList.add('marked-for-removal');
+
+            // Скриваме quantity контролите
+            const quantityInput = row.querySelector('.quantity-input');
+            if (quantityInput) {
+                quantityInput.disabled = true;
+            }
+
+            this.checkForChanges();
+            this.showToast('warning', 'Артикулът е маркиран за премахване. Натиснете "Запази промените" за да потвърдите.');
+
+            // 🔵 Quick loader за UX
+            window.universalLoader.showQuick("Маркиране...", "Очаква потвърждение", 1000, "secondary");
+        }
+    }
+
+
+    /**
+     * Проверява дали има промени и активира/деактивира бутоните
+     */
+    checkForChanges() {
+        const changedRows = document.querySelectorAll('.item-row.changed');
+        const removedRows = document.querySelectorAll('.item-row.marked-for-removal');
+
+        this.hasChanges = changedRows.length > 0 || removedRows.length > 0;
+
+        // Активиране/деактивиране на бутоните
+        if (this.saveBtn) {
+            this.saveBtn.disabled = !this.hasChanges;
+        }
+        if (this.resetBtn) {
+            this.resetBtn.disabled = !this.hasChanges;
+        }
+
+        console.log('Промени:', this.hasChanges, 'Променени редове:', changedRows.length, 'Премахнати:', removedRows.length);
+    }
+
+    /**
+     * Запазва всички промени с един API call
+     */
+
+    async saveChanges() {
+        if (!this.hasChanges) {
+            this.showToast('info', 'Няма промени за запазване.');
+            return;
+        }
+
+        const items = [];
+        const rows = document.querySelectorAll('.item-row:not(.marked-for-removal)');
+
+        rows.forEach(row => {
+            const productId = parseInt(row.dataset.productId);
+            const quantityInput = row.querySelector('.quantity-input');
+            const quantity = quantityInput ? parseInt(quantityInput.value) : parseInt(row.dataset.originalQuantity);
+
+            items.push({
+                productId: productId,
+                quantity: quantity
+            });
+        });
+
+        console.log('Изпращане на промени:', items);
 
         try {
-            // Show loader
-            window.universalLoader?.show('Обновяване на количеството...', 'Запазване на промените');
-            updateBtn.disabled = true;
-            updateBtn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Обновява...';
+            // 🔵 Показваме Universal Loader
+            window.universalLoader.show("Запазване...", "Моля изчакайте", "primary", "save");
 
-            // API call
-            const response = await fetch(`/api/orders/${orderId}/items/${productId}/quantity`, {
-                method: 'POST',
+            const response = await fetch(`/api/orders/${this.orderId}`, {
+                method: 'PUT',
                 headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Content-Type': 'application/json',
                     [this.csrfHeader]: this.csrfToken
                 },
-                body: `quantity=${newQuantity}`
+                body: JSON.stringify({ items: items })
             });
 
             const result = await response.json();
 
             if (result.success) {
-                // Update UI
-                row.querySelector('.quantity-value').textContent = newQuantity;
-                this.cancelQuantityEdit(row);
-                this.showToast('success', 'Успешно', 'Количеството е обновено');
-
-                // Reload page to refresh totals
-                setTimeout(() => {
-                    window.location.reload();
-                }, 1000);
+                this.handleSuccessResponse(result);
             } else {
-                // Show error from backend
-                this.showToast('error', 'Грешка', result.message);
-                // Reset to original value
-                quantityInput.value = originalQuantity;
+                this.handleErrorResponse(result);
             }
+
         } catch (error) {
-            console.error('Update quantity error:', error);
-            this.showToast('error', 'Грешка', 'Възникна грешка при обновяването');
-            quantityInput.value = originalQuantity;
+            console.error('Грешка при запазване:', error);
+            this.showToast('error', 'Възникна грешка при запазването. Моля, опитайте отново.');
         } finally {
-            // Hide loader and reset button
-            window.universalLoader?.hide();
-            updateBtn.disabled = false;
-            updateBtn.innerHTML = '<i class="bi bi-check"></i> Обнови';
+            // 🟢 Скриваме Universal Loader
+            window.universalLoader.hide();
         }
     }
 
-    setupRemoveButtons() {
-        document.addEventListener('click', (e) => {
-            if (e.target.closest('.remove-item-btn')) {
-                const row = e.target.closest('.item-row');
-                this.confirmRemoveItem(row);
-            }
-        });
-    }
 
-    confirmRemoveItem(row) {
-        const productName = row.querySelector('.product-name').textContent;
-        const productSku = row.querySelector('.product-sku').textContent;
-
-        const isConfirmed = confirm(
-            `Сигурни ли сте, че искате да премахнете:\n\n${productName} (${productSku})\n\nТова действие не може да бъде отменено.`
-        );
-
-        if (isConfirmed) {
-            this.removeItem(row);
+    /**
+     * Обработва успешен отговор от сървъра
+     */
+    handleSuccessResponse(result) {
+        // Основно съобщение за успех
+        if (result.updatedItems && result.updatedItems.length > 0) {
+            this.showToast('success', `Поръчката ви е обновена успешно !`);
         }
+
+        // Предупреждения за артикули с недостатъчна наличност
+        if (result.warnings && result.warnings.length > 0) {
+            result.warnings.forEach(warning => {
+                this.showToast('warning', warning.message);
+            });
+        }
+
+        // Ако има общи суми, ги обновяваме
+        if (result.totals) {
+            this.updateTotals(result.totals);
+        }
+
+        // 🟢 Презареждаме артикулите от бекенда
+        this.reloadItems();
     }
 
-    async removeItem(row) {
-        const productId = row.getAttribute('data-product-id');
-        const orderId = this.getOrderId();
-        const removeBtn = row.querySelector('.remove-item-btn');
-
+    /**
+     * Презарежда артикулите от бекенда и обновява таблицата
+     */
+    async reloadItems() {
         try {
-            // Show loader
-            window.universalLoader?.show('Премахване на артикула...', 'Моля изчакайте');
-            removeBtn.disabled = true;
-            removeBtn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Премахва...';
+            window.universalLoader.show("Презареждане...", "Моля изчакайте", "secondary", "refresh");
 
-            // API call
-            const response = await fetch(`/api/orders/${orderId}/items/${productId}`, {
-                method: 'DELETE',
+            const response = await fetch(`/api/orders/${this.orderId}/items`, {
                 headers: {
                     [this.csrfHeader]: this.csrfToken
                 }
             });
 
-            const result = await response.json();
+            const itemsHtml = await response.text();
 
-            if (result.success) {
-                // Animate removal
-                row.style.transition = 'all 0.3s ease';
-                row.style.opacity = '0';
-                row.style.transform = 'translateX(100%)';
-
-                setTimeout(() => {
-                    this.showToast('success', 'Успешно', 'Артикулът е премахнат');
-                    // Reload to refresh totals
-                    window.location.reload();
-                }, 300);
-            } else {
-                // Show error from backend
-                this.showToast('error', 'Грешка', result.message);
+            // Замества таблицата с нов HTML от бекенда
+            const container = document.getElementById('orderItemsContainer');
+            if (container) {
+                container.innerHTML = itemsHtml;
             }
+
+            // Реинициализация на event listeners и originalData
+            this.saveOriginalDataFromDOM();
+            this.checkForChanges();
+            this.setupQuantityControls();
+            this.setupActionButtons();
+            this.setupRemoveButtons();
+
         } catch (error) {
-            console.error('Remove item error:', error);
-            this.showToast('error', 'Грешка', 'Възникна грешка при премахването');
+            console.error('Грешка при презареждане на артикули:', error);
+            this.showToast('error', 'Неуспешно презареждане на артикулите.');
         } finally {
-            // Hide loader and reset button
-            window.universalLoader?.hide();
-            removeBtn.disabled = false;
-            removeBtn.innerHTML = '<i class="bi bi-trash"></i> Премахни';
+            window.universalLoader.hide();
         }
     }
 
+    /**
+     * Обработва грешен отговор от сървъра
+     */
+    handleErrorResponse(result) {
+        if (result.errors && result.errors.length > 0) {
+            result.errors.forEach(error => {
+                this.showToast('error', error.message);
+            });
+        } else {
+            this.showToast('error', result.message || 'Възникна грешка при запазването.');
+        }
+    }
+
+    /**
+     * Обновява общите суми в UI
+     */
+    updateTotals(totals) {
+        const totalNetElement = document.getElementById('totalNet');
+        const totalVatElement = document.getElementById('totalVat');
+        const totalGrossElement = document.getElementById('totalGross');
+
+        if (totalNetElement && totals.totalNet !== undefined) {
+            totalNetElement.textContent = totals.totalNet.toFixed(2) + ' лв.';
+        }
+        if (totalVatElement && totals.totalVat !== undefined) {
+            totalVatElement.textContent = totals.totalVat.toFixed(2) + ' лв.';
+        }
+        if (totalGrossElement && totals.totalGross !== undefined) {
+            totalGrossElement.textContent = totals.totalGross.toFixed(2) + ' лв.';
+        }
+    }
+
+    /**
+     * Връща всички промени към оригиналните стойности
+     */
+    resetChanges() {
+        const rows = document.querySelectorAll('.item-row');
+
+        rows.forEach(row => {
+            const productId = row.dataset.productId;
+            const originalData = this.originalData.get(productId);
+
+            // Възстановяване на количеството
+            const quantityInput = row.querySelector('.quantity-input');
+            if (quantityInput) {
+                quantityInput.value = originalData.quantity;
+                quantityInput.disabled = false;
+            }
+
+            // Възстановяване на общата цена
+            this.updateRowTotal(row, originalData.quantity);
+
+            // Премахване на change индикаторите
+            row.classList.remove('changed', 'marked-for-removal');
+            row.style.opacity = '';
+            row.style.textDecoration = '';
+        });
+
+        this.checkForChanges();
+        this.showToast('info', 'Всички промени са върнати към оригиналните стойности.');
+    }
+
+    /**
+     * Премахва всички индикатори за промени
+     */
+    resetChangeIndicators() {
+        const rows = document.querySelectorAll('.item-row');
+        rows.forEach(row => {
+            row.classList.remove('changed', 'marked-for-removal');
+            row.style.opacity = '';
+            row.style.textDecoration = '';
+        });
+        this.hasChanges = false;
+        this.checkForChanges();
+    }
+
+    /**
+     * Получава ID на поръчката от URL
+     */
     getOrderId() {
         const pathParts = window.location.pathname.split('/');
         return pathParts[pathParts.length - 1];
     }
 
-    showToast(type, title, message) {
+    /**
+     * Показва toast съобщение
+     */
+    showToast(type, message, title = '') {
         if (window.toastManager) {
-            window.toastManager[type](message);
+            window.toastManager[type](message, title);
         } else {
             console.log(`${type.toUpperCase()}: ${title} - ${message}`);
-            alert(`${title}: ${message}`);
+            alert(`${title ? title + ': ' : ''}${message}`);
         }
     }
 }
 
-// Initialize when DOM is loaded
+// ==========================================
+// INITIALIZATION
+// ==========================================
+
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Order Detail page loaded');
-    window.orderDetailManager = new OrderDetailManager();
+    console.log('Order Detail страница заредена');
+
+    // Инициализираме само ако има редактируеми елементи
+    const editableInputs = document.querySelectorAll('.quantity-input');
+    if (editableInputs.length > 0) {
+        window.orderDetailManager = new OrderDetailManager();
+        console.log('OrderDetailManager инициализиран за редактиране');
+    } else {
+        console.log('Поръчката не може да се редактира - OrderDetailManager не е нужен');
+    }
 });

@@ -73,4 +73,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     @QueryHints(@QueryHint(name = "org.hibernate.readOnly", value = "true"))
     @Transactional(readOnly = true)
     java.math.BigDecimal getTotalValueByStatus(@Param("status") OrderStatus status);
+
+    @Query("SELECT DISTINCT o FROM Order o LEFT JOIN FETCH o.items oi LEFT JOIN FETCH oi.product WHERE o.id = :orderId")
+    Optional<Order> findByIdWithItemsForUpdate(@Param("orderId") Long orderId);
 }

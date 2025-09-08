@@ -20,8 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 @Transactional
@@ -98,9 +97,6 @@ public class OrderServiceImpl implements OrderService {
 
             // 9. Изчисти количката
             cartService.clearCart(userId);
-
-            log.info("Създадена поръчка #{} за клиент {} с {} артикула",
-                    savedOrder.getId(), client.getUsername(), cartItems.size());
 
             return savedOrder;
 
@@ -195,8 +191,7 @@ public class OrderServiceImpl implements OrderService {
         order = recalculateOrderTotals(order);
         orderRepository.save(order);
 
-        log.info("Обновено количество в поръчка #{}: {} -> {}",
-                orderId, currentReserved, newQuantity);
+
 
         return true;
     }
@@ -235,8 +230,6 @@ public class OrderServiceImpl implements OrderService {
         order = recalculateOrderTotals(order);
         orderRepository.save(order);
 
-        log.info("Премахнат артикул {} от поръчка #{}", product.getSku(), orderId);
-
         return true;
     }
 
@@ -264,5 +257,174 @@ public class OrderServiceImpl implements OrderService {
         order.setTotalGross(totalNet.add(totalVat));
 
         return order;
+    }
+
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Map<String, Object> updateOrderBatch(Long orderId, Map<Long, Integer> itemUpdates, Long clientId) {
+        Map<String, Object> result = new HashMap<>();
+        List<Map<String, Object>> warnings = new ArrayList<>();
+        List<Map<String, Object>> errors = new ArrayList<>();
+        List<String> updatedItems = new ArrayList<>();
+
+        try {
+            // 1. Намери поръчката БЕЗ readOnly
+            Optional<Order> orderOpt = orderRepository.findByIdWithItemsForUpdate(orderId);
+            if (orderOpt.isEmpty()) {
+                result.put("success", false);
+                result.put("message", "Поръчката не е намерена");
+                return result;
+            }
+
+            Order order = orderOpt.get();
+
+            // Провери дали принадлежи на клиента
+            if (!order.getClient().getId().equals(clientId)) {
+                result.put("success", false);
+                result.put("message", "Поръчката не е намерена");
+                return result;
+            }
+
+            // 2. Провери дали може да се редактира
+            if (!canEditOrder(order)) {
+                result.put("success", false);
+                result.put("message", "Поръчката не може да се редактира в текущото ѝ състояние");
+                return result;
+            }
+
+            // 3. Валидация - поръчката не може да остане празна
+            if (itemUpdates == null || itemUpdates.isEmpty()) {
+                result.put("success", false);
+                result.put("message", "Поръчката не може да остане без артикули");
+                return result;
+            }
+
+            // 4. Създай map на съществуващите артикули
+            Map<Long, OrderItem> existingItems = new HashMap<>();
+            for (OrderItem item : order.getItems()) {
+                existingItems.put(item.getProduct().getId(), item);
+            }
+
+            // 5. Обработи премахванията (артикули които не са в новия списък)
+            List<OrderItem> itemsToRemove = new ArrayList<>();
+
+            for (OrderItem item : new ArrayList<>(order.getItems())) {
+                if (!itemUpdates.containsKey(item.getProduct().getId())) {
+                    // Този артикул трябва да се премахне
+                    ProductEntity product = item.getProduct();
+                    product.releaseReservation(item.getQty().intValue());
+                    productRepository.save(product);
+                    itemsToRemove.add(item);
+                }
+            }
+
+            // 6. Премахни артикулите от поръчката
+            for (OrderItem itemToRemove : itemsToRemove) {
+                order.getItems().remove(itemToRemove);
+                orderItemRepository.delete(itemToRemove);
+            }
+
+            // 7. Обработи обновяванията на количествата
+            for (Map.Entry<Long, Integer> entry : itemUpdates.entrySet()) {
+                Long productId = entry.getKey();
+                Integer newQuantity = entry.getValue();
+
+                // Валидация на количеството
+                if (newQuantity == null || newQuantity <= 0) {
+                    Map<String, Object> error = new HashMap<>();
+                    error.put("message", "Невалидно количество за продукт с ID " + productId);
+                    error.put("productId", productId);
+                    errors.add(error);
+                    continue;
+                }
+
+                OrderItem orderItem = existingItems.get(productId);
+                if (orderItem == null) {
+                    Map<String, Object> error = new HashMap<>();
+                    error.put("message", "Продуктът с ID " + productId + " не е намерен в поръчката");
+                    error.put("productId", productId);
+                    errors.add(error);
+                    continue;
+                }
+
+                ProductEntity product = orderItem.getProduct();
+                int currentReserved = orderItem.getQty().intValue();
+                int difference = newQuantity - currentReserved;
+
+                // Проверка на наличност ако увеличаваме
+                if (difference > 0) {
+                    int available = product.getQuantityAvailable();
+                    if (available < difference) {
+                        // Не можем да увеличим с толкова - задай максималното възможно
+                        int maxPossible = currentReserved + available;
+
+                        Map<String, Object> warning = new HashMap<>();
+                        warning.put("message", String.format("Продуктът '%s' няма достатъчна наличност. Заявени: %d, налични: %d, актуализирано на: %d",
+                                product.getName(), newQuantity, available, maxPossible));
+                        warning.put("productId", productId);
+                        warning.put("productName", product.getName());
+                        warning.put("requestedQuantity", newQuantity);
+                        warning.put("availableQuantity", available);
+                        warning.put("finalQuantity", maxPossible);
+                        warnings.add(warning);
+
+                        // Използвай максималното възможно количество
+                        newQuantity = maxPossible;
+                        difference = available;
+                    }
+
+                    if (difference > 0) {
+                        product.reserveQuantity(difference);
+                        productRepository.save(product);
+                    }
+                } else if (difference < 0) {
+                    // Намаляваме - освободи излишното
+                    product.releaseReservation(Math.abs(difference));
+                    productRepository.save(product);
+                }
+
+                // Обнови количеството
+                orderItem.setQty(BigDecimal.valueOf(newQuantity));
+                updatedItems.add(product.getName() + " (нова бройка: " + newQuantity + ")");
+            }
+
+            // 8. Преизчисли общите суми
+            order = recalculateOrderTotals(order);
+
+            // 9. Запази поръчката
+            orderRepository.save(order);
+
+            // 10. Подготви резултата
+            result.put("success", true);
+            result.put("message", "Поръчката е обновена успешно");
+            result.put("updatedItems", updatedItems);
+
+            if (!warnings.isEmpty()) {
+                result.put("warnings", warnings);
+            }
+
+            if (!errors.isEmpty()) {
+                result.put("errors", errors);
+            }
+
+            // 11. Добави новите общи суми
+            Map<String, Object> totals = new HashMap<>();
+            totals.put("totalNet", order.getTotalNet());
+            totals.put("totalVat", order.getTotalVat());
+            totals.put("totalGross", order.getTotalGross());
+            result.put("totals", totals);
+
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            result.put("success", false);
+            result.put("message", e.getMessage());
+            log.warn("Валидационна грешка при batch обновяване на поръчка {}: {}", orderId, e.getMessage());
+        } catch (Exception e) {
+            result.put("success", false);
+            result.put("message", "Възникна грешка при обновяването на поръчката");
+            log.error("Грешка при batch обновяване на поръчка {}: {}", orderId, e.getMessage(), e);
+        }
+
+        return result;
     }
 }

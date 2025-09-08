@@ -189,4 +189,66 @@ public class OrderController {
 
         return ResponseEntity.ok(response);
     }
+
+    /**
+     * НОВ API endpoint за batch обновяване на поръчка
+     */
+    @PutMapping("/api/orders/{orderId}")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> updateOrderBatch(@PathVariable Long orderId,
+                                                                @RequestBody Map<String, Object> requestBody,
+                                                                Authentication authentication) {
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            if (authentication == null || !authentication.isAuthenticated()) {
+                response.put("success", false);
+                response.put("message", "Трябва да сте влезли в системата");
+                return ResponseEntity.status(401).body(response);
+            }
+
+            UserEntity currentUser = userService.getCurrentUser();
+
+            // Извличане на items от request body
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> items = (List<Map<String, Object>>) requestBody.get("items");
+
+            if (items == null) {
+                response.put("success", false);
+                response.put("message", "Липсват данни за артикулите");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            // Конвертиране в Map<Long, Integer>
+            Map<Long, Integer> itemUpdates = new HashMap<>();
+            for (Map<String, Object> item : items) {
+                try {
+                    Long productId = Long.valueOf(item.get("productId").toString());
+                    Integer quantity = Integer.valueOf(item.get("quantity").toString());
+                    itemUpdates.put(productId, quantity);
+                } catch (Exception e) {
+                    response.put("success", false);
+                    response.put("message", "Невалидни данни за артикул: " + item);
+                    return ResponseEntity.badRequest().body(response);
+                }
+            }
+
+            // Извикване на batch update метода
+            Map<String, Object> result = orderService.updateOrderBatch(orderId, itemUpdates, currentUser.getId());
+
+            return ResponseEntity.ok(result);
+
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            log.warn("Валидационна грешка при batch обновяване на поръчка {}: {}", orderId, e.getMessage());
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+
+        } catch (Exception e) {
+            log.error("Грешка при batch обновяване на поръчка {}: {}", orderId, e.getMessage(), e);
+            response.put("success", false);
+            response.put("message", "Възникна грешка при обновяването на поръчката");
+            return ResponseEntity.status(500).body(response);
+        }
+    }
 }

@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public interface OrderService {
@@ -75,4 +76,13 @@ public interface OrderService {
      * @return обновената поръчка
      */
     Order recalculateOrderTotals(Order order);
+
+    /**
+     * Обновява всички артикули в поръчка с една операция (batch update)
+     * @param orderId ID на поръчката
+     * @param itemUpdates Map с productId -> quantity за новите количества
+     * @param clientId ID на клиента (за сигурност)
+     * @return Map с резултат и детайли за операцията
+     */
+    Map<String, Object> updateOrderBatch(Long orderId, Map<Long, Integer> itemUpdates, Long clientId);
 }

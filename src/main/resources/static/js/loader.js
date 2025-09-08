@@ -168,12 +168,7 @@ class UniversalLoader {
         this.show(text, subtext, 'secondary', `cart_${operation}`);
     }
 
-    /**
-     * Показва loader за каталог
-     */
-    showCatalog(text = 'Зареждане на продукти...', subtext = 'Моля изчакайте') {
-        this.show(text, subtext, 'accent', 'catalog_load');
-    }
+
 
     /**
      * Унищожава loader-а и почиства ресурсите
