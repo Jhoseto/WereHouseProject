@@ -1,65 +1,147 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" >
-<body>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="bg">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>403 - Отказан достъп | Warehouse Portal</title>
+
+    <!-- Bootstrap Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.1/font/bootstrap-icons.min.css" rel="stylesheet">
+
+    <!-- Error Styles -->
+    <link rel="stylesheet" href="/css/error.css">
+</head>
+<body class="error-page">
 <section>
     <div class="error-container">
         <div class="error-visual">
-            <div class="error-number">500</div>
-            <div class="error-icon">🔧</div>
+            <div class="error-number">403</div>
+            <div class="error-icon">
+                <i class="bi bi-shield-exclamation"></i>
+            </div>
         </div>
 
         <div class="error-content">
-            <h1 class="error-title">Вътрешна грешка на сървъра</h1>
+            <h1 class="error-title">Отказан достъп</h1>
             <p class="error-message">
-                Съжаляваме, възникна неочаквана грешка. Нашият екип е уведомен за проблема.
+                Съжаляваме, но нямате права за достъп до тази страница или ресурс.
+                Възможно е да се нуждаете от по-високи права или да не сте влезли в системата.
             </p>
-
-            <div class="error-suggestions">
-                <h3>Какво можете да направите:</h3>
-                <ul>
-                    <li>Опитайте да презаредите страницата след няколко секунди</li>
-                    <li>Проверете дали действието което сте извършили е валидно</li>
-                    <li>Върнете се към началната страница и опитайте отново</li>
-                    <li>Ако проблемът продължава, свържете се с администратора</li>
-                </ul>
-            </div>
-
-            <div class="error-actions">
-                <button onclick="location.reload()" class="btn">
-                    <span class="nav-icon">🔄</span> Презареди страницата
-                </button>
-                <a th:href="@{/}" class="btn btn-secondary">
-                    <span class="nav-icon">🏠</span> Начална страница
-                </a>
-                <button onclick="history.back()" class="btn btn-secondary">
-                    <span class="nav-icon">⬅️</span> Назад
-                </button>
-            </div>
 
             <div class="error-status">
                 <div class="status-indicator">
                     <div class="status-dot"></div>
-                    <span>Системата работи с ограничения</span>
+                    <span>Необходима е автентикация или авторизация</span>
                 </div>
                 <small class="text-muted">
-                    Ако проблемът продължава, моля свържете се с техническата поддръжка
+                    Моля, влезте в профила си или се свържете с администратор
                 </small>
             </div>
 
+            <div class="error-suggestions">
+                <h3>
+                    <i class="bi bi-lightbulb"></i>
+                    Възможни причини
+                </h3>
+                <div class="suggestions-grid">
+                    <div class="suggestion-card">
+                        <div class="suggestion-icon">
+                            <i class="bi bi-person-x"></i>
+                        </div>
+                        <div class="suggestion-content">
+                            <h4>Не сте влезли в системата</h4>
+                            <p>Тази страница изисква да бъдете автентикирани в системата</p>
+                        </div>
+                    </div>
+
+                    <div class="suggestion-card">
+                        <div class="suggestion-icon">
+                            <i class="bi bi-shield-slash"></i>
+                        </div>
+                        <div class="suggestion-content">
+                            <h4>Недостатъчни права</h4>
+                            <p>Вашият потребителски профил няма права за достъп до този ресурс</p>
+                        </div>
+                    </div>
+
+                    <div class="suggestion-card">
+                        <div class="suggestion-icon">
+                            <i class="bi bi-clock"></i>
+                        </div>
+                        <div class="suggestion-content">
+                            <h4>Изтекла сесия</h4>
+                            <p>Възможно е вашата сесия да е изтекла и да трябва да влезете отново</p>
+                        </div>
+                    </div>
+
+                    <div class="suggestion-card">
+                        <div class="suggestion-icon">
+                            <i class="bi bi-person-gear"></i>
+                        </div>
+                        <div class="suggestion-content">
+                            <h4>Нужда от администратор</h4>
+                            <p>Свържете се с администратор за предоставяне на необходимите права</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="error-actions">
+                <a th:href="@{/login}" class="btn" sec:authorize="!isAuthenticated()">
+                    <i class="bi bi-box-arrow-in-right nav-icon"></i>
+                    Влезте в системата
+                </a>
+                <a th:href="@{/}" class="btn btn-secondary">
+                    <i class="bi bi-house nav-icon"></i>
+                    Начална страница
+                </a>
+                <button onclick="history.back()" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left nav-icon"></i>
+                    Назад
+                </button>
+            </div>
+
+            <div sec:authorize="isAuthenticated()" class="error-details">
+                <h3>
+                    <i class="bi bi-info-circle"></i>
+                    Информация за текущия потребител
+                </h3>
+                <p>
+                    Влезли сте като: <strong sec:authentication="name">username</strong><br>
+                    Роли: <span sec:authentication="authorities">roles</span>
+                </p>
+            </div>
+
             <div class="helpful-links">
-                <h4>Алтернативни действия:</h4>
+                <h4>
+                    <i class="bi bi-compass"></i>
+                    Налични ресурси
+                </h4>
                 <div class="links-grid">
                     <a th:href="@{/catalog}" class="help-link">
-                        <span class="link-icon">📦</span>
-                        <span class="link-text">Разгледай каталога</span>
+                        <i class="bi bi-box-seam link-icon"></i>
+                        <span class="link-text">Каталог продукти</span>
                     </a>
                     <a th:href="@{/orders}" class="help-link" sec:authorize="hasRole('CLIENT')">
-                        <span class="link-icon">📋</span>
+                        <i class="bi bi-list-check link-icon"></i>
                         <span class="link-text">Моите заявки</span>
                     </a>
                     <a th:href="@{/admin}" class="help-link" sec:authorize="hasRole('ADMIN')">
-                        <span class="link-icon">⚙️</span>
+                        <i class="bi bi-gear link-icon"></i>
                         <span class="link-text">Админ панел</span>
+                    </a>
+                    <a th:href="@{/about}" class="help-link">
+                        <i class="bi bi-info-square link-icon"></i>
+                        <span class="link-text">За системата</span>
+                    </a>
+                    <a th:href="@{/login}" class="help-link" sec:authorize="!isAuthenticated()">
+                        <i class="bi bi-box-arrow-in-right link-icon"></i>
+                        <span class="link-text">Вход в системата</span>
+                    </a>
+                    <a th:href="@{/logout}" class="help-link" sec:authorize="isAuthenticated()">
+                        <i class="bi bi-box-arrow-right link-icon"></i>
+                        <span class="link-text">Изход от системата</span>
                     </a>
                 </div>
             </div>
@@ -67,280 +149,64 @@
     </div>
 </section>
 
-<style>
-    .error-container {
-        max-width: 600px;
-        margin: 50px auto;
-        text-align: center;
-        padding: 0 20px;
-    }
-
-    .error-visual {
-        margin-bottom: 40px;
-        position: relative;
-    }
-
-    .error-number {
-        font-size: 8rem;
-        font-weight: bold;
-        color: #e67e22;
-        line-height: 1;
-        margin-bottom: 20px;
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
-    }
-
-    .error-icon {
-        font-size: 4rem;
-        margin-bottom: 20px;
-    }
-
-    .error-title {
-        font-size: 2rem;
-        color: #2c3e50;
-        margin-bottom: 20px;
-    }
-
-    .error-message {
-        font-size: 1.1rem;
-        color: #6c757d;
-        margin-bottom: 30px;
-        line-height: 1.6;
-    }
-
-    .error-suggestions {
-        text-align: left;
-        background: white;
-        padding: 25px;
-        border-radius: 8px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        margin: 30px 0;
-        border-left: 4px solid #e67e22;
-    }
-
-    .error-suggestions h3 {
-        color: #2c3e50;
-        margin-bottom: 15px;
-        font-size: 1.2rem;
-    }
-
-    .error-suggestions ul {
-        margin: 0;
-        padding-left: 20px;
-        color: #6c757d;
-    }
-
-    .error-suggestions li {
-        margin-bottom: 8px;
-        line-height: 1.5;
-    }
-
-    .error-actions {
-        display: flex;
-        gap: 15px;
-        justify-content: center;
-        flex-wrap: wrap;
-        margin: 40px 0;
-    }
-
-    .error-status {
-        background: #fff8dc;
-        border: 1px solid #f39c12;
-        border-radius: 6px;
-        padding: 20px;
-        margin: 30px 0;
-    }
-
-    .status-indicator {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
-        margin-bottom: 10px;
-        font-weight: 600;
-        color: #e67e22;
-    }
-
-    .status-dot {
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        background: #f39c12;
-        animation: pulse 2s infinite;
-    }
-
-    @keyframes pulse {
-        0% {
-            transform: scale(1);
-            opacity: 1;
-        }
-        50% {
-            transform: scale(1.1);
-            opacity: 0.7;
-        }
-        100% {
-            transform: scale(1);
-            opacity: 1;
-        }
-    }
-
-    .helpful-links {
-        text-align: left;
-        background: white;
-        padding: 25px;
-        border-radius: 8px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        margin-top: 30px;
-    }
-
-    .helpful-links h4 {
-        color: #2c3e50;
-        margin-bottom: 20px;
-        font-size: 1.1rem;
-    }
-
-    .links-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 15px;
-    }
-
-    .help-link {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 15px;
-        border: 1px solid #e9ecef;
-        border-radius: 6px;
-        text-decoration: none;
-        color: #2c3e50;
-        transition: all 0.3s ease;
-    }
-
-    .help-link:hover {
-        border-color: #e67e22;
-        background: #fef9f2;
-        transform: translateY(-1px);
-        box-shadow: 0 2px 8px rgba(230, 126, 34, 0.2);
-    }
-
-    .link-icon {
-        font-size: 1.5rem;
-    }
-
-    .link-text {
-        font-weight: 600;
-    }
-
-    .text-muted {
-        color: #6c757d;
-    }
-
-    /* Animation */
-    @keyframes shake {
-        0%, 100% { transform: translateX(0); }
-        10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
-        20%, 40%, 60%, 80% { transform: translateX(5px); }
-    }
-
-    .error-icon {
-        animation: shake 0.8s ease-in-out infinite alternate;
-    }
-
-    .error-number {
-        animation: fadeIn 1s ease-in;
-    }
-
-    @keyframes fadeIn {
-        from {
-            opacity: 0;
-            transform: scale(0.8);
-        }
-        to {
-            opacity: 1;
-            transform: scale(1);
-        }
-    }
-
-    /* Responsive design */
-    @media (max-width: 768px) {
-        .error-number {
-            font-size: 5rem;
-        }
-
-        .error-title {
-            font-size: 1.5rem;
-        }
-
-        .error-actions {
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .error-actions .btn {
-            width: 100%;
-            max-width: 250px;
-        }
-
-        .links-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .error-container {
-            margin: 30px auto;
-        }
-
-        .status-indicator {
-            flex-direction: column;
-            gap: 5px;
-        }
-    }
-
-    @media (max-width: 480px) {
-        .error-number {
-            font-size: 4rem;
-        }
-
-        .error-icon {
-            font-size: 3rem;
-        }
-
-        .error-suggestions,
-        .helpful-links,
-        .error-status {
-            padding: 20px;
-        }
-    }
-</style>
-
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Track 500 errors for analytics (if needed)
-        console.error('500 Server Error:', window.location.pathname);
+        // Track access denied events for security monitoring
+        console.warn('Access Denied tracked:', {
+            url: window.location.pathname,
+            timestamp: new Date().toISOString(),
+            userAgent: navigator.userAgent,
+            referrer: document.referrer
+        });
 
-        // Auto-retry after 10 seconds (optional)
-        let retryCount = 0;
-        const maxRetries = 3;
-
-        function autoRetry() {
-            if (retryCount < maxRetries) {
-                retryCount++;
-                setTimeout(() => {
-                    console.log(`Auto-retry attempt ${retryCount}/${maxRetries}`);
-                    location.reload();
-                }, 10000 * retryCount); // Increasing delay
-            }
-        }
-
-        // Uncomment if you want auto-retry functionality
-        // autoRetry();
-
-        // Add click tracking for error actions
+        // Add click tracking for recovery actions
         const actionButtons = document.querySelectorAll('.error-actions .btn, .help-link');
         actionButtons.forEach(button => {
             button.addEventListener('click', function() {
-                console.log('500 recovery action:', this.textContent.trim());
+                console.log('Access denied recovery action clicked:', this.textContent.trim());
             });
         });
+
+        // Add keyboard shortcuts for quick navigation
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'l' && e.ctrlKey) {
+                e.preventDefault();
+                // Navigate to login page if not authenticated
+                const loginLink = document.querySelector('a[href*="/login"]');
+                if (loginLink) {
+                    loginLink.click();
+                }
+            } else if (e.key === 'h' && e.ctrlKey) {
+                e.preventDefault();
+                window.location.href = '/';
+            } else if (e.key === 'b' && e.ctrlKey) {
+                e.preventDefault();
+                history.back();
+            }
+        });
+
+        // Auto-refresh authentication status periodically (every 5 minutes)
+        setInterval(function() {
+            fetch('/api/auth/status', {
+                method: 'GET',
+                credentials: 'include'
+            })
+                .then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    }
+                })
+                .then(data => {
+                    if (data && data.authenticated) {
+                        console.log('User authentication status updated');
+                        // Optionally reload page if user has gained access
+                        // location.reload();
+                    }
+                })
+                .catch(error => {
+                    console.log('Authentication status check failed:', error);
+                });
+        }, 300000); // 5 minutes
     });
 </script>
 </body>

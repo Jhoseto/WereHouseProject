@@ -299,7 +299,7 @@
 .order-number {
     font-weight: var(--font-weight-bold);
     color: var(--color-primary);
-    font-size: 1.1rem;
+    font-size: 1.5rem;
 }
 
 .order-items-count {

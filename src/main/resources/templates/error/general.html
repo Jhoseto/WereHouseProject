@@ -1,63 +1,91 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="bg" >
-<body>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="bg">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Грешка в системата | Warehouse Portal</title>
+
+    <!-- Bootstrap Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.1/font/bootstrap-icons.min.css" rel="stylesheet">
+
+    <!-- Error Styles -->
+    <link rel="stylesheet" href="/css/error.css">
+</head>
+<body class="error-page">
 <section>
     <div class="error-container">
         <div class="error-visual">
-            <div class="error-icon">⚠️</div>
+            <div class="error-icon">
+                <i class="bi bi-exclamation-triangle"></i>
+            </div>
         </div>
 
         <div class="error-content">
             <h1 class="error-title">Възникна грешка</h1>
             <p class="error-message">
                 Съжаляваме за неудобството. Възникна неочаквана грешка при обработката на вашата заявка.
+                Моля, опитайте отново или се свържете с техническата поддръжка ако проблемът продължава.
             </p>
-
-            <div th:if="${error}" class="error-details">
-                <div class="error-description">
-                    <h3>Детайли за грешката:</h3>
-                    <p th:text="${error}">Error description</p>
-                </div>
-            </div>
 
             <div th:if="${statusCode}" class="status-info">
                 <div class="status-badge">
-                    <span class="status-code" th:text="'Код: ' + ${statusCode}">Code: 400</span>
+                    <i class="bi bi-info-circle"></i>
+                    <span class="status-code" th:text="'Код на грешката: ' + ${statusCode}">Код: 400</span>
                 </div>
             </div>
 
+            <div th:if="${error}" class="error-details">
+                <h3>
+                    <i class="bi bi-bug"></i>
+                    Детайли за грешката
+                </h3>
+                <p th:text="${error}">Error description</p>
+            </div>
+
             <div class="error-suggestions">
-                <h3>Възможни решения:</h3>
+                <h3>
+                    <i class="bi bi-lightbulb"></i>
+                    Възможни решения
+                </h3>
                 <div class="suggestions-grid">
                     <div class="suggestion-card">
-                        <div class="suggestion-icon">🔄</div>
+                        <div class="suggestion-icon">
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </div>
                         <div class="suggestion-content">
                             <h4>Опитайте отново</h4>
-                            <p>Презаредете страницата и повторете действието</p>
+                            <p>Презаредете страницата и повторете действието - възможно е грешката да е временна</p>
                         </div>
                     </div>
 
                     <div class="suggestion-card">
-                        <div class="suggestion-icon">🏠</div>
+                        <div class="suggestion-icon">
+                            <i class="bi bi-arrow-left"></i>
+                        </div>
                         <div class="suggestion-content">
                             <h4>Върнете се назад</h4>
-                            <p>Използвайте бутона "Назад" или се върнете към началната страница</p>
+                            <p>Използвайте бутона "Назад" или се върнете към предишната страница</p>
                         </div>
                     </div>
 
                     <div class="suggestion-card">
-                        <div class="suggestion-icon">📝</div>
+                        <div class="suggestion-icon">
+                            <i class="bi bi-check-circle"></i>
+                        </div>
                         <div class="suggestion-content">
                             <h4>Проверете данните</h4>
-                            <p>Уверете се, че сте въвели правилна информация</p>
+                            <p>Уверете се, че сте въвели правилна информация във всички полета</p>
                         </div>
                     </div>
 
                     <div class="suggestion-card">
-                        <div class="suggestion-icon">⏰</div>
+                        <div class="suggestion-icon">
+                            <i class="bi bi-clock"></i>
+                        </div>
                         <div class="suggestion-content">
-                            <h4>Изчакайте</h4>
-                            <p>Възможно е системата да е временно претоварена</p>
+                            <h4>Изчакайте малко</h4>
+                            <p>Възможно е системата да е временно претоварена - опитайте след няколко минути</p>
                         </div>
                     </div>
                 </div>
@@ -65,18 +93,24 @@
 
             <div class="error-actions">
                 <button onclick="location.reload()" class="btn">
-                    <span class="nav-icon">🔄</span> Презареди
+                    <i class="bi bi-arrow-clockwise nav-icon"></i>
+                    Презареди
                 </button>
                 <button onclick="history.back()" class="btn btn-secondary">
-                    <span class="nav-icon">⬅️</span> Назад
+                    <i class="bi bi-arrow-left nav-icon"></i>
+                    Назад
                 </button>
                 <a th:href="@{/}" class="btn btn-secondary">
-                    <span class="nav-icon">🏠</span> Начало
+                    <i class="bi bi-house nav-icon"></i>
+                    Начало
                 </a>
             </div>
 
-            <div class="technical-info" style="display: none;" id="technicalInfo">
-                <h4>Техническа информация:</h4>
+            <div class="technical-info hidden" id="technicalInfo">
+                <h4>
+                    <i class="bi bi-gear"></i>
+                    Техническа информация
+                </h4>
                 <div class="tech-details">
                     <div class="tech-item">
                         <span class="tech-label">URL:</span>
@@ -94,400 +128,159 @@
                         <span class="tech-label">HTTP Status:</span>
                         <span class="tech-value" th:text="${statusCode}">—</span>
                     </div>
+                    <div class="tech-item">
+                        <span class="tech-label">Referrer:</span>
+                        <span class="tech-value" id="referrerUrl">—</span>
+                    </div>
                 </div>
             </div>
 
             <div class="helpful-links">
-                <h4>Полезни връзки:</h4>
+                <h4>
+                    <i class="bi bi-compass"></i>
+                    Полезни връзки
+                </h4>
                 <div class="links-grid">
                     <a th:href="@{/catalog}" class="help-link">
-                        <span class="link-icon">📦</span>
+                        <i class="bi bi-box-seam link-icon"></i>
                         <span class="link-text">Каталог продукти</span>
                     </a>
                     <a th:href="@{/orders}" class="help-link" sec:authorize="hasRole('CLIENT')">
-                        <span class="link-icon">📋</span>
+                        <i class="bi bi-list-check link-icon"></i>
                         <span class="link-text">Моите заявки</span>
                     </a>
                     <a th:href="@{/cart}" class="help-link" sec:authorize="hasRole('CLIENT')">
-                        <span class="link-icon">🛒</span>
+                        <i class="bi bi-cart link-icon"></i>
                         <span class="link-text">Кошница</span>
                     </a>
                     <a th:href="@{/admin}" class="help-link" sec:authorize="hasRole('ADMIN')">
-                        <span class="link-icon">⚙️</span>
+                        <i class="bi bi-gear link-icon"></i>
                         <span class="link-text">Админ панел</span>
+                    </a>
+                    <a th:href="@{/about}" class="help-link">
+                        <i class="bi bi-info-square link-icon"></i>
+                        <span class="link-text">За системата</span>
                     </a>
                 </div>
             </div>
 
             <div class="debug-actions">
                 <button onclick="toggleTechnicalInfo()" class="debug-btn">
-                    <span class="nav-icon">🔧</span> Техническа информация
+                    <i class="bi bi-code-slash nav-icon"></i>
+                    Техническа информация
                 </button>
             </div>
         </div>
     </div>
 </section>
 
-<style>
-    .error-container {
-        max-width: 700px;
-        margin: 50px auto;
-        text-align: center;
-        padding: 0 20px;
-    }
-
-    .error-visual {
-        margin-bottom: 40px;
-    }
-
-    .error-icon {
-        font-size: 5rem;
-        margin-bottom: 20px;
-        display: block;
-    }
-
-    .error-title {
-        font-size: 2rem;
-        color: #2c3e50;
-        margin-bottom: 20px;
-    }
-
-    .error-message {
-        font-size: 1.1rem;
-        color: #6c757d;
-        margin-bottom: 30px;
-        line-height: 1.6;
-    }
-
-    .error-details {
-        background: #fff3cd;
-        border: 1px solid #ffeaa7;
-        border-radius: 6px;
-        padding: 20px;
-        margin: 25px 0;
-        text-align: left;
-        border-left: 4px solid #f39c12;
-    }
-
-    .error-description h3 {
-        color: #856404;
-        margin-bottom: 10px;
-        font-size: 1.1rem;
-    }
-
-    .error-description p {
-        color: #856404;
-        margin: 0;
-        line-height: 1.5;
-    }
-
-    .status-info {
-        margin: 20px 0;
-    }
-
-    .status-badge {
-        display: inline-block;
-        background: #e9ecef;
-        padding: 8px 16px;
-        border-radius: 20px;
-        border: 1px solid #dee2e6;
-    }
-
-    .status-code {
-        font-family: monospace;
-        font-weight: 600;
-        color: #495057;
-    }
-
-    .error-suggestions {
-        background: white;
-        padding: 30px;
-        border-radius: 8px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        margin: 30px 0;
-        text-align: left;
-    }
-
-    .error-suggestions h3 {
-        color: #2c3e50;
-        margin-bottom: 25px;
-        font-size: 1.3rem;
-        text-align: center;
-    }
-
-    .suggestions-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 20px;
-    }
-
-    .suggestion-card {
-        display: flex;
-        align-items: flex-start;
-        gap: 15px;
-        padding: 20px;
-        border: 1px solid #e9ecef;
-        border-radius: 6px;
-        background: #f8f9fa;
-        transition: all 0.3s ease;
-    }
-
-    .suggestion-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        border-color: #3498db;
-    }
-
-    .suggestion-icon {
-        font-size: 1.8rem;
-        flex-shrink: 0;
-    }
-
-    .suggestion-content h4 {
-        color: #2c3e50;
-        margin-bottom: 8px;
-        font-size: 1rem;
-    }
-
-    .suggestion-content p {
-        color: #6c757d;
-        margin: 0;
-        font-size: 0.9rem;
-        line-height: 1.4;
-    }
-
-    .error-actions {
-        display: flex;
-        gap: 15px;
-        justify-content: center;
-        flex-wrap: wrap;
-        margin: 40px 0;
-    }
-
-    .technical-info {
-        background: #f8f9fa;
-        border: 1px solid #dee2e6;
-        border-radius: 6px;
-        padding: 20px;
-        margin: 25px 0;
-        text-align: left;
-    }
-
-    .technical-info h4 {
-        color: #2c3e50;
-        margin-bottom: 15px;
-        font-size: 1.1rem;
-    }
-
-    .tech-details {
-        display: grid;
-        gap: 10px;
-    }
-
-    .tech-item {
-        display: grid;
-        grid-template-columns: 120px 1fr;
-        gap: 10px;
-        align-items: center;
-    }
-
-    .tech-label {
-        font-weight: 600;
-        color: #495057;
-    }
-
-    .tech-value {
-        color: #6c757d;
-        font-family: monospace;
-        word-break: break-all;
-    }
-
-    .helpful-links {
-        text-align: left;
-        background: white;
-        padding: 25px;
-        border-radius: 8px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        margin: 30px 0;
-    }
-
-    .helpful-links h4 {
-        color: #2c3e50;
-        margin-bottom: 20px;
-        font-size: 1.1rem;
-        text-align: center;
-    }
-
-    .links-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 15px;
-    }
-
-    .help-link {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 15px;
-        border: 1px solid #e9ecef;
-        border-radius: 6px;
-        text-decoration: none;
-        color: #2c3e50;
-        transition: all 0.3s ease;
-    }
-
-    .help-link:hover {
-        border-color: #3498db;
-        background: #f8fcff;
-        transform: translateY(-1px);
-        box-shadow: 0 2px 8px rgba(52, 152, 219, 0.2);
-    }
-
-    .link-icon {
-        font-size: 1.5rem;
-    }
-
-    .link-text {
-        font-weight: 600;
-    }
-
-    .debug-actions {
-        margin-top: 30px;
-        text-align: center;
-    }
-
-    .debug-btn {
-        background: none;
-        border: 1px solid #6c757d;
-        color: #6c757d;
-        padding: 8px 16px;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 0.85rem;
-        transition: all 0.3s ease;
-    }
-
-    .debug-btn:hover {
-        border-color: #495057;
-        color: #495057;
-        background: #f8f9fa;
-    }
-
-    /* Animation */
-    @keyframes wobble {
-        0%, 100% { transform: rotate(0deg); }
-        15% { transform: rotate(-5deg); }
-        30% { transform: rotate(3deg); }
-        45% { transform: rotate(-3deg); }
-        60% { transform: rotate(2deg); }
-        75% { transform: rotate(-1deg); }
-    }
-
-    .error-icon {
-        animation: wobble 1s ease-in-out;
-    }
-
-    /* Responsive design */
-    @media (max-width: 768px) {
-        .error-icon {
-            font-size: 4rem;
-        }
-
-        .error-title {
-            font-size: 1.5rem;
-        }
-
-        .error-actions {
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .error-actions .btn {
-            width: 100%;
-            max-width: 250px;
-        }
-
-        .suggestions-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .links-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .tech-item {
-            grid-template-columns: 1fr;
-            gap: 5px;
-        }
-
-        .error-container {
-            margin: 30px auto;
-        }
-    }
-
-    @media (max-width: 480px) {
-        .error-icon {
-            font-size: 3rem;
-        }
-
-        .error-suggestions,
-        .helpful-links,
-        .technical-info {
-            padding: 20px;
-        }
-
-        .suggestion-card {
-            flex-direction: column;
-            text-align: center;
-            gap: 10px;
-        }
-    }
-</style>
-
 <script>
     function toggleTechnicalInfo() {
         const techInfo = document.getElementById('technicalInfo');
-        if (techInfo.style.display === 'none') {
-            // Populate technical information
-            document.getElementById('currentUrl').textContent = window.location.href;
-            document.getElementById('errorTime').textContent = new Date().toLocaleString('bg-BG');
-            document.getElementById('userAgent').textContent = navigator.userAgent;
+        const button = document.querySelector('.debug-btn');
 
-            techInfo.style.display = 'block';
+        if (techInfo.classList.contains('hidden')) {
+            // Show technical information and populate it
+            populateTechnicalInfo();
+            techInfo.classList.remove('hidden');
+            button.innerHTML = '<i class="bi bi-eye-slash nav-icon"></i> Скрий техническата информация';
         } else {
-            techInfo.style.display = 'none';
+            // Hide technical information
+            techInfo.classList.add('hidden');
+            button.innerHTML = '<i class="bi bi-code-slash nav-icon"></i> Техническа информация';
         }
     }
 
+    function populateTechnicalInfo() {
+        document.getElementById('currentUrl').textContent = window.location.href;
+        document.getElementById('errorTime').textContent = new Date().toLocaleString('bg-BG');
+        document.getElementById('userAgent').textContent = navigator.userAgent;
+        document.getElementById('referrerUrl').textContent = document.referrer || 'Няма';
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
-        // Track general errors for analytics
-        console.error('General Error:', {
+        // Track general errors for analytics and debugging
+        const errorInfo = {
             url: window.location.pathname,
             timestamp: new Date().toISOString(),
-            error: [[${error}]] || 'Unknown error'
-        });
+            userAgent: navigator.userAgent,
+            referrer: document.referrer,
+            viewport: {
+                width: window.innerWidth,
+                height: window.innerHeight
+            },
+            error: '[[${error}]]' || 'Unknown error',
+            statusCode: '[[${statusCode}]]' || null
+        };
+
+        console.error('General Error tracked:', errorInfo);
 
         // Add click tracking for recovery actions
         const actionButtons = document.querySelectorAll('.error-actions .btn, .help-link');
         actionButtons.forEach(button => {
             button.addEventListener('click', function() {
-                console.log('Error recovery action:', this.textContent.trim());
+                console.log('Error recovery action clicked:', {
+                    action: this.textContent.trim(),
+                    timestamp: new Date().toISOString()
+                });
             });
         });
 
-        // Auto-hide technical info after 30 seconds if shown
+        // Add keyboard shortcuts for common actions
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'r' && e.ctrlKey) {
+                e.preventDefault();
+                location.reload();
+            } else if (e.key === 'h' && e.ctrlKey) {
+                e.preventDefault();
+                window.location.href = '/';
+            } else if (e.key === 'b' && e.ctrlKey) {
+                e.preventDefault();
+                history.back();
+            } else if (e.key === 't' && e.ctrlKey) {
+                e.preventDefault();
+                toggleTechnicalInfo();
+            }
+        });
+
+        // Auto-hide technical info after 60 seconds if shown
         let techInfoTimeout;
         const originalToggle = window.toggleTechnicalInfo;
         window.toggleTechnicalInfo = function() {
             originalToggle();
             const techInfo = document.getElementById('technicalInfo');
-            if (techInfo.style.display === 'block') {
+
+            if (!techInfo.classList.contains('hidden')) {
                 clearTimeout(techInfoTimeout);
                 techInfoTimeout = setTimeout(() => {
-                    techInfo.style.display = 'none';
-                }, 30000);
+                    techInfo.classList.add('hidden');
+                    document.querySelector('.debug-btn').innerHTML =
+                        '<i class="bi bi-code-slash nav-icon"></i> Техническа информация';
+                }, 60000); // Auto-hide after 60 seconds
             }
         };
+
+        // Monitor for performance issues
+        if ('performance' in window) {
+            const perfData = performance.getEntriesByType('navigation')[0];
+            if (perfData && perfData.loadEventEnd > 3000) {
+                console.warn('Page load took longer than expected:', perfData.loadEventEnd + 'ms');
+            }
+        }
+
+        // Check for network connectivity
+        if (!navigator.onLine) {
+            console.warn('User appears to be offline');
+            // Optionally show offline indicator
+        }
+
+        window.addEventListener('online', function() {
+            console.log('Network connection restored');
+        });
+
+        window.addEventListener('offline', function() {
+            console.warn('Network connection lost');
+        });
     });
 </script>
 </body>

@@ -91,26 +91,33 @@ class OrderDetailManager {
         });
 
         // Quantity бутони (+/-)
-        document.addEventListener('click', (e) => {
-            if (e.target.closest('.quantity-decrease')) {
-                const input = e.target.closest('.quantity-input-wrapper').querySelector('.quantity-input');
+        document.querySelectorAll('.quantity-decrease').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const input = btn.closest('.quantity-input-wrapper').querySelector('.quantity-input');
                 const currentValue = parseInt(input.value) || 1;
                 if (currentValue > 1) {
                     input.value = currentValue - 1;
                     this.handleQuantityChange(input);
                 }
-            }
+            });
+        });
 
-            if (e.target.closest('.quantity-increase')) {
-                const input = e.target.closest('.quantity-input-wrapper').querySelector('.quantity-input');
+        document.querySelectorAll('.quantity-increase').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const input = btn.closest('.quantity-input-wrapper').querySelector('.quantity-input');
                 const currentValue = parseInt(input.value) || 1;
-                if (currentValue < 999) {
+                if (currentValue < 9999) {
                     input.value = currentValue + 1;
                     this.handleQuantityChange(input);
                 }
-            }
+            });
         });
     }
+
 
     /**
      * Обработва промяна в количеството
@@ -362,6 +369,7 @@ class OrderDetailManager {
             });
         } else {
             this.showToast('error', result.message || 'Възникна грешка при запазването.');
+            this.resetChanges();
         }
     }
 
@@ -414,19 +422,6 @@ class OrderDetailManager {
         this.showToast('info', 'Всички промени са върнати към оригиналните стойности.');
     }
 
-    /**
-     * Премахва всички индикатори за промени
-     */
-    resetChangeIndicators() {
-        const rows = document.querySelectorAll('.item-row');
-        rows.forEach(row => {
-            row.classList.remove('changed', 'marked-for-removal');
-            row.style.opacity = '';
-            row.style.textDecoration = '';
-        });
-        this.hasChanges = false;
-        this.checkForChanges();
-    }
 
     /**
      * Получава ID на поръчката от URL

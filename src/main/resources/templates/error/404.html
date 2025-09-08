@@ -1,61 +1,93 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="bg" >
-<body>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="bg">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - Страницата не е намерена | Warehouse Portal</title>
+
+    <!-- Bootstrap Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.1/font/bootstrap-icons.min.css" rel="stylesheet">
+
+    <!-- Error Styles -->
+    <link rel="stylesheet" href="/css/error.css">
+</head>
+<body class="error-page">
 <section>
     <div class="error-container">
         <div class="error-visual">
             <div class="error-number">404</div>
-            <div class="error-icon">🔍</div>
+            <div class="error-icon">
+                <i class="bi bi-search"></i>
+            </div>
         </div>
 
         <div class="error-content">
             <h1 class="error-title">Страницата не е намерена</h1>
             <p class="error-message">
                 Съжаляваме, но страницата която търсите не съществува или е била преместена.
+                Моля, проверете адреса или използвайте навигацията за да намерите това което търсите.
             </p>
 
             <div th:if="${originalUrl}" class="error-details">
-                <small class="text-muted">
+                <h3>
+                    <i class="bi bi-info-circle"></i>
+                    Информация за заявката
+                </h3>
+                <p>
                     Заявеният URL: <code th:text="${originalUrl}">url</code>
-                </small>
+                </p>
             </div>
 
             <div class="error-suggestions">
-                <h3>Възможни причини:</h3>
+                <h3>
+                    <i class="bi bi-lightbulb"></i>
+                    Възможни причини
+                </h3>
                 <ul>
-                    <li>Грешка в адреса (URL)</li>
-                    <li>Страницата е била преместена или изтрита</li>
+                    <li>Грешка в адреса (URL) - проверете дали е написан правилно</li>
+                    <li>Страницата е била преместена или изтрита от системата</li>
                     <li>Нямате права за достъп до този ресурс</li>
-                    <li>Проблем със сървъра</li>
+                    <li>Временен проблем със сървъра или мрежата</li>
                 </ul>
             </div>
 
             <div class="error-actions">
                 <a th:href="@{/}" class="btn">
-                    <span class="nav-icon">🏠</span> Начална страница
+                    <i class="bi bi-house nav-icon"></i>
+                    Начална страница
                 </a>
                 <button onclick="history.back()" class="btn btn-secondary">
-                    <span class="nav-icon">⬅️</span> Назад
+                    <i class="bi bi-arrow-left nav-icon"></i>
+                    Назад
                 </button>
                 <a th:href="@{/catalog}" class="btn btn-secondary">
-                    <span class="nav-icon">📦</span> Каталог
+                    <i class="bi bi-grid-3x2 nav-icon"></i>
+                    Каталог
                 </a>
             </div>
 
             <div class="helpful-links">
-                <h4>Полезни връзки:</h4>
+                <h4>
+                    <i class="bi bi-compass"></i>
+                    Полезни връзки
+                </h4>
                 <div class="links-grid">
                     <a th:href="@{/catalog}" class="help-link">
-                        <span class="link-icon">📦</span>
+                        <i class="bi bi-box-seam link-icon"></i>
                         <span class="link-text">Каталог продукти</span>
                     </a>
                     <a th:href="@{/orders}" class="help-link" sec:authorize="hasRole('CLIENT')">
-                        <span class="link-icon">📋</span>
+                        <i class="bi bi-list-check link-icon"></i>
                         <span class="link-text">Моите заявки</span>
                     </a>
                     <a th:href="@{/admin}" class="help-link" sec:authorize="hasRole('ADMIN')">
-                        <span class="link-icon">⚙️</span>
+                        <i class="bi bi-gear link-icon"></i>
                         <span class="link-text">Админ панел</span>
+                    </a>
+                    <a th:href="@{/about}" class="help-link">
+                        <i class="bi bi-info-square link-icon"></i>
+                        <span class="link-text">За системата</span>
                     </a>
                 </div>
             </div>
@@ -63,232 +95,35 @@
     </div>
 </section>
 
-<style>
-    .error-container {
-        max-width: 600px;
-        margin: 50px auto;
-        text-align: center;
-        padding: 0 20px;
-    }
-
-    .error-visual {
-        margin-bottom: 40px;
-        position: relative;
-    }
-
-    .error-number {
-        font-size: 8rem;
-        font-weight: bold;
-        color: #e74c3c;
-        line-height: 1;
-        margin-bottom: 20px;
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
-    }
-
-    .error-icon {
-        font-size: 4rem;
-        margin-bottom: 20px;
-    }
-
-    .error-title {
-        font-size: 2rem;
-        color: #2c3e50;
-        margin-bottom: 20px;
-    }
-
-    .error-message {
-        font-size: 1.1rem;
-        color: #6c757d;
-        margin-bottom: 30px;
-        line-height: 1.6;
-    }
-
-    .error-details {
-        background: #f8f9fa;
-        padding: 15px;
-        border-radius: 6px;
-        margin: 20px 0;
-        border-left: 3px solid #e74c3c;
-    }
-
-    .error-details code {
-        background: #e9ecef;
-        padding: 2px 6px;
-        border-radius: 3px;
-        font-family: monospace;
-        color: #495057;
-    }
-
-    .error-suggestions {
-        text-align: left;
-        background: white;
-        padding: 25px;
-        border-radius: 8px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        margin: 30px 0;
-    }
-
-    .error-suggestions h3 {
-        color: #2c3e50;
-        margin-bottom: 15px;
-        font-size: 1.2rem;
-    }
-
-    .error-suggestions ul {
-        margin: 0;
-        padding-left: 20px;
-        color: #6c757d;
-    }
-
-    .error-suggestions li {
-        margin-bottom: 8px;
-        line-height: 1.5;
-    }
-
-    .error-actions {
-        display: flex;
-        gap: 15px;
-        justify-content: center;
-        flex-wrap: wrap;
-        margin: 40px 0;
-    }
-
-    .helpful-links {
-        text-align: left;
-        background: white;
-        padding: 25px;
-        border-radius: 8px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        margin-top: 30px;
-    }
-
-    .helpful-links h4 {
-        color: #2c3e50;
-        margin-bottom: 20px;
-        font-size: 1.1rem;
-    }
-
-    .links-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 15px;
-    }
-
-    .help-link {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 15px;
-        border: 1px solid #e9ecef;
-        border-radius: 6px;
-        text-decoration: none;
-        color: #2c3e50;
-        transition: all 0.3s ease;
-    }
-
-    .help-link:hover {
-        border-color: #3498db;
-        background: #f8fcff;
-        transform: translateY(-1px);
-        box-shadow: 0 2px 8px rgba(52, 152, 219, 0.2);
-    }
-
-    .link-icon {
-        font-size: 1.5rem;
-    }
-
-    .link-text {
-        font-weight: 600;
-    }
-
-    /* Animation */
-    @keyframes bounce {
-        0%, 20%, 50%, 80%, 100% {
-            transform: translateY(0);
-        }
-        40% {
-            transform: translateY(-10px);
-        }
-        60% {
-            transform: translateY(-5px);
-        }
-    }
-
-    .error-icon {
-        animation: bounce 2s infinite;
-    }
-
-    .error-number {
-        animation: fadeIn 1s ease-in;
-    }
-
-    @keyframes fadeIn {
-        from {
-            opacity: 0;
-            transform: scale(0.8);
-        }
-        to {
-            opacity: 1;
-            transform: scale(1);
-        }
-    }
-
-    /* Responsive design */
-    @media (max-width: 768px) {
-        .error-number {
-            font-size: 5rem;
-        }
-
-        .error-title {
-            font-size: 1.5rem;
-        }
-
-        .error-actions {
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .error-actions .btn {
-            width: 100%;
-            max-width: 250px;
-        }
-
-        .links-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .error-container {
-            margin: 30px auto;
-        }
-    }
-
-    @media (max-width: 480px) {
-        .error-number {
-            font-size: 4rem;
-        }
-
-        .error-icon {
-            font-size: 3rem;
-        }
-
-        .error-suggestions,
-        .helpful-links {
-            padding: 20px;
-        }
-    }
-</style>
-
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Track 404 errors for analytics (if needed)
-        console.log('404 Error:', window.location.pathname);
+        // Track 404 errors for analytics
+        console.log('404 Error tracked:', {
+            url: window.location.pathname,
+            timestamp: new Date().toISOString(),
+            userAgent: navigator.userAgent
+        });
 
-        // Add click tracking for error actions
+        // Add click tracking for recovery actions
         const actionButtons = document.querySelectorAll('.error-actions .btn, .help-link');
         actionButtons.forEach(button => {
             button.addEventListener('click', function() {
-                console.log('404 recovery action:', this.textContent.trim());
+                console.log('404 recovery action clicked:', this.textContent.trim());
             });
+        });
+
+        // Add keyboard shortcuts for common actions
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'h' && e.ctrlKey) {
+                e.preventDefault();
+                window.location.href = '/';
+            } else if (e.key === 'b' && e.ctrlKey) {
+                e.preventDefault();
+                history.back();
+            } else if (e.key === 'r' && e.ctrlKey) {
+                e.preventDefault();
+                location.reload();
+            }
         });
     });
 </script>
