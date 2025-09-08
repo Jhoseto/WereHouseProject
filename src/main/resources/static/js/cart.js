@@ -104,22 +104,93 @@ class CartManager {
      * @returns {Promise<boolean>} - true ако е успешно
      */
     async add(productId, quantity = 1) {
-        // Добавя в pending операции
-        const existingQty = this.pendingOperations.get(productId) || 0;
-        this.pendingOperations.set(productId, existingQty + quantity);
+        const addButton = document.querySelector(`.add-to-cart[data-product-id="${productId}"]`);
 
-        // Отменя предишния timeout
+        // LOADER START
+        window.universalLoader?.showCart('add');
+        if (addButton) addButton.classList.add('btn-loading');
+
+        // Ако е array от продукти
+        if (Array.isArray(productId)) {
+            console.warn('Bulk add не се поддържа в момента');
+            window.universalLoader?.hide();
+            if (addButton) addButton.classList.remove('btn-loading');
+            return false;
+        }
+
+        let allSuccess = true;
+
+        // Batch операции
+        if (this.pendingOperations.has(productId)) {
+            this.pendingOperations.set(productId, this.pendingOperations.get(productId) + quantity);
+        } else {
+            this.pendingOperations.set(productId, quantity);
+        }
+
+        // Debounce
         if (this.operationTimeout) {
             clearTimeout(this.operationTimeout);
         }
 
-        // Чака 300ms за още операции
-        return new Promise((resolve) => {
-            this.operationTimeout = setTimeout(async () => {
-                const success = await this.flushPendingOperations();
-                resolve(success);
-            }, 300);
-        });
+        this.operationTimeout = setTimeout(async () => {
+            for (const [pid, qty] of this.pendingOperations) {
+                try {
+                    const response = await fetch(this.apiEndpoints.add, {
+                        method: 'POST',
+                        headers: this.getPostHeaders(),
+                        body: `productId=${pid}&quantity=${qty}`,
+                        credentials: 'include'
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.success) {
+                            window.toastManager?.success(data.message || 'Продуктът е добавен в кошницата');
+
+                            // Обновява cache
+                            if (data.cart && data.cart.totalItems !== undefined) {
+                                this.updateCacheCount(data.cart.totalItems);
+                            }
+                        } else {
+                            window.toastManager?.error(data.error || 'Грешка при добавяне в кошницата');
+                            allSuccess = false;
+                        }
+                    } else {
+                        if (response.status === 403) {
+                            window.toastManager?.error('Сесията ви е изтекла. Моля, презаредете страницата.');
+                        } else {
+                            window.toastManager?.error('Грешка при добавяне в кошницата');
+                        }
+                        allSuccess = false;
+                    }
+                } catch (error) {
+                    console.error('Cart add error:', error);
+                    window.toastManager?.error('Грешка при добавяне в кошницата');
+                    allSuccess = false;
+                }
+            }
+
+            // Обновява badge и отваря панела
+            await this.updateBadge();
+
+            if (allSuccess) {
+                setTimeout(() => {
+                    window.cartPanel?.open();
+                }, 200);
+            }
+
+            // LOADER END
+            window.universalLoader?.hide();
+            if (addButton) addButton.classList.remove('btn-loading');
+
+            // Изчиства pending операциите
+            this.pendingOperations.clear();
+            this.operationTimeout = null;
+
+            return allSuccess;
+        }, 300);
+
+        return true;
     }
 
     /**
@@ -220,7 +291,7 @@ class CartManager {
                 return false;
             }
         } catch (error) {
-            console.error('Cart update error:', error);
+            console.error('Update quantity error:', error);
             window.toastManager?.error('Грешка при обновяване на количеството');
             return false;
         }
@@ -436,33 +507,6 @@ class CartManager {
  * ===============================
  */
 
-/**
- * Добавя продукт в кошницата - глобална функция за HTML onclick
- * @param {string|number} productId - ID на продукта
- * @param {number} quantity - Количество
- */
-async function addToCart(productId, quantity = 1) {
-    if (window.cartManager) {
-        return await window.cartManager.add(productId, quantity);
-    } else {
-        console.error('CartManager не е инициализиран');
-        return false;
-    }
-}
-
-/**
- * Изчиства количката след потвърждение
- */
-async function clearCart() {
-    if (window.cartManager) {
-        const confirmed = confirm('Сигурни ли сте, че искате да изчистите количката?');
-        if (confirmed) {
-            await window.cartManager.clear();
-        }
-    } else {
-        console.error('CartManager не е инициализиран');
-    }
-}
 
 /**
  * INITIALIZATION

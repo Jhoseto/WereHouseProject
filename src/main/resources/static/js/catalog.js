@@ -417,15 +417,23 @@ class CatalogManager {
             });
         });
 
-        // Add to cart buttons - ИЗПОЛЗВА CART API
+        // Add to cart buttons - С ДОБАВЕН LOADER
         this.productsContainer.querySelectorAll('.add-to-cart').forEach(btn => {
-            btn.addEventListener('click', (e) => {
+            btn.addEventListener('click', async (e) => {
                 const productId = e.target.dataset.productId;
                 const qtyInput = this.productsContainer.querySelector(`.catalog-qty-input[data-product-id="${productId}"]`);
                 const quantity = parseInt(qtyInput.value) || 1;
 
-                // Използва глобалния cartManager
-                window.cartManager.add(productId, quantity);
+                // LOADER START - само за конкретния бутон
+                e.target.classList.add('btn-loading');
+
+                try {
+                    // Използва глобалния cartManager
+                    await window.cartManager.add(productId, quantity);
+                } finally {
+                    // LOADER END
+                    e.target.classList.remove('btn-loading');
+                }
             });
         });
     }

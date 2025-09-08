@@ -104,25 +104,27 @@ class CartPanel {
      * OPTIMIZED зареждане - инкрементални updates
      */
     async loadCartContent() {
-        if (!this.content) return;
+        // LOADER START
+        window.universalLoader?.showCart('load');
 
         try {
             const data = await this.fetchCartData();
 
-            if (!data) {
-                this.renderError();
-                return;
+            if (data && data.items) {
+                this.renderCartItems(data.items);
+                this.renderFooter(data);
+                this.bindCartEvents();
+            } else {
+                this.renderEmptyCart();
+                this.renderFooter(null);
             }
-
-            // Проверява дали има промени преди да обновява DOM
-            if (this.hasDataChanged(data)) {
-                this.updateContent(data);
-                this.currentData = data;
-            }
-
         } catch (error) {
-            console.error('Error loading cart content:', error);
+            console.error('Load cart content error:', error);
             this.renderError();
+            window.toastManager?.error('Грешка при зареждане на количката');
+        } finally {
+            // LOADER END
+            window.universalLoader?.hide();
         }
     }
 
@@ -421,6 +423,14 @@ class CartPanel {
      * OPTIMIZED обновяване на количество - използва cartManager
      */
     async updateQuantity(productId, quantity) {
+        const button = event?.target;
+        const input = this.content.querySelector(`.cart-qty-input[data-product-id="${productId}"]`);
+
+        // LOADER START
+        window.universalLoader?.showCart('update');
+        if (button) button.classList.add('btn-loading');
+        if (input) input.disabled = true;
+
         try {
             const success = await window.cartManager?.updateQuantity(productId, quantity);
 
@@ -435,9 +445,7 @@ class CartPanel {
                 const element = this.itemElements.get(productId);
                 if (element) {
                     const qtyInput = element.querySelector('.cart-qty-input');
-                    if (qtyInput) {
-                        qtyInput.value = quantity;
-                    }
+                    if (qtyInput) qtyInput.value = quantity;
                 }
 
                 // Обновява общите суми асинхронно
@@ -452,6 +460,11 @@ class CartPanel {
             console.error('Update quantity error:', error);
             window.toastManager?.error('Грешка при обновяване на количеството');
             await this.loadCartContent();
+        } finally {
+            // LOADER END
+            window.universalLoader?.hide();
+            if (button) button.classList.remove('btn-loading');
+            if (input) input.disabled = false;
         }
     }
 
@@ -459,6 +472,12 @@ class CartPanel {
      * OPTIMIZED премахване на артикул
      */
     async removeItem(productId) {
+        const button = event?.target;
+
+        // LOADER START
+        window.universalLoader?.showCart('remove');
+        if (button) button.classList.add('btn-loading');
+
         try {
             const success = await window.cartManager?.remove(productId);
 
@@ -490,6 +509,10 @@ class CartPanel {
         } catch (error) {
             console.error('Remove item error:', error);
             window.toastManager?.error('Грешка при премахване от кошницата');
+        } finally {
+            // LOADER END
+            window.universalLoader?.hide();
+            if (button) button.classList.remove('btn-loading');
         }
     }
 

@@ -1,0 +1,279 @@
+/**
+ * УНИВЕРСАЛЕН LOADING SPINNER - Съответства на дизайна на Warehouse Portal
+ * ===================================================================
+ */
+
+/* ==========================================
+   ОСНОВНИ VARIABLES - използват цветовете на сайта
+   ========================================== */
+
+:root {
+    /* Loader colors - съответстват на main.css */
+    --loader-primary: #2c3e50;         /* Primary color */
+    --loader-secondary: #3498db;       /* Secondary color */
+    --loader-accent: #f39c12;          /* Accent color */
+
+    /* Loader animations */
+    --loader-spin-duration: 0.8s;
+    --loader-fade-duration: 0.4s;
+
+    /* Loader shadows */
+    --loader-shadow-primary: rgba(44, 62, 80, 0.3);
+    --loader-shadow-secondary: rgba(52, 152, 219, 0.3);
+    --loader-shadow-accent: rgba(243, 156, 18, 0.3);
+}
+
+/* ==========================================
+   FULLSCREEN OVERLAY LOADER
+   ========================================== */
+
+.universal-loader-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: all var(--loader-fade-duration) cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.universal-loader-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* ==========================================
+   LOADER CONTAINER
+   ========================================== */
+
+.universal-loader-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    padding: 40px 30px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow:
+            0 20px 40px rgba(0, 0, 0, 0.1),
+            0 0 0 1px rgba(255, 255, 255, 0.1);
+    transform: scale(0.9) translateY(20px);
+    transition: all var(--loader-fade-duration) cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.universal-loader-overlay.active .universal-loader-container {
+    transform: scale(1) translateY(0);
+}
+
+/* ==========================================
+   SPINNER VARIANTS
+   ========================================== */
+
+/* PRIMARY SPINNER (default) */
+.universal-spinner {
+    width: 48px;
+    height: 48px;
+    position: relative;
+}
+
+.universal-spinner::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: 3px solid transparent;
+    border-top: 3px solid var(--loader-primary);
+    border-radius: 50%;
+    animation: universalSpin var(--loader-spin-duration) cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite;
+    filter: drop-shadow(0 2px 8px var(--loader-shadow-primary));
+}
+
+.universal-spinner::after {
+    content: '';
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    width: calc(100% - 12px);
+    height: calc(100% - 12px);
+    border: 2px solid transparent;
+    border-bottom: 2px solid var(--loader-secondary);
+    border-radius: 50%;
+    animation: universalSpin 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite reverse;
+    filter: drop-shadow(0 1px 4px var(--loader-shadow-secondary));
+}
+
+/* SECONDARY SPINNER */
+.universal-spinner.secondary::before {
+    border-top-color: var(--loader-secondary);
+    filter: drop-shadow(0 2px 8px var(--loader-shadow-secondary));
+}
+
+.universal-spinner.secondary::after {
+    border-bottom-color: var(--loader-accent);
+    filter: drop-shadow(0 1px 4px var(--loader-shadow-accent));
+}
+
+/* ACCENT SPINNER */
+.universal-spinner.accent::before {
+    border-top-color: var(--loader-accent);
+    filter: drop-shadow(0 2px 8px var(--loader-shadow-accent));
+}
+
+.universal-spinner.accent::after {
+    border-bottom-color: var(--loader-primary);
+    filter: drop-shadow(0 1px 4px var(--loader-shadow-primary));
+}
+
+@keyframes universalSpin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* ==========================================
+   INLINE BUTTON SPINNERS
+   ========================================== */
+
+/* Малки спинери за бутони */
+.btn-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top: 2px solid currentColor;
+    border-radius: 50%;
+    animation: universalSpin 0.6s linear infinite;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+/* Средни спинери за панели */
+.panel-spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid rgba(44, 62, 80, 0.2);
+    border-top: 3px solid var(--loader-primary);
+    border-radius: 50%;
+    animation: universalSpin var(--loader-spin-duration) linear infinite;
+    filter: drop-shadow(0 2px 4px var(--loader-shadow-primary));
+}
+
+/* ==========================================
+   LOADING TEXT STYLES
+   ========================================== */
+
+.universal-loader-text {
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--loader-primary);
+    margin: 0;
+    opacity: 0;
+    animation: fadeInText 0.6s ease-out 0.2s forwards;
+}
+
+.universal-loader-subtext {
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 400;
+    color: #737373;
+    margin: 0;
+    opacity: 0;
+    animation: fadeInText 0.6s ease-out 0.4s forwards;
+}
+
+@keyframes fadeInText {
+    0% {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ==========================================
+   DISABLED STATES
+   ========================================== */
+
+.loading-disabled {
+    pointer-events: none;
+    opacity: 0.6;
+    transition: opacity 0.3s ease;
+}
+
+/* Button loading states */
+.btn-loading {
+    position: relative;
+    pointer-events: none;
+    color: transparent !important;
+}
+
+.btn-loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 16px;
+    height: 16px;
+    margin: -8px 0 0 -8px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top: 2px solid currentColor;
+    border-radius: 50%;
+    animation: universalSpin 0.6s linear infinite;
+}
+
+/* ==========================================
+   RESPONSIVE DESIGN
+   ========================================== */
+
+@media (max-width: 768px) {
+    .universal-loader-container {
+        padding: 30px 20px;
+        margin: 20px;
+    }
+
+    .universal-spinner {
+        width: 40px;
+        height: 40px;
+    }
+
+    .universal-loader-text {
+        font-size: 14px;
+    }
+
+    .universal-loader-subtext {
+        font-size: 12px;
+    }
+}
+
+/* ==========================================
+   ACCESSIBILITY - REDUCED MOTION
+   ========================================== */
+
+@media (prefers-reduced-motion: reduce) {
+    .universal-spinner,
+    .universal-spinner::before,
+    .universal-spinner::after,
+    .btn-spinner,
+    .panel-spinner {
+        animation-duration: 2s;
+    }
+
+    .universal-loader-overlay {
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
+}
