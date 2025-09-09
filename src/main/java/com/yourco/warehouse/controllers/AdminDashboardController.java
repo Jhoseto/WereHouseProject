@@ -1,35 +1,22 @@
 package com.yourco.warehouse.controllers;
 
-import com.yourco.warehouse.dto.DailyStatsDTO;
-import com.yourco.warehouse.dto.DashboardDataDTO;
+import com.yourco.warehouse.dto.*;
 import com.yourco.warehouse.entity.Order;
-import com.yourco.warehouse.entity.UserEntity;
 import com.yourco.warehouse.entity.enums.OrderStatus;
 import com.yourco.warehouse.service.DashboardService;
-import com.yourco.warehouse.service.UserService;
+import com.yourco.warehouse.service.impl.DashboardServiceImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 /**
- * CLEAN ADMIN DASHBOARD CONTROLLER
- * ================================
- * Чист контролер който се занимава само с HTTP комуникация.
- * Цялата бизнес логика е делегирана на DashboardService.
- * Този контролер служи само като тънък слой между HTTP заявките и сервиза.
+ * DASHBOARD REST CONTROLLER
+ * ================================================
  */
-@Controller
+@RestController
 @RequestMapping("/employer")
 @PreAuthorize("hasRole('ADMIN') or hasRole('EMPLOYER')")
 public class AdminDashboardController {
@@ -37,57 +24,13 @@ public class AdminDashboardController {
     private static final Logger log = LoggerFactory.getLogger(AdminDashboardController.class);
 
     private final DashboardService dashboardService;
-    private final UserService userService;
+    private final DashboardServiceImpl dashboardServiceImpl;
 
     @Autowired
-    public AdminDashboardController(DashboardService dashboardService, UserService userService) {
+    public AdminDashboardController(DashboardService dashboardService,
+                                        DashboardServiceImpl dashboardServiceImpl) {
         this.dashboardService = dashboardService;
-        this.userService = userService;
-    }
-
-    // ==========================================
-    // PAGE RENDERING ENDPOINTS
-    // ==========================================
-
-    /**
-     * Главна dashboard страница
-     * Зарежда данните чрез сервиза и ги предава на template-а
-     */
-    @GetMapping("/dashboard")
-    public String mainDashboard(Model model, Authentication authentication) {
-        try {
-            log.info("Loading dashboard page for user: {}", authentication.getName());
-
-            // Получаваме текущия потребител
-            UserEntity currentUser = userService.getCurrentUser();
-            model.addAttribute("currentUser", currentUser);
-
-            // Получаваме dashboard данните чрез сервиза
-            DashboardDataDTO dashboardData = dashboardService.getDashboardOverview();
-
-            // Добавяме данните в модела за Thymeleaf
-            model.addAttribute("submittedCount", dashboardData.getSubmittedCount());
-            model.addAttribute("confirmedCount", dashboardData.getConfirmedCount());
-            model.addAttribute("pickedCount", dashboardData.getPickedCount());
-            model.addAttribute("shippedCount", dashboardData.getShippedCount());
-            model.addAttribute("cancelledCount", dashboardData.getCancelledCount());
-            model.addAttribute("dashboardData", dashboardData);
-
-            // Получаваме дневните статистики
-            DailyStatsDTO dailyStats = dashboardService.getDailyStatistics();
-            model.addAttribute("dailyStats", dailyStats);
-
-            // Добавяме timestamp за cache-busting
-            model.addAttribute("lastUpdate", LocalDateTime.now());
-
-            log.info("Dashboard page loaded successfully for user: {}", currentUser.getUsername());
-            return "main-dashboard";
-
-        } catch (Exception e) {
-            log.error("Error loading dashboard page: {}", e.getMessage(), e);
-            model.addAttribute("error", "Възникна грешка при зареждане на dashboard-а");
-            return "error/general";
-        }
+        this.dashboardServiceImpl = dashboardServiceImpl;
     }
 
     // ==========================================
@@ -95,244 +38,194 @@ public class AdminDashboardController {
     // ==========================================
 
     /**
-     * API endpoint за общи dashboard данни
-     * Връща актуални статистики за frontend-а
+     * API endpoint за dashboard overview - използва реалния getDashboardOverviewAsDTO метод
      */
     @GetMapping("/dashboard/overview")
-    @ResponseBody
-    public ResponseEntity<Map<String, Object>> getDashboardOverview() {
+    public ResponseEntity<DashboardResponseDTO> getDashboardOverview() {
         try {
-            log.debug("API request for dashboard overview");
-
-            DashboardDataDTO dashboardData = dashboardService.getDashboardOverview();
-            DailyStatsDTO dailyStats = dashboardService.getDailyStatistics();
-
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("urgentCount", dashboardData.getSubmittedCount());
-            response.put("pendingCount", dashboardData.getConfirmedCount());
-            response.put("readyCount", dashboardData.getPickedCount());
-            response.put("completedCount", dashboardData.getShippedCount());
-            response.put("cancelledCount", dashboardData.getCancelledCount());
-            response.put("dailyStats", dailyStats);
-            response.put("timestamp", LocalDateTime.now());
+            DashboardOverviewResponseDTO overviewData = dashboardServiceImpl.getDashboardOverviewAsDTO();
+            DashboardResponseDTO response = DashboardResponseDTO.success(overviewData);
 
             return ResponseEntity.ok(response);
-
         } catch (Exception e) {
             log.error("Error getting dashboard overview: {}", e.getMessage(), e);
-            return createErrorResponse("Грешка при зареждане на dashboard данните");
+            DashboardResponseDTO errorResponse = DashboardResponseDTO.error("Грешка при зареждане на dashboard данните");
+            return ResponseEntity.ok(errorResponse);
         }
     }
 
     /**
-     * API endpoint за поръчки по статус
-     * Връща филтрирани поръчки за конкретни dashboard табове
+     * API endpoint за поръчки по статус - използва реалния getOrdersByStatusAsDTO метод
      */
     @GetMapping("/dashboard/orders/{status}")
-    @ResponseBody
-    public ResponseEntity<Map<String, Object>> getOrdersByStatus(@PathVariable String status) {
+    public ResponseEntity<DashboardResponseDTO> getOrdersByStatus(@PathVariable String status) {
         try {
-            log.debug("API request for orders with status: {}", status);
 
-            // Валидираме статуса
             OrderStatus orderStatus;
             try {
                 orderStatus = OrderStatus.valueOf(status.toUpperCase());
             } catch (IllegalArgumentException e) {
                 log.warn("Invalid order status requested: {}", status);
-                return createErrorResponse("Невалиден статус на поръчка: " + status);
+                DashboardResponseDTO errorResponse = DashboardResponseDTO.error("Невалиден статус на поръчка: " + status);
+                return ResponseEntity.badRequest().body(errorResponse);
             }
 
-            // Получаваме поръчките чрез сервиза (ограничени до 50 за performance)
-            List<Order> orders = dashboardService.getOrdersByStatus(orderStatus, 50);
+            OrdersListResponseDTO ordersData = dashboardServiceImpl.getOrdersByStatusAsDTO(orderStatus, 50);
+            DashboardResponseDTO response = DashboardResponseDTO.success(ordersData);
 
-            // Конвертираме към API response формат
-            List<Map<String, Object>> orderMaps = orders.stream()
-                    .map(dashboardService::convertOrderToApiResponse)
-                    .toList();
-
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("orders", orderMaps);
-            response.put("totalCount", orders.size());
-            response.put("status", status);
-            response.put("timestamp", LocalDateTime.now());
-
-            log.info("Successfully returned {} orders for status: {}", orderMaps.size(), status);
             return ResponseEntity.ok(response);
-
         } catch (Exception e) {
             log.error("Error getting orders by status {}: {}", status, e.getMessage(), e);
-            return createErrorResponse("Грешка при зареждане на поръчките");
+            DashboardResponseDTO errorResponse = DashboardResponseDTO.error("Грешка при зареждане на поръчките");
+            return ResponseEntity.ok(errorResponse);
         }
     }
 
     // ==========================================
-    // ORDER MANAGEMENT ENDPOINTS
+    // ORDER OPERATION ENDPOINTS
     // ==========================================
 
     /**
-     * Потвърждаване на поръчка
+     * Потвърждаване на поръчка - използва реалния confirmOrder метод
      */
     @PostMapping("/orders/{orderId}/confirm")
-    @ResponseBody
-    public ResponseEntity<Map<String, Object>> confirmOrder(@PathVariable Long orderId) {
+    public ResponseEntity<DashboardResponseDTO> confirmOrder(@PathVariable Long orderId) {
         try {
-            log.info("Confirming order: {}", orderId);
 
             boolean success = dashboardService.confirmOrder(orderId);
 
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", success);
-            response.put("message", success ? "Поръчката е потвърдена успешно" : "Грешка при потвърждаване");
-            response.put("orderId", orderId);
-
-            return ResponseEntity.ok(response);
-
+            if (success) {
+                DashboardResponseDTO response = DashboardResponseDTO.success("Поръчката е потвърдена успешно");
+                return ResponseEntity.ok(response);
+            } else {
+                DashboardResponseDTO response = DashboardResponseDTO.error("Грешка при потвърждаване на поръчката");
+                return ResponseEntity.ok(response);
+            }
         } catch (IllegalArgumentException e) {
             log.warn("Invalid order ID for confirmation: {}", orderId);
-            return createErrorResponse("Поръчката не съществува");
+            DashboardResponseDTO errorResponse = DashboardResponseDTO.error("Поръчката не съществува");
+            return ResponseEntity.badRequest().body(errorResponse);
         } catch (IllegalStateException e) {
             log.warn("Invalid status transition for order {}: {}", orderId, e.getMessage());
-            return createErrorResponse("Невалидна операция: " + e.getMessage());
+            DashboardResponseDTO errorResponse = DashboardResponseDTO.error("Невалидна операция: " + e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
         } catch (Exception e) {
             log.error("Error confirming order {}: {}", orderId, e.getMessage(), e);
-            return createErrorResponse("Грешка при потвърждаване на поръчката");
+            DashboardResponseDTO errorResponse = DashboardResponseDTO.error("Грешка при потвърждаване на поръчката");
+            return ResponseEntity.ok(errorResponse);
         }
     }
 
     /**
-     * Започване на пикинг процес
+     * Започване на пикинг процес - използва реалния startPickingOrder метод
      */
     @PostMapping("/orders/{orderId}/pick")
-    @ResponseBody
-    public ResponseEntity<Map<String, Object>> startPicking(@PathVariable Long orderId) {
+    public ResponseEntity<DashboardResponseDTO> startPicking(@PathVariable Long orderId) {
         try {
-            log.info("Starting picking for order: {}", orderId);
 
             boolean success = dashboardService.startPickingOrder(orderId);
 
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", success);
-            response.put("message", success ? "Пикингът е започнат успешно" : "Грешка при започване на пикинга");
-            response.put("orderId", orderId);
-
-            return ResponseEntity.ok(response);
-
+            if (success) {
+                DashboardResponseDTO response = DashboardResponseDTO.success("Пикинг процесът е започнат успешно");
+                return ResponseEntity.ok(response);
+            } else {
+                DashboardResponseDTO response = DashboardResponseDTO.error("Грешка при започване на пикинг процеса");
+                return ResponseEntity.ok(response);
+            }
         } catch (IllegalArgumentException e) {
             log.warn("Invalid order ID for picking: {}", orderId);
-            return createErrorResponse("Поръчката не съществува");
+            DashboardResponseDTO errorResponse = DashboardResponseDTO.error("Поръчката не съществува");
+            return ResponseEntity.badRequest().body(errorResponse);
         } catch (IllegalStateException e) {
             log.warn("Invalid status transition for picking order {}: {}", orderId, e.getMessage());
-            return createErrorResponse("Невалидна операция: " + e.getMessage());
+            DashboardResponseDTO errorResponse = DashboardResponseDTO.error("Невалидна операция: " + e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
         } catch (Exception e) {
             log.error("Error starting picking for order {}: {}", orderId, e.getMessage(), e);
-            return createErrorResponse("Грешка при започване на пикинга");
+            DashboardResponseDTO errorResponse = DashboardResponseDTO.error("Грешка при започване на пикинг процеса");
+            return ResponseEntity.ok(errorResponse);
         }
     }
 
     /**
-     * Завършване на поръчка
-     */
-    @PostMapping("/orders/{orderId}/complete")
-    @ResponseBody
-    public ResponseEntity<Map<String, Object>> completeOrder(@PathVariable Long orderId) {
-        try {
-            log.info("Completing order: {}", orderId);
-
-            boolean success = dashboardService.completeOrder(orderId);
-
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", success);
-            response.put("message", success ? "Поръчката е завършена успешно" : "Грешка при завършване");
-            response.put("orderId", orderId);
-
-            return ResponseEntity.ok(response);
-
-        } catch (IllegalArgumentException e) {
-            log.warn("Invalid order ID for completion: {}", orderId);
-            return createErrorResponse("Поръчката не съществува");
-        } catch (IllegalStateException e) {
-            log.warn("Invalid status transition for completing order {}: {}", orderId, e.getMessage());
-            return createErrorResponse("Невалидна операция: " + e.getMessage());
-        } catch (Exception e) {
-            log.error("Error completing order {}: {}", orderId, e.getMessage(), e);
-            return createErrorResponse("Грешка при завършване на поръчката");
-        }
-    }
-
-    /**
-     * Отказване на поръчка
+     * Отказване на поръчка - използва реалния rejectOrder метод с причина
      */
     @PostMapping("/orders/{orderId}/reject")
-    @ResponseBody
-    public ResponseEntity<Map<String, Object>> rejectOrder(@PathVariable Long orderId,
-                                                           @RequestBody Map<String, String> requestBody) {
+    public ResponseEntity<DashboardResponseDTO> rejectOrder(@PathVariable Long orderId) {
         try {
-            String reason = requestBody.getOrDefault("reason", "Няма посочена причина");
-            log.info("Rejecting order: {} with reason: {}", orderId, reason);
 
-            boolean success = dashboardService.rejectOrder(orderId, reason);
+            boolean success = dashboardService.rejectOrder(orderId, "Отказана от dashboard");
 
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", success);
-            response.put("message", success ? "Поръчката е отказана успешно" : "Грешка при отказване");
-            response.put("orderId", orderId);
-
-            return ResponseEntity.ok(response);
-
+            if (success) {
+                DashboardResponseDTO response = DashboardResponseDTO.success("Поръчката е отказана успешно");
+                return ResponseEntity.ok(response);
+            } else {
+                DashboardResponseDTO response = DashboardResponseDTO.error("Грешка при отказване на поръчката");
+                return ResponseEntity.ok(response);
+            }
         } catch (IllegalArgumentException e) {
             log.warn("Invalid order ID for rejection: {}", orderId);
-            return createErrorResponse("Поръчката не съществува");
+            DashboardResponseDTO errorResponse = DashboardResponseDTO.error("Поръчката не съществува");
+            return ResponseEntity.badRequest().body(errorResponse);
         } catch (IllegalStateException e) {
             log.warn("Invalid status transition for rejecting order {}: {}", orderId, e.getMessage());
-            return createErrorResponse("Невалидна операция: " + e.getMessage());
+            DashboardResponseDTO errorResponse = DashboardResponseDTO.error("Невалидна операция: " + e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
         } catch (Exception e) {
             log.error("Error rejecting order {}: {}", orderId, e.getMessage(), e);
-            return createErrorResponse("Грешка при отказване на поръчката");
+            DashboardResponseDTO errorResponse = DashboardResponseDTO.error("Грешка при отказване на поръчката");
+            return ResponseEntity.ok(errorResponse);
         }
     }
 
     /**
-     * Получаване на детайли за поръчка
+     * Получаване на детайли за поръчка - използва реалния convertOrderToDTO метод
      */
     @GetMapping("/orders/{orderId}/details")
-    @ResponseBody
-    public ResponseEntity<Map<String, Object>> getOrderDetails(@PathVariable Long orderId) {
+    public ResponseEntity<DashboardResponseDTO> getOrderDetails(@PathVariable Long orderId) {
         try {
             log.debug("Getting details for order: {}", orderId);
 
             Order order = dashboardService.getOrderDetails(orderId);
-
             if (order == null) {
-                return createErrorResponse("Поръчката не съществува");
+                DashboardResponseDTO errorResponse = DashboardResponseDTO.error("Поръчката не съществува");
+                return ResponseEntity.notFound().build();
             }
 
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("order", dashboardService.convertOrderToApiResponse(order));
+            OrderDTO orderDTO = dashboardServiceImpl.convertOrderToDTO(order);
+            DashboardResponseDTO response = DashboardResponseDTO.success(orderDTO);
 
             return ResponseEntity.ok(response);
-
         } catch (Exception e) {
             log.error("Error getting order details for {}: {}", orderId, e.getMessage(), e);
-            return createErrorResponse("Грешка при зареждане на детайлите");
+            DashboardResponseDTO errorResponse = DashboardResponseDTO.error("Грешка при зареждане на детайлите");
+            return ResponseEntity.ok(errorResponse);
         }
     }
 
     // ==========================================
-    // UTILITY METHODS
+    // HEALTH CHECK ENDPOINT
     // ==========================================
 
     /**
-     * Създава стандартизиран error response
+     * Health check - използва реалния getDashboardOverview метод
      */
-    private ResponseEntity<Map<String, Object>> createErrorResponse(String message) {
-        Map<String, Object> errorResponse = new HashMap<>();
-        errorResponse.put("success", false);
-        errorResponse.put("message", message);
-        errorResponse.put("timestamp", LocalDateTime.now());
-        return ResponseEntity.ok(errorResponse); // Използваме OK за consistency с frontend-а
+    @GetMapping("/dashboard/health")
+    public ResponseEntity<DashboardResponseDTO> healthCheck() {
+        try {
+            DashboardDataDTO testData = dashboardService.getDashboardOverview();
+
+            long totalOrders = testData.getSubmittedCount() + testData.getConfirmedCount()
+                    + testData.getPickedCount() + testData.getShippedCount();
+
+            String healthInfo = String.format("Dashboard service operational - Processing %d total orders", totalOrders);
+            DashboardResponseDTO response = DashboardResponseDTO.success(healthInfo);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Health check failed: {}", e.getMessage());
+            DashboardResponseDTO errorResponse = DashboardResponseDTO.error("Dashboard service unavailable");
+            return ResponseEntity.status(503).body(errorResponse);
+        }
     }
 }

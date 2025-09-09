@@ -240,27 +240,15 @@
 
 <!-- Include Footer Fragment -->
 <div th:replace="~{fragments/footer :: footer}"></div>
-
-<!-- JavaScript Configuration -->
 <script th:inline="javascript">
-    // Pass server-side data to JavaScript
     window.dashboardConfig = {
-        csrfToken: /*[[${_csrf.token}]]*/ '',
-        csrfHeader: /*[[${_csrf.headerName}]]*/ '',
-        userId: /*[[${currentUser.id}]]*/ null,
-        userRole: /*[[${currentUser.role.name()}]]*/ 'GUEST',
-        enableRealTimeUpdates: true,
-        refreshInterval: 180000 // 3 minutes
-    };
-
-    // Initial dashboard data
-    window.dashboardData = {
-        urgentCount: /*[[${submittedCount ?: 0}]]*/ 0,
-        pendingCount: /*[[${confirmedCount ?: 0}]]*/ 0,
-        readyCount: /*[[${pickedCount ?: 0}]]*/ 0,
-        completedCount: /*[[${shippedCount ?: 0}]]*/ 0
+        userId: /*[[${userId}]]*/'',
+        csrfToken: /*[[${csrfToken}]]*/ '',
+        csrfHeader: /*[[${csrfHeader}]]*/ '',
+        initialDashboardData: /*[[${initialDashboardData}]]*/ {}
     };
 </script>
+
 
 <!-- Dashboard JavaScript -->
 <script src="/js/dashboard/dashboardApi.js"></script>

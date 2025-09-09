@@ -307,32 +307,44 @@ class DashboardUI {
      * Update tab content with new order data
      */
     updateTabContent(tabName, orders) {
+        const safeOrders = Array.isArray(orders) ? orders : [];
+
+        console.log(`Updating tab ${tabName} with ${safeOrders.length} orders`);
+
         try {
-            const tabContent = document.getElementById(`${tabName}-tab`);
-            if (!tabContent) return;
-
-            const panelContent = tabContent.querySelector('.panel-content');
-            if (!panelContent) return;
-
-            // Clear existing content
-            panelContent.innerHTML = '';
-
-            if (orders.length === 0) {
-                panelContent.innerHTML = this.createEmptyStateHTML(tabName);
-            } else {
-                // Create order items
-                orders.forEach(order => {
-                    const orderHTML = this.createOrderItemHTML(order, tabName);
-                    panelContent.insertAdjacentHTML('beforeend', orderHTML);
-                });
+            const tabElement = document.querySelector(`#${tabName}-tab-content`);
+            if (!tabElement) {
+                console.warn(`⚠️ Tab element for '${tabName}' not found!`);
+                return;
             }
 
-            console.log(`✓ ${tabName} tab content updated with ${orders.length} orders`);
+            // Изчистваме съдържанието
+            tabElement.innerHTML = "";
 
-        } catch (error) {
-            console.error(`Error updating ${tabName} tab content:`, error);
+            if (safeOrders.length === 0) {
+                tabElement.innerHTML = `<p class="empty-message">Няма намерени поръчки</p>`;
+                return;
+            }
+
+            // Добавяме новите елементи
+            safeOrders.forEach(order => {
+                const item = document.createElement("div");
+                item.className = "order-item";
+                item.innerHTML = `
+                <div class="order-id">#${order.id}</div>
+                <div class="order-customer">${order.customerName || "Неизвестен клиент"}</div>
+                <div class="order-status">${order.status}</div>
+            `;
+                tabElement.appendChild(item);
+            });
+
+            console.log(`✓ ${tabName} tab content updated with ${safeOrders.length} orders`);
+
+        } catch (err) {
+            console.error(`❌ Error updating ${tabName} tab content:`, err);
         }
     }
+
 
     // ==========================================
     // ORDER DISPLAY AND INTERACTION

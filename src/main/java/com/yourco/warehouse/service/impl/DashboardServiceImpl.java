@@ -20,15 +20,6 @@ import java.util.List;
 /**
  * DASHBOARD SERVICE IMPLEMENTATION WITH DTO SUPPORT
  * =================================================
- * Обновена версия която използва типизирани DTO класове вместо Map<String, Object>.
- * Това осигурява type safety, по-добра читаемост и професионална архитектура.
- *
- * Защо използваме DTO-та вместо Map<String, Object>:
- * - Type safety при compile time
- * - Автоматично JSON сериализиране с Jackson
- * - IntelliJ auto-completion и code navigation
- * - Ясна документация на API структурата
- * - По-лесно refactoring и maintenance
  */
 @Service
 @Transactional(readOnly = true)

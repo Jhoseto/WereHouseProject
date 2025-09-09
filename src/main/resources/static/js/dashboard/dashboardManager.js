@@ -66,7 +66,8 @@ class DashboardManager {
      * Load complete dashboard data from server
      * Updates both counters and initial order lists
      */
-    async loadDashboardData() {
+    async loadDashboardData()
+    {
         try {
             console.log('Loading dashboard data from server...');
 
@@ -129,19 +130,21 @@ class DashboardManager {
                 const data = await this.api.getOrdersByStatus(status);
 
                 if (data.success) {
-                    // Update cache
+                    // API връща "data" обект вътре
+                    const apiData = data.data || {};
+                    const safeOrders = Array.isArray(apiData.orders) ? apiData.orders : [];
+
                     this.orderCache.set(cacheKey, {
-                        orders: data.orders,
+                        orders: safeOrders,
                         timestamp: new Date(),
-                        totalCount: data.totalCount
+                        totalCount: apiData.totalCount || 0
                     });
 
-                    // Update UI
                     if (this.ui) {
-                        this.ui.updateTabContent(tabName, data.orders);
+                        this.ui.updateTabContent(tabName, safeOrders);
                     }
 
-                    console.log(`✓ Loaded ${data.orders.length} orders for ${tabName} tab`);
+                    console.log(`✓ Loaded ${safeOrders.length} orders for ${tabName} tab`);
                 } else {
                     throw new Error(data.message || 'Failed to load tab data');
                 }

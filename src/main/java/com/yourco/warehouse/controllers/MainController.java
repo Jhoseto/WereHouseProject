@@ -1,7 +1,10 @@
 package com.yourco.warehouse.controllers;
 
+import com.yourco.warehouse.dto.DailyStatsDTO;
+import com.yourco.warehouse.dto.DashboardDataDTO;
 import com.yourco.warehouse.entity.Order;
 import com.yourco.warehouse.entity.UserEntity;
+import com.yourco.warehouse.service.DashboardService;
 import com.yourco.warehouse.service.UserService;
 import com.yourco.warehouse.service.impl.OrderServiceImpl;
 import com.yourco.warehouse.utils.RequestUtils;
@@ -13,6 +16,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.support.RequestContextUtils;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -22,11 +26,13 @@ public class MainController {
 
     private final UserService userService;
     private final OrderServiceImpl orderService;
+    private final DashboardService dashboardService;
 
     public MainController(UserService userService,
-                          OrderServiceImpl orderService) {
+                          OrderServiceImpl orderService, DashboardService dashboardService) {
         this.userService = userService;
         this.orderService = orderService;
+        this.dashboardService = dashboardService;
     }
 
     @GetMapping("/")
@@ -134,6 +140,30 @@ public class MainController {
         }
     }
 
+
+    @GetMapping("/employer/dashboard")
+    public String mainDashboard(Model model, Authentication authentication) {
+        UserEntity currentUser = userService.getCurrentUser();
+
+        // Използваме реалните методи от интерфейса
+        DashboardDataDTO dashboardData = dashboardService.getDashboardOverview();
+
+        model.addAttribute("submittedCount", dashboardData.getSubmittedCount());
+        model.addAttribute("confirmedCount", dashboardData.getConfirmedCount());
+        model.addAttribute("pickedCount", dashboardData.getPickedCount());
+        model.addAttribute("shippedCount", dashboardData.getShippedCount());
+        model.addAttribute("cancelledCount", dashboardData.getCancelledCount());
+        model.addAttribute("dashboardData", dashboardData);
+
+        // Получаваме дневните статистики
+        DailyStatsDTO dailyStats = dashboardService.getDailyStatistics();
+        model.addAttribute("dailyStats", dailyStats);
+        model.addAttribute("lastUpdate", LocalDateTime.now());
+        model.addAttribute("currentUser", currentUser);
+        model.addAttribute("userId", (currentUser.getId()));
+
+        return "main-dashboard"; // Само темплейта
+    }
 
 
     @GetMapping("/about")

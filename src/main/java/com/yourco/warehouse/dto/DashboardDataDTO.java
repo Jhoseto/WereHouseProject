@@ -11,6 +11,7 @@ public class DashboardDataDTO {
     private long shippedCount;
     private long cancelledCount;
 
+
     // Getters and setters
     public long getSubmittedCount() { return submittedCount; }
     public void setSubmittedCount(long submittedCount) { this.submittedCount = submittedCount; }
