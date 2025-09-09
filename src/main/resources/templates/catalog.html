@@ -1,141 +1,288 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="bg"
-      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Съни Комерс-Каталог Клиенти</title>
-    <meta name="description" content="Каталог с продукти от Съни Комерс-Димо Пенев ООД. Над 2500 артикула за хотели, ресторанти и хорека бизнес.">
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      lang="bg" >
 
-    <th:block th:replace="~{fragments/topHtmlImports :: topImports}"></th:block>
+<head>
+    <title>Каталог продукти | Warehouse Portal</title>
+
+    <div th:replace="~{fragments/topHtmlImports :: topImports}"></div>
+    <!-- Existing CSS imports -->
     <link rel="stylesheet" href="/css/catalog.css">
+    <!-- NEW: Table view specific styles -->
+    <link rel="stylesheet" href="/css/table-view.css">
 </head>
+
 <body>
+<!-- Flash Messages Data (скрит за JavaScript) -->
+<div th:replace="~{fragments/toastSystem :: flashData}"></div>
 
 <!-- Навигация -->
 <div th:replace="~{fragments/navbar :: navbar}"></div>
+<div th:replace="~{fragments/toastSystem.html :: toastContainer}"></div>
 
-<!-- Toast Container -->
-<div id="toastContainer" class="toast-container"></div>
 
 <section class="catalog-section">
     <div class="container">
-        <!-- Header -->
+
+        <!-- ==========================================
+             CATALOG HEADER - ENHANCED
+             ========================================== -->
         <div class="catalog-header">
-            <h1 class="catalog-title">
-                <i class="bi bi-archive"></i>
-                Каталог продукти
-            </h1>
+            <div class="catalog-title-section">
+                <h1 class="catalog-title">Каталог продукти</h1>
+                <div class="catalog-subtitle">
+                    Професионално управление на поръчки и инвентар
+                </div>
+            </div>
+
             <div class="catalog-stats">
-                <span><span id="product-count">0</span> продукта</span>
-                <span id="filtered-count" class="filtered-count hidden"></span>
+                <span>Общо продукти: <strong id="product-count">—</strong></span>
+                <span class="filtered-count hidden" id="filtered-count"></span>
+
+                <!-- NEW: View mode indicator -->
+                <div class="view-mode-indicator">
+                    <i class="bi bi-eye"></i>
+                    <span id="current-view-label">Мрежов изглед</span>
+                </div>
             </div>
         </div>
 
-        <!-- Search & Filters -->
+        <!-- ==========================================
+             SEARCH & FILTERS - ENHANCED
+             ========================================== -->
         <div class="catalog-controls">
+
+            <!-- Search Section -->
             <div class="search-container">
                 <div class="search-box">
                     <input type="text"
                            id="search-input"
                            class="search-input"
-                           placeholder="Търси по име или SKU..."
+                           placeholder="Търсене по име, SKU, ID или описание..."
                            autocomplete="off">
                     <button type="button" id="clear-search" class="clear-search hidden">
                         <i class="bi bi-x"></i>
                     </button>
                 </div>
+
+                <!-- NEW: Search hints for professional users -->
+                <div class="search-hints">
+                    <small class="text-muted">
+                        <i class="bi bi-info-circle"></i>
+                        Съвети: Търсете по SKU (PR001), ID (#123) или име на продукт
+                    </small>
+                </div>
             </div>
 
+            <!-- Filters Row -->
             <div class="filters-container">
                 <div class="filter-group">
-                    <label for="category-filter" class="filter-label">Категория</label>
+                    <label for="category-filter" class="filter-label">
+                        <i class="bi bi-collection"></i> Категория
+                    </label>
                     <select id="category-filter" class="filter-select">
                         <option value="">Всички категории</option>
+                        <!-- Categories populated by JavaScript -->
                     </select>
                 </div>
 
                 <div class="filter-group">
-                    <label for="price-min" class="filter-label">Минимална цена</label>
-                    <input type="number" id="price-min" class="filter-input"
-                           placeholder="0.00" step="0.01" min="0">
+                    <label for="price-min" class="filter-label">
+                        <i class="bi bi-currency-dollar"></i> Мин. цена
+                    </label>
+                    <input type="number"
+                           id="price-min"
+                           class="filter-input"
+                           placeholder="0.00"
+                           step="0.01"
+                           min="0">
                 </div>
 
                 <div class="filter-group">
-                    <label for="price-max" class="filter-label">Максимална цена</label>
-                    <input type="number" id="price-max" class="filter-input"
-                           placeholder="999.99" step="0.01" min="0">
+                    <label for="price-max" class="filter-label">
+                        <i class="bi bi-currency-dollar"></i> Макс. цена
+                    </label>
+                    <input type="number"
+                           id="price-max"
+                           class="filter-input"
+                           placeholder="999.99"
+                           step="0.01"
+                           min="0">
                 </div>
 
+                <!-- ENHANCED: Expanded sorting options -->
                 <div class="filter-group">
-                    <label for="sort-by" class="filter-label">Сортиране</label>
+                    <label for="sort-by" class="filter-label">
+                        <i class="bi bi-sort-down"></i> Сортиране
+                    </label>
                     <select id="sort-by" class="filter-select">
-                        <option value="name-asc">Име А-Я</option>
-                        <option value="name-desc">Име Я-А</option>
-                        <option value="price-asc">Цена възходящо</option>
-                        <option value="price-desc">Цена низходящо</option>
+                        <optgroup label="По име">
+                            <option value="name-asc" selected>Име А-Я</option>
+                            <option value="name-desc">Име Я-А</option>
+                        </optgroup>
+                        <optgroup label="По цена">
+                            <option value="price-asc">Цена възходящо</option>
+                            <option value="price-desc">Цена низходящо</option>
+                        </optgroup>
+                        <optgroup label="По SKU">
+                            <option value="sku-asc">SKU А-Я</option>
+                            <option value="sku-desc">SKU Я-А</option>
+                        </optgroup>
+                        <optgroup label="По наличност">
+                            <option value="stock-desc">Най-много налични</option>
+                            <option value="stock-asc">Най-малко налични</option>
+                        </optgroup>
                     </select>
                 </div>
+
+                <!-- ENHANCED: Per-page options adapted for table view -->
                 <div class="filter-group">
-                    <label for="per-page" class="filter-label">Показвай</label>
+                    <label for="per-page" class="filter-label">
+                        <i class="bi bi-layout-text-window"></i> Показвай
+                    </label>
                     <select id="per-page" class="filter-select">
                         <option value="12">12 на страница</option>
                         <option value="24" selected>24 на страница</option>
                         <option value="48">48 на страница</option>
-                        <option value="96">96 на страница</option>
+                        <!-- NEW: Higher values for table view -->
+                        <option value="50">50 на страница</option>
+                        <option value="100">100 на страница</option>
+                        <option value="200">200 на страница</option>
                     </select>
                 </div>
             </div>
 
+            <!-- ENHANCED: View Controls with Table Mode -->
             <div class="view-controls">
                 <button type="button" id="grid-view" class="view-btn active">
                     <i class="bi bi-grid-3x2"></i>
-                    Мрежа
+                    Карти
                 </button>
-                <button type="button" id="list-view" class="view-btn">
-                    <i class="bi bi-list-task"></i>
-                    Списък
+                <button type="button" id="table-view" class="view-btn">
+                    <i class="bi bi-table"></i>
+                    Професионален изглед
                 </button>
-                <button type="button" id="clear-filters" class="view-btn">
+                <button type="button" id="clear-filters" class="view-btn secondary">
                     <i class="bi bi-arrow-counterclockwise"></i>
                     Изчисти
                 </button>
             </div>
         </div>
 
-        <!-- Loading State -->
+        <!-- ==========================================
+             LOADING STATE
+             ========================================== -->
         <div id="loading-state" class="loading-state">
             <div class="loading-spinner"></div>
             <p>Зареждане на продуктите...</p>
         </div>
 
-        <!-- Products Container -->
+        <!-- ==========================================
+             PRODUCTS CONTAINER - DUAL MODE SUPPORT
+             ========================================== -->
         <div id="products-container" class="products-container hidden">
             <!-- Products will be populated by JavaScript -->
+            <!-- Grid/List view: Cards rendered here -->
+            <!-- Table view: Professional table rendered here -->
         </div>
 
-        <!-- Empty State -->
+        <!-- ==========================================
+             EMPTY STATES
+             ========================================== -->
         <div id="empty-state" class="empty-state hidden">
-            <h3>Няма продукти</h3>
-            <p id="empty-message">Няма налични продукти в каталога в момента.</p>
-            <button type="button" id="reset-search" class="view-btn">
-                Опресни
+            <div class="empty-icon">
+                <i class="bi bi-inbox"></i>
+            </div>
+            <h3>Няма продукти в каталога</h3>
+            <p>В момента няма налични продукти за показване.</p>
+            <button type="button" class="btn btn-primary" onclick="location.reload()">
+                <i class="bi bi-arrow-clockwise"></i>
+                Презареди
             </button>
         </div>
 
-        <!-- No Results State -->
         <div id="no-results" class="empty-state hidden">
+            <div class="empty-icon">
+                <i class="bi bi-search"></i>
+            </div>
             <h3>Няма резултати</h3>
-            <p>Не бяха намерени продукти отговарящи на търсенето.</p>
-            <button type="button" class="view-btn" onclick="window.catalogManager.clearAllFilters()">
-                Изчисти филтрите
-            </button>
+            <p>Не са намерени продукти отговарящи на критериите за търсене.</p>
+            <div class="empty-actions">
+                <button type="button" id="reset-search" class="btn btn-secondary">
+                    <i class="bi bi-arrow-counterclockwise"></i>
+                    Изчисти филтрите
+                </button>
+                <button type="button" class="btn btn-primary" onclick="catalogManager.clearAllFilters()">
+                    <i class="bi bi-collection"></i>
+                    Виж всички продукти
+                </button>
+            </div>
         </div>
-    </div>
-    <!-- Pagination Container - НОВА СЕКЦИЯ -->
-    <div id="pagination-container" class="pagination-container"></div>
-</section>
 
+        <!-- ==========================================
+             PAGINATION
+             ========================================== -->
+        <div id="pagination-container" class="pagination-container">
+            <!-- Pagination will be populated by JavaScript -->
+        </div>
+
+        <!-- ==========================================
+             KEYBOARD NAVIGATION HINTS - NEW
+             ========================================== -->
+        <div class="keyboard-hint" id="keyboard-hint">
+            <strong>Клавишни комбинации:</strong>
+            ↑↓ Навигация | Enter Добави | Space Избери | Esc Изчисти
+        </div>
+
+        <!-- ==========================================
+             PROFESSIONAL FEATURES PANEL - NEW
+             ========================================== -->
+        <div class="professional-panel" id="professional-panel" style="display: none;">
+            <div class="panel-header">
+                <h4><i class="bi bi-speedometer2"></i> Професионални инструменти</h4>
+                <button type="button" class="panel-close" onclick="hideProfessionalPanel()">
+                    <i class="bi bi-x"></i>
+                </button>
+            </div>
+
+            <div class="panel-content">
+                <div class="tool-section">
+                    <h5><i class="bi bi-upload"></i> Импорт от CSV</h5>
+                    <p>Качете CSV файл с продукти и количества за бързо поръчване.</p>
+                    <input type="file" id="csv-upload" accept=".csv" style="display: none;">
+                    <button type="button" class="btn btn-outline" onclick="document.getElementById('csv-upload').click()">
+                        <i class="bi bi-file-earmark-arrow-up"></i>
+                        Избери CSV файл
+                    </button>
+                </div>
+
+                <div class="tool-section">
+                    <h5><i class="bi bi-bookmark"></i> Шаблони за поръчки</h5>
+                    <p>Запазете текущата поръчка като шаблон за бъдеща употреба.</p>
+                    <button type="button" class="btn btn-outline" onclick="saveOrderTemplate()">
+                        <i class="bi bi-plus-circle"></i>
+                        Създай шаблон
+                    </button>
+                </div>
+
+                <div class="tool-section">
+                    <h5><i class="bi bi-download"></i> Експорт данни</h5>
+                    <p>Изтеглете продуктовите данни в различни формати.</p>
+                    <div class="export-buttons">
+                        <button type="button" class="btn btn-outline btn-sm" onclick="exportToCSV()">
+                            <i class="bi bi-file-earmark-spreadsheet"></i> CSV
+                        </button>
+                        <button type="button" class="btn btn-outline btn-sm" onclick="exportToExcel()">
+                            <i class="bi bi-file-earmark-excel"></i> Excel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</section>
 
 <!-- FLOATING CART ICON - САМО ЗА КАТАЛОЖНАТА СТРАНИЦА -->
 <div sec:authorize="isAuthenticated()" class="floating-cart-container">
@@ -153,8 +300,92 @@
 <!-- Include Footer Fragment -->
 <div th:replace="~{fragments/footer :: footer}"></div>
 
-<!-- Scripts -->
+<!-- ==========================================
+     JAVASCRIPT IMPORTS
+     ========================================== -->
+<script th:inline="javascript">
+    // Pass server-side data to JavaScript
+    window.catalogConfig = {
+        defaultView: 'grid',
+        enableKeyboardHints: true,
+        tableViewPerPage: 50,
+        enableProfessionalFeatures: /*[[${#authorization.expression('hasRole(''ADMIN'') or hasRole(''EMPLOYER'')')}]]*/ false
+    };
+</script>
+
+<!-- Enhanced catalog JavaScript with table view support -->
 <script src="/js/catalog.js"></script>
-<th:block th:replace="~{fragments/bottomHtmlImports :: bottomImports}"></th:block>
+<div th:replace="~{fragments/bottomHtmlImports :: bottomImports}"></div>
+
+
+<!-- Initialize enhanced functionality -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Update view mode indicator when view changes
+        function updateViewModeIndicator(mode) {
+            const indicator = document.getElementById('current-view-label');
+            const modeLabels = {
+                'grid': 'Мрежов изглед',
+                'list': 'Списъчен изглед',
+                'table': 'Табличен изглед'
+            };
+
+            if (indicator) {
+                indicator.textContent = modeLabels[mode] || 'Неизвестен изглед';
+            }
+        }
+
+        // Listen for view changes
+        ['grid-view', 'list-view', 'table-view'].forEach(id => {
+            const btn = document.getElementById(id);
+            if (btn) {
+                btn.addEventListener('click', function() {
+                    const mode = id.replace('-view', '');
+                    updateViewModeIndicator(mode);
+
+                    // Show keyboard hints in table mode
+                    const hints = document.getElementById('keyboard-hint');
+                    if (hints) {
+                        hints.classList.toggle('show', mode === 'table');
+                    }
+                });
+            }
+        });
+
+        // Professional panel functionality
+        window.showProfessionalPanel = function() {
+            const panel = document.getElementById('professional-panel');
+            if (panel) {
+                panel.style.display = 'block';
+                setTimeout(() => panel.classList.add('show'), 10);
+            }
+        };
+
+        window.hideProfessionalPanel = function() {
+            const panel = document.getElementById('professional-panel');
+            if (panel) {
+                panel.classList.remove('show');
+                setTimeout(() => panel.style.display = 'none', 300);
+            }
+        };
+
+        // CSV upload handler (placeholder)
+        window.exportToCSV = function() {
+            console.log('CSV export functionality to be implemented');
+            // TODO: Implement CSV export
+        };
+
+        window.exportToExcel = function() {
+            console.log('Excel export functionality to be implemented');
+            // TODO: Implement Excel export
+        };
+
+        window.saveOrderTemplate = function() {
+            console.log('Order template functionality to be implemented');
+            // TODO: Implement order template saving
+        };
+    });
+</script>
+
 </body>
 </html>

@@ -1,0 +1,574 @@
+/* ==========================================
+   PROFESSIONAL TABLE VIEW - WAREHOUSE CATALOG
+   ========================================== */
+
+/* Table view container - заменя grid/list layout */
+.products-container.table-view {
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    padding: 0;
+    overflow: hidden;
+}
+
+/* ==========================================
+   TABLE CONTROLS TOOLBAR
+   ========================================== */
+.table-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-bottom: 2px solid #dee2e6;
+}
+
+.bulk-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.bulk-actions .btn-secondary {
+    background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.bulk-actions .btn-secondary:hover {
+    background: linear-gradient(135deg, #5a6268 0%, #495057 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(108, 117, 125, 0.3);
+}
+
+.bulk-actions .btn-primary {
+    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 2px 8px rgba(52, 152, 219, 0.2);
+}
+
+.bulk-actions .btn-primary:hover:not(:disabled) {
+    background: linear-gradient(135deg, #2980b9 0%, #1f5582 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
+}
+
+.bulk-actions .btn-primary:disabled {
+    background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.table-info {
+    font-size: 0.9rem;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+/* ==========================================
+   PROFESSIONAL TABLE LAYOUT
+   ========================================== */
+.professional-table-wrapper {
+    overflow-x: auto;
+    /*max-height: 70vh; !* Позволява скролиране при много продукти *!*/
+}
+
+.professional-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+    background: white;
+}
+
+.professional-table thead {
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    color: white;
+    position: sticky; /* Header остава видим при скролиране */
+    top: 0;
+    z-index: 10;
+}
+
+.professional-table thead th {
+    padding: 12px 8px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    white-space: nowrap;
+}
+
+.professional-table thead th:last-child {
+    border-right: none;
+}
+
+/* ==========================================
+   TABLE COLUMN SIZING
+   ========================================== */
+.select-col { width: 40px; text-align: center; }
+.id-col { width: 60px; }
+.sku-col { width: 100px; }
+.name-col { width: auto; min-width: 200px; } /* Flexible width за product name */
+.category-col { width: 120px; }
+.stock-col { width: 90px; text-align: center; }
+.price-col { width: 120px; text-align: right; }
+.quantity-col { width: 80px; text-align: center; }
+.actions-col { width: 60px; text-align: center; }
+
+/* ==========================================
+   TABLE ROWS AND CELLS
+   ========================================== */
+.professional-table tbody tr {
+    border-bottom: 1px solid #e9ecef;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.professional-table tbody tr:hover {
+    background: linear-gradient(135deg, #f8fcff 0%, #e3f2fd 100%);
+}
+
+.professional-table tbody tr.focused {
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    box-shadow: inset 3px 0 0 #2196f3;
+    outline: none;
+}
+
+.professional-table tbody tr:nth-child(even) {
+    background: rgba(248, 249, 250, 0.5);
+}
+
+.professional-table tbody tr:nth-child(even):hover {
+    background: linear-gradient(135deg, #f8fcff 0%, #e3f2fd 100%);
+}
+
+.professional-table td {
+    padding: 10px 8px;
+    vertical-align: middle;
+    border-right: 1px solid #f1f3f4;
+}
+
+.professional-table td:last-child {
+    border-right: none;
+}
+
+/* ==========================================
+   PRODUCT DATA STYLING
+   ========================================== */
+.product-id {
+    font-family: 'Courier New', monospace;
+    font-weight: 600;
+    color: #495057;
+    background: #f8f9fa;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid #dee2e6;
+}
+
+.product-sku {
+    font-family: 'Courier New', monospace;
+    font-weight: 700;
+    color: #2c3e50;
+    background: linear-gradient(135deg, #ecf0f1 0%, #d5dbdb 100%);
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid #bdc3c7;
+    font-size: 0.8rem;
+}
+
+.product-name {
+    font-weight: 600;
+    color: #2c3e50;
+    line-height: 1.3;
+    margin-bottom: 2px;
+}
+
+.product-description {
+    font-size: 0.75rem;
+    color: #6c757d;
+    line-height: 1.2;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.product-category {
+    background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+/* ==========================================
+   STOCK INDICATORS
+   ========================================== */
+.stock-indicator {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-align: center;
+    display: inline-block;
+    min-width: 60px;
+}
+
+.stock-indicator.stock-good {
+    background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+    color: white;
+}
+
+.stock-indicator.stock-low {
+    background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+    color: white;
+}
+
+.stock-indicator.stock-none {
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    color: white;
+}
+
+/* ==========================================
+   PRICE DISPLAY
+   ========================================== */
+.price-display {
+    text-align: right;
+}
+
+.price-without-vat {
+    font-family: 'Courier New', monospace;
+    font-weight: 700;
+    color: #2c3e50;
+    font-size: 0.9rem;
+}
+
+.price-with-vat {
+    font-family: 'Courier New', monospace;
+    font-size: 0.75rem;
+    color: #6c757d;
+    margin-top: 2px;
+}
+
+/* ==========================================
+   QUANTITY INPUT AND ACTIONS
+   ========================================== */
+.quantity-input-group {
+    display: flex;
+    justify-content: center;
+}
+
+.quantity-input {
+    width: 60px;
+    padding: 4px 6px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    text-align: center;
+    font-family: 'Courier New', monospace;
+    font-weight: 600;
+    font-size: 0.8rem;
+    background: white;
+    transition: all 0.2s ease;
+}
+
+.quantity-input:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+    background: #f8fcff;
+}
+
+.quantity-input:disabled {
+    background: #f8f9fa;
+    color: #6c757d;
+    cursor: not-allowed;
+}
+
+.btn-quick-add {
+    background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+    color: white;
+    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 4px rgba(39, 174, 96, 0.3);
+}
+
+.btn-quick-add:hover:not(:disabled) {
+    background: linear-gradient(135deg, #229954 0%, #1e8449 100%);
+    transform: scale(1.05);
+    box-shadow: 0 2px 8px rgba(39, 174, 96, 0.4);
+}
+
+.btn-quick-add:disabled {
+    background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.btn-quick-add.btn-loading {
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+/* ==========================================
+   SELECTION CHECKBOXES
+   ========================================== */
+.row-selector, #select-all-header {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: #3498db; /* Modern checkbox styling */
+}
+
+.select-col input[type="checkbox"] {
+    transform: scale(1.1);
+}
+
+/* ==========================================
+   VIEW TOGGLE BUTTONS - ENHANCED
+   ========================================== */
+.view-controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.view-btn {
+    background: linear-gradient(135deg, #ecf0f1 0%, #d5dbdb 100%);
+    color: #2c3e50;
+    border: 1px solid #bdc3c7;
+    padding: 10px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 90px;
+    justify-content: center;
+}
+
+.view-btn:hover {
+    background: linear-gradient(135deg, #d5dbdb 0%, #bdc3c7 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(189, 195, 199, 0.3);
+}
+
+.view-btn.active {
+    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+    color: white;
+    border-color: #2980b9;
+    box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
+}
+
+.view-btn.active:hover {
+    background: linear-gradient(135deg, #2980b9 0%, #1f5582 100%);
+}
+
+.view-btn i {
+    font-size: 1rem;
+}
+
+/* ==========================================
+   RESPONSIVE TABLE DESIGN
+   ========================================== */
+@media (max-width: 1200px) {
+    .category-col {
+        display: none; /* Скриваме категорията на по-малки екрани */
+    }
+
+    .name-col {
+        min-width: 150px;
+    }
+}
+
+@media (max-width: 992px) {
+    .professional-table-wrapper {
+        font-size: 0.8rem;
+    }
+
+    .id-col {
+        display: none; /* Скриваме ID колоната */
+    }
+
+    .product-description {
+        display: none; /* Скриваме описанието */
+    }
+
+    .bulk-actions {
+        flex-direction: column;
+        gap: 8px;
+        align-items: flex-start;
+    }
+
+    .table-controls {
+        flex-direction: column;
+        gap: 12px;
+        align-items: stretch;
+    }
+}
+
+@media (max-width: 768px) {
+    .professional-table thead th {
+        padding: 8px 4px;
+        font-size: 0.7rem;
+    }
+
+    .professional-table td {
+        padding: 8px 4px;
+    }
+
+    .sku-col {
+        width: 80px;
+    }
+
+    .stock-col, .price-col {
+        width: 70px;
+    }
+
+    .quantity-col, .actions-col {
+        width: 50px;
+    }
+
+    .quantity-input {
+        width: 45px;
+        font-size: 0.75rem;
+    }
+
+    .btn-quick-add {
+        width: 28px;
+        height: 28px;
+        font-size: 0.8rem;
+    }
+}
+
+/* ==========================================
+   KEYBOARD NAVIGATION INDICATORS
+   ========================================== */
+.table-view .keyboard-hint {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: rgba(44, 62, 80, 0.9);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    z-index: 1000;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.3s ease;
+}
+
+.table-view .keyboard-hint.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* ==========================================
+   LOADING STATES
+   ========================================== */
+.table-view .btn-loading {
+    position: relative;
+    color: transparent;
+}
+
+.table-view .btn-loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 12px;
+    height: 12px;
+    border: 2px solid transparent;
+    border-top: 2px solid currentColor;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: translate(-50%, -50%) rotate(0deg); }
+    100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* ==========================================
+   ACCESSIBILITY IMPROVEMENTS
+   ========================================== */
+.professional-table tbody tr:focus {
+    outline: 2px solid #3498db;
+    outline-offset: -2px;
+}
+
+.quantity-input:focus,
+.row-selector:focus,
+.btn-quick-add:focus {
+    outline: 2px solid #3498db;
+    outline-offset: 2px;
+}
+
+/* Screen reader support */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* ==========================================
+   INTEGRATION WITH EXISTING CATALOG STYLES
+   ========================================== */
+.table-view .catalog-stats {
+    margin-bottom: 20px;
+}
+
+.table-view .pagination-wrapper {
+    margin-top: 20px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 0 0 12px 12px;
+}

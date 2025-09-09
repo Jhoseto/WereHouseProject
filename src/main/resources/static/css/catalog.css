@@ -266,11 +266,6 @@
     margin-bottom: 30px;
 }
 
-.products-list {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
 
 /* PRODUCT CARD - ОСНОВНИ СТИЛОВЕ */
 .catalog-product-card {
@@ -466,50 +461,6 @@
     box-shadow: none;
 }
 
-/* ==========================================
-   LIST VIEW STYLES
-   ========================================== */
-
-.products-list .catalog-product-card {
-    display: flex;
-    align-items: center;
-    gap: 30px;
-    padding: 20px;
-}
-
-.products-list .catalog-product-content {
-    display: flex;
-    flex: 1;
-    gap: 30px;
-    align-items: center;
-}
-
-.products-list .catalog-product-info {
-    flex: 2;
-}
-
-.products-list .catalog-product-name {
-    font-size: 1.2rem;
-    margin-bottom: 8px;
-}
-
-.products-list .catalog-product-description {
-    -webkit-line-clamp: 1;
-    margin-bottom: 8px;
-}
-
-.products-list .catalog-product-price {
-    flex: 1;
-    align-items: flex-end;
-}
-
-.products-list .catalog-add-to-cart-section {
-    flex: 1;
-    flex-direction: row;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 15px;
-}
 
 /* ==========================================
    ENHANCED PRODUCT CARDS - Обогатена информация
@@ -1201,6 +1152,18 @@
     }
 }
 
+.view-btn.secondary {
+    min-width: auto;
+    padding: 10px 16px;
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    color: white;
+    border-color: #c0392b;
+}
+
+.view-btn.secondary:hover {
+    background: linear-gradient(135deg, #c0392b 0%, #a93226 100%);
+}
+
 /* ==========================================
    RESPONSIVE DESIGN
    ========================================== */
@@ -1237,21 +1200,6 @@
         gap: 15px;
     }
 
-    .products-list .catalog-product-card {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 20px;
-    }
-
-    .products-list .catalog-product-content {
-        flex-direction: column;
-        gap: 20px;
-    }
-
-    .products-list .catalog-add-to-cart-section {
-        flex-direction: column;
-        align-items: stretch;
-    }
 
     .view-controls {
         justify-content: center;
