@@ -187,16 +187,50 @@ class CatalogManager {
     sortProducts(sortBy) {
         this.filteredProducts.sort((a, b) => {
             switch (sortBy) {
-                case 'name':
-                    return a.name.localeCompare(b.name, 'bg');
+                case 'name-asc':
+                    try {
+                        const nameA = (a.name || '').toString().trim();
+                        const nameB = (b.name || '').toString().trim();
+                        return nameA.localeCompare(nameB, 'bg-BG', {
+                            numeric: true,
+                            sensitivity: 'base'
+                        });
+                    } catch (e) {
+                        const nameA = (a.name || '').toString().toLowerCase();
+                        const nameB = (b.name || '').toString().toLowerCase();
+                        return nameA.localeCompare(nameB);
+                    }
+                case 'name-desc':
+                    try {
+                        const nameA = (a.name || '').toString().trim();
+                        const nameB = (b.name || '').toString().trim();
+                        return nameB.localeCompare(nameA, 'bg-BG', {
+                            numeric: true,
+                            sensitivity: 'base'
+                        });
+                    } catch (e) {
+                        const nameA = (a.name || '').toString().toLowerCase();
+                        const nameB = (b.name || '').toString().toLowerCase();
+                        return nameB.localeCompare(nameA);
+                    }
                 case 'price-asc':
                     return parseFloat(a.price) - parseFloat(b.price);
                 case 'price-desc':
                     return parseFloat(b.price) - parseFloat(a.price);
-                case 'sku':
-                    return a.sku.localeCompare(b.sku);
                 default:
-                    return 0;
+                    // Fallback за default сортиране по азбучен ред
+                    try {
+                        const nameA = (a.name || '').toString().trim();
+                        const nameB = (b.name || '').toString().trim();
+                        return nameA.localeCompare(nameB, 'bg-BG', {
+                            numeric: true,
+                            sensitivity: 'base'
+                        });
+                    } catch (e) {
+                        const nameA = (a.name || '').toString().toLowerCase();
+                        const nameB = (b.name || '').toString().toLowerCase();
+                        return nameA.localeCompare(nameB);
+                    }
             }
         });
     }
