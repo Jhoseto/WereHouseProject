@@ -94,57 +94,9 @@
                 <div class="panel-badge" id="urgent-badge" th:text="${submittedCount ?: 0}">0</div>
             </div>
             <div class="panel-content">
-                <!-- Orders will be populated by JavaScript or server-side rendering -->
-                <div class="order-item" data-order-id="1247">
-                    <div class="order-summary">
-                        <div class="order-priority priority-urgent"></div>
-                        <div class="order-info" onclick="toggleOrderDetails(1247)" style="cursor: pointer; flex: 1;">
-                            <div class="order-header">
-                                <div class="order-number">Поръчка #1247</div>
-                                <div class="order-time">2ч</div>
-                            </div>
-                            <div class="order-client">Хотел Бургас Плаза</div>
-                            <div class="order-meta">
-                                <span>847.50 лв • 15 арт.</span>
-                                <span>SUBMITTED</span>
-                            </div>
-                        </div>
-                        <button class="order-action action-confirm" onclick="confirmOrder(1247)">Потвърди</button>
-                    </div>
-
-                    <div class="order-details" id="details-1247">
-                        <div class="details-header">
-                            <div class="details-title">Детайли поръчка #1247</div>
-                            <div class="order-total">847.50 лв</div>
-                        </div>
-
-                        <div class="product-list">
-                            <div class="product-item">
-                                <div class="product-image">IMG</div>
-                                <div class="product-info">
-                                    <div class="product-name">Домати чери</div>
-                                    <div class="product-sku">SKU: F001</div>
-                                    <div class="product-meta">15.80 лв/кг</div>
-                                    <div class="availability-info">
-                                        <div class="stock-indicator stock-available"></div>
-                                        <span class="stock-text">В наличност: 45 кг</span>
-                                    </div>
-                                </div>
-                                <div class="quantity-editor">
-                                    <div class="qty-control">
-                                        <button class="qty-btn" onclick="adjustQuantity(1247, 'F001', -1)">-</button>
-                                        <input type="number" class="qty-input" value="5" id="qty-1247-F001" onchange="updateQuantity(1247, 'F001', this.value)">
-                                        <button class="qty-btn" onclick="adjustQuantity(1247, 'F001', 1)">+</button>
-                                    </div>
-                                    <span class="qty-unit">кг</span>
-                                </div>
-                                <div class="product-actions">
-                                    <button class="product-btn btn-accept" onclick="approveProduct(1247, 'F001')">✓</button>
-                                    <button class="product-btn btn-reject" onclick="rejectProduct(1247, 'F001')">✗</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                <!-- Празен контейнер - JavaScript ще добави реалните поръчки тук -->
+                <div id="urgent-orders-container">
+                    <!-- Реалните поръчки ще се заредят тук от JavaScript модулите -->
                 </div>
             </div>
         </div>
@@ -295,8 +247,8 @@
     window.dashboardConfig = {
         csrfToken: /*[[${_csrf.token}]]*/ '',
         csrfHeader: /*[[${_csrf.headerName}]]*/ '',
-        // userId: /*[[${#authentication.principal.id}]]*/ null,
-        // userRole: /*[[${#authentication.principal.authorities}]]*/ [],
+        userId: /*[[${currentUser.id}]]*/ null,
+        userRole: /*[[${currentUser.role.name()}]]*/ 'GUEST',
         enableRealTimeUpdates: true,
         refreshInterval: 180000 // 3 minutes
     };
@@ -314,6 +266,7 @@
 <script src="/js/dashboard/dashboardApi.js"></script>
 <script src="/js/dashboard/dashboardManager.js"></script>
 <script src="/js/dashboard/dashboardUI.js"></script>
+<script src="/js/dashboard/mainDashboard.js"></script>
 
 <!-- Standard project bottom imports -->
 <div th:replace="~{fragments/bottomHtmlImports :: bottomImports}"></div>

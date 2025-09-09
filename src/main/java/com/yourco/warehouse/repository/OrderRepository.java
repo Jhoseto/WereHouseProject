@@ -33,23 +33,16 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     @Transactional(readOnly = true)
     Page<Order> findByClientOrderBySubmittedAtDesc(@Param("client") UserEntity client, Pageable pageable);
 
-    @Query("SELECT DISTINCT o FROM Order o LEFT JOIN FETCH o.items oi LEFT JOIN FETCH oi.product WHERE o.status = :status ORDER BY o.submittedAt DESC")
+    @Query("SELECT DISTINCT o FROM Order o " +
+            "LEFT JOIN FETCH o.client " +
+            "LEFT JOIN FETCH o.items oi " +
+            "LEFT JOIN FETCH oi.product " +
+            "WHERE o.status = :status " +
+            "ORDER BY o.submittedAt DESC")
     @Cacheable(value = "ordersByStatus", key = "#status")
     @QueryHints(@QueryHint(name = "org.hibernate.readOnly", value = "true"))
     @Transactional(readOnly = true)
     List<Order> findByStatusOrderBySubmittedAtDesc(@Param("status") OrderStatus status);
-
-    @Query(value = "SELECT DISTINCT o FROM Order o LEFT JOIN FETCH o.items oi LEFT JOIN FETCH oi.product WHERE o.status = :status",
-            countQuery = "SELECT COUNT(o) FROM Order o WHERE o.status = :status")
-    @QueryHints(@QueryHint(name = "org.hibernate.readOnly", value = "true"))
-    @Transactional(readOnly = true)
-    Page<Order> findByStatusOrderBySubmittedAtDesc(@Param("status") OrderStatus status, Pageable pageable);
-
-    @Query(value = "SELECT DISTINCT o FROM Order o LEFT JOIN FETCH o.items oi LEFT JOIN FETCH oi.product",
-            countQuery = "SELECT COUNT(o) FROM Order o")
-    @QueryHints(@QueryHint(name = "org.hibernate.readOnly", value = "true"))
-    @Transactional(readOnly = true)
-    Page<Order> findAllByOrderBySubmittedAtDesc(Pageable pageable);
 
     @Query("SELECT DISTINCT o FROM Order o LEFT JOIN FETCH o.items oi LEFT JOIN FETCH oi.product WHERE o.id = :orderId")
     @Cacheable(value = "orderById", key = "#orderId")

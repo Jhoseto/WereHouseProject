@@ -1,0 +1,71 @@
+package com.yourco.warehouse.dto;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import java.math.BigDecimal;
+
+/**
+ * ORDER ITEM DTO FOR API RESPONSES
+ * ================================
+ * Типизиран DTO за OrderItem данни в API отговори.
+ */
+public class OrderItemDTO {
+
+    @JsonProperty("productId")
+    private Long productId;
+
+    @JsonProperty("productSku")
+    private String productSku;
+
+    @JsonProperty("productName")
+    private String productName;
+
+    @JsonProperty("quantity")
+    private BigDecimal quantity;
+
+    @JsonProperty("unit")
+    private String unit;
+
+    @JsonProperty("price")
+    private BigDecimal price;
+
+    @JsonProperty("totalPrice")
+    private BigDecimal totalPrice;
+
+    @JsonProperty("availableStock")
+    private Integer availableStock;
+
+    @JsonProperty("hasStockIssue")
+    private boolean hasStockIssue;
+
+    // Constructors
+    public OrderItemDTO() {}
+
+    // Getters and Setters
+    public Long getProductId() { return productId; }
+    public void setProductId(Long productId) { this.productId = productId; }
+
+    public String getProductSku() { return productSku; }
+    public void setProductSku(String productSku) { this.productSku = productSku; }
+
+    public String getProductName() { return productName; }
+    public void setProductName(String productName) { this.productName = productName; }
+
+    public BigDecimal getQuantity() { return quantity; }
+    public void setQuantity(BigDecimal quantity) { this.quantity = quantity; }
+
+    public String getUnit() { return unit; }
+    public void setUnit(String unit) { this.unit = unit; }
+
+    public BigDecimal getPrice() { return price; }
+    public void setPrice(BigDecimal price) { this.price = price; }
+
+    public BigDecimal getTotalPrice() { return totalPrice; }
+    public void setTotalPrice(BigDecimal totalPrice) { this.totalPrice = totalPrice; }
+
+    public Integer getAvailableStock() { return availableStock; }
+    public void setAvailableStock(Integer availableStock) { this.availableStock = availableStock; }
+
+    public boolean isHasStockIssue() { return hasStockIssue; }
+    public void setHasStockIssue(boolean hasStockIssue) { this.hasStockIssue = hasStockIssue; }
+}
