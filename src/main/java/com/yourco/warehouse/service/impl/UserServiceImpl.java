@@ -1,6 +1,6 @@
 package com.yourco.warehouse.service.impl;
 
-import com.yourco.warehouse.dto.UserProfileViewModel;
+import com.yourco.warehouse.dto.UserProfileDTO;
 import com.yourco.warehouse.entity.UserEntity;
 import com.yourco.warehouse.repository.UserRepository;
 import com.yourco.warehouse.service.UserService;
@@ -64,7 +64,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public List<UserProfileViewModel> getAllUsers() {
+    public List<UserProfileDTO> getAllUsers() {
         // TODO: Implement this method
         return List.of();
     }
@@ -92,7 +92,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserProfileViewModel getUserByUsername(String userName) {
+    public UserProfileDTO getUserByUsername(String userName) {
         // TODO: Implement this method
         return null;
     }

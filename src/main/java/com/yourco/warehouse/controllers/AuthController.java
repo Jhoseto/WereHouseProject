@@ -122,7 +122,7 @@ public class AuthController {
                 System.out.println("SUCCESS: Потребител " + username + " е автентикиран успешно!");
 
                 if (user.getRole().equals(Role.ADMIN) || user.getRole().equals(Role.EMPLOYER)) {
-                    return "redirect:/admin/dashboard";
+                    return "redirect:/employer/dashboard";
                 } else {
                     return "redirect:/catalog";
                 }

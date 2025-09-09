@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      lang="bg">
+
+<head>
+    <title>MainDashboard | Warehouse Portal</title>
+
+    <!-- Standard project imports -->
+    <div th:replace="~{fragments/topHtmlImports :: topImports}"></div>
+
+    <!-- Dashboard specific CSS -->
+    <link rel="stylesheet" href="/css/mainDashboard.css">
+</head>
+
+<body>
+<!-- Flash Messages Data -->
+<div th:replace="~{fragments/toastSystem :: flashData}"></div>
+
+<!-- Navigation -->
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+<div th:replace="~{fragments/toastSystem :: toastContainer}"></div>
+
+<!-- Header with integrated quick stats -->
+<header class="header">
+    <div class="header-top">
+        <h1 class="header-title">Операторски панел</h1>
+        <div class="header-actions">
+            <button class="header-btn" onclick="refreshDashboard()" title="Обнови">
+                <i class="bi bi-arrow-clockwise"></i>
+            </button>
+            <button class="header-btn" onclick="toggleNotifications()" title="Нотификации">
+                <i class="bi bi-bell"></i>
+            </button>
+            <button class="header-btn active" onclick="showSettings()" title="Настройки">
+                <i class="bi bi-gear"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Compact status overview -->
+    <div class="status-bar">
+        <div class="status-item urgent" onclick="switchTab('urgent')">
+            <div class="status-number" id="urgent-count" th:text="${submittedCount ?: 0}">0</div>
+            <div class="status-text">Спешни</div>
+        </div>
+        <div class="status-item warning" onclick="switchTab('pending')">
+            <div class="status-number" id="pending-count" th:text="${confirmedCount ?: 0}">0</div>
+            <div class="status-text">Обработка</div>
+        </div>
+        <div class="status-item info" onclick="switchTab('ready')">
+            <div class="status-number" id="ready-count" th:text="${pickedCount ?: 0}">0</div>
+            <div class="status-text">Готови</div>
+        </div>
+        <div class="status-item success" onclick="switchTab('stats')">
+            <div class="status-number" id="completed-count" th:text="${shippedCount ?: 0}">0</div>
+            <div class="status-text">Днес</div>
+        </div>
+    </div>
+</header>
+
+<!-- Tab Navigation -->
+<nav class="tab-nav">
+    <button class="tab-btn active" onclick="switchTab('urgent')" data-tab="urgent">
+        <i class="tab-icon bi bi-exclamation-triangle"></i>
+        <span>Спешни</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('pending')" data-tab="pending">
+        <i class="tab-icon bi bi-clock"></i>
+        <span>Обработка</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('ready')" data-tab="ready">
+        <i class="tab-icon bi bi-box-seam"></i>
+        <span>Готови</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('activity')" data-tab="activity">
+        <i class="tab-icon bi bi-activity"></i>
+        <span>Активност</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('manage')" data-tab="manage">
+        <i class="tab-icon bi bi-grid"></i>
+        <span>Управление</span>
+    </button>
+</nav>
+
+<!-- Main Content -->
+<main class="content">
+
+    <!-- Urgent Orders Tab -->
+    <div class="tab-content active" id="urgent-tab">
+        <div class="panel">
+            <div class="panel-header">
+                <div class="panel-title">За незабавна обработка</div>
+                <div class="panel-badge" id="urgent-badge" th:text="${submittedCount ?: 0}">0</div>
+            </div>
+            <div class="panel-content">
+                <!-- Orders will be populated by JavaScript or server-side rendering -->
+                <div class="order-item" data-order-id="1247">
+                    <div class="order-summary">
+                        <div class="order-priority priority-urgent"></div>
+                        <div class="order-info" onclick="toggleOrderDetails(1247)" style="cursor: pointer; flex: 1;">
+                            <div class="order-header">
+                                <div class="order-number">Поръчка #1247</div>
+                                <div class="order-time">2ч</div>
+                            </div>
+                            <div class="order-client">Хотел Бургас Плаза</div>
+                            <div class="order-meta">
+                                <span>847.50 лв • 15 арт.</span>
+                                <span>SUBMITTED</span>
+                            </div>
+                        </div>
+                        <button class="order-action action-confirm" onclick="confirmOrder(1247)">Потвърди</button>
+                    </div>
+
+                    <div class="order-details" id="details-1247">
+                        <div class="details-header">
+                            <div class="details-title">Детайли поръчка #1247</div>
+                            <div class="order-total">847.50 лв</div>
+                        </div>
+
+                        <div class="product-list">
+                            <div class="product-item">
+                                <div class="product-image">IMG</div>
+                                <div class="product-info">
+                                    <div class="product-name">Домати чери</div>
+                                    <div class="product-sku">SKU: F001</div>
+                                    <div class="product-meta">15.80 лв/кг</div>
+                                    <div class="availability-info">
+                                        <div class="stock-indicator stock-available"></div>
+                                        <span class="stock-text">В наличност: 45 кг</span>
+                                    </div>
+                                </div>
+                                <div class="quantity-editor">
+                                    <div class="qty-control">
+                                        <button class="qty-btn" onclick="adjustQuantity(1247, 'F001', -1)">-</button>
+                                        <input type="number" class="qty-input" value="5" id="qty-1247-F001" onchange="updateQuantity(1247, 'F001', this.value)">
+                                        <button class="qty-btn" onclick="adjustQuantity(1247, 'F001', 1)">+</button>
+                                    </div>
+                                    <span class="qty-unit">кг</span>
+                                </div>
+                                <div class="product-actions">
+                                    <button class="product-btn btn-accept" onclick="approveProduct(1247, 'F001')">✓</button>
+                                    <button class="product-btn btn-reject" onclick="rejectProduct(1247, 'F001')">✗</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pending Orders Tab -->
+    <div class="tab-content" id="pending-tab">
+        <div class="panel">
+            <div class="panel-header">
+                <div class="panel-title">В процес на обработка</div>
+                <div class="panel-badge" id="pending-badge" th:text="${confirmedCount ?: 0}">0</div>
+            </div>
+            <div class="panel-content">
+                <!-- Pending orders content -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Ready Orders Tab -->
+    <div class="tab-content" id="ready-tab">
+        <div class="panel">
+            <div class="panel-header">
+                <div class="panel-title">Готови за изпращане</div>
+                <div class="panel-badge" id="ready-badge" th:text="${pickedCount ?: 0}">0</div>
+            </div>
+            <div class="panel-content">
+                <!-- Ready orders content -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Activity Feed Tab -->
+    <div class="tab-content" id="activity-tab">
+        <div class="panel">
+            <div class="panel-header">
+                <div class="panel-title">Последна активност</div>
+            </div>
+            <div class="panel-content">
+                <!-- Activity content -->
+            </div>
+        </div>
+
+        <!-- Daily Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" th:text="${dailyStats.processed ?: 0}">0</div>
+                <div class="stat-label">Обработени</div>
+                <div class="stat-change change-positive">+15%</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" th:text="${dailyStats.revenue ?: '0.0'}">0.0</div>
+                <div class="stat-label">Продажби (лв)</div>
+                <div class="stat-change change-positive">+8%</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" th:text="${dailyStats.avgTime ?: '0.0ч'}">0.0ч</div>
+                <div class="stat-label">Среден срок</div>
+                <div class="stat-change change-negative">-12%</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" th:text="${dailyStats.activeClients ?: 0}">0</div>
+                <div class="stat-label">Активни клиенти</div>
+                <div class="stat-change change-positive">+3</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Management Tab -->
+    <div class="tab-content" id="manage-tab">
+        <div class="nav-grid">
+            <a href="/admin/orders" class="nav-item">
+                <i class="nav-icon bi bi-list-ul"></i>
+                <span class="nav-label">Всички поръчки</span>
+            </a>
+
+            <a href="/admin/catalog" class="nav-item">
+                <i class="nav-icon bi bi-box-seam"></i>
+                <span class="nav-label">Каталог</span>
+            </a>
+
+            <a href="/admin/clients" class="nav-item">
+                <i class="nav-icon bi bi-people"></i>
+                <span class="nav-label">Клиенти</span>
+            </a>
+
+            <a href="/admin/reports" class="nav-item">
+                <i class="nav-icon bi bi-graph-up"></i>
+                <span class="nav-label">Отчети</span>
+            </a>
+
+            <a href="/admin/inventory" class="nav-item">
+                <i class="nav-icon bi bi-boxes"></i>
+                <span class="nav-label">Инвентар</span>
+            </a>
+
+            <a href="/admin/settings" class="nav-item">
+                <i class="nav-icon bi bi-gear"></i>
+                <span class="nav-label">Настройки</span>
+            </a>
+        </div>
+    </div>
+
+</main>
+
+<!-- Rejection Modal -->
+<div class="modal-overlay" id="rejection-modal">
+    <div class="modal">
+        <div class="modal-header">Причина за отказ</div>
+
+        <div class="reason-options">
+            <div class="reason-option" onclick="selectReason(this, 'Няма в наличност')">
+                <strong>Няма в наличност</strong><br>
+                <small>Продуктът не е наличен в склада</small>
+            </div>
+            <div class="reason-option" onclick="selectReason(this, 'Невъзможна доставка в срок')">
+                <strong>Невъзможна доставка в срок</strong><br>
+                <small>Не можем да доставим в исканото време</small>
+            </div>
+            <div class="reason-option" onclick="selectReason(this, 'Изтекъл срок на годност')">
+                <strong>Изтекъл срок на годност</strong><br>
+                <small>Продуктът е с изтекъл срок</small>
+            </div>
+            <div class="reason-option" onclick="selectReason(this, 'Повреден продукт')">
+                <strong>Повреден продукт</strong><br>
+                <small>Продуктът е с дефект или повреда</small>
+            </div>
+            <div class="reason-option" onclick="selectReason(this, 'Заменен с алтернатива')">
+                <strong>Заменен с алтернатива</strong><br>
+                <small>Предлагаме алтернативен продукт</small>
+            </div>
+        </div>
+
+        <textarea class="custom-reason" id="custom-reason" placeholder="Или напишете персонализирана причина..."></textarea>
+
+        <div class="modal-actions">
+            <button class="modal-btn btn-cancel" onclick="closeRejectionModal()">Отказ</button>
+            <button class="modal-btn btn-confirm" onclick="confirmRejection()">Потвърди отказа</button>
+        </div>
+    </div>
+</div>
+
+<!-- Include Footer Fragment -->
+<div th:replace="~{fragments/footer :: footer}"></div>
+
+<!-- JavaScript Configuration -->
+<script th:inline="javascript">
+    // Pass server-side data to JavaScript
+    window.dashboardConfig = {
+        csrfToken: /*[[${_csrf.token}]]*/ '',
+        csrfHeader: /*[[${_csrf.headerName}]]*/ '',
+        // userId: /*[[${#authentication.principal.id}]]*/ null,
+        // userRole: /*[[${#authentication.principal.authorities}]]*/ [],
+        enableRealTimeUpdates: true,
+        refreshInterval: 180000 // 3 minutes
+    };
+
+    // Initial dashboard data
+    window.dashboardData = {
+        urgentCount: /*[[${submittedCount ?: 0}]]*/ 0,
+        pendingCount: /*[[${confirmedCount ?: 0}]]*/ 0,
+        readyCount: /*[[${pickedCount ?: 0}]]*/ 0,
+        completedCount: /*[[${shippedCount ?: 0}]]*/ 0
+    };
+</script>
+
+<!-- Dashboard JavaScript -->
+<script src="/js/dashboard/dashboardApi.js"></script>
+<script src="/js/dashboard/dashboardManager.js"></script>
+<script src="/js/dashboard/dashboardUI.js"></script>
+
+<!-- Standard project bottom imports -->
+<div th:replace="~{fragments/bottomHtmlImports :: bottomImports}"></div>
+
+</body>
+</html>
