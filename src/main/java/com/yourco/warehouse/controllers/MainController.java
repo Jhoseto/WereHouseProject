@@ -10,6 +10,7 @@ import com.yourco.warehouse.service.impl.OrderServiceImpl;
 import com.yourco.warehouse.utils.RequestUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.support.RequestContextUtils;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -142,27 +144,72 @@ public class MainController {
 
 
     @GetMapping("/employer/dashboard")
-    public String mainDashboard(Model model, Authentication authentication) {
-        UserEntity currentUser = userService.getCurrentUser();
+    public String mainDashboard(Model model, Authentication authentication, HttpServletRequest request) {
+        try {
+            UserEntity currentUser = userService.getCurrentUser();
 
-        // Използваме реалните методи от интерфейса
-        DashboardDataDTO dashboardData = dashboardService.getDashboardOverview();
+            // ✅ FIXED: Използваме съществуващите методи от DashboardServiceImpl
+            DashboardDataDTO dashboardData = dashboardService.getDashboardOverview();
+            DailyStatsDTO dailyStats = dashboardService.getDailyStatistics();
 
-        model.addAttribute("submittedCount", dashboardData.getSubmittedCount());
-        model.addAttribute("confirmedCount", dashboardData.getConfirmedCount());
-        model.addAttribute("pickedCount", dashboardData.getPickedCount());
-        model.addAttribute("shippedCount", dashboardData.getShippedCount());
-        model.addAttribute("cancelledCount", dashboardData.getCancelledCount());
-        model.addAttribute("dashboardData", dashboardData);
+            // ✅ Add individual counts for Thymeleaf template (както преди)
+            model.addAttribute("submittedCount", dashboardData.getSubmittedCount());
+            model.addAttribute("confirmedCount", dashboardData.getConfirmedCount());
+            model.addAttribute("pickedCount", dashboardData.getPickedCount());
+            model.addAttribute("shippedCount", dashboardData.getShippedCount());
+            model.addAttribute("cancelledCount", dashboardData.getCancelledCount());
+            model.addAttribute("dailyStats", dailyStats);
+            model.addAttribute("lastUpdate", LocalDateTime.now());
+            model.addAttribute("currentUser", currentUser);
+            model.addAttribute("userId", currentUser.getId());
 
-        // Получаваме дневните статистики
-        DailyStatsDTO dailyStats = dashboardService.getDailyStatistics();
-        model.addAttribute("dailyStats", dailyStats);
-        model.addAttribute("lastUpdate", LocalDateTime.now());
-        model.addAttribute("currentUser", currentUser);
-        model.addAttribute("userId", (currentUser.getId()));
+            // ✅ CRITICAL FIX: Create EXACTLY the same structure that AdminDashboardController returns
+            Map<String, Object> initialDashboardData = new HashMap<>();
 
-        return "main-dashboard"; // Само темплейта
+            // ✅ Use the SAME field names as DashboardOverviewResponseDTO
+            initialDashboardData.put("urgentCount", dashboardData.getSubmittedCount());
+            initialDashboardData.put("pendingCount", dashboardData.getConfirmedCount());
+            initialDashboardData.put("readyCount", dashboardData.getPickedCount());
+            initialDashboardData.put("completedCount", dashboardData.getShippedCount());
+            initialDashboardData.put("cancelledCount", dashboardData.getCancelledCount());
+            initialDashboardData.put("dailyStats", dailyStats);
+            initialDashboardData.put("hasUrgentAlerts", dashboardData.getSubmittedCount() > 0);
+            initialDashboardData.put("lastUpdate", LocalDateTime.now().toString());
+            initialDashboardData.put("isValid", true);
+
+            model.addAttribute("initialDashboardData", initialDashboardData);
+
+            // ✅ SECURITY: Proper CSRF token handling
+            CsrfToken csrfToken = (CsrfToken) request.getAttribute(CsrfToken.class.getName());
+            if (csrfToken != null) {
+                model.addAttribute("csrfToken", csrfToken.getToken());
+                model.addAttribute("csrfHeader", csrfToken.getHeaderName());
+            } else {
+                model.addAttribute("csrfToken", "");
+                model.addAttribute("csrfHeader", "X-CSRF-TOKEN");
+            }
+
+            return "main-dashboard";
+
+        } catch (Exception e) {
+
+            // ✅ ERROR FALLBACK: Ensure model has safe defaults
+            model.addAttribute("submittedCount", 0);
+            model.addAttribute("confirmedCount", 0);
+            model.addAttribute("pickedCount", 0);
+            model.addAttribute("shippedCount", 0);
+            model.addAttribute("cancelledCount", 0);
+
+            // ✅ Error fallback data for JavaScript
+            Map<String, Object> errorData = Map.of(
+                    "isValid", false,
+                    "error", "Грешка при зареждане на данните"
+            );
+            model.addAttribute("initialDashboardData", errorData);
+            model.addAttribute("errorMessage", "Възникна грешка при зареждане на dashboard данните");
+
+            return "main-dashboard";
+        }
     }
 
 

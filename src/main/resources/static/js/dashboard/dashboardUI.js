@@ -25,22 +25,14 @@ class DashboardUI {
 
     /**
      * Initialize UI components and cache DOM elements
-     * Sets up event listeners and prepares the interface
      */
     initialize() {
         try {
             console.log('=== DashboardUI Initialization ===');
 
-            // Cache frequently used DOM elements
             this.cacheElements();
-
-            // Set up event listeners
             this.setupEventListeners();
-
-            // Initialize keyboard shortcuts
             this.setupKeyboardShortcuts();
-
-            // Initialize touch gestures for mobile
             this.setupTouchGestures();
 
             console.log('✓ DashboardUI initialized successfully');
@@ -79,7 +71,7 @@ class DashboardUI {
             tabContents: document.querySelectorAll('.tab-content'),
             statusItems: document.querySelectorAll('.status-item'),
 
-            // Modal elements
+            // Modal elements - INTEGRATED FROM HTML
             rejectionModal: document.getElementById('rejection-modal'),
             customReason: document.getElementById('custom-reason'),
 
@@ -125,7 +117,7 @@ class DashboardUI {
             });
         });
 
-        // Modal overlay clicks (close modal)
+        // Modal overlay clicks (close modal) - INTEGRATED FROM HTML
         if (this.elements.rejectionModal) {
             this.elements.rejectionModal.addEventListener('click', (e) => {
                 if (e.target === this.elements.rejectionModal) {
@@ -141,19 +133,13 @@ class DashboardUI {
     // COUNTER AND STATS UPDATES
     // ==========================================
 
-    /**
-     * Update dashboard counters with new data
-     * Provides smooth number transitions for better UX
-     */
     updateCounters(data) {
         try {
-            // Update main counters
             this.animateCounter(this.elements.urgentCount, data.urgentCount);
             this.animateCounter(this.elements.pendingCount, data.pendingCount);
             this.animateCounter(this.elements.readyCount, data.readyCount);
             this.animateCounter(this.elements.completedCount, data.completedCount);
 
-            // Update badges
             this.updateBadge(this.elements.urgentBadge, data.urgentCount);
             this.updateBadge(this.elements.pendingBadge, data.pendingCount);
             this.updateBadge(this.elements.readyBadge, data.readyCount);
@@ -165,15 +151,12 @@ class DashboardUI {
         }
     }
 
-    /**
-     * Animate counter changes for smooth visual feedback
-     */
     animateCounter(element, targetValue) {
         if (!element) return;
 
         const currentValue = parseInt(element.textContent) || 0;
         const difference = targetValue - currentValue;
-        const duration = Math.min(500, Math.abs(difference) * 50); // Max 500ms
+        const duration = Math.min(500, Math.abs(difference) * 50);
         const steps = Math.max(10, Math.abs(difference));
         const stepValue = difference / steps;
         const stepDuration = duration / steps;
@@ -187,21 +170,17 @@ class DashboardUI {
 
             if (currentStep >= steps) {
                 clearInterval(timer);
-                element.textContent = targetValue; // Ensure exact final value
+                element.textContent = targetValue;
             }
         }, stepDuration);
     }
 
-    /**
-     * Update badge with visual highlight if value changed
-     */
     updateBadge(element, newValue) {
         if (!element) return;
 
         const oldValue = parseInt(element.textContent) || 0;
         element.textContent = newValue;
 
-        // Highlight if value increased (new items)
         if (newValue > oldValue) {
             element.style.animation = 'pulse 0.5s ease-in-out';
             setTimeout(() => {
@@ -210,9 +189,6 @@ class DashboardUI {
         }
     }
 
-    /**
-     * Update daily statistics display
-     */
     updateDailyStats(dailyStats) {
         try {
             const statElements = {
@@ -238,12 +214,8 @@ class DashboardUI {
     // TAB MANAGEMENT
     // ==========================================
 
-    /**
-     * Update tab UI when switching between tabs
-     */
     updateTabUI(activeTab, previousTab) {
         try {
-            // Update tab button states
             this.elements.tabButtons.forEach(btn => {
                 if (btn.dataset.tab === activeTab) {
                     btn.classList.add('active');
@@ -252,7 +224,6 @@ class DashboardUI {
                 }
             });
 
-            // Update tab content visibility
             this.elements.tabContents.forEach(content => {
                 if (content.id === `${activeTab}-tab`) {
                     content.classList.add('active');
@@ -261,7 +232,6 @@ class DashboardUI {
                 }
             });
 
-            // Update status bar highlighting
             this.updateStatusBarSelection(activeTab);
 
             console.log(`✓ Tab UI updated: ${previousTab} → ${activeTab}`);
@@ -271,16 +241,11 @@ class DashboardUI {
         }
     }
 
-    /**
-     * Highlight corresponding status item when switching tabs
-     */
     updateStatusBarSelection(tabName) {
-        // Reset all status items
         this.elements.statusItems.forEach(item => {
             item.style.background = '';
         });
 
-        // Map tabs to status item classes
         const statusMap = {
             'urgent': 'urgent',
             'pending': 'warning',
@@ -303,142 +268,160 @@ class DashboardUI {
         }
     }
 
-    /**
-     * Update tab content with new order data
-     */
+    // ==========================================
+    // ORDER CONTENT - EXPANDABLE DETAILS WITH FULL INTEGRATION
+    // ==========================================
+
     updateTabContent(tabName, orders) {
         const safeOrders = Array.isArray(orders) ? orders : [];
-
         console.log(`Updating tab ${tabName} with ${safeOrders.length} orders`);
 
         try {
-            const tabElement = document.querySelector(`#${tabName}-tab-content`);
+            const tabElement = document.querySelector(`#${tabName}-tab .panel-content`);
             if (!tabElement) {
                 console.warn(`⚠️ Tab element for '${tabName}' not found!`);
                 return;
             }
 
-            // Изчистваме съдържанието
             tabElement.innerHTML = "";
 
             if (safeOrders.length === 0) {
-                tabElement.innerHTML = `<p class="empty-message">Няма намерени поръчки</p>`;
+                tabElement.innerHTML = `<div style="text-align: center; padding: 40px; color: #888;">
+                    <i class="bi bi-inbox" style="font-size: 2rem; margin-bottom: 10px; display: block;"></i>
+                    <p>Няма намерени поръчки за този статус</p>
+                </div>`;
                 return;
             }
 
-            // Добавяме новите елементи
-            safeOrders.forEach(order => {
-                const item = document.createElement("div");
-                item.className = "order-item";
-                item.innerHTML = `
-                <div class="order-id">#${order.id}</div>
-                <div class="order-customer">${order.customerName || "Неизвестен клиент"}</div>
-                <div class="order-status">${order.status}</div>
-            `;
-                tabElement.appendChild(item);
+            safeOrders.forEach((order, index) => {
+                const orderElement = document.createElement("div");
+                orderElement.className = "order-item";
+                orderElement.dataset.orderId = order.id || index;
+
+                const orderId = order.id || 'N/A';
+                const customerName = order.customerName || order.customerInfo || 'Неизвестен клиент';
+                const status = order.status || 'Неизвестен статус';
+                const submittedAt = order.submittedAt ? this.formatOrderTime(order.submittedAt) : 'Неизвестно време';
+                const priority = this.getOrderPriority(order);
+
+                orderElement.innerHTML = `
+                    <div class="order-summary" onclick="toggleOrderDetails(${order.id})">
+                        <div class="order-priority priority-${priority}"></div>
+                        <div class="order-info">
+                            <div class="order-header">
+                                <div class="order-number">#${orderId}</div>
+                                <div class="order-time">${submittedAt}</div>
+                            </div>
+                            <div class="order-client">${customerName}</div>
+                            <div class="order-meta">
+                                <span>Статус: ${status}</span>
+                                <i class="bi bi-chevron-down expand-icon" id="expand-icon-${order.id}"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Expandable Details -->
+                    <div class="order-details" id="order-details-${order.id}" style="display: none;">
+                        <div class="details-header">
+                            <div class="details-title">Детайли на поръчката</div>
+                            <div class="order-total">Общо: ${order.totalGross || '0.00'} лв</div>
+                        </div>
+                        
+                        <div class="product-list" id="product-list-${order.id}">
+                            <div class="loading-items">
+                                <i class="bi bi-hourglass-split"></i> Зареждане на артикули...
+                            </div>
+                        </div>
+                        
+                        <div class="order-actions">
+                            ${this.generateOrderActions(order, tabName)}
+                            <button class="order-action action-save" onclick="saveOrderChanges(${order.id})" style="display: none;">
+                                <i class="bi bi-check2"></i> Запази промените
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                tabElement.appendChild(orderElement);
             });
 
-            console.log(`✓ ${tabName} tab content updated with ${safeOrders.length} orders`);
+            console.log(`✅ ${tabName} tab content updated with ${safeOrders.length} orders`);
 
         } catch (err) {
             console.error(`❌ Error updating ${tabName} tab content:`, err);
         }
     }
 
-
-    // ==========================================
-    // ORDER DISPLAY AND INTERACTION
-    // ==========================================
-
-    /**
-     * Create HTML for an order item
-     */
-    createOrderItemHTML(order, tabContext) {
-        const statusActions = {
-            'urgent': `<button class="order-action action-confirm" onclick="confirmOrder(${order.id})">Потвърди</button>`,
-            'pending': `<button class="order-action action-pick" onclick="startPicking(${order.id})">Пикинг</button>`,
-            'ready': `<button class="order-action action-ship" onclick="shipOrder(${order.id})">Изпрати</button>`
+    generateOrderActions(order, tabContext) {
+        const actions = {
+            'urgent': `<button class="order-action action-confirm" onclick="confirmOrder(${order.id})">
+                        <i class="bi bi-check-circle"></i> Потвърди
+                       </button>
+                       <button class="order-action action-reject" onclick="rejectEntireOrder(${order.id})">
+                        <i class="bi bi-x-circle"></i> Отказ
+                       </button>`,
+            'pending': `<button class="order-action action-pick" onclick="startPicking(${order.id})">
+                        <i class="bi bi-box-seam"></i> Пикинг
+                        </button>`,
+            'ready': `<button class="order-action action-ship" onclick="shipOrder(${order.id})">
+                       <i class="bi bi-truck"></i> Изпрати
+                      </button>`,
+            'activity': ''
         };
 
-        const actionButton = statusActions[tabContext] || '';
-        const timeText = this.formatOrderTime(order.submittedAt);
-
-        return `
-            <div class="order-item" data-order-id="${order.id}">
-                <div class="order-summary">
-                    <div class="order-priority priority-${this.getOrderPriority(order)}"></div>
-                    <div class="order-info" onclick="toggleOrderDetails(${order.id})" style="cursor: pointer; flex: 1;">
-                        <div class="order-header">
-                            <div class="order-number">Поръчка #${order.id}</div>
-                            <div class="order-time">${timeText}</div>
-                        </div>
-                        <div class="order-client">${order.clientName}</div>
-                        <div class="order-meta">
-                            <span>${order.totalGross} лв • ${order.itemsCount} арт.</span>
-                            <span>${order.status}</span>
-                        </div>
-                    </div>
-                    ${actionButton}
-                </div>
-                
-                <div class="order-details" id="details-${order.id}">
-                    <div class="details-header">
-                        <div class="details-title">Детайли поръчка #${order.id}</div>
-                        <div class="order-total">${order.totalGross} лв</div>
-                    </div>
-                    
-                    <div class="product-list">
-                        <!-- Products will be loaded when expanded -->
-                        <div class="loading-placeholder">Зареждане на продукти...</div>
-                    </div>
-                </div>
-            </div>
-        `;
-    }
-
-    /**
-     * Create empty state HTML for tabs with no data
-     */
-    createEmptyStateHTML(tabName) {
-        const messages = {
-            'urgent': 'Няма спешни поръчки',
-            'pending': 'Няма поръчки в обработка',
-            'ready': 'Няма готови поръчки',
-            'activity': 'Няма последна активност'
-        };
-
-        return `
-            <div class="empty-state">
-                <div class="empty-icon">
-                    <i class="bi bi-inbox"></i>
-                </div>
-                <div class="empty-message">${messages[tabName] || 'Няма данни'}</div>
-            </div>
-        `;
+        return actions[tabContext] || '';
     }
 
     // ==========================================
-    // ORDER DETAILS EXPANSION
+    // EXPANDABLE ORDER DETAILS FUNCTIONALITY
     // ==========================================
 
+    async toggleOrderDetails(orderId) {
+        const detailsDiv = document.getElementById(`order-details-${orderId}`);
+        const expandIcon = document.getElementById(`expand-icon-${orderId}`);
+
+        if (!detailsDiv || !expandIcon) {
+            console.warn(`Order details elements not found for ID: ${orderId}`);
+            return;
+        }
+
+        if (detailsDiv.style.display === 'none') {
+            this.expandOrder(orderId);
+            detailsDiv.style.display = 'block';
+            expandIcon.className = 'bi bi-chevron-up expand-icon';
+
+            await this.loadOrderItems(orderId);
+
+            if (this.manager && this.manager.expandedOrders) {
+                this.manager.expandedOrders.add(orderId);
+            }
+        } else {
+            this.collapseOrder(orderId);
+            detailsDiv.style.display = 'none';
+            expandIcon.className = 'bi bi-chevron-down expand-icon';
+
+            if (this.manager && this.manager.expandedOrders) {
+                this.manager.expandedOrders.delete(orderId);
+            }
+        }
+    }
+
     /**
-     * Expand order details with smooth animation
+     * Expand order with smooth animation - INTEGRATED FUNCTIONALITY
      */
     expandOrder(orderId) {
         try {
             const orderItem = document.querySelector(`[data-order-id="${orderId}"]`);
-            const details = document.getElementById(`details-${orderId}`);
+            const details = document.getElementById(`order-details-${orderId}`);
 
             if (!orderItem || !details) {
                 console.warn(`Order elements not found for ID: ${orderId}`);
                 return;
             }
 
-            // Add expanded classes
-            details.classList.add('expanded');
             orderItem.classList.add('expanded');
+            details.classList.add('expanded');
 
-            // Smooth scroll into view
             setTimeout(() => {
                 details.scrollIntoView({
                     behavior: 'smooth',
@@ -454,18 +437,17 @@ class DashboardUI {
     }
 
     /**
-     * Collapse order details
+     * Collapse order - INTEGRATED FUNCTIONALITY
      */
     collapseOrder(orderId) {
         try {
             const orderItem = document.querySelector(`[data-order-id="${orderId}"]`);
-            const details = document.getElementById(`details-${orderId}`);
+            const details = document.getElementById(`order-details-${orderId}`);
 
             if (!orderItem || !details) return;
 
-            // Remove expanded classes
-            details.classList.remove('expanded');
             orderItem.classList.remove('expanded');
+            details.classList.remove('expanded');
 
             console.log(`✓ Order ${orderId} collapsed`);
 
@@ -474,12 +456,159 @@ class DashboardUI {
         }
     }
 
+    async loadOrderItems(orderId) {
+        const productList = document.getElementById(`product-list-${orderId}`);
+
+        try {
+            const response = await fetch(`/employer/orders/${orderId}/details`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    [window.dashboardConfig?.csrfHeader || 'X-CSRF-TOKEN']: window.dashboardConfig?.csrfToken || ''
+                }
+            });
+
+            const result = await response.json();
+
+            if (result.success && result.data) {
+                const order = result.data;
+                this.displayOrderItems(orderId, order.items || []);
+            } else {
+                productList.innerHTML = '<div class="error-message">Грешка при зареждане на артикулите</div>';
+            }
+
+        } catch (error) {
+            console.error('Error loading order items:', error);
+            productList.innerHTML = '<div class="error-message">Грешка при зареждане на артикулите</div>';
+        }
+    }
+
+    displayOrderItems(orderId, items) {
+        const productList = document.getElementById(`product-list-${orderId}`);
+
+        if (items.length === 0) {
+            productList.innerHTML = '<div class="no-items">Няма артикули в поръчката</div>';
+            return;
+        }
+
+        const itemsHTML = items.map(item => `
+            <div class="product-item" data-item-id="${item.id}" data-product-id="${item.productId || item.id}">
+                <div class="product-image">
+                    <i class="bi bi-box"></i>
+                </div>
+                <div class="product-info">
+                    <div class="product-name">${item.productName || 'Неизвестен продукт'}</div>
+                    <div class="product-sku">SKU: ${item.productSku || 'N/A'}</div>
+                    <div class="product-price">Цена: ${item.unitPrice || '0.00'} лв</div>
+                </div>
+                <div class="product-quantity">
+                    <label>Количество:</label>
+                    <input type="number" 
+                           value="${item.quantity || 0}" 
+                           min="0"
+                           class="quantity-input"
+                           id="qty-${orderId}-${item.productId || item.id}"
+                           onchange="updateProductQuantity(${orderId}, ${item.productId || item.id}, this.value)"
+                           data-original="${item.quantity || 0}">
+                </div>
+                <div class="product-availability">
+                    <label>
+                        <input type="checkbox" 
+                               ${item.available !== false ? 'checked' : ''} 
+                               onchange="toggleItemAvailability(${orderId}, ${item.id}, this)"
+                               class="availability-checkbox">
+                        В наличност
+                    </label>
+                </div>
+                <div class="product-actions">
+                    <button class="btn btn-accept" onclick="approveProduct(${orderId}, ${item.productId || item.id})">
+                        <i class="bi bi-check"></i> Одобри
+                    </button>
+                    <button class="btn btn-reject" onclick="rejectProduct(${orderId}, ${item.productId || item.id})">
+                        <i class="bi bi-x"></i> Отказ
+                    </button>
+                </div>
+                <div class="product-total">
+                    Общо: <span class="item-total">${((item.quantity || 0) * (item.unitPrice || 0)).toFixed(2)}</span> лв
+                </div>
+            </div>
+        `).join('');
+
+        productList.innerHTML = itemsHTML;
+    }
+
     // ==========================================
-    // PRODUCT OPERATIONS UI
+    // PRODUCT OPERATIONS - INTEGRATED WITH VISUAL FEEDBACK
     // ==========================================
 
     /**
-     * Highlight quantity update with visual feedback
+     * Update product quantity with visual feedback - INTEGRATED FUNCTIONALITY
+     */
+    async updateProductQuantity(orderId, productId, quantity) {
+        try {
+            const input = document.getElementById(`qty-${orderId}-${productId}`);
+
+            if (this.manager && this.manager.api) {
+                const result = await this.manager.api.updateProductQuantity(orderId, productId, quantity);
+
+                if (result.success) {
+                    this.highlightQuantityUpdate(orderId, productId, quantity);
+                    this.updateItemTotals(orderId);
+                    this.markOrderAsModified(orderId);
+                } else {
+                    this.revertQuantityUpdate(orderId, productId);
+                    if (window.toastManager) {
+                        window.toastManager.showError('Грешка при обновяване на количеството');
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error updating product quantity:', error);
+            this.revertQuantityUpdate(orderId, productId);
+        }
+    }
+
+    /**
+     * Approve product with visual feedback - INTEGRATED FUNCTIONALITY
+     */
+    async approveProduct(orderId, productId) {
+        try {
+            if (this.manager && this.manager.api) {
+                const result = await this.manager.api.approveProduct(orderId, productId);
+
+                if (result.success) {
+                    this.markProductApproved(orderId, productId);
+                    if (window.toastManager) {
+                        window.toastManager.showSuccess('Продуктът е одобрен');
+                    }
+                } else {
+                    if (window.toastManager) {
+                        window.toastManager.showError('Грешка при одобряване на продукта');
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error approving product:', error);
+        }
+    }
+
+    /**
+     * Reject product with modal - INTEGRATED WITH HTML MODAL
+     */
+    rejectProduct(orderId, productId) {
+        this.showRejectionModal(orderId, productId);
+    }
+
+    /**
+     * Reject entire order - INTEGRATED FUNCTIONALITY
+     */
+    rejectEntireOrder(orderId) {
+        this.showRejectionModal(orderId, null);
+    }
+
+    /**
+     * Highlight quantity update with visual feedback - INTEGRATED FUNCTIONALITY
      */
     highlightQuantityUpdate(orderId, productId, quantity) {
         try {
@@ -497,12 +626,13 @@ class DashboardUI {
     }
 
     /**
-     * Revert quantity update on error
+     * Revert quantity update on error - INTEGRATED FUNCTIONALITY
      */
     revertQuantityUpdate(orderId, productId) {
         try {
             const input = document.getElementById(`qty-${orderId}-${productId}`);
             if (input) {
+                input.value = input.dataset.original;
                 input.style.background = '#ffe6e6';
                 setTimeout(() => {
                     input.style.background = '';
@@ -514,7 +644,7 @@ class DashboardUI {
     }
 
     /**
-     * Mark product as approved with visual changes
+     * Mark product as approved - INTEGRATED VISUAL FEEDBACK
      */
     markProductApproved(orderId, productId) {
         try {
@@ -522,12 +652,13 @@ class DashboardUI {
             if (!productItem) return;
 
             productItem.style.border = '2px solid #27ae60';
+            productItem.classList.add('approved');
 
             const approveBtn = productItem.querySelector('.btn-accept');
             const rejectBtn = productItem.querySelector('.btn-reject');
 
             if (approveBtn) {
-                approveBtn.textContent = '✓ Одобрен';
+                approveBtn.innerHTML = '<i class="bi bi-check"></i> Одобрен';
                 approveBtn.style.background = '#27ae60';
                 approveBtn.style.color = 'white';
                 approveBtn.disabled = true;
@@ -544,7 +675,7 @@ class DashboardUI {
     }
 
     /**
-     * Mark product as rejected with visual changes
+     * Mark product as rejected - INTEGRATED VISUAL FEEDBACK
      */
     markProductRejected(orderId, productId, reason) {
         try {
@@ -553,12 +684,13 @@ class DashboardUI {
 
             productItem.style.border = '2px solid #e74c3c';
             productItem.style.opacity = '0.7';
+            productItem.classList.add('rejected');
 
             const approveBtn = productItem.querySelector('.btn-accept');
             const rejectBtn = productItem.querySelector('.btn-reject');
 
             if (rejectBtn) {
-                rejectBtn.textContent = '✗ Отказан';
+                rejectBtn.innerHTML = '<i class="bi bi-x"></i> Отказан';
                 rejectBtn.style.background = '#e74c3c';
                 rejectBtn.style.color = 'white';
                 rejectBtn.disabled = true;
@@ -569,26 +701,157 @@ class DashboardUI {
                 approveBtn.style.opacity = '0.5';
             }
 
+            // Add rejection reason as tooltip
+            if (reason) {
+                productItem.title = `Отказан: ${reason}`;
+            }
+
         } catch (error) {
             console.error('Error marking product rejected:', error);
         }
     }
 
+    /**
+     * Find product item in DOM - HELPER FOR INTEGRATED FUNCTIONALITY
+     */
+    findProductItem(orderId, productId) {
+        const productList = document.getElementById(`product-list-${orderId}`);
+        if (!productList) return null;
+
+        return productList.querySelector(`[data-product-id="${productId}"]`);
+    }
+
+    markOrderAsModified(orderId) {
+        const saveButton = document.querySelector(`#order-details-${orderId} .action-save`);
+        if (saveButton) {
+            saveButton.style.display = 'inline-flex';
+        }
+
+        this.updateItemTotals(orderId);
+    }
+
+    toggleItemAvailability(orderId, itemId, checkbox) {
+        const productItem = checkbox.closest('.product-item');
+
+        if (checkbox.checked) {
+            productItem.classList.remove('unavailable');
+        } else {
+            productItem.classList.add('unavailable');
+            const quantityInput = productItem.querySelector('.quantity-input');
+            if (quantityInput && quantityInput.value > 0) {
+                if (confirm('Артикулът е недостъпен. Да се зададе количество 0?')) {
+                    quantityInput.value = 0;
+                }
+            }
+        }
+
+        this.markOrderAsModified(orderId);
+    }
+
+    updateItemTotals(orderId) {
+        const productList = document.getElementById(`product-list-${orderId}`);
+        const items = productList.querySelectorAll('.product-item');
+
+        items.forEach(item => {
+            const quantityInput = item.querySelector('.quantity-input');
+            const priceText = item.querySelector('.product-price').textContent;
+            const price = parseFloat(priceText.match(/[\d.]+/)?.[0] || 0);
+            const quantity = parseInt(quantityInput.value || 0);
+            const total = (price * quantity).toFixed(2);
+
+            item.querySelector('.item-total').textContent = total;
+        });
+    }
+
+    async saveOrderChanges(orderId) {
+        const productList = document.getElementById(`product-list-${orderId}`);
+        const items = productList.querySelectorAll('.product-item');
+
+        const changes = [];
+
+        items.forEach(item => {
+            const itemId = item.dataset.itemId;
+            const quantityInput = item.querySelector('.quantity-input');
+            const availabilityCheckbox = item.querySelector('.availability-checkbox');
+            const originalQuantity = parseInt(quantityInput.dataset.original);
+            const newQuantity = parseInt(quantityInput.value);
+
+            if (newQuantity !== originalQuantity || !availabilityCheckbox.checked) {
+                changes.push({
+                    itemId: itemId,
+                    quantity: newQuantity,
+                    available: availabilityCheckbox.checked
+                });
+            }
+        });
+
+        if (changes.length === 0) {
+            alert('Няма промени за запазване');
+            return;
+        }
+
+        try {
+            if (window.LoaderManager) {
+                window.LoaderManager.show('Запазване на промените...');
+            }
+
+            const response = await fetch(`/employer/orders/${orderId}/update-items`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    [window.dashboardConfig?.csrfHeader || 'X-CSRF-TOKEN']: window.dashboardConfig?.csrfToken || ''
+                },
+                body: JSON.stringify({ changes: changes })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                const saveButton = document.querySelector(`#order-details-${orderId} .action-save`);
+                if (saveButton) {
+                    saveButton.style.display = 'none';
+                }
+
+                if (window.toastManager) {
+                    window.toastManager.showSuccess('Промените са запазени успешно');
+                }
+
+                items.forEach(item => {
+                    const quantityInput = item.querySelector('.quantity-input');
+                    quantityInput.dataset.original = quantityInput.value;
+                });
+
+            } else {
+                throw new Error(result.message || 'Грешка при запазване');
+            }
+
+        } catch (error) {
+            console.error('Error saving changes:', error);
+            if (window.toastManager) {
+                window.toastManager.showError('Грешка при запазване на промените');
+            } else {
+                alert('Грешка при запазване на промените');
+            }
+        } finally {
+            if (window.LoaderManager) {
+                window.LoaderManager.hide();
+            }
+        }
+    }
+
     // ==========================================
-    // MODAL MANAGEMENT
+    // MODAL MANAGEMENT - INTEGRATED WITH HTML MODAL
     // ==========================================
 
     /**
-     * Show rejection modal for product rejection
+     * Show rejection modal - INTEGRATED WITH HTML MODAL
      */
     showRejectionModal(orderId, productId) {
         try {
             this.rejectionContext = { orderId, productId };
-
-            // Reset modal state
             this.resetRejectionModal();
 
-            // Show modal
             if (this.elements.rejectionModal) {
                 this.elements.rejectionModal.classList.add('active');
                 this.activeModal = 'rejection';
@@ -600,7 +863,7 @@ class DashboardUI {
     }
 
     /**
-     * Close rejection modal
+     * Close rejection modal - INTEGRATED WITH HTML MODAL
      */
     closeRejectionModal() {
         try {
@@ -617,17 +880,114 @@ class DashboardUI {
     }
 
     /**
-     * Reset rejection modal to initial state
+     * Reset rejection modal - INTEGRATED WITH HTML MODAL
      */
     resetRejectionModal() {
-        // Clear reason selections
         document.querySelectorAll('.reason-option').forEach(option => {
             option.classList.remove('selected');
         });
 
-        // Clear custom reason text
         if (this.elements.customReason) {
             this.elements.customReason.value = '';
+        }
+    }
+
+    /**
+     * Confirm rejection with reason - INTEGRATED FUNCTIONALITY
+     */
+    async confirmRejection() {
+        if (!this.rejectionContext) return;
+
+        const { orderId, productId } = this.rejectionContext;
+
+        // Get selected reason
+        const selectedOption = document.querySelector('.reason-option.selected');
+        const customReason = this.elements.customReason?.value;
+        const reason = selectedOption ?
+            selectedOption.querySelector('strong').textContent :
+            customReason || 'Без посочена причина';
+
+        try {
+            if (productId) {
+                // Reject specific product
+                if (this.manager && this.manager.api) {
+                    const result = await this.manager.api.rejectProduct(orderId, productId, reason);
+                    if (result.success) {
+                        this.markProductRejected(orderId, productId, reason);
+                        if (window.toastManager) {
+                            window.toastManager.showSuccess('Продуктът е отказан');
+                        }
+                    }
+                }
+            } else {
+                // Reject entire order
+                if (this.manager && this.manager.api) {
+                    const result = await this.manager.api.cancelOrder(orderId, reason);
+                    if (result.success) {
+                        if (window.toastManager) {
+                            window.toastManager.showSuccess('Поръчката е отказана');
+                        }
+                        // Refresh dashboard to update order status
+                        if (this.manager) {
+                            this.manager.refreshDashboard();
+                        }
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error during rejection:', error);
+            if (window.toastManager) {
+                window.toastManager.showError('Грешка при отказване');
+            }
+        } finally {
+            this.closeRejectionModal();
+        }
+    }
+
+    // ==========================================
+    // UTILITY METHODS - INTEGRATED FUNCTIONALITY
+    // ==========================================
+
+    /**
+     * Format order time for display - INTEGRATED FUNCTIONALITY
+     */
+    formatOrderTime(submittedAt) {
+        try {
+            const orderDate = new Date(submittedAt);
+            const now = new Date();
+            const diffMs = now - orderDate;
+            const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+            const diffMins = Math.floor(diffMs / (1000 * 60));
+
+            if (diffHours > 24) {
+                return `${Math.floor(diffHours / 24)}д`;
+            } else if (diffHours > 0) {
+                return `${diffHours}ч`;
+            } else {
+                return `${diffMins}мин`;
+            }
+        } catch (error) {
+            return 'Неизвестно';
+        }
+    }
+
+    /**
+     * Get order priority based on age and urgency - INTEGRATED FUNCTIONALITY
+     */
+    getOrderPriority(order) {
+        try {
+            const orderDate = new Date(order.submittedAt);
+            const now = new Date();
+            const hoursOld = (now - orderDate) / (1000 * 60 * 60);
+
+            // Priority based on age and total value
+            const totalValue = parseFloat(order.totalGross || 0);
+
+            if (hoursOld > 4 || totalValue > 1000) return 'urgent';
+            if (hoursOld > 2 || totalValue > 500) return 'high';
+            return 'normal';
+        } catch (error) {
+            return 'normal';
         }
     }
 
@@ -635,12 +995,8 @@ class DashboardUI {
     // KEYBOARD AND TOUCH SUPPORT
     // ==========================================
 
-    /**
-     * Set up keyboard shortcuts for power users
-     */
     setupKeyboardShortcuts() {
         document.addEventListener('keydown', (e) => {
-            // Only handle shortcuts with Ctrl/Cmd key
             if (e.ctrlKey || e.metaKey) {
                 switch(e.key) {
                     case '1':
@@ -670,7 +1026,6 @@ class DashboardUI {
                 }
             }
 
-            // Escape key to close modals
             if (e.key === 'Escape') {
                 this.closeRejectionModal();
             }
@@ -679,9 +1034,6 @@ class DashboardUI {
         console.log('✓ Keyboard shortcuts set up');
     }
 
-    /**
-     * Set up touch gestures for mobile navigation
-     */
     setupTouchGestures() {
         let touchStartX = 0;
 
@@ -693,16 +1045,13 @@ class DashboardUI {
             const touchEndX = e.changedTouches[0].clientX;
             const diff = touchStartX - touchEndX;
 
-            // Minimum swipe distance to trigger navigation
             if (Math.abs(diff) > 50 && this.manager) {
                 const tabs = ['urgent', 'pending', 'ready', 'activity', 'manage'];
                 const currentIndex = tabs.indexOf(this.manager.currentTab);
 
                 if (diff > 0 && currentIndex < tabs.length - 1) {
-                    // Swipe left - next tab
                     this.manager.switchTab(tabs[currentIndex + 1]);
                 } else if (diff < 0 && currentIndex > 0) {
-                    // Swipe right - previous tab
                     this.manager.switchTab(tabs[currentIndex - 1]);
                 }
             }
@@ -711,66 +1060,6 @@ class DashboardUI {
         console.log('✓ Touch gestures set up');
     }
 
-    // ==========================================
-    // UTILITY METHODS
-    // ==========================================
-
-    /**
-     * Find product item element in DOM
-     */
-    findProductItem(orderId, productId) {
-        const detailsContainer = document.getElementById(`details-${orderId}`);
-        if (!detailsContainer) return null;
-
-        const productItems = detailsContainer.querySelectorAll('.product-item');
-        for (let item of productItems) {
-            const skuElement = item.querySelector('.product-sku');
-            if (skuElement && skuElement.textContent.includes(productId)) {
-                return item;
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Format order time for display
-     */
-    formatOrderTime(submittedAt) {
-        try {
-            const orderDate = new Date(submittedAt);
-            const now = new Date();
-            const diffMs = now - orderDate;
-            const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-            const diffMins = Math.floor(diffMs / (1000 * 60));
-
-            if (diffHours > 24) {
-                return `${Math.floor(diffHours / 24)}д`;
-            } else if (diffHours > 0) {
-                return `${diffHours}ч`;
-            } else {
-                return `${diffMins}мин`;
-            }
-        } catch (error) {
-            return 'Неизвестно';
-        }
-    }
-
-    /**
-     * Get order priority based on time and status
-     */
-    getOrderPriority(order) {
-        const orderDate = new Date(order.submittedAt);
-        const now = new Date();
-        const hoursOld = (now - orderDate) / (1000 * 60 * 60);
-
-        if (hoursOld > 4) return 'urgent';
-        if (hoursOld > 2) return 'high';
-        return 'normal';
-    }
-
-    /**
-     * Update activity feed
-     */
     updateActivityFeed(activities) {
         try {
             const activityTab = document.getElementById('activity-tab');
@@ -780,7 +1069,7 @@ class DashboardUI {
             if (!panelContent) return;
 
             if (activities.length === 0) {
-                panelContent.innerHTML = this.createEmptyStateHTML('activity');
+                panelContent.innerHTML = '<div class="empty-state"><div class="empty-icon"><i class="bi bi-inbox"></i></div><div class="empty-message">Няма последна активност</div></div>';
                 return;
             }
 
@@ -803,6 +1092,83 @@ class DashboardUI {
         }
     }
 }
+
+// Global functions for HTML onclick handlers - FULLY INTEGRATED
+window.toggleOrderDetails = function(orderId) {
+    if (window.mainDashboard && window.mainDashboard.ui) {
+        window.mainDashboard.ui.toggleOrderDetails(orderId);
+    }
+};
+
+window.markOrderAsModified = function(orderId) {
+    if (window.mainDashboard && window.mainDashboard.ui) {
+        window.mainDashboard.ui.markOrderAsModified(orderId);
+    }
+};
+
+window.toggleItemAvailability = function(orderId, itemId, checkbox) {
+    if (window.mainDashboard && window.mainDashboard.ui) {
+        window.mainDashboard.ui.toggleItemAvailability(orderId, itemId, checkbox);
+    }
+};
+
+window.saveOrderChanges = function(orderId) {
+    if (window.mainDashboard && window.mainDashboard.ui) {
+        window.mainDashboard.ui.saveOrderChanges(orderId);
+    }
+};
+
+window.updateProductQuantity = function(orderId, productId, quantity) {
+    if (window.mainDashboard && window.mainDashboard.ui) {
+        window.mainDashboard.ui.updateProductQuantity(orderId, productId, quantity);
+    }
+};
+
+window.approveProduct = function(orderId, productId) {
+    if (window.mainDashboard && window.mainDashboard.ui) {
+        window.mainDashboard.ui.approveProduct(orderId, productId);
+    }
+};
+
+window.rejectProduct = function(orderId, productId) {
+    if (window.mainDashboard && window.mainDashboard.ui) {
+        window.mainDashboard.ui.rejectProduct(orderId, productId);
+    }
+};
+
+window.rejectEntireOrder = function(orderId) {
+    if (window.mainDashboard && window.mainDashboard.ui) {
+        window.mainDashboard.ui.rejectEntireOrder(orderId);
+    }
+};
+
+window.closeRejectionModal = function() {
+    if (window.mainDashboard && window.mainDashboard.ui) {
+        window.mainDashboard.ui.closeRejectionModal();
+    }
+};
+
+window.confirmRejection = function() {
+    if (window.mainDashboard && window.mainDashboard.ui) {
+        window.mainDashboard.ui.confirmRejection();
+    }
+};
+
+window.selectReason = function(element, reason) {
+    // Remove previous selections
+    document.querySelectorAll('.reason-option').forEach(option => {
+        option.classList.remove('selected');
+    });
+
+    // Select current option
+    element.classList.add('selected');
+
+    // Clear custom reason if predefined option is selected
+    const customReason = document.getElementById('custom-reason');
+    if (customReason) {
+        customReason.value = '';
+    }
+};
 
 // Export for use in other modules
 window.DashboardUI = DashboardUI;

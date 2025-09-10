@@ -50,10 +50,6 @@ public class DashboardServiceImpl implements DashboardService {
             data.setShippedCount(orderRepository.countByStatus(OrderStatus.SHIPPED));
             data.setCancelledCount(orderRepository.countByStatus(OrderStatus.CANCELLED));
 
-            log.info("Dashboard overview loaded: submitted={}, confirmed={}, picked={}, shipped={}, cancelled={}",
-                    data.getSubmittedCount(), data.getConfirmedCount(), data.getPickedCount(),
-                    data.getShippedCount(), data.getCancelledCount());
-
             return data;
 
         } catch (DataAccessException e) {
@@ -92,9 +88,6 @@ public class DashboardServiceImpl implements DashboardService {
                     .count();
             stats.setActiveClients((int) activeClients);
 
-            log.info("Daily stats loaded: processed={}, revenue={}, activeClients={}",
-                    stats.getProcessed(), stats.getRevenue(), stats.getActiveClients());
-
             return stats;
 
         } catch (DataAccessException e) {
@@ -131,9 +124,6 @@ public class DashboardServiceImpl implements DashboardService {
             // Log mapping статистика за debugging
             orderMapper.logMappingStats(limitedOrders, "getOrdersByStatus");
 
-            log.info("Loaded {} orders (limited from {}) for status: {}",
-                    orderDTOs.size(), orders.size(), status);
-
             return response;
 
         } catch (DataAccessException e) {
@@ -154,7 +144,6 @@ public class DashboardServiceImpl implements DashboardService {
 
             DashboardOverviewResponseDTO response = new DashboardOverviewResponseDTO(dashboardData, dailyStats);
 
-            log.info("Dashboard overview DTO created successfully");
             return response;
 
         } catch (Exception e) {
@@ -180,7 +169,6 @@ public class DashboardServiceImpl implements DashboardService {
     @Override
     @Transactional // Write transaction за статус промени
     public boolean confirmOrder(Long orderId) {
-        log.info("Confirming order: {}", orderId);
 
         try {
             java.util.Optional<Order> orderOpt = orderRepository.findById(orderId);
@@ -200,7 +188,6 @@ public class DashboardServiceImpl implements DashboardService {
 
             orderRepository.save(order);
 
-            log.info("Order {} confirmed successfully", orderId);
             return true;
 
         } catch (DataAccessException e) {
@@ -212,7 +199,6 @@ public class DashboardServiceImpl implements DashboardService {
     @Override
     @Transactional
     public boolean startPickingOrder(Long orderId) {
-        log.info("Starting picking for order: {}", orderId);
 
         try {
             java.util.Optional<Order> orderOpt = orderRepository.findById(orderId);
@@ -230,7 +216,6 @@ public class DashboardServiceImpl implements DashboardService {
             order.setStatus(OrderStatus.PICKED);
             orderRepository.save(order);
 
-            log.info("Picking started for order {}", orderId);
             return true;
 
         } catch (DataAccessException e) {
@@ -242,7 +227,6 @@ public class DashboardServiceImpl implements DashboardService {
     @Override
     @Transactional
     public boolean completeOrder(Long orderId) {
-        log.info("Completing order: {}", orderId);
 
         try {
             java.util.Optional<Order> orderOpt = orderRepository.findById(orderId);
@@ -260,7 +244,6 @@ public class DashboardServiceImpl implements DashboardService {
             order.setStatus(OrderStatus.SHIPPED);
             orderRepository.save(order);
 
-            log.info("Order {} completed successfully", orderId);
             return true;
 
         } catch (DataAccessException e) {
@@ -272,7 +255,6 @@ public class DashboardServiceImpl implements DashboardService {
     @Override
     @Transactional
     public boolean rejectOrder(Long orderId, String reason) {
-        log.info("Rejecting order: {} with reason: {}", orderId, reason);
 
         try {
             java.util.Optional<Order> orderOpt = orderRepository.findById(orderId);
@@ -296,7 +278,6 @@ public class DashboardServiceImpl implements DashboardService {
 
             orderRepository.save(order);
 
-            log.info("Order {} rejected successfully", orderId);
             return true;
 
         } catch (DataAccessException e) {
@@ -325,8 +306,6 @@ public class DashboardServiceImpl implements DashboardService {
     @Override
     @Transactional
     public boolean updateOrderItemQuantity(Long orderId, String productSku, Integer newQuantity) {
-        log.info("Updating quantity for order: {}, product: {}, quantity: {}",
-                orderId, productSku, newQuantity);
 
         log.warn("updateOrderItemQuantity not fully implemented yet");
         return false;
@@ -335,7 +314,6 @@ public class DashboardServiceImpl implements DashboardService {
     @Override
     @Transactional
     public boolean approveOrderItem(Long orderId, String productSku) {
-        log.info("Approving item for order: {}, product: {}", orderId, productSku);
 
         log.warn("approveOrderItem not fully implemented yet");
         return false;
@@ -344,8 +322,6 @@ public class DashboardServiceImpl implements DashboardService {
     @Override
     @Transactional
     public boolean rejectOrderItem(Long orderId, String productSku, String reason) {
-        log.info("Rejecting item for order: {}, product: {}, reason: {}",
-                orderId, productSku, reason);
 
         log.warn("rejectOrderItem not fully implemented yet");
         return false;

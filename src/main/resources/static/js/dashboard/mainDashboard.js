@@ -71,51 +71,114 @@ class MainDashboard {
      * Това е единственото място където взаимодействаме с HTML данните
      */
     extractConfigurationFromHTML() {
-        console.log('📥 Extracting configuration from HTML globals...');
+        console.log('📋 Extracting configuration from HTML...');
 
-        // Извличаме конфигурацията от window.dashboardConfig (ако съществува)
-        const htmlConfig = window.dashboardConfig || {};
-        const htmlData = window.dashboardData || {};
+        try {
+            // ✅ Проверяваме дали window.dashboardConfig съществува
+            if (!window.dashboardConfig) {
+                throw new Error('window.dashboardConfig не е дефинирана в HTML template-а');
+            }
 
-        // Построяваме нашата конфигурация за модулите
-        this.config = {
-            // CSRF и сигурност
-            csrfToken: htmlConfig.csrfToken || null,
-            csrfHeader: htmlConfig.csrfHeader || null,
+            // Извличаме основната конфигурация
+            this.config = {
+                userId: window.dashboardConfig.userId || null,
+                csrfToken: window.dashboardConfig.csrfToken || '',
+                csrfHeader: window.dashboardConfig.csrfHeader || 'X-CSRF-TOKEN',
 
-            // Потребителска информация
-            userId: htmlConfig.userId || null,
-            userRole: htmlConfig.userRole || 'GUEST',
+                // ✅ Dashboard специфични настройки
+                enableRealTimeUpdates: true,
+                refreshInterval: 30000, // 30 секунди
+                verboseLogging: true,
 
-            // Функционални настройки
-            enableRealTimeUpdates: htmlConfig.enableRealTimeUpdates !== false, // default true
-            refreshInterval: htmlConfig.refreshInterval || 180000, // 3 минути
+                // ✅ Роля на потребителя (за бъдещи permissions)
+                userRole: 'ADMIN' // Може да дойде от сървъра в бъдеще
+            };
 
-            // UI настройки
-            animationDuration: 300,
-            autoCollapseDetails: true,
+            // ✅ Извличаме началните данни и валидираме ги
+            const rawInitialData = window.dashboardConfig.initialDashboardData || {};
 
-            // Debug режим - активен само в development
-            debug: this.isDebugMode(),
-            verboseLogging: this.isDebugMode()
-        };
+            this.initialData = {
+                // Counters за status bar-а
+                urgentCount: this.safeParseInt(rawInitialData.submittedCount, 0),
+                pendingCount: this.safeParseInt(rawInitialData.confirmedCount, 0),
+                readyCount: this.safeParseInt(rawInitialData.pickedCount, 0),
+                completedCount: this.safeParseInt(rawInitialData.shippedCount, 0),
+                cancelledCount: this.safeParseInt(rawInitialData.cancelledCount, 0),
 
-        // Извличаме началните данни
-        this.initialData = {
-            urgentCount: htmlData.urgentCount || 0,
-            pendingCount: htmlData.pendingCount || 0,
-            readyCount: htmlData.readyCount || 0,
-            completedCount: htmlData.completedCount || 0,
+                // Daily statistics
+                dailyStats: rawInitialData.dailyStats || {
+                    processed: 0,
+                    revenue: '0.0',
+                    avgTime: '0.0ч',
+                    activeClients: 0
+                },
 
-            // Meta информация
-            isValid: this.isValidDataFromServer(htmlData),
-            timestamp: new Date().getTime(),
-            source: 'server-initial'
-        };
+                // ✅ Флаг за валидност на данните
+                isValid: rawInitialData.isValid === true,
 
-        console.log('✓ Configuration extracted:', this.config);
-        console.log('✓ Initial data extracted:', this.initialData);
+                // Timestamp
+                lastUpdate: rawInitialData.lastUpdate || new Date().toISOString(),
+
+                // Error information if any
+                error: rawInitialData.error || null
+            };
+
+            // ✅ Валидация на критичните данни
+            if (!this.config.userId) {
+                console.warn('⚠️ userId липсва - някои функции може да не работят');
+            }
+
+            if (!this.initialData.isValid) {
+                console.warn('⚠️ Началните данни не са валидни:', this.initialData.error);
+            }
+
+            console.log('✓ Configuration extracted successfully');
+            console.log('📊 Initial data valid:', this.initialData.isValid);
+
+            if (this.config.verboseLogging) {
+                console.log('🔧 Config:', this.config);
+                console.log('📋 Initial data:', this.initialData);
+            }
+
+        } catch (error) {
+            console.error('❌ Failed to extract configuration:', error);
+
+            // ✅ Fallback конфигурация при грешка
+            this.config = {
+                userId: null,
+                csrfToken: '',
+                csrfHeader: 'X-CSRF-TOKEN',
+                enableRealTimeUpdates: false, // Изключваме auto-refresh при проблеми
+                refreshInterval: 60000,
+                verboseLogging: true,
+                userRole: 'UNKNOWN'
+            };
+
+            this.initialData = {
+                urgentCount: 0,
+                pendingCount: 0,
+                readyCount: 0,
+                completedCount: 0,
+                cancelledCount: 0,
+                dailyStats: { processed: 0, revenue: '0.0', avgTime: '0.0ч', activeClients: 0 },
+                isValid: false,
+                error: 'Конфигурацията не може да бъде заредена',
+                lastUpdate: new Date().toISOString()
+            };
+
+            this.hasErrors = true;
+        }
     }
+
+    safeParseInt(value, defaultValue = 0) {
+        if (value === null || value === undefined || value === '') {
+            return defaultValue;
+        }
+
+        const parsed = parseInt(value, 10);
+        return isNaN(parsed) ? defaultValue : parsed;
+    }
+
 
     /**
      * Валидира дали имаме достатъчно данни за стартиране

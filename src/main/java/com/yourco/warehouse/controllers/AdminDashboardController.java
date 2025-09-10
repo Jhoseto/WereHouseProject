@@ -12,6 +12,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * DASHBOARD REST CONTROLLER
  * ================================================
@@ -43,13 +47,57 @@ public class AdminDashboardController {
     @GetMapping("/dashboard/overview")
     public ResponseEntity<DashboardResponseDTO> getDashboardOverview() {
         try {
-            DashboardOverviewResponseDTO overviewData = dashboardServiceImpl.getDashboardOverviewAsDTO();
-            DashboardResponseDTO response = DashboardResponseDTO.success(overviewData);
+            log.debug("API call: Getting dashboard overview data");
 
+            // ✅ Използваме същите методи като MainController
+            DashboardDataDTO dashboardData = dashboardService.getDashboardOverview();
+            DailyStatsDTO dailyStats = dashboardService.getDailyStatistics();
+
+            // ✅ Създаваме структура идентична с тази от MainController
+            Map<String, Object> responseData = new HashMap<>();
+            responseData.put("submittedCount", dashboardData.getSubmittedCount());
+            responseData.put("confirmedCount", dashboardData.getConfirmedCount());
+            responseData.put("pickedCount", dashboardData.getPickedCount());
+            responseData.put("shippedCount", dashboardData.getShippedCount());
+            responseData.put("cancelledCount", dashboardData.getCancelledCount());
+            responseData.put("dailyStats", dailyStats);
+            responseData.put("lastUpdate", LocalDateTime.now().toString());
+            responseData.put("isValid", true);
+
+            // ✅ Добавяме допълнителна метаинформация за JavaScript-а
+            responseData.put("totalOrders",
+                    dashboardData.getSubmittedCount() +
+                            dashboardData.getConfirmedCount() +
+                            dashboardData.getPickedCount() +
+                            dashboardData.getShippedCount());
+
+            responseData.put("hasUrgentAlerts", dashboardData.getSubmittedCount() > 0);
+
+            DashboardResponseDTO response = DashboardResponseDTO.success(responseData);
+
+            log.debug("✓ Dashboard overview data sent successfully");
             return ResponseEntity.ok(response);
+
         } catch (Exception e) {
-            log.error("Error getting dashboard overview: {}", e.getMessage(), e);
+            log.error("❌ Error getting dashboard overview: {}", e.getMessage(), e);
+
+            // ✅ При грешка връщаме структура със същите полета, но с празни стойности
+            Map<String, Object> errorData = new HashMap<>();
+            errorData.put("submittedCount", 0);
+            errorData.put("confirmedCount", 0);
+            errorData.put("pickedCount", 0);
+            errorData.put("shippedCount", 0);
+            errorData.put("cancelledCount", 0);
+            errorData.put("dailyStats", new DailyStatsDTO()); // Празен обект
+            errorData.put("lastUpdate", LocalDateTime.now().toString());
+            errorData.put("isValid", false);
+            errorData.put("error", e.getMessage());
+            errorData.put("totalOrders", 0);
+            errorData.put("hasUrgentAlerts", false);
+
             DashboardResponseDTO errorResponse = DashboardResponseDTO.error("Грешка при зареждане на dashboard данните");
+            errorResponse.setData(errorData); // ✅ Важно: добавяме данните и при грешка
+
             return ResponseEntity.ok(errorResponse);
         }
     }

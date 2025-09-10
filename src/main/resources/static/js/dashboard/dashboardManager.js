@@ -66,36 +66,176 @@ class DashboardManager {
      * Load complete dashboard data from server
      * Updates both counters and initial order lists
      */
-    async loadDashboardData()
-    {
+    async loadDashboardData() {
         try {
-            console.log('Loading dashboard data from server...');
+            console.log('🔄 Loading dashboard data from server...');
 
             // Get overview data (counters and statistics)
-            const data = await this.api.getDashboardOverview();
+            const apiResponse = await this.api.getDashboardOverview();
 
-            if (data.success) {
-                this.dashboardData = data;
+            if (apiResponse.success && apiResponse.data) {
+                console.log('✅ API data received successfully');
+
+                // ✅ CRITICAL FIX: Handle the ACTUAL structure from AdminDashboardController
+                // The data comes wrapped in DashboardOverviewResponseDTO
+                const serverData = apiResponse.data;
+
+                // ✅ Map the actual field names from DashboardOverviewResponseDTO
+                this.dashboardData = {
+                    // Map from API response structure to internal structure
+                    submittedCount: this.safeParseInt(serverData.urgentCount, 0),
+                    confirmedCount: this.safeParseInt(serverData.pendingCount, 0),
+                    pickedCount: this.safeParseInt(serverData.readyCount, 0),
+                    shippedCount: this.safeParseInt(serverData.completedCount, 0),
+                    cancelledCount: this.safeParseInt(serverData.cancelledCount, 0),
+
+                    // Daily stats (same structure)
+                    dailyStats: serverData.dailyStats || {
+                        processed: 0,
+                        revenue: '0.0',
+                        avgTime: '0.0ч',
+                        activeClients: 0
+                    },
+
+                    // Metadata
+                    hasUrgentAlerts: serverData.hasUrgentAlerts || false,
+                    lastUpdate: new Date().toISOString(),
+                    isValid: true,
+                    error: null
+                };
+
                 this.lastRefresh = new Date();
 
-                // Update UI counters
+                // ✅ Update UI with correctly mapped data
                 if (this.ui) {
-                    this.ui.updateCounters(data);
-                    this.ui.updateDailyStats(data.dailyStats);
+                    // Create the data structure that UI expects
+                    const uiData = {
+                        urgentCount: this.dashboardData.submittedCount,
+                        pendingCount: this.dashboardData.confirmedCount,
+                        readyCount: this.dashboardData.pickedCount,
+                        completedCount: this.dashboardData.shippedCount,
+                        cancelledCount: this.dashboardData.cancelledCount,
+                        dailyStats: this.dashboardData.dailyStats
+                    };
+
+                    this.ui.updateCounters(uiData);
+                    this.ui.updateDailyStats(this.dashboardData.dailyStats);
                 }
 
-                // Load data for current tab
+                // ✅ Load data for current tab
                 await this.loadTabData(this.currentTab);
 
-                console.log('✓ Dashboard data loaded successfully');
+                console.log('✅ Dashboard data loaded and processed successfully');
+
             } else {
-                throw new Error(data.message || 'Failed to load dashboard data');
+                throw new Error(apiResponse.message || 'API request returned unsuccessful response');
             }
 
         } catch (error) {
-            console.error('Error loading dashboard data:', error);
-            this.api.showWarning('Грешка при зареждане на данните');
+            console.error('❌ Error loading dashboard data from API:', error);
+
+            // ✅ FALLBACK: Try to use initial data from HTML
+            console.log('🔄 Attempting to use initial data from server as fallback...');
+            this.tryLoadInitialData();
         }
+    }
+
+    tryLoadInitialData() {
+        try {
+            if (window.dashboardConfig && window.dashboardConfig.initialDashboardData) {
+                const initialData = window.dashboardConfig.initialDashboardData;
+
+                if (initialData.isValid) {
+                    console.log('✅ Using initial data from HTML as fallback');
+
+                    // ✅ Map initial data structure to internal structure
+                    this.dashboardData = {
+                        submittedCount: this.safeParseInt(initialData.urgentCount, 0),
+                        confirmedCount: this.safeParseInt(initialData.pendingCount, 0),
+                        pickedCount: this.safeParseInt(initialData.readyCount, 0),
+                        shippedCount: this.safeParseInt(initialData.completedCount, 0),
+                        cancelledCount: this.safeParseInt(initialData.cancelledCount, 0),
+                        dailyStats: initialData.dailyStats || {
+                            processed: 0,
+                            revenue: '0.0',
+                            avgTime: '0.0ч',
+                            activeClients: 0
+                        },
+                        hasUrgentAlerts: initialData.hasUrgentAlerts || false,
+                        lastUpdate: initialData.lastUpdate || new Date().toISOString(),
+                        isValid: true,
+                        error: null
+                    };
+
+                    if (this.ui) {
+                        const uiData = {
+                            urgentCount: this.dashboardData.submittedCount,
+                            pendingCount: this.dashboardData.confirmedCount,
+                            readyCount: this.dashboardData.pickedCount,
+                            completedCount: this.dashboardData.shippedCount,
+                            cancelledCount: this.dashboardData.cancelledCount,
+                            dailyStats: this.dashboardData.dailyStats
+                        };
+
+                        this.ui.updateCounters(uiData);
+                        this.ui.updateDailyStats(this.dashboardData.dailyStats);
+                    }
+
+                    // Load tab data
+                    this.loadTabData(this.currentTab);
+
+                    console.log('✅ Fallback data loaded successfully');
+                    return;
+                }
+            }
+
+            // ✅ Final fallback - show error state
+            console.error('❌ No valid data source available');
+            this.showGracefulDegradation();
+
+        } catch (error) {
+            console.error('❌ Error loading initial data:', error);
+            this.showGracefulDegradation();
+        }
+    }
+
+    showGracefulDegradation() {
+        if (this.ui) {
+            // Show zero counts but keep UI functional
+            const fallbackData = {
+                urgentCount: 0,
+                pendingCount: 0,
+                readyCount: 0,
+                completedCount: 0,
+                cancelledCount: 0,
+                dailyStats: {
+                    processed: 0,
+                    revenue: '0.0',
+                    avgTime: '0.0ч',
+                    activeClients: 0
+                }
+            };
+
+            this.ui.updateCounters(fallbackData);
+            this.ui.updateDailyStats(fallbackData.dailyStats);
+
+            // Show error message
+            if (window.toastManager) {
+                window.toastManager.showError('Не могат да бъдат заредени данните за dashboard-а. Моля, опреснете страницата.');
+            } else {
+                console.error('Dashboard data could not be loaded');
+            }
+        }
+    }
+
+
+    safeParseInt(value, defaultValue = 0) {
+        if (value === null || value === undefined || value === '') {
+            return defaultValue;
+        }
+
+        const parsed = parseInt(value, 10);
+        return isNaN(parsed) ? defaultValue : parsed;
     }
 
     /**
