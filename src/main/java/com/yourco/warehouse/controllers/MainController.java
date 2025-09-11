@@ -1,14 +1,14 @@
 package com.yourco.warehouse.controllers;
 
-import com.yourco.warehouse.dto.DailyStatsDTO;
-import com.yourco.warehouse.dto.DashboardDataDTO;
+import com.yourco.warehouse.dto.DashboardDTO;
 import com.yourco.warehouse.entity.Order;
 import com.yourco.warehouse.entity.UserEntity;
 import com.yourco.warehouse.service.DashboardService;
 import com.yourco.warehouse.service.UserService;
-import com.yourco.warehouse.service.impl.OrderServiceImpl;
+import com.yourco.warehouse.service.OrderService;
 import com.yourco.warehouse.utils.RequestUtils;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.stereotype.Controller;
@@ -27,11 +27,12 @@ public class MainController {
 
 
     private final UserService userService;
-    private final OrderServiceImpl orderService;
+    private final OrderService orderService;
     private final DashboardService dashboardService;
 
+    @Autowired
     public MainController(UserService userService,
-                          OrderServiceImpl orderService, DashboardService dashboardService) {
+                          OrderService orderService, DashboardService dashboardService) {
         this.userService = userService;
         this.orderService = orderService;
         this.dashboardService = dashboardService;
@@ -148,38 +149,28 @@ public class MainController {
         try {
             UserEntity currentUser = userService.getCurrentUser();
 
-            // ✅ FIXED: Използваме съществуващите методи от DashboardServiceImpl
-            DashboardDataDTO dashboardData = dashboardService.getDashboardOverview();
-            DailyStatsDTO dailyStats = dashboardService.getDailyStatistics();
+            DashboardDTO dashboardData = dashboardService.getFullDashboard();
 
-            // ✅ Add individual counts for Thymeleaf template (както преди)
-            model.addAttribute("submittedCount", dashboardData.getSubmittedCount());
-            model.addAttribute("confirmedCount", dashboardData.getConfirmedCount());
-            model.addAttribute("pickedCount", dashboardData.getPickedCount());
-            model.addAttribute("shippedCount", dashboardData.getShippedCount());
-            model.addAttribute("cancelledCount", dashboardData.getCancelledCount());
-            model.addAttribute("dailyStats", dailyStats);
+            if (!dashboardData.getSuccess()) {
+                throw new RuntimeException(dashboardData.getMessage());
+            }
+
+            model.addAttribute("submittedCount", dashboardData.getUrgentCount() != null ? dashboardData.getUrgentCount() : 0);
+            model.addAttribute("confirmedCount", dashboardData.getPendingCount() != null ? dashboardData.getPendingCount() : 0);
+            model.addAttribute("pickedCount", dashboardData.getReadyCount() != null ? dashboardData.getReadyCount() : 0);
+            model.addAttribute("shippedCount", dashboardData.getCompletedCount() != null ? dashboardData.getCompletedCount() : 0);
+            model.addAttribute("cancelledCount", dashboardData.getCancelledCount() != null ? dashboardData.getCancelledCount() : 0);
+
+            model.addAttribute("dailyStats", dashboardData); // Template ще използва полетата processed, revenue, avgTime, activeClients
+
             model.addAttribute("lastUpdate", LocalDateTime.now());
             model.addAttribute("currentUser", currentUser);
             model.addAttribute("userId", currentUser.getId());
 
-            // ✅ CRITICAL FIX: Create EXACTLY the same structure that AdminDashboardController returns
-            Map<String, Object> initialDashboardData = new HashMap<>();
+            // ✅ За JavaScript също запазваме очакваната структура
+            model.addAttribute("initialDashboardData", dashboardData);
 
-            // ✅ Use the SAME field names as DashboardOverviewResponseDTO
-            initialDashboardData.put("urgentCount", dashboardData.getSubmittedCount());
-            initialDashboardData.put("pendingCount", dashboardData.getConfirmedCount());
-            initialDashboardData.put("readyCount", dashboardData.getPickedCount());
-            initialDashboardData.put("completedCount", dashboardData.getShippedCount());
-            initialDashboardData.put("cancelledCount", dashboardData.getCancelledCount());
-            initialDashboardData.put("dailyStats", dailyStats);
-            initialDashboardData.put("hasUrgentAlerts", dashboardData.getSubmittedCount() > 0);
-            initialDashboardData.put("lastUpdate", LocalDateTime.now().toString());
-            initialDashboardData.put("isValid", true);
-
-            model.addAttribute("initialDashboardData", initialDashboardData);
-
-            // ✅ SECURITY: Proper CSRF token handling
+            // CSRF token handling
             CsrfToken csrfToken = (CsrfToken) request.getAttribute(CsrfToken.class.getName());
             if (csrfToken != null) {
                 model.addAttribute("csrfToken", csrfToken.getToken());
@@ -192,19 +183,16 @@ public class MainController {
             return "main-dashboard";
 
         } catch (Exception e) {
-
-            // ✅ ERROR FALLBACK: Ensure model has safe defaults
+            // Error fallback - запазваме същата структура
             model.addAttribute("submittedCount", 0);
             model.addAttribute("confirmedCount", 0);
             model.addAttribute("pickedCount", 0);
             model.addAttribute("shippedCount", 0);
             model.addAttribute("cancelledCount", 0);
 
-            // ✅ Error fallback data for JavaScript
-            Map<String, Object> errorData = Map.of(
-                    "isValid", false,
-                    "error", "Грешка при зареждане на данните"
-            );
+            // Празен DTO за dailyStats
+            DashboardDTO errorData = new DashboardDTO("Грешка при зареждане на данните");
+            model.addAttribute("dailyStats", errorData);
             model.addAttribute("initialDashboardData", errorData);
             model.addAttribute("errorMessage", "Възникна грешка при зареждане на dashboard данните");
 

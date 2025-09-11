@@ -11,9 +11,12 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.QueryHints;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.persistence.QueryHint;
+
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -21,9 +24,6 @@ import java.util.Optional;
 /**
  * УЛТРА-ОПТИМИЗИРАНО ORDER REPOSITORY
  * ==================================
- * Този repository е проектиран за максимална производителност
- * с фокус върху dashboard заявки които се изпълняват често.
- *
  * Принципи на оптимизация:
  * 1. Минимални JOIN операции там където е възможно
  * 2. Projection queries за dashboard counters (само COUNT, не цели обекти)
@@ -31,6 +31,7 @@ import java.util.Optional;
  * 4. Batch операции за related data
  * 5. Native MySQL queries за complex aggregations
  */
+@Repository
 public interface OrderRepository extends JpaRepository<Order, Long> {
 
     // ==========================================
@@ -68,7 +69,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             status,
             COUNT(*) as count
         FROM orders 
-        WHERE status IN ('SUBMITTED', 'CONFIRMED', 'PICKED', 'SHIPPED', 'CANCELLED')
+        WHERE status IN ('SUBMITTED', 'CONFIRMED', 'SHIPPED', 'CANCELLED')
         GROUP BY status
         """, nativeQuery = true)
     @Cacheable(value = "allOrderCounts", unless = "#result == null")
@@ -341,12 +342,5 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
                               @Param("newStatus") String newStatus,
                               @Param("confirmedAt") LocalDateTime confirmedAt);
 
-    /**
-     * Batch status update за множество поръчки
-     */
-    @Modifying
-    @Query(value = "UPDATE orders SET status = :newStatus WHERE id IN :orderIds", nativeQuery = true)
-    @Transactional
-    int updateMultipleOrderStatus(@Param("orderIds") List<Long> orderIds,
-                                  @Param("newStatus") String newStatus);
+
 }

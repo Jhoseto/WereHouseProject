@@ -3,9 +3,9 @@ package com.yourco.warehouse.controllers;
 import com.yourco.warehouse.dto.CartDTO;
 import com.yourco.warehouse.entity.Order;
 import com.yourco.warehouse.entity.UserEntity;
+import com.yourco.warehouse.service.OrderService;
 import com.yourco.warehouse.service.impl.CartServiceImpl;
 import com.yourco.warehouse.service.UserService;
-import com.yourco.warehouse.service.impl.OrderServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -33,12 +33,12 @@ public class CartController {
 
     private final CartServiceImpl cartService;
     private final UserService userService;
-    private final OrderServiceImpl orderService;
+    private final OrderService orderService;
 
     @Autowired
     public CartController(CartServiceImpl cartService,
                           UserService userService,
-                          OrderServiceImpl orderService) {
+                          OrderService orderService) {
         this.cartService = cartService;
         this.userService = userService;
         this.orderService = orderService;
