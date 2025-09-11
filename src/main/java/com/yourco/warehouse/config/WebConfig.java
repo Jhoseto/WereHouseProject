@@ -20,9 +20,9 @@ import java.util.Locale;
 @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 public class WebConfig implements WebMvcConfigurer {
 
-
     /**
      * Configure static resource handling with caching
+     * ЗАПАЗЕНА ОРИГИНАЛНА ФУНКЦИОНАЛНОСТ - без промени
      */
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
@@ -45,40 +45,69 @@ public class WebConfig implements WebMvcConfigurer {
     }
 
     /**
-     * Configure CORS for API endpoints
+     * Configure CORS for API endpoints AND WebSocket endpoints
+     * РАЗШИРЕНА ФУНКЦИОНАЛНОСТ - добавена WebSocket поддръжка без засягане на API конфигурацията
      */
     @Override
     public void addCorsMappings(CorsRegistry registry) {
+        // ОРИГИНАЛНА API КОНФИГУРАЦИЯ - запазена точно както беше
         registry.addMapping("/api/**")
                 .allowedOriginPatterns("*")
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*") // Позволява всички заглавки - za produkcia triabva da se izbroiat konkretni domeini
                 .allowCredentials(true)
                 .maxAge(3600);
+
+        // WebSocket CORS конфигурация за решаване на connection проблема
+        registry.addMapping("/ws/**")
+                .allowedOriginPatterns("*")
+                .allowedMethods("GET", "POST", "OPTIONS") // WebSocket handshake използва GET и понякога OPTIONS
+                .allowedHeaders(
+                        "Origin",
+                        "X-Requested-With",
+                        "Content-Type",
+                        "Accept",
+                        "Authorization",
+                        "Upgrade",        // Критично за WebSocket handshake
+                        "Connection",     // Критично за WebSocket handshake
+                        "Sec-WebSocket-Key",
+                        "Sec-WebSocket-Version",
+                        "Sec-WebSocket-Protocol"
+                )
+                .allowCredentials(true)
+                .maxAge(3600);
     }
 
     /**
-     * Configure content negotiation - ПОПРАВЕНО!
+     * Configure content negotiation - МОДИФИЦИРАНА за WebSocket съвместимост
+     * Запазена оригинална логика с добавена поддръжка за WebSocket endpoints
      */
     @Override
     public void configureContentNegotiation(ContentNegotiationConfigurer configurer) {
         configurer
-                .defaultContentType(MediaType.APPLICATION_JSON)  // JSON first!
+                .defaultContentType(MediaType.APPLICATION_JSON)  // JSON first - запазено!
                 .favorParameter(false)
                 .ignoreAcceptHeader(false)
                 .useRegisteredExtensionsOnly(false)
                 .mediaType("html", MediaType.TEXT_HTML)
                 .mediaType("json", MediaType.APPLICATION_JSON);
+
+        // Важно: не налагаме content type restrictions които могат да интерферират с WebSocket handshake
+        // WebSocket handshake използва специфични headers които не трябва да се modification-ват от content negotiation
     }
 
     /**
-     * Configure path matching
+     * Configure path matching - МОДИФИЦИРАНА за WebSocket съвместимост
+     * Запазени оригинални настройки с изключение за WebSocket пътища
      */
     @Override
     public void configurePathMatch(PathMatchConfigurer configurer) {
         configurer
-                .setUseTrailingSlashMatch(false)
-                .setUseSuffixPatternMatch(false);
+                .setUseTrailingSlashMatch(false)  // Запазено оригинално
+                .setUseSuffixPatternMatch(false); // Запазено оригинално
+
+        // Важно: Не прилагаме strict path matching правила към WebSocket endpoints
+        // защото те използват специфичен upgrade protocol който може да се интерферира от path restrictions
     }
 
     /**

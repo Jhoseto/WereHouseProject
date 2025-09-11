@@ -46,6 +46,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/css/**", "/js/**", "/images/**", "/favicon.ico")
                         .permitAll()
+                        .requestMatchers("/ws/**").authenticated()
                         .requestMatchers("/", "/login", "/error", "/error/general").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
                         .requestMatchers("/admin/**").hasAnyRole("ADMIN", "EMPLOYER")
@@ -92,7 +93,7 @@ public class SecurityConfig {
                     tokenRepository.setCookieName("XSRF-TOKEN");
                     tokenRepository.setHeaderName("X-XSRF-TOKEN");
                     csrf.csrfTokenRepository(tokenRepository)
-                            .ignoringRequestMatchers("/images/**", "/css/**", "/js/**");
+                            .ignoringRequestMatchers("/images/**", "/css/**", "/js/**", "/ws/**");
                 });
         return http.build();
     }
