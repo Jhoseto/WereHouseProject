@@ -286,10 +286,12 @@ class DashboardUI {
             tabElement.innerHTML = "";
 
             if (safeOrders.length === 0) {
-                tabElement.innerHTML = `<div style="text-align: center; padding: 40px; color: #888;">
+                tabElement.innerHTML = `
+                <div style="text-align: center; padding: 40px; color: #888;">
                     <i class="bi bi-inbox" style="font-size: 2rem; margin-bottom: 10px; display: block;"></i>
                     <p>Няма намерени поръчки за този статус</p>
-                </div>`;
+                </div>
+            `;
                 return;
             }
 
@@ -298,57 +300,107 @@ class DashboardUI {
                 orderElement.className = "order-item";
                 orderElement.dataset.orderId = order.id || index;
 
-                const orderId = order.id || 'N/A';
-                const customerName = order.customerName || order.customerInfo || 'Неизвестен клиент';
-                const status = order.status || 'Неизвестен статус';
-                const submittedAt = order.submittedAt ? this.formatOrderTime(order.submittedAt) : 'Неизвестно време';
+                const orderId = order.id || "N/A";
+                const customerName = order.customerName || order.customerInfo || "Неизвестен клиент";
+                const status = order.status || "Неизвестен статус";
+                const submittedAt = order.submittedAt
+                    ? this.formatOrderTime(order.submittedAt)
+                    : "Неизвестно време";
                 const priority = this.getOrderPriority(order);
 
                 orderElement.innerHTML = `
-                    <div class="order-summary" onclick="toggleOrderDetails(${order.id})">
-                        <div class="order-priority priority-${priority}"></div>
-                        <div class="order-info">
-                            <div class="order-header">
-                                <div class="order-number">#${orderId}</div>
-                                <div class="order-time">${submittedAt}</div>
-                            </div>
-                            <div class="order-client">${customerName}</div>
-                            <div class="order-meta">
-                                <span>Статус: ${status}</span>
-                                <i class="bi bi-chevron-down expand-icon" id="expand-icon-${order.id}"></i>
-                            </div>
+                <div class="order-summary">
+                    <div class="order-priority priority-${priority}"></div>
+                    <div class="order-info">
+                        <div class="order-header">
+                            <div class="order-number">#${orderId}</div>
+                            <div class="order-time">${submittedAt}</div>
+                        </div>
+                        <div class="order-client">${customerName}</div>
+                        <div class="order-meta">
+                            <span>Статус: ${status}</span>
+                            <i class="bi bi-chevron-down expand-icon" id="expand-icon-${order.id}"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Expandable Details -->
+                <div class="order-details" id="order-details-${order.id}" style="display: none;">
+                    <div class="details-header">
+                        <div class="details-title">Детайли на поръчката</div>
+                        <div class="order-total">Общо: ${order.totalGross || "0.00"} лв</div>
+                    </div>
+                    
+                    <div class="product-list" id="product-list-${order.id}">
+                        <div class="loading-items">
+                            <i class="bi bi-hourglass-split"></i> Зареждане на артикули...
                         </div>
                     </div>
                     
-                    <!-- Expandable Details -->
-                    <div class="order-details" id="order-details-${order.id}" style="display: none;">
-                        <div class="details-header">
-                            <div class="details-title">Детайли на поръчката</div>
-                            <div class="order-total">Общо: ${order.totalGross || '0.00'} лв</div>
-                        </div>
-                        
-                        <div class="product-list" id="product-list-${order.id}">
-                            <div class="loading-items">
-                                <i class="bi bi-hourglass-split"></i> Зареждане на артикули...
-                            </div>
-                        </div>
-                        
-                        <div class="order-actions">
-                            ${this.generateOrderActions(order, tabName)}
-                            <button class="order-action action-save" onclick="saveOrderChanges(${order.id})" style="display: none;">
-                                <i class="bi bi-check2"></i> Запази промените
-                            </button>
-                        </div>
+                    <div class="order-actions">
+                        ${this.generateOrderActions(order, tabName)}
+                        <button class="order-action action-save" data-order-id="${order.id}" style="display: none;">
+                            <i class="bi bi-check2"></i> Запази промените
+                        </button>
                     </div>
-                `;
+                </div>
+            `;
+
+                // 📌 Закачаме listener за разпъване на детайлите
+                const summaryElement = orderElement.querySelector(".order-summary");
+                summaryElement.addEventListener("click", () => this.toggleOrderDetails(order.id));
+
+                // 📌 Закачаме listener за бутона "Запази промените"
+                const saveButton = orderElement.querySelector(".action-save");
+                if (saveButton) {
+                    saveButton.addEventListener("click", () => this.saveOrderChanges(order.id));
+                }
 
                 tabElement.appendChild(orderElement);
             });
 
             console.log(`✅ ${tabName} tab content updated with ${safeOrders.length} orders`);
-
         } catch (err) {
             console.error(`❌ Error updating ${tabName} tab content:`, err);
+        }
+    }
+
+
+    // ==========================================
+    // COMPATIBILITY METHODS FOR DASHBOARD MANAGER
+    // ==========================================
+
+    /**
+     * Alias method for backward compatibility with DashboardManager
+     * DashboardManager expects this method name but DashboardUI implements updateTabContent
+     */
+    updateOrdersList(tabName, orders) {
+        console.log(`updateOrdersList called for tab: ${tabName} with ${orders?.length || 0} orders`);
+        return this.updateTabContent(tabName, orders);
+    }
+
+    /**
+     * Alternative method signature for different calling patterns
+     */
+    renderOrdersList(orders, tabName = 'urgent') {
+        console.log(`renderOrdersList called with ${orders?.length || 0} orders for tab: ${tabName}`);
+        return this.updateTabContent(tabName, orders);
+    }
+
+    /**
+     * Enhanced method with additional validation and error handling
+     */
+    displayOrdersInTab(tabName, orders) {
+        try {
+            if (!Array.isArray(orders)) {
+                console.warn(`Expected orders array for tab ${tabName}, got:`, typeof orders);
+                orders = [];
+            }
+
+            return this.updateTabContent(tabName, orders);
+        } catch (error) {
+            console.error(`Error displaying orders in tab ${tabName}:`, error);
+            return false;
         }
     }
 
@@ -460,7 +512,7 @@ class DashboardUI {
         const productList = document.getElementById(`product-list-${orderId}`);
 
         try {
-            const response = await fetch(`/employer/orders/${orderId}/details`, {
+            const response = await fetch(`/employer/dashboard/order/${orderId}/details`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -795,7 +847,7 @@ class DashboardUI {
                 window.LoaderManager.show('Запазване на промените...');
             }
 
-            const response = await fetch(`/employer/orders/${orderId}/update-items`, {
+            const response = await fetch(`/employer/dashboard/order/${orderId}/update-items`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

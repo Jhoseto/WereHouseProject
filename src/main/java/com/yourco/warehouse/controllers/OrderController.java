@@ -129,7 +129,7 @@ public class OrderController {
             List<Order> orders = orderService.getOrdersForClient(currentUser.getId());
 
             long pendingCount = orders.stream()
-                    .filter(order -> order.getStatus() == OrderStatus.SUBMITTED)
+                    .filter(order -> order.getStatus() == OrderStatus.PENDING)
                     .count();
 
             response.put("pendingCount", pendingCount);

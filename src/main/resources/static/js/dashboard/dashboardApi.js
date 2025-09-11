@@ -91,7 +91,7 @@ class DashboardApi {
                 throw new Error('SockJS библиотеката не е заредена. Проверете bottomHtmlImports фрагмента.');
             }
 
-            if (typeof Stomp === 'undefined') {
+            if (typeof StompJs === 'undefined') {
                 throw new Error('STOMP библиотеката не е заредена. Проверете bottomHtmlImports фрагмента.');
             }
 
@@ -101,7 +101,7 @@ class DashboardApi {
             this.sockjs = new SockJS(sockJSUrl);
 
             // Създаване на STOMP client over SockJS
-            this.stompClient = Stomp.over(this.sockjs);
+            this.stompClient = StompJs.Stomp.over(this.sockjs);
 
             // Конфигуриране на STOMP client за production readiness
             this.configureStompClient();

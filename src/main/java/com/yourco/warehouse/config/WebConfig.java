@@ -57,25 +57,6 @@ public class WebConfig implements WebMvcConfigurer {
                 .allowedHeaders("*") // Позволява всички заглавки - za produkcia triabva da se izbroiat konkretni domeini
                 .allowCredentials(true)
                 .maxAge(3600);
-
-        // WebSocket CORS конфигурация за решаване на connection проблема
-        registry.addMapping("/ws/**")
-                .allowedOriginPatterns("*")
-                .allowedMethods("GET", "POST", "OPTIONS") // WebSocket handshake използва GET и понякога OPTIONS
-                .allowedHeaders(
-                        "Origin",
-                        "X-Requested-With",
-                        "Content-Type",
-                        "Accept",
-                        "Authorization",
-                        "Upgrade",        // Критично за WebSocket handshake
-                        "Connection",     // Критично за WebSocket handshake
-                        "Sec-WebSocket-Key",
-                        "Sec-WebSocket-Version",
-                        "Sec-WebSocket-Protocol"
-                )
-                .allowCredentials(true)
-                .maxAge(3600);
     }
 
     /**

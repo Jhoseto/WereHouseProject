@@ -509,7 +509,7 @@ public class DashboardBroadcastServiceImpl implements DashboardBroadcastService 
     private boolean isHighPriorityStatusChange(String newStatus, String previousStatus) {
         // New urgent orders
         // Failed orders
-        return "SUBMITTED".equals(newStatus) || "CANCELLED".equals(newStatus); // Reverted orders
+        return "PENDING".equals(newStatus) || "CANCELLED".equals(newStatus); // Reverted orders
     }
 
     /**
@@ -517,7 +517,7 @@ public class DashboardBroadcastServiceImpl implements DashboardBroadcastService 
      */
     private String mapStatusToWorkflowStage(String status) {
         return switch (status) {
-            case "SUBMITTED" -> "INTAKE";
+            case "PENDING" -> "INTAKE";
             case "CONFIRMED" -> "PROCESSING";
             case "SHIPPED" -> "FULFILLMENT";
             case "CANCELLED" -> "RESOLVED";

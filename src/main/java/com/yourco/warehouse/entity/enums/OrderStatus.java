@@ -2,8 +2,8 @@
 package com.yourco.warehouse.entity.enums;
 
 public enum OrderStatus {
-    SUBMITTED,
-    CONFIRMED,
-    SHIPPED,
-    CANCELLED
+    PENDING,    // чакаща поръчка
+    CONFIRMED,  // обработена поръчка
+    SHIPPED,    // доставена поръчка
+    CANCELLED   // анулирана поръчка
 }

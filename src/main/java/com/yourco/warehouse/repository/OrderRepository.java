@@ -69,7 +69,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             status,
             COUNT(*) as count
         FROM orders 
-        WHERE status IN ('SUBMITTED', 'CONFIRMED', 'SHIPPED', 'CANCELLED')
+        WHERE status IN ('PENDING', 'CONFIRMED', 'SHIPPED', 'CANCELLED')
         GROUP BY status
         """, nativeQuery = true)
     @Cacheable(value = "allOrderCounts", unless = "#result == null")
@@ -152,7 +152,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             TIMESTAMPDIFF(HOUR, o.submitted_at, NOW()) as hours_old
         FROM orders o 
         INNER JOIN users c ON o.client_id = c.id
-        WHERE (o.status = 'SUBMITTED' OR 
+        WHERE (o.status = 'PENDING' OR 
                (o.status = 'CONFIRMED' AND o.submitted_at < :urgentThreshold))
         ORDER BY o.submitted_at ASC
         LIMIT :limit

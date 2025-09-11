@@ -115,7 +115,7 @@ public class MainController {
 
             // ✅ Логика за броячи на статуси
             long submittedCount = orders.stream()
-                    .filter(o -> o.getStatus() != null && o.getStatus().name().equals("SUBMITTED"))
+                    .filter(o -> o.getStatus() != null && o.getStatus().name().equals("PENDING"))
                     .count();
 
             long confirmedCount = orders.stream()
@@ -155,10 +155,9 @@ public class MainController {
                 throw new RuntimeException(dashboardData.getMessage());
             }
 
-            model.addAttribute("submittedCount", dashboardData.getUrgentCount() != null ? dashboardData.getUrgentCount() : 0);
-            model.addAttribute("confirmedCount", dashboardData.getPendingCount() != null ? dashboardData.getPendingCount() : 0);
-            model.addAttribute("pickedCount", dashboardData.getReadyCount() != null ? dashboardData.getReadyCount() : 0);
-            model.addAttribute("shippedCount", dashboardData.getCompletedCount() != null ? dashboardData.getCompletedCount() : 0);
+            model.addAttribute("urgentCount", dashboardData.getUrgentCount() != null ? dashboardData.getUrgentCount() : 0);
+            model.addAttribute("pendingCount", dashboardData.getPendingCount() != null ? dashboardData.getPendingCount() : 0);
+            model.addAttribute("confirmedCount", dashboardData.getCompletedCount() != null ? dashboardData.getCompletedCount() : 0);
             model.addAttribute("cancelledCount", dashboardData.getCancelledCount() != null ? dashboardData.getCancelledCount() : 0);
 
             model.addAttribute("dailyStats", dashboardData); // Template ще използва полетата processed, revenue, avgTime, activeClients
@@ -184,10 +183,9 @@ public class MainController {
 
         } catch (Exception e) {
             // Error fallback - запазваме същата структура
-            model.addAttribute("submittedCount", 0);
+            model.addAttribute("pendingCount", 0);
+            model.addAttribute("urgentCount", 0);
             model.addAttribute("confirmedCount", 0);
-            model.addAttribute("pickedCount", 0);
-            model.addAttribute("shippedCount", 0);
             model.addAttribute("cancelledCount", 0);
 
             // Празен DTO за dailyStats

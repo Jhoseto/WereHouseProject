@@ -315,7 +315,7 @@ public class AdminDashboardController {
                 orderData.put("hasCorrections", response.getMessage().contains("корекции"));
 
                 broadcastService.broadcastOrderStatusChange(
-                        orderId, "CONFIRMED", "SUBMITTED", orderData);
+                        orderId, "CONFIRMED", "PENDING", orderData);
 
                 // Trigger automatic counter update broadcast
                 this.getCounters(); // Този call автоматично ще broadcast-не новите counters
@@ -359,7 +359,7 @@ public class AdminDashboardController {
                 orderData.put("rejectionReason", rejectionReason);
 
                 broadcastService.broadcastOrderStatusChange(
-                        orderId, "CANCELLED", "SUBMITTED", orderData);
+                        orderId, "CANCELLED", "PENDING", orderData);
 
                 // Trigger automatic counter update
                 this.getCounters();
@@ -445,41 +445,4 @@ public class AdminDashboardController {
         }
     }
 
-    // ==========================================
-    // DEVELOPMENT & TESTING ENDPOINTS
-    // ==========================================
-
-    /**
-     * Manual trigger за broadcasting test data (development only)
-     *
-     * Полезен endpoint за testing на WebSocket connectivity
-     * и debugging на real-time communication issues.
-     */
-    @PostMapping("/dashboard/broadcast/test")
-    public ResponseEntity<Map<String, String>> testBroadcast() {
-        try {
-            log.info("Broadcasting test data for WebSocket connectivity testing");
-
-            // Send test counter update
-            broadcastService.broadcastCounterUpdate(5L, 3L, 12L, 2L);
-
-            // Send test heartbeat
-            broadcastService.sendHeartbeat();
-
-            Map<String, String> response = new HashMap<>();
-            response.put("message", "Test broadcast sent successfully");
-            response.put("status", "OK");
-            response.put("timestamp", java.time.LocalDateTime.now().toString());
-
-            log.info("Test broadcast completed successfully");
-            return ResponseEntity.ok(response);
-
-        } catch (Exception e) {
-            log.error("Error sending test broadcast", e);
-            Map<String, String> error = new HashMap<>();
-            error.put("message", "Failed to send test broadcast");
-            error.put("error", e.getMessage());
-            return ResponseEntity.status(500).body(error);
-        }
-    }
 }

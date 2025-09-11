@@ -651,7 +651,6 @@ const PerformanceMonitor = {
         // Track form submissions
         document.addEventListener('submit', (e) => {
             const formClass = e.target.className;
-            console.log('Form submitted:', formClass);
             // Here you would send to analytics service
         });
     }

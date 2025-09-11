@@ -109,6 +109,12 @@ class DashboardManager {
                     cancelledCount: dashboardResponse.cancelledCount || 0
                 };
 
+                // Initialize empty arrays for all tabs to avoid undefined issues
+                const tabs = ['urgent', 'pending', 'ready', 'completed', 'activity'];
+                tabs.forEach(tab => {
+                    if (!this.loadedOrders.has(tab)) this.loadedOrders.set(tab, []);
+                });
+
                 // Update UI with initial data
                 this.ui.updateCounters(this.currentCounters);
                 this.ui.updateDailyStats(dashboardResponse);
@@ -128,6 +134,7 @@ class DashboardManager {
             throw error;
         }
     }
+
 
     // ==========================================
     // TAB MANAGEMENT & NAVIGATION
@@ -172,26 +179,31 @@ class DashboardManager {
      */
     async loadTabData(tabName) {
         const statusMap = {
-            'urgent': 'SUBMITTED',
-            'pending': 'CONFIRMED',
-            'ready': 'PICKED',
-            'completed': 'SHIPPED',
-            'activity': null // Special case for activity feed
+            'urgent': 'PENDING',   // всички необработени поръчки
+            'pending': 'PENDING',  // същите като urgent, но UI може да ги филтрира допълнително
+            'completed': 'SHIPPED',  // доставени поръчки
+            'cancelled': 'CANCELLED',// отменени поръчки
+            'activity': null          // специален случай
         };
 
         try {
+            console.log(`Loading tab ${tabName}...`);
+
             if (tabName === 'activity') {
-                // Load activity feed and daily stats
+                // Load activity feed
                 await this.loadActivityData();
+                // Prevent undefined for UI
+                this.loadedOrders.set('activity', []);
+                this.ui.updateOrdersList('activity', []);
             } else {
                 const status = statusMap[tabName];
                 if (status) {
                     const response = await this.api.getOrdersByStatus(status, 10);
-
-                    if (response.success && response.orders) {
-                        this.loadedOrders.set(tabName, response.orders);
-                        this.ui.updateOrdersList(tabName, response.orders);
-                        console.log(`✓ Loaded ${response.orders.length} orders for ${tabName} tab`);
+                    if (response.success) {
+                        const orders = response.orders || [];
+                        this.loadedOrders.set(tabName, orders);
+                        this.ui.updateOrdersList(tabName, orders);
+                        console.log(`✓ Loaded ${orders.length} orders for ${tabName} tab`);
                     }
                 }
             }
@@ -201,6 +213,7 @@ class DashboardManager {
             throw error;
         }
     }
+
 
     /**
      * Load activity feed data
@@ -273,22 +286,25 @@ class DashboardManager {
         try {
             console.log('Handling order update:', data);
 
-            const { orderId, newStatus, previousStatus } = data;
+            const { orderId, newStatus, previousStatus, orderData } = data;
 
-            // Remove order from previous status tab
             if (previousStatus) {
                 this.removeOrderFromTab(orderId, previousStatus);
             }
 
-            // Add order to new status tab if visible
             if (newStatus) {
-                this.addOrderToTab(orderId, newStatus, data.orderData);
+                const tabMap = {
+                    'PENDING': 'pending',
+                    'CONFIRMED': 'confimed',
+                    'PICKED': 'ready',
+                    'SHIPPED': 'completed'
+                };
+                if (newStatus in tabMap) {
+                    this.addOrderToTab(orderId, newStatus, orderData);
+                }
             }
 
-            // Update counters
             this.refreshCounters();
-
-            // Show notification
             this.showOrderUpdateNotification(orderId, newStatus);
 
         } catch (error) {
@@ -304,22 +320,25 @@ class DashboardManager {
             console.log('Handling new order:', data);
 
             const { orderId, orderData } = data;
+            const tabMap = {
+                'PENDING': 'urgent',
+                'CONFIRMED': 'pending',
+                'PICKED': 'ready',
+                'SHIPPED': 'completed'
+            };
 
-            // Add to urgent tab if it's submitted
-            if (orderData.status === 'SUBMITTED') {
-                this.addOrderToTab(orderId, 'SUBMITTED', orderData);
+            if (orderData.status in tabMap) {
+                this.addOrderToTab(orderId, orderData.status, orderData);
             }
 
-            // Update counters
             this.refreshCounters();
-
-            // Show notification
             this.showNewOrderNotification(orderId, orderData);
 
         } catch (error) {
             console.error('Error handling new order:', error);
         }
     }
+
 
     /**
      * Handle WebSocket connection status changes
@@ -634,19 +653,22 @@ class DashboardManager {
      * Start auto-refresh timer (fallback when WebSocket is down)
      */
     startAutoRefresh() {
-        if (this.autoRefreshInterval || !this.autoRefreshEnabled) {
-            return;
-        }
+        if (this.autoRefreshInterval || !this.autoRefreshEnabled) return;
 
         console.log(`Starting auto-refresh every ${this.refreshIntervalMs}ms`);
 
         this.autoRefreshInterval = setInterval(async () => {
             if (!this.isConnected) {
-                console.log('Auto-refreshing counters (WebSocket down)');
+                console.log('Auto-refreshing all tabs (WebSocket down)');
+                const tabs = ['urgent', 'pending', 'ready', 'completed'];
+                for (const tab of tabs) {
+                    await this.loadTabData(tab);
+                }
                 await this.refreshCounters();
             }
         }, this.refreshIntervalMs);
     }
+
 
     /**
      * Stop auto-refresh timer
@@ -668,7 +690,7 @@ class DashboardManager {
      */
     removeOrderFromTab(orderId, status) {
         const tabMap = {
-            'SUBMITTED': 'urgent',
+            'PENDING': 'urgent',
             'CONFIRMED': 'pending',
             'PICKED': 'ready',
             'SHIPPED': 'completed'
@@ -691,7 +713,7 @@ class DashboardManager {
      */
     addOrderToTab(orderId, status, orderData) {
         const tabMap = {
-            'SUBMITTED': 'urgent',
+            'PENDING': 'urgent',
             'CONFIRMED': 'pending',
             'PICKED': 'ready',
             'SHIPPED': 'completed'

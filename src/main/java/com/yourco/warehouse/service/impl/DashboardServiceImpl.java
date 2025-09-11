@@ -78,8 +78,8 @@ public class DashboardServiceImpl implements DashboardService {
             DashboardDTO dashboard = new DashboardDTO();
 
             // Основни броячи - optimized queries за минимален database impact
-            dashboard.setUrgentCount(orderRepository.countByStatus(OrderStatus.SUBMITTED));
-            dashboard.setPendingCount(orderRepository.countByStatus(OrderStatus.CONFIRMED));
+            dashboard.setUrgentCount(orderRepository.countByStatus(OrderStatus.PENDING));
+            dashboard.setPendingCount(orderRepository.countByStatus(OrderStatus.PENDING));
             dashboard.setCompletedCount(orderRepository.countByStatus(OrderStatus.SHIPPED));
             dashboard.setCancelledCount(orderRepository.countByStatus(OrderStatus.CANCELLED));
 
@@ -128,7 +128,7 @@ public class DashboardServiceImpl implements DashboardService {
             DashboardDTO dashboard = new DashboardDTO();
 
             // Efficient counter queries - single database round-trip per counter
-            dashboard.setUrgentCount(orderRepository.countByStatus(OrderStatus.SUBMITTED));
+            dashboard.setUrgentCount(orderRepository.countByStatus(OrderStatus.PENDING));
             dashboard.setPendingCount(orderRepository.countByStatus(OrderStatus.CONFIRMED));
             dashboard.setCompletedCount(orderRepository.countByStatus(OrderStatus.SHIPPED));
             dashboard.setCancelledCount(orderRepository.countByStatus(OrderStatus.CANCELLED));
@@ -408,7 +408,7 @@ public class DashboardServiceImpl implements DashboardService {
             }
 
             Order order = orderOpt.get();
-            if (order.getStatus() != OrderStatus.SUBMITTED) {
+            if (order.getStatus() != OrderStatus.PENDING) {
                 return new DashboardDTO("Поръчката не може да бъде одобрена в текущия статус");
             }
 
@@ -427,7 +427,7 @@ public class DashboardServiceImpl implements DashboardService {
             // }
 
             log.info("Order {} approved successfully (status: {} -> {})",
-                    orderId, OrderStatus.SUBMITTED, OrderStatus.CONFIRMED);
+                    orderId, OrderStatus.PENDING, OrderStatus.CONFIRMED);
 
             return response;
 
@@ -460,7 +460,7 @@ public class DashboardServiceImpl implements DashboardService {
             }
 
             Order order = orderOpt.get();
-            if (order.getStatus() != OrderStatus.SUBMITTED) {
+            if (order.getStatus() != OrderStatus.PENDING) {
                 return new DashboardDTO("Поръчката не може да бъде отказана в текущия статус");
             }
 

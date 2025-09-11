@@ -19,7 +19,7 @@ public class Order {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable=false)
-    private OrderStatus status = OrderStatus.SUBMITTED;
+    private OrderStatus status = OrderStatus.PENDING;
 
     @Column(length = 2000)
     private String notes;

@@ -73,7 +73,7 @@ public class OrderServiceImpl implements OrderService {
             // 5. Създай поръчката
             Order order = new Order();
             order.setClient(client);
-            order.setStatus(OrderStatus.SUBMITTED);
+            order.setStatus(OrderStatus.PENDING);
             order.setNotes(notes != null ? notes.trim() : "");
             order.setSubmittedAt(LocalDateTime.now());
 
@@ -235,7 +235,7 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public boolean canEditOrder(Order order) {
-        return order.getStatus() == OrderStatus.SUBMITTED;
+        return order.getStatus() == OrderStatus.PENDING;
     }
 
     @Override
