@@ -42,37 +42,25 @@
     <div class="status-bar">
         <div class="status-item urgent" onclick="switchTab('urgent')">
             <div class="status-number" id="urgent-count" th:text="${submittedCount ?: 0}">0</div>
-            <div class="status-text">Спешни</div>
+            <div class="status-text">Спешни/Приоритетни поръчки</div>
         </div>
         <div class="status-item warning" onclick="switchTab('pending')">
             <div class="status-number" id="pending-count" th:text="${confirmedCount ?: 0}">0</div>
-            <div class="status-text">Обработка</div>
-        </div>
-        <div class="status-item info" onclick="switchTab('ready')">
-            <div class="status-number" id="ready-count" th:text="${pickedCount ?: 0}">0</div>
-            <div class="status-text">Готови</div>
+            <div class="status-text">Чакащи одобрение поръчки</div>
         </div>
         <div class="status-item success" onclick="switchTab('stats')">
             <div class="status-number" id="completed-count" th:text="${shippedCount ?: 0}">0</div>
-            <div class="status-text">Днес</div>
+            <div class="status-text">Одобрени поръчки</div>
+        </div>
+        <div class="status-item success" onclick="switchTab('stats')">
+            <div class="status-number" id="canceled-count" th:text="${canceledCount ?: 0}">0</div>
+            <div class="status-text">Одобрени поръчки</div>
         </div>
     </div>
 </header>
 
 <!-- Tab Navigation -->
 <nav class="tab-nav">
-    <button class="tab-btn active" onclick="switchTab('urgent')" data-tab="urgent">
-        <i class="tab-icon bi bi-exclamation-triangle"></i>
-        <span>Спешни</span>
-    </button>
-    <button class="tab-btn" onclick="switchTab('pending')" data-tab="pending">
-        <i class="tab-icon bi bi-clock"></i>
-        <span>Обработка</span>
-    </button>
-    <button class="tab-btn" onclick="switchTab('ready')" data-tab="ready">
-        <i class="tab-icon bi bi-box-seam"></i>
-        <span>Готови</span>
-    </button>
     <button class="tab-btn" onclick="switchTab('activity')" data-tab="activity">
         <i class="tab-icon bi bi-activity"></i>
         <span>Активност</span>

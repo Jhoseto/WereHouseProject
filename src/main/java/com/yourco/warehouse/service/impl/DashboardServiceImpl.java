@@ -31,7 +31,8 @@ public class DashboardServiceImpl implements DashboardService {
     private final OrderMapper orderMapper;
 
     @Autowired
-    public DashboardServiceImpl(OrderRepository orderRepository, OrderMapper orderMapper) {
+    public DashboardServiceImpl(OrderRepository orderRepository,
+                                OrderMapper orderMapper) {
         this.orderRepository = orderRepository;
         this.orderMapper = orderMapper;
     }
@@ -44,61 +45,77 @@ public class DashboardServiceImpl implements DashboardService {
             DashboardDataDTO data = new DashboardDataDTO();
 
             // Използваме cached repository методи за оптимална производителност
+            // Всяко извикване на countByStatus използва индексиран заявка към базата данни
             data.setSubmittedCount(orderRepository.countByStatus(OrderStatus.SUBMITTED));
             data.setConfirmedCount(orderRepository.countByStatus(OrderStatus.CONFIRMED));
             data.setPickedCount(orderRepository.countByStatus(OrderStatus.PICKED));
             data.setShippedCount(orderRepository.countByStatus(OrderStatus.SHIPPED));
             data.setCancelledCount(orderRepository.countByStatus(OrderStatus.CANCELLED));
 
+            // Изчисляваме общия брой активни поръчки (всички освен SHIPPED и CANCELLED)
+            data.setTotalActiveCount(
+                    data.getSubmittedCount() +
+                            data.getConfirmedCount() +
+                            data.getPickedCount()
+            );
+
+            // Добавяме timestamp за проследяване на актуалността на данните
+            data.setLastUpdated(LocalDateTime.now());
+
+
             return data;
 
         } catch (DataAccessException e) {
-            log.error("Database error while getting dashboard overview: {}", e.getMessage());
-            throw new RuntimeException("Грешка при зареждане на dashboard статистиките", e);
+            log.error("Database error while loading dashboard overview", e);
+            throw new RuntimeException("Грешка при зареждане на dashboard данни", e);
+        } catch (Exception e) {
+            log.error("Unexpected error while loading dashboard overview", e);
+            throw new RuntimeException("Неочаквана грешка при зареждане на dashboard", e);
         }
     }
 
     @Override
+    @Transactional
     public DailyStatsDTO getDailyStatistics() {
         log.debug("Getting daily statistics");
 
         try {
-            LocalDateTime startOfDay = LocalDateTime.of(LocalDateTime.now().toLocalDate(), LocalTime.MIN);
-            LocalDateTime endOfDay = LocalDateTime.of(LocalDateTime.now().toLocalDate(), LocalTime.MAX);
-
-            List<Order> todayOrders = orderRepository.findOrdersBetweenDates(startOfDay, endOfDay);
+            LocalDateTime startOfDay = LocalDateTime.now().with(LocalTime.MIN);
+            LocalDateTime endOfDay = LocalDateTime.now().with(LocalTime.MAX);
 
             DailyStatsDTO stats = new DailyStatsDTO();
-            stats.setProcessed(todayOrders.size());
 
-            // Изчисляваме общия приход от завършени поръчки днес
-            java.math.BigDecimal totalRevenue = todayOrders.stream()
-                    .filter(order -> order.getStatus() == OrderStatus.SHIPPED)
-                    .map(Order::getTotalGross)
-                    .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
-            stats.setRevenue(totalRevenue.toString());
+            // Изчисляваме дневните статистики
+            // Използваме custom заявки за по-добра производителност
+            stats.setProcessed(orderRepository.countProcessedToday(startOfDay, endOfDay));
+            stats.setRevenue(orderRepository.calculateDailyRevenue(startOfDay, endOfDay));
 
-            // Изчисляваме средното време за обработка (опростена версия)
-            stats.setAvgTime(calculateAverageProcessingTime(todayOrders));
+            // Изчисляваме средното време за обработка
+            Double avgProcessingTime = orderRepository.calculateAverageProcessingTime(startOfDay, endOfDay);
+            stats.setAvgTime(avgProcessingTime != null ? avgProcessingTime + "ч" : "0.0ч");
 
-            // Броим уникалните клиенти днес
-            long activeClients = todayOrders.stream()
-                    .map(order -> order.getClient().getId())
-                    .distinct()
-                    .count();
-            stats.setActiveClients((int) activeClients);
+            // Броим уникалните клиенти за днес
+            stats.setActiveClients(orderRepository.countUniqueClientsToday(startOfDay, endOfDay));
 
+            log.debug("Daily statistics loaded: {} processed orders, {} revenue",
+                    stats.getProcessed(), stats.getRevenue());
             return stats;
 
         } catch (DataAccessException e) {
-            log.error("Database error while getting daily statistics: {}", e.getMessage());
-            throw new RuntimeException("Грешка при зареждане на дневните статистики", e);
+            log.error("Database error while loading daily statistics", e);
+            // Връщаме празни статистики вместо да хвърляме грешка
+            return createEmptyDailyStats();
+        } catch (Exception e) {
+            log.error("Unexpected error while loading daily statistics", e);
+            return createEmptyDailyStats();
         }
     }
 
     /**
      * НОВА ВЕРСИЯ: Връща типизиран OrdersListResponseDTO вместо Map<String, Object>
      */
+    @Override
+    @Transactional
     public OrdersListResponseDTO getOrdersByStatusAsDTO(OrderStatus status, int limit) {
         log.debug("Getting orders by status: {} with limit: {}", status, limit);
 
@@ -132,27 +149,57 @@ public class DashboardServiceImpl implements DashboardService {
         }
     }
 
-    /**
-     * НОВА ВЕРСИЯ: Връща DashboardOverviewResponseDTO вместо Map<String, Object>
-     */
-    public DashboardOverviewResponseDTO getDashboardOverviewAsDTO() {
-        log.debug("Getting dashboard overview as DTO");
+    @Override
+    @Transactional
+    public List<Order> getUrgentOrders() {
+        log.debug("Getting urgent orders");
 
         try {
-            DashboardDataDTO dashboardData = getDashboardOverview();
-            DailyStatsDTO dailyStats = getDailyStatistics();
+            // Спешни са тези със статус SUBMITTED и CONFIRMED
+            List<Order> urgentOrders = orderRepository.findUrgentOrders();
+            log.debug("Found {} urgent orders", urgentOrders.size());
+            return urgentOrders;
 
-            DashboardOverviewResponseDTO response = new DashboardOverviewResponseDTO(dashboardData, dailyStats);
-
-            return response;
-
-        } catch (Exception e) {
-            log.error("Error getting dashboard overview DTO: {}", e.getMessage());
-            throw new RuntimeException("Грешка при създаване на dashboard overview", e);
+        } catch (DataAccessException e) {
+            log.error("Database error while loading urgent orders", e);
+            throw new RuntimeException("Грешка при зареждане на спешни поръчки", e);
         }
     }
 
+    @Override
+    @Transactional
+    public List<Order> getOrdersByStatus(OrderStatus status) {
+        log.debug("Getting orders by status: {}", status);
 
+        try {
+            List<Order> orders = orderRepository.findByStatusOrderByCreatedAtDesc(status);
+            log.debug("Found {} orders with status {}", orders.size(), status);
+            return orders;
+
+        } catch (DataAccessException e) {
+            log.error("Database error while loading orders by status: {}", status, e);
+            throw new RuntimeException("Грешка при зареждане на поръчки по статус", e);
+        }
+    }
+
+    @Override
+    @Transactional
+    public List<Order> getRecentOrders(int limit) {
+        log.debug("Getting {} recent orders", limit);
+
+        try {
+            List<Order> recentOrders = orderRepository.findRecentOrders(limit);
+            log.debug("Found {} recent orders", recentOrders.size());
+            return recentOrders;
+
+        } catch (DataAccessException e) {
+            log.error("Database error while loading recent orders", e);
+            throw new RuntimeException("Грешка при зареждане на последни поръчки", e);
+        }
+    }
+
+    @Override
+    @Transactional
     public OrderDTO convertOrderToDTO(Order order) {
         log.debug("Converting order {} to DTO", order != null ? order.getId() : "null");
 
@@ -328,6 +375,7 @@ public class DashboardServiceImpl implements DashboardService {
     }
 
     @Override
+    @Transactional
     public Order getOrderDetails(Long orderId) {
         log.debug("Getting order details for: {}", orderId);
 
@@ -351,6 +399,8 @@ public class DashboardServiceImpl implements DashboardService {
     /**
      * НОВА ВЕРСИЯ: Връща OrderDTO вместо Order entity
      */
+    @Transactional
+    @Override
     public OrderDTO getOrderDetailsAsDTO(Long orderId) {
         log.debug("Getting order details as DTO for: {}", orderId);
 

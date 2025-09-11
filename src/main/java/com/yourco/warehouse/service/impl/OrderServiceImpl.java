@@ -141,7 +141,7 @@ public class OrderServiceImpl implements OrderService {
     public Page<Order> getOrdersForClient(Long clientId, Pageable pageable) {
         UserEntity client = userRepository.findById(clientId)
                 .orElseThrow(() -> new IllegalArgumentException("Клиентът не съществува"));
-        return orderRepository.findByClientOrderBySubmittedAtDesc(client, pageable);
+        return orderRepository.findByClientOrderBySubmittedAtDescPageble(client, pageable);
     }
 
     @Override
@@ -270,7 +270,7 @@ public class OrderServiceImpl implements OrderService {
 
         try {
             // 1. Намери поръчката БЕЗ readOnly
-            Optional<Order> orderOpt = orderRepository.findByIdWithItemsForUpdate(orderId);
+            Optional<Order> orderOpt = orderRepository.findById(orderId);
             if (orderOpt.isEmpty()) {
                 result.put("success", false);
                 result.put("message", "Поръчката не е намерена");

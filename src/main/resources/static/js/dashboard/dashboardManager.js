@@ -82,11 +82,10 @@ class DashboardManager {
 
                 // ✅ Map the actual field names from DashboardOverviewResponseDTO
                 this.dashboardData = {
-                    // Map from API response structure to internal structure
-                    submittedCount: this.safeParseInt(serverData.urgentCount, 0),
-                    confirmedCount: this.safeParseInt(serverData.pendingCount, 0),
-                    pickedCount: this.safeParseInt(serverData.readyCount, 0),
-                    shippedCount: this.safeParseInt(serverData.completedCount, 0),
+                    submittedCount: this.safeParseInt(serverData.submittedCount, 0),
+                    confirmedCount: this.safeParseInt(serverData.confirmedCount, 0),
+                    pickedCount: this.safeParseInt(serverData.pickedCount, 0),
+                    shippedCount: this.safeParseInt(serverData.shippedCount, 0),
                     cancelledCount: this.safeParseInt(serverData.cancelledCount, 0),
 
                     // Daily stats (same structure)
@@ -150,10 +149,10 @@ class DashboardManager {
 
                     // ✅ Map initial data structure to internal structure
                     this.dashboardData = {
-                        submittedCount: this.safeParseInt(initialData.urgentCount, 0),
-                        confirmedCount: this.safeParseInt(initialData.pendingCount, 0),
-                        pickedCount: this.safeParseInt(initialData.readyCount, 0),
-                        shippedCount: this.safeParseInt(initialData.completedCount, 0),
+                        submittedCount: this.safeParseInt(initialData.submittedCount, 0),
+                        confirmedCount: this.safeParseInt(initialData.confirmedCount, 0),
+                        pickedCount: this.safeParseInt(initialData.pickedCount, 0),
+                        shippedCount: this.safeParseInt(initialData.shippedCount, 0),
                         cancelledCount: this.safeParseInt(initialData.cancelledCount, 0),
                         dailyStats: initialData.dailyStats || {
                             processed: 0,

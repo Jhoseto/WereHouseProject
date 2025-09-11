@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -28,13 +29,10 @@ public class AdminDashboardController {
     private static final Logger log = LoggerFactory.getLogger(AdminDashboardController.class);
 
     private final DashboardService dashboardService;
-    private final DashboardServiceImpl dashboardServiceImpl;
 
     @Autowired
-    public AdminDashboardController(DashboardService dashboardService,
-                                        DashboardServiceImpl dashboardServiceImpl) {
+    public AdminDashboardController(DashboardService dashboardService) {
         this.dashboardService = dashboardService;
-        this.dashboardServiceImpl = dashboardServiceImpl;
     }
 
     // ==========================================
@@ -45,89 +43,171 @@ public class AdminDashboardController {
      * API endpoint за dashboard overview - използва реалния getDashboardOverviewAsDTO метод
      */
     @GetMapping("/dashboard/overview")
-    public ResponseEntity<DashboardResponseDTO> getDashboardOverview() {
+    public ResponseEntity<Map<String, Object>> getDashboardOverview() {
         try {
             log.debug("API call: Getting dashboard overview data");
 
-            // ✅ Използваме същите методи като MainController
+            // Извличаме основните dashboard данни
             DashboardDataDTO dashboardData = dashboardService.getDashboardOverview();
             DailyStatsDTO dailyStats = dashboardService.getDailyStatistics();
 
-            // ✅ Създаваме структура идентична с тази от MainController
+            // ✅ ПОПРАВЕНО: Създаваме структура с правилни имена на полетата
+            // Тези имена трябва да съответстват на тези, които JavaScript-ът очаква
             Map<String, Object> responseData = new HashMap<>();
-            responseData.put("submittedCount", dashboardData.getSubmittedCount());
-            responseData.put("confirmedCount", dashboardData.getConfirmedCount());
-            responseData.put("pickedCount", dashboardData.getPickedCount());
-            responseData.put("shippedCount", dashboardData.getShippedCount());
+
+            // Основни броячи - използваме имената които JavaScript-ът очаква
+            responseData.put("urgentCount", dashboardData.getSubmittedCount());
+            responseData.put("pendingCount", dashboardData.getConfirmedCount());
+            responseData.put("readyCount", dashboardData.getPickedCount());
+            responseData.put("completedCount", dashboardData.getShippedCount());
             responseData.put("cancelledCount", dashboardData.getCancelledCount());
+
+            // Дневни статистики
             responseData.put("dailyStats", dailyStats);
+
+            // Метаданни
+            responseData.put("hasUrgentAlerts", dashboardData.getSubmittedCount() > 5);
             responseData.put("lastUpdate", LocalDateTime.now().toString());
-            responseData.put("isValid", true);
+            long totalActive = dashboardData.getSubmittedCount() +
+                    dashboardData.getConfirmedCount() +
+                    dashboardData.getPickedCount();
+            responseData.put("totalActive", totalActive);
 
-            // ✅ Добавяме допълнителна метаинформация за JavaScript-а
-            responseData.put("totalOrders",
-                    dashboardData.getSubmittedCount() +
-                            dashboardData.getConfirmedCount() +
-                            dashboardData.getPickedCount() +
-                            dashboardData.getShippedCount());
 
-            responseData.put("hasUrgentAlerts", dashboardData.getSubmittedCount() > 0);
+            // Структурираме отговора в формат, който frontend-ът очаква
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("data", responseData);
+            response.put("timestamp", System.currentTimeMillis());
 
-            DashboardResponseDTO response = DashboardResponseDTO.success(responseData);
-
-            log.debug("✓ Dashboard overview data sent successfully");
+            log.debug("Dashboard overview API response prepared successfully");
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
-            log.error("❌ Error getting dashboard overview: {}", e.getMessage(), e);
+            log.error("Error getting dashboard overview", e);
 
-            // ✅ При грешка връщаме структура със същите полета, но с празни стойности
-            Map<String, Object> errorData = new HashMap<>();
-            errorData.put("submittedCount", 0);
-            errorData.put("confirmedCount", 0);
-            errorData.put("pickedCount", 0);
-            errorData.put("shippedCount", 0);
-            errorData.put("cancelledCount", 0);
-            errorData.put("dailyStats", new DailyStatsDTO()); // Празен обект
-            errorData.put("lastUpdate", LocalDateTime.now().toString());
-            errorData.put("isValid", false);
-            errorData.put("error", e.getMessage());
-            errorData.put("totalOrders", 0);
-            errorData.put("hasUrgentAlerts", false);
+            // При грешка връщаме структуриран error response
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "Грешка при зареждане на dashboard данни");
+            errorResponse.put("timestamp", System.currentTimeMillis());
 
-            DashboardResponseDTO errorResponse = DashboardResponseDTO.error("Грешка при зареждане на dashboard данните");
-            errorResponse.setData(errorData); // ✅ Важно: добавяме данните и при грешка
+            return ResponseEntity.internalServerError().body(errorResponse);
+        }
+    }
+    /**
+     * API endpoint за спешни поръчки
+     * Връща списък със спешните поръчки (SUBMITTED и CONFIRMED)
+     */
+    @GetMapping("/dashboard/urgent-orders")
+    public ResponseEntity<Map<String, Object>> getUrgentOrders() {
+        try {
+            log.debug("API call: Getting urgent orders");
 
-            return ResponseEntity.ok(errorResponse);
+            List<Order> urgentOrders = dashboardService.getUrgentOrders();
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("data", urgentOrders);
+            response.put("count", urgentOrders.size());
+            response.put("timestamp", System.currentTimeMillis());
+
+            log.debug("Found {} urgent orders", urgentOrders.size());
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            log.error("Error getting urgent orders", e);
+
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "Грешка при зареждане на спешни поръчки");
+
+            return ResponseEntity.internalServerError().body(errorResponse);
         }
     }
 
     /**
-     * API endpoint за поръчки по статус - използва реалния getOrdersByStatusAsDTO метод
+     * API endpoint за поръчки по статус
+     * Параметър: status - статусът на поръчките които искаме
      */
-    @GetMapping("/dashboard/orders/{status}")
-    public ResponseEntity<DashboardResponseDTO> getOrdersByStatus(@PathVariable String status) {
+    @GetMapping("/dashboard/orders-by-status")
+    public ResponseEntity<Map<String, Object>> getOrdersByStatus(
+            @RequestParam("status") String statusName) {
         try {
+            log.debug("API call: Getting orders by status: {}", statusName);
 
-            OrderStatus orderStatus;
-            try {
-                orderStatus = OrderStatus.valueOf(status.toUpperCase());
-            } catch (IllegalArgumentException e) {
-                log.warn("Invalid order status requested: {}", status);
-                DashboardResponseDTO errorResponse = DashboardResponseDTO.error("Невалиден статус на поръчка: " + status);
-                return ResponseEntity.badRequest().body(errorResponse);
-            }
+            // Конвертираме string в OrderStatus enum
+            OrderStatus status = OrderStatus.valueOf(statusName.toUpperCase());
+            List<Order> orders = dashboardService.getOrdersByStatus(status);
 
-            OrdersListResponseDTO ordersData = dashboardServiceImpl.getOrdersByStatusAsDTO(orderStatus, 50);
-            DashboardResponseDTO response = DashboardResponseDTO.success(ordersData);
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("data", orders);
+            response.put("count", orders.size());
+            response.put("status", statusName);
+            response.put("timestamp", System.currentTimeMillis());
 
+            log.debug("Found {} orders with status {}", orders.size(), statusName);
             return ResponseEntity.ok(response);
+
+        } catch (IllegalArgumentException e) {
+            log.error("Invalid status parameter: {}", statusName, e);
+
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "Невалиден статус: " + statusName);
+
+            return ResponseEntity.badRequest().body(errorResponse);
+
         } catch (Exception e) {
-            log.error("Error getting orders by status {}: {}", status, e.getMessage(), e);
-            DashboardResponseDTO errorResponse = DashboardResponseDTO.error("Грешка при зареждане на поръчките");
-            return ResponseEntity.ok(errorResponse);
+            log.error("Error getting orders by status: {}", statusName, e);
+
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "Грешка при зареждане на поръчки");
+
+            return ResponseEntity.internalServerError().body(errorResponse);
         }
     }
+
+    /**
+     * API endpoint за последни поръчки
+     * Параметър: limit - колко поръчки да върне (по подразбиране 10)
+     */
+    @GetMapping("/dashboard/recent-orders")
+    public ResponseEntity<Map<String, Object>> getRecentOrders(
+            @RequestParam(value = "limit", defaultValue = "10") int limit) {
+        try {
+            log.debug("API call: Getting {} recent orders", limit);
+
+            // Валидираме лимита
+            if (limit < 1 || limit > 100) {
+                limit = 10; // Безопасна стойност по подразбиране
+            }
+
+            List<Order> recentOrders = dashboardService.getRecentOrders(limit);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("data", recentOrders);
+            response.put("count", recentOrders.size());
+            response.put("limit", limit);
+            response.put("timestamp", System.currentTimeMillis());
+
+            log.debug("Retrieved {} recent orders", recentOrders.size());
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            log.error("Error getting recent orders", e);
+
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "Грешка при зареждане на последни поръчки");
+
+            return ResponseEntity.internalServerError().body(errorResponse);
+        }
+    }
+
 
     // ==========================================
     // ORDER OPERATION ENDPOINTS
@@ -240,7 +320,7 @@ public class AdminDashboardController {
                 return ResponseEntity.notFound().build();
             }
 
-            OrderDTO orderDTO = dashboardServiceImpl.convertOrderToDTO(order);
+            OrderDTO orderDTO = dashboardService.convertOrderToDTO(order);
             DashboardResponseDTO response = DashboardResponseDTO.success(orderDTO);
 
             return ResponseEntity.ok(response);

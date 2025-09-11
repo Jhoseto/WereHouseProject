@@ -9,6 +9,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.QueryHints;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,56 +18,335 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * УЛТРА-ОПТИМИЗИРАНО ORDER REPOSITORY
+ * ==================================
+ * Този repository е проектиран за максимална производителност
+ * с фокус върху dashboard заявки които се изпълняват често.
+ *
+ * Принципи на оптимизация:
+ * 1. Минимални JOIN операции там където е възможно
+ * 2. Projection queries за dashboard counters (само COUNT, не цели обекти)
+ * 3. Агресивно кеширане с правилни ключове
+ * 4. Batch операции за related data
+ * 5. Native MySQL queries за complex aggregations
+ */
 public interface OrderRepository extends JpaRepository<Order, Long> {
 
-    @Query("SELECT DISTINCT o FROM Order o LEFT JOIN FETCH o.items oi LEFT JOIN FETCH oi.product WHERE o.client = :client ORDER BY o.submittedAt DESC")
+    // ==========================================
+    // СВЕТКАВИЧНИ DASHBOARD COUNTERS
+    // ==========================================
+
+    /**
+     * УЛТРА-БЪРЗ Counter за статус без JOIN операции
+     * Използва прост индекс върху status колоната
+     * Кешира се агресивно защото се променя рядко
+     */
+    @Query(value = "SELECT COUNT(*) FROM orders WHERE status = :status", nativeQuery = true)
+    @Cacheable(value = "fastOrderCount", key = "#status", unless = "#result == null")
     @QueryHints({
-            @QueryHint(name = "org.hibernate.cacheable", value = "true"),
-            @QueryHint(name = "org.hibernate.readOnly", value = "true")
+            @QueryHint(name = "org.hibernate.readOnly", value = "true"),
+            @QueryHint(name = "org.hibernate.fetchSize", value = "1"),
+            @QueryHint(name = "org.hibernate.timeout", value = "1000") // 1 секунда timeout
     })
     @Transactional(readOnly = true)
-    List<Order> findByClientOrderBySubmittedAtDesc(@Param("client") UserEntity client);
+    long countByStatusFast(@Param("status") String status);
 
-    @Query(value = "SELECT DISTINCT o FROM Order o LEFT JOIN FETCH o.items oi LEFT JOIN FETCH oi.product WHERE o.client = :client",
-            countQuery = "SELECT COUNT(o) FROM Order o WHERE o.client = :client")
-    @QueryHints(@QueryHint(name = "org.hibernate.readOnly", value = "true"))
+    /**
+     * Wrapper метод за OrderStatus enum
+     */
+    default long countByStatus(OrderStatus status) {
+        return countByStatusFast(status.name());
+    }
+
+    /**
+     * BATCH COUNTERS - Всички counter-и в една заявка
+     * Това е революционно по-бързо от 5 отделни заявки
+     */
+    @Query(value = """
+        SELECT 
+            status,
+            COUNT(*) as count
+        FROM orders 
+        WHERE status IN ('SUBMITTED', 'CONFIRMED', 'PICKED', 'SHIPPED', 'CANCELLED')
+        GROUP BY status
+        """, nativeQuery = true)
+    @Cacheable(value = "allOrderCounts", unless = "#result == null")
+    @QueryHints({
+            @QueryHint(name = "org.hibernate.readOnly", value = "true"),
+            @QueryHint(name = "org.hibernate.fetchSize", value = "10")
+    })
     @Transactional(readOnly = true)
-    Page<Order> findByClientOrderBySubmittedAtDesc(@Param("client") UserEntity client, Pageable pageable);
+    List<Object[]> getAllStatusCounts();
 
+    // ==========================================
+    // ОПТИМИЗИРАНИ DAILY STATISTICS
+    // ==========================================
+
+    /**
+     * MEGA-ОПТИМИЗИРАНА Daily Stats - Всички в една заявка
+     * Вместо 4 отделни заявки, правим само една с complex aggregation
+     */
+    @Query(value = """
+        SELECT 
+            COUNT(CASE WHEN status = 'SHIPPED' THEN 1 END) as processed_count,
+            COALESCE(SUM(CASE WHEN status = 'SHIPPED' THEN total_gross ELSE 0 END), 0) as daily_revenue,
+            AVG(CASE WHEN confirmed_at IS NOT NULL 
+                THEN TIMESTAMPDIFF(HOUR, submitted_at, confirmed_at) 
+                ELSE NULL END) as avg_processing_hours,
+            COUNT(DISTINCT client_id) as unique_clients
+        FROM orders 
+        WHERE submitted_at >= :startDate AND submitted_at <= :endDate
+        """, nativeQuery = true)
+    @Cacheable(value = "dailyStatsSuper", key = "#startDate.toLocalDate()")
+    @QueryHints({
+            @QueryHint(name = "org.hibernate.readOnly", value = "true"),
+            @QueryHint(name = "org.hibernate.fetchSize", value = "1")
+    })
+    @Transactional(readOnly = true)
+    Object[] getDailyStatsSuperFast(@Param("startDate") LocalDateTime startDate,
+                                    @Param("endDate") LocalDateTime endDate);
+
+    // ==========================================
+    // PROJECTION-BASED ORDER LISTS (Само нужните данни)
+    // ==========================================
+
+    /**
+     * СВЕТКАВИЧНА Order List - Само основните данни за dashboard
+     * Не зареждаме items, clients и други heavy relations
+     */
+    @Query(value = """
+        SELECT 
+            o.id,
+            o.status,
+            o.total_gross,
+            o.submitted_at,
+            o.confirmed_at,
+            c.username as customer_name
+        FROM orders o 
+        INNER JOIN users c ON o.client_id = c.id
+        WHERE o.status = :status 
+        ORDER BY o.submitted_at DESC 
+        LIMIT :limit
+        """, nativeQuery = true)
+    @Cacheable(value = "orderProjections", key = "#status + '_' + #limit")
+    @QueryHints({
+            @QueryHint(name = "org.hibernate.readOnly", value = "true"),
+            @QueryHint(name = "org.hibernate.fetchSize", value = "50")
+    })
+    @Transactional(readOnly = true)
+    List<Object[]> findOrderProjectionsByStatus(@Param("status") String status,
+                                                @Param("limit") int limit);
+
+    /**
+     * УЛТРА-БЪРЗ Urgent Orders - Само projection без JOINs където е възможно
+     */
+    @Query(value = """
+        SELECT 
+            o.id,
+            o.status,
+            o.total_gross,
+            o.submitted_at,
+            c.username as customer_name,
+            TIMESTAMPDIFF(HOUR, o.submitted_at, NOW()) as hours_old
+        FROM orders o 
+        INNER JOIN users c ON o.client_id = c.id
+        WHERE (o.status = 'SUBMITTED' OR 
+               (o.status = 'CONFIRMED' AND o.submitted_at < :urgentThreshold))
+        ORDER BY o.submitted_at ASC
+        LIMIT :limit
+        """, nativeQuery = true)
+    @QueryHints({
+            @QueryHint(name = "org.hibernate.readOnly", value = "true"),
+            @QueryHint(name = "org.hibernate.fetchSize", value = "20")
+    })
+    @Transactional(readOnly = true)
+    List<Object[]> findUrgentOrderProjections(@Param("urgentThreshold") LocalDateTime urgentThreshold,
+                                              @Param("limit") int limit);
+
+    // ==========================================
+    // LEGACY METHODS OPTIMIZED (за backward compatibility)
+    // ==========================================
+
+    /**
+     * ОПТИМИЗИРАН findByStatusOrderBySubmittedAtDesc
+     * Използва covering index за по-бързо изпълнение
+     */
+    @Query(value = """
+        SELECT DISTINCT o FROM Order o 
+        LEFT JOIN FETCH o.client 
+        LEFT JOIN FETCH o.items oi 
+        LEFT JOIN FETCH oi.product 
+        WHERE o.status = :status 
+        ORDER BY o.submittedAt DESC
+        """)
+    @Cacheable(value = "ordersByStatus", key = "#status")
+    @QueryHints({
+            @QueryHint(name = "org.hibernate.readOnly", value = "true"),
+            @QueryHint(name = "org.hibernate.fetchSize", value = "100"),
+            @QueryHint(name = "org.hibernate.batchSize", value = "25") // Batch loading за items
+    })
+    @Transactional(readOnly = true)
+    List<Order> findByStatusOrderBySubmittedAtDesc(@Param("status") OrderStatus status);
+
+    /**
+     * ОПТИМИЗИРАН findByIdWithItems за single order loading
+     */
     @Query("SELECT DISTINCT o FROM Order o " +
             "LEFT JOIN FETCH o.client " +
             "LEFT JOIN FETCH o.items oi " +
             "LEFT JOIN FETCH oi.product " +
-            "WHERE o.status = :status " +
-            "ORDER BY o.submittedAt DESC")
-    @Cacheable(value = "ordersByStatus", key = "#status")
-    @QueryHints(@QueryHint(name = "org.hibernate.readOnly", value = "true"))
-    @Transactional(readOnly = true)
-    List<Order> findByStatusOrderBySubmittedAtDesc(@Param("status") OrderStatus status);
-
-    @Query("SELECT DISTINCT o FROM Order o LEFT JOIN FETCH o.items oi LEFT JOIN FETCH oi.product WHERE o.id = :orderId")
-    @Cacheable(value = "orderById", key = "#orderId")
-    @QueryHints(@QueryHint(name = "org.hibernate.readOnly", value = "true"))
+            "WHERE o.id = :orderId")
+    @Cacheable(value = "orderByIdFull", key = "#orderId")
+    @QueryHints({
+            @QueryHint(name = "org.hibernate.readOnly", value = "true"),
+            @QueryHint(name = "org.hibernate.batchSize", value = "10")
+    })
     @Transactional(readOnly = true)
     Optional<Order> findByIdWithItems(@Param("orderId") Long orderId);
 
-    @Query("SELECT COUNT(o) FROM Order o WHERE o.status = :status")
-    @Cacheable(value = "orderCount", key = "#status")
+    // ==========================================
+    // CLIENT-SPECIFIC OPTIMIZED QUERIES
+    // ==========================================
+
+    /**
+     * Оптимизирани client orders с pagination
+     */
+    @Query(value = """
+        SELECT DISTINCT o FROM Order o 
+        LEFT JOIN FETCH o.items oi 
+        LEFT JOIN FETCH oi.product 
+        WHERE o.client = :client 
+        ORDER BY o.submittedAt DESC
+        """,
+            countQuery = "SELECT COUNT(o) FROM Order o WHERE o.client = :client")
+    @QueryHints({
+            @QueryHint(name = "org.hibernate.readOnly", value = "true"),
+            @QueryHint(name = "org.hibernate.fetchSize", value = "50")
+    })
+    @Transactional(readOnly = true)
+    Page<Order> findByClientOrderBySubmittedAtDescPageble(@Param("client") UserEntity client, Pageable pageable);
+
+    @Query(value = """
+        SELECT DISTINCT o FROM Order o 
+        LEFT JOIN FETCH o.items oi 
+        LEFT JOIN FETCH oi.product 
+        WHERE o.client = :client 
+        ORDER BY o.submittedAt DESC
+        """,
+            countQuery = "SELECT COUNT(o) FROM Order o WHERE o.client = :client")
+    @QueryHints({
+            @QueryHint(name = "org.hibernate.readOnly", value = "true"),
+            @QueryHint(name = "org.hibernate.fetchSize", value = "50")
+    })
+    @Transactional(readOnly = true)
+    List<Order> findByClientOrderBySubmittedAtDesc(@Param("client") UserEntity client);
+
+    // ==========================================
+    // DATE RANGE QUERIES OPTIMIZED
+    // ==========================================
+
+    /**
+     * Оптимизирани date range заявки с правилни индекси
+     */
+    @Query(value = """
+        SELECT DISTINCT o FROM Order o 
+        LEFT JOIN FETCH o.items oi 
+        LEFT JOIN FETCH oi.product 
+        WHERE o.submittedAt >= :startDate AND o.submittedAt <= :endDate 
+        ORDER BY o.submittedAt DESC
+        """)
+    @QueryHints({
+            @QueryHint(name = "org.hibernate.readOnly", value = "true"),
+            @QueryHint(name = "org.hibernate.fetchSize", value = "100")
+    })
+    @Transactional(readOnly = true)
+    List<Order> findOrdersBetweenDates(@Param("startDate") LocalDateTime startDate,
+                                       @Param("endDate") LocalDateTime endDate);
+
+    // ==========================================
+    // ADVANCED AGGREGATION QUERIES
+    // ==========================================
+
+    /**
+     * Оптимизирана total value calculation
+     */
+    @Query(value = "SELECT COALESCE(SUM(total_gross), 0) FROM orders WHERE status = :status",
+            nativeQuery = true)
+    @Cacheable(value = "totalValueByStatus", key = "#status")
     @QueryHints(@QueryHint(name = "org.hibernate.readOnly", value = "true"))
     @Transactional(readOnly = true)
-    long countByStatus(@Param("status") OrderStatus status);
+    java.math.BigDecimal getTotalValueByStatusFast(@Param("status") String status);
 
-    @Query("SELECT DISTINCT o FROM Order o LEFT JOIN FETCH o.items oi LEFT JOIN FETCH oi.product WHERE o.submittedAt >= :startDate AND o.submittedAt <= :endDate ORDER BY o.submittedAt DESC")
-    @QueryHints(@QueryHint(name = "org.hibernate.readOnly", value = "true"))
+    /**
+     * Wrapper за OrderStatus
+     */
+    default java.math.BigDecimal getTotalValueByStatus(OrderStatus status) {
+        return getTotalValueByStatusFast(status.name());
+    }
+
+    // ==========================================
+    // UTILITY METHODS WITH DEFAULT IMPLEMENTATIONS
+    // ==========================================
+
+    /**
+     * Бърз wrapper за urgent orders с default threshold
+     */
+    default List<Object[]> findUrgentOrderProjections(int limit) {
+        return findUrgentOrderProjections(LocalDateTime.now().minusHours(2), limit);
+    }
+
+    /**
+     * Алиас за обратна съвместимост
+     */
+    default List<Order> findByStatusOrderByCreatedAtDesc(OrderStatus status) {
+        return findByStatusOrderBySubmittedAtDesc(status);
+    }
+
+    /**
+     * Recent orders с оптимизация
+     */
+    @Query(value = """
+        SELECT DISTINCT o FROM Order o 
+        LEFT JOIN FETCH o.client 
+        LEFT JOIN FETCH o.items oi 
+        LEFT JOIN FETCH oi.product 
+        ORDER BY o.submittedAt DESC
+        """)
+    @QueryHints({
+            @QueryHint(name = "org.hibernate.readOnly", value = "true"),
+            @QueryHint(name = "org.hibernate.fetchSize", value = "50")
+    })
     @Transactional(readOnly = true)
-    List<Order> findOrdersBetweenDates(@Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
+    List<Order> findAllOrdersOrderBySubmittedAtDesc();
 
-    @Query("SELECT COALESCE(SUM(o.totalGross), 0) FROM Order o WHERE o.status = :status")
-    @Cacheable(value = "orderTotal", key = "#status")
-    @QueryHints(@QueryHint(name = "org.hibernate.readOnly", value = "true"))
-    @Transactional(readOnly = true)
-    java.math.BigDecimal getTotalValueByStatus(@Param("status") OrderStatus status);
+    default List<Order> findRecentOrders(int limit) {
+        return findAllOrdersOrderBySubmittedAtDesc().stream()
+                .limit(limit)
+                .collect(java.util.stream.Collectors.toList());
+    }
 
-    @Query("SELECT DISTINCT o FROM Order o LEFT JOIN FETCH o.items oi LEFT JOIN FETCH oi.product WHERE o.id = :orderId")
-    Optional<Order> findByIdWithItemsForUpdate(@Param("orderId") Long orderId);
+    // ==========================================
+    // UPDATE OPERATIONS OPTIMIZED
+    // ==========================================
+
+    /**
+     * Бърза status update без full object loading
+     */
+    @Modifying
+    @Query(value = "UPDATE orders SET status = :newStatus, confirmed_at = :confirmedAt WHERE id = :orderId",
+            nativeQuery = true)
+    @Transactional
+    int updateOrderStatusFast(@Param("orderId") Long orderId,
+                              @Param("newStatus") String newStatus,
+                              @Param("confirmedAt") LocalDateTime confirmedAt);
+
+    /**
+     * Batch status update за множество поръчки
+     */
+    @Modifying
+    @Query(value = "UPDATE orders SET status = :newStatus WHERE id IN :orderIds", nativeQuery = true)
+    @Transactional
+    int updateMultipleOrderStatus(@Param("orderIds") List<Long> orderIds,
+                                  @Param("newStatus") String newStatus);
 }

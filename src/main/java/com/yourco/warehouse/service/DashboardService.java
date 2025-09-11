@@ -2,8 +2,11 @@ package com.yourco.warehouse.service;
 
 import com.yourco.warehouse.dto.DailyStatsDTO;
 import com.yourco.warehouse.dto.DashboardDataDTO;
+import com.yourco.warehouse.dto.OrderDTO;
+import com.yourco.warehouse.dto.OrdersListResponseDTO;
 import com.yourco.warehouse.entity.Order;
 import com.yourco.warehouse.entity.enums.OrderStatus;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
@@ -33,6 +36,16 @@ public interface DashboardService {
      */
     DailyStatsDTO getDailyStatistics();
 
+
+    OrdersListResponseDTO getOrdersByStatusAsDTO(OrderStatus status, int limit);
+
+    List<Order> getUrgentOrders();
+
+    List<Order> getOrdersByStatus(OrderStatus status);
+
+    List<Order> getRecentOrders(int limit);
+
+    OrderDTO convertOrderToDTO(Order order);
 
     /**
      * Потвърждава поръчка (SUBMITTED → CONFIRMED)
@@ -116,6 +129,9 @@ public interface DashboardService {
      * @return Order обект с пълни данни или null ако не съществува
      */
     Order getOrderDetails(Long orderId);
+
+    @Transactional
+    OrderDTO getOrderDetailsAsDTO(Long orderId);
 
     /**
      * Проверява дали има активни поръчки изискващи внимание
