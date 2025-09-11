@@ -80,7 +80,7 @@ public class DashboardServiceImpl implements DashboardService {
             // Основни броячи - optimized queries за минимален database impact
             dashboard.setUrgentCount(orderRepository.countByStatus(OrderStatus.PENDING));
             dashboard.setPendingCount(orderRepository.countByStatus(OrderStatus.PENDING));
-            dashboard.setCompletedCount(orderRepository.countByStatus(OrderStatus.SHIPPED));
+            dashboard.setCompletedCount(orderRepository.countByStatus(OrderStatus.CONFIRMED));
             dashboard.setCancelledCount(orderRepository.countByStatus(OrderStatus.CANCELLED));
 
             // Alert indicators за urgent attention
@@ -129,8 +129,8 @@ public class DashboardServiceImpl implements DashboardService {
 
             // Efficient counter queries - single database round-trip per counter
             dashboard.setUrgentCount(orderRepository.countByStatus(OrderStatus.PENDING));
-            dashboard.setPendingCount(orderRepository.countByStatus(OrderStatus.CONFIRMED));
-            dashboard.setCompletedCount(orderRepository.countByStatus(OrderStatus.SHIPPED));
+            dashboard.setPendingCount(orderRepository.countByStatus(OrderStatus.PENDING));
+            dashboard.setCompletedCount(orderRepository.countByStatus(OrderStatus.CONFIRMED));
             dashboard.setCancelledCount(orderRepository.countByStatus(OrderStatus.CANCELLED));
 
             dashboard.setHasUrgentAlerts(dashboard.getUrgentCount() > 0);

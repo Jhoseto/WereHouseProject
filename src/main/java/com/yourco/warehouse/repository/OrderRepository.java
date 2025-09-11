@@ -69,7 +69,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             status,
             COUNT(*) as count
         FROM orders 
-        WHERE status IN ('PENDING', 'CONFIRMED', 'SHIPPED', 'CANCELLED')
+        WHERE status IN ('PENDING', 'CONFIRMED', 'CANCELLED')
         GROUP BY status
         """, nativeQuery = true)
     @Cacheable(value = "allOrderCounts", unless = "#result == null")
@@ -90,8 +90,8 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
      */
     @Query(value = """
         SELECT 
-            COUNT(CASE WHEN status = 'SHIPPED' THEN 1 END) as processed_count,
-            COALESCE(SUM(CASE WHEN status = 'SHIPPED' THEN total_gross ELSE 0 END), 0) as daily_revenue,
+            COUNT(CASE WHEN status = 'CONFIRMED' THEN 1 END) as processed_count,
+            COALESCE(SUM(CASE WHEN status = 'CONFIRMED' THEN total_gross ELSE 0 END), 0) as daily_revenue,
             AVG(CASE WHEN confirmed_at IS NOT NULL 
                 THEN TIMESTAMPDIFF(HOUR, submitted_at, confirmed_at) 
                 ELSE NULL END) as avg_processing_hours,

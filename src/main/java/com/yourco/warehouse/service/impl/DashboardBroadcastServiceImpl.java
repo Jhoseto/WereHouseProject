@@ -519,7 +519,6 @@ public class DashboardBroadcastServiceImpl implements DashboardBroadcastService 
         return switch (status) {
             case "PENDING" -> "INTAKE";
             case "CONFIRMED" -> "PROCESSING";
-            case "SHIPPED" -> "FULFILLMENT";
             case "CANCELLED" -> "RESOLVED";
             default -> "UNKNOWN";
         };

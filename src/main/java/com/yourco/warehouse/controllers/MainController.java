@@ -122,10 +122,6 @@ public class MainController {
                     .filter(o -> o.getStatus() != null && o.getStatus().name().equals("CONFIRMED"))
                     .count();
 
-            long shippedCount = orders.stream()
-                    .filter(o -> o.getStatus() != null && o.getStatus().name().equals("SHIPPED"))
-                    .count();
-
             long cancelledCount = orders.stream()
                     .filter(o -> o.getStatus() != null && o.getStatus().name().equals("CANCELLED"))
                     .count();
@@ -133,7 +129,6 @@ public class MainController {
             // ✅ Добавяме в модела
             model.addAttribute("submittedCount", submittedCount);
             model.addAttribute("confirmedCount", confirmedCount);
-            model.addAttribute("shippedCount", shippedCount);
             model.addAttribute("cancelledCount", cancelledCount);
 
             return "order";
