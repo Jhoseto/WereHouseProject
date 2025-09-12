@@ -362,7 +362,7 @@ class DashboardApi {
     /**
      * Get detailed order data with all items - ОСНОВЕН МЕТОД ЗА ORDER DETAILS
      */
-    async getOrderDetails(orderId) {
+    async getOrderDetailsAndItems(orderId) {
         const cacheKey = `orderDetails_${orderId}`;
 
         try {
@@ -382,13 +382,6 @@ class DashboardApi {
         }
     }
 
-    /**
-     * Get order details with all items for expanded view - АЛИАС МЕТОД
-     * Това е същият като getOrderDetails но с по-описателно име
-     */
-    async getOrderDetailsWithItems(orderId) {
-        return await this.getOrderDetails(orderId);
-    }
 
     /**
      * Update product quantity in order (with change tracking)
@@ -643,6 +636,34 @@ class DashboardApi {
         }
     }
 
+    async approveOrder(orderId, operatorNote = '') {
+        try {
+            const requestData = { operatorNote };
+            const response = await this.makeRequest('POST', `/order/${orderId}/approve`, requestData);
+            const data = await response.json();
+
+            this.clearOrderCache(orderId);
+            return data;
+        } catch (error) {
+            console.error(`Error approving order ${orderId}:`, error);
+            throw error;
+        }
+    }
+
+    async rejectOrder(orderId, rejectionReason) {
+        try {
+            const requestData = { rejectionReason };
+            const response = await this.makeRequest('POST', `/order/${orderId}/reject`, requestData);
+            const data = await response.json();
+
+            this.clearOrderCache(orderId);
+            return data;
+        } catch (error) {
+            console.error(`Error rejecting order ${orderId}:`, error);
+            throw error;
+        }
+    }
+
     // ==========================================
     // HTTP CLIENT UTILITIES
     // ==========================================
@@ -679,6 +700,28 @@ class DashboardApi {
 
         } catch (error) {
             console.error(`Request failed for ${method} ${url}:`, error);
+            throw error;
+        }
+    }
+
+    async validateInventoryForChanges(orderId, changes) {
+        try {
+            const response = await this.makeRequest('POST', `/order/${orderId}/validate-inventory`, { changes });
+            return await response.json();
+        } catch (error) {
+            console.error('Inventory validation failed:', error);
+            throw error;
+        }
+    }
+
+    async approveOrderWithChanges(orderId, data) {
+        try {
+            const response = await this.makeRequest('POST', `/order/${orderId}/approve-with-changes`, data);
+            const result = await response.json();
+            this.clearOrderCache(orderId);
+            return result;
+        } catch (error) {
+            console.error('Order approval failed:', error);
             throw error;
         }
     }

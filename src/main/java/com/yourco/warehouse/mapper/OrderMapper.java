@@ -99,6 +99,7 @@ public class OrderMapper {
         dto.setQuantity(orderItem.getQty());
         dto.setUnit(orderItem.getProduct().getUnit());
         dto.setPrice(orderItem.getUnitPrice());
+        dto.setAvailableQuantity(orderItem.getProduct().getQuantityAvailable());
 
         // Изчисляваме total price за този item
         if (orderItem.getQty() != null && orderItem.getUnitPrice() != null) {

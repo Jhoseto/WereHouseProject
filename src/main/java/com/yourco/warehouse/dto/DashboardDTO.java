@@ -42,6 +42,10 @@ public class DashboardDTO {
     @JsonProperty("orders")
     private List<OrderDTO> orders;
 
+    // ✅ НОВО: За един order details
+    @JsonProperty("order")
+    private OrderDTO order;
+
     // Метаданни
     @JsonProperty("hasUrgentAlerts")
     private Boolean hasUrgentAlerts;
@@ -92,6 +96,10 @@ public class DashboardDTO {
 
     public List<OrderDTO> getOrders() { return orders; }
     public void setOrders(List<OrderDTO> orders) { this.orders = orders; }
+
+    // ✅ НОВО: Getter/Setter за един order
+    public OrderDTO getOrder() { return order; }
+    public void setOrder(OrderDTO order) { this.order = order; }
 
     public Boolean getHasUrgentAlerts() { return hasUrgentAlerts; }
     public void setHasUrgentAlerts(Boolean hasUrgentAlerts) { this.hasUrgentAlerts = hasUrgentAlerts; }

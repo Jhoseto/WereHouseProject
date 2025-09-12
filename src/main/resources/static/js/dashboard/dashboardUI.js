@@ -499,25 +499,45 @@ class DashboardUI {
     /**
      * Load order items via API - REFACTORED TO USE API
      */
+    // Замени loadOrderItems метода в dashboardUI.js (около ред 500-530)
+
     async loadOrderItems(orderId) {
         const productList = document.getElementById(`product-list-${orderId}`);
 
         try {
-            // Check if API is available
-            if (!this.manager || !this.manager.api) {
-                console.error('API not available for loading order items');
-                productList.innerHTML = '<div class="error-message">API не е достъпно</div>';
-                return;
+            let result = null;
+
+            // Опитай API методите
+            if (this.manager?.api?.getOrderDetailsWithItems) {
+                result = await this.manager.api.getOrderDetailsWithItems(orderId);
+            } else if (this.manager?.api?.getOrderDetails) {
+                result = await this.manager.api.getOrderDetails(orderId);
+            } else {
+                // Fallback към direct fetch
+                const response = await fetch(`/employer/dashboard/order/${orderId}/details`);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                result = await response.json();
             }
 
-            // Use API instead of direct fetch
-            const result = await this.manager.api.getOrderDetailsWithItems(orderId);
+            // Обработи response-а правилно
+            let orderData = null;
+            if (result.success && result.order) {
+                orderData = result.order;
+            } else if (result.data) {
+                orderData = result.data;
+            } else if (result.id) {
+                orderData = result;
+            }
 
-            if (result.success && result.data) {
-                const order = result.data;
-                this.displayOrderItems(orderId, order.items || []);
+            if (orderData && orderData.items) {
+                // Инициализирай state management ако има manager
+                if (this.manager && typeof this.manager.initOrderState === 'function') {
+                    this.manager.initOrderState(orderId, orderData);
+                }
+
+                this.displayOrderItems(orderId, orderData);
             } else {
-                productList.innerHTML = '<div class="error-message">Грешка при зареждане на артикулите</div>';
+                productList.innerHTML = '<div class="error-message">Няма данни за артикули</div>';
             }
 
         } catch (error) {
@@ -526,59 +546,57 @@ class DashboardUI {
         }
     }
 
-    displayOrderItems(orderId, items) {
+    displayOrderItems(orderId, orderData) {
         const productList = document.getElementById(`product-list-${orderId}`);
 
-        if (items.length === 0) {
+        if (!orderData.items || orderData.items.length === 0) {
             productList.innerHTML = '<div class="no-items">Няма артикули в поръчката</div>';
             return;
         }
 
-        const itemsHTML = items.map(item => `
-            <div class="product-item" data-item-id="${item.id}" data-product-id="${item.productId || item.id}">
-                <div class="product-image">
-                    <i class="bi bi-box"></i>
-                </div>
-                <div class="product-info">
-                    <div class="product-name">${item.productName || 'Неизвестен продукт'}</div>
-                    <div class="product-sku">SKU: ${item.productSku || 'N/A'}</div>
-                    <div class="product-price">Цена: ${item.unitPrice || '0.00'} лв</div>
-                </div>
-                <div class="product-quantity">
-                    <label>Количество:</label>
-                    <input type="number" 
-                           value="${item.quantity || 0}" 
-                           min="0"
-                           class="quantity-input"
-                           id="qty-${orderId}-${item.productId || item.id}"
-                           onchange="updateProductQuantity(${orderId}, ${item.productId || item.id}, this.value)"
-                           data-original="${item.quantity || 0}">
-                </div>
-                <div class="product-availability">
-                    <label>
-                        <input type="checkbox" 
-                               ${item.available !== false ? 'checked' : ''} 
-                               onchange="toggleItemAvailability(${orderId}, ${item.id}, this)"
-                               class="availability-checkbox">
-                        В наличност
-                    </label>
-                </div>
-                <div class="product-actions">
-                    <button class="btn btn-accept" onclick="approveProduct(${orderId}, ${item.productId || item.id})">
-                        <i class="bi bi-check"></i> Одобри
-                    </button>
-                    <button class="btn btn-reject" onclick="rejectProduct(${orderId}, ${item.productId || item.id})">
-                        <i class="bi bi-x"></i> Отказ
-                    </button>
-                </div>
-                <div class="product-total">
-                    Общо: <span class="item-total">${((item.quantity || 0) * (item.unitPrice || 0)).toFixed(2)}</span> лв
-                </div>
-            </div>
-        `).join('');
+        const itemsHTML = orderData.items.map(item => {
+            const available = item.availableQuantity || 0;
+            const stockClass = available >= item.quantity ? 'stock-good' : 'stock-low';
 
-        productList.innerHTML = itemsHTML;
+            return `
+        <div class="order-item" data-product-id="${item.productId || item.id}">
+            <div class="item-name">${item.productName || 'Неизвестен продукт'}</div>
+            <div class="item-quantity">
+                <input type="number" 
+                       value="${item.quantity || 0}" 
+                       min="0" 
+                       max="${available}"
+                       class="qty-input ${stockClass}"
+                       onchange="handleQuantityChange(${orderId}, ${item.productId || item.id}, this.value)">
+                <span class="unit">бр.</span>
+            </div>
+            <div class="stock-info ${stockClass}">
+                <span class="stock-badge">${available >= item.quantity ? 'В наличност' : 'Малко'}</span>
+                <small>налични: ${available}</small>
+            </div>
+            <div class="item-price">${item.unitPrice || '0.00'} лв</div>
+        </div>
+        `;
+        }).join('');
+
+        productList.innerHTML = `
+        <div class="items-container">
+            ${itemsHTML}
+        </div>
+        <div class="order-summary">
+            <div class="approval-panel">
+                <textarea id="note-${orderId}" placeholder="Бележка към клиента за промените..."></textarea>
+                <button class="btn-approve" onclick="approveOrderFinal(${orderId})">
+                    Одобри поръчката
+                </button>
+                <button class="btn-reject" onclick="rejectOrderFinal(${orderId})">
+                    Откажи поръчката
+                </button>
+            </div>
+        </div>
+    `;
     }
+
 
     // ==========================================
     // PRODUCT OPERATIONS - REFACTORED TO USE API
@@ -1032,6 +1050,90 @@ class DashboardUI {
         }
     }
 
+    getStockStatus(available, requested) {
+        if (available === 0) {
+            return { class: 'stock-none', text: 'Няма' };
+        } else if (available < requested) {
+            return { class: 'stock-insufficient', text: 'Недостатъчно' };
+        } else if (available < requested * 2) {
+            return { class: 'stock-low', text: 'Малко' };
+        } else {
+            return { class: 'stock-good', text: 'В наличност' };
+        }
+    }
+
+
+    markOrderAsProcessed(orderId, action) {
+        const orderElement = document.querySelector(`[data-order-id="${orderId}"]`);
+        if (orderElement) {
+            orderElement.classList.add(`order-${action}`);
+            orderElement.style.opacity = '0.7';
+        }
+    }
+
+    showSuccessMessage(message) {
+        if (window.toastManager) {
+            window.toastManager.success(message);
+        } else {
+            alert(message);
+        }
+    }
+
+    showErrorMessage(message) {
+        if (window.toastManager) {
+            window.toastManager.error(message);
+        } else {
+            alert('Грешка: ' + message);
+        }
+    }
+
+    getStockClass(available, requested) {
+        if (available === 0) return 'stock-none';
+        if (available < requested) return 'stock-insufficient';
+        if (available < requested * 1.5) return 'stock-low';
+        return 'stock-good';
+    }
+
+    getStockText(available, requested) {
+        if (available === 0) return 'Няма';
+        if (available < requested) return 'Недостатъчно';
+        return 'В наличност';
+    }
+
+    updateOrderChangeIndicator(orderId, hasChanges) {
+        const indicator = document.getElementById(`changes-${orderId}`);
+        if (indicator) {
+            indicator.style.display = hasChanges ? 'block' : 'none';
+        }
+    }
+
+    showInventoryWarning(productId, requested, available) {
+        const input = document.querySelector(`input[data-product-id="${productId}"]`);
+        if (input) {
+            input.classList.add('inventory-error');
+            input.value = available; // Auto-correct to max available
+
+            if (window.toastManager) {
+                window.toastManager.warning(`Само ${available} бр. налични от този артикул`);
+            }
+
+            setTimeout(() => input.classList.remove('inventory-error'), 3000);
+        }
+    }
+
+
+    async showInventoryConflictDialog(conflicts) {
+        const message = conflicts.map(c =>
+            `${c.productName}: искате ${c.requested}, има ${c.available}`
+        ).join('\n');
+
+        return confirm(`Конфликт с наличности:\n\n${message}\n\nАвтоматично коригиране на количествата?`);
+    }
+
+
+
+
+
     // ==========================================
     // KEYBOARD AND TOUCH SUPPORT
     // ==========================================
@@ -1148,7 +1250,38 @@ class DashboardUI {
     }
 }
 
+
 // Global functions for HTML onclick handlers - FULLY INTEGRATED
+
+window.handleQuantityChange = function(orderId, productId, newQuantity) {
+    if (window.mainDashboard?.manager) {
+        window.mainDashboard.manager.updatePendingQuantity(orderId, productId, parseInt(newQuantity));
+    }
+};
+
+window.approveOrderFinal = window.approveOrderFinal || function(orderId) {
+    const noteTextarea = document.getElementById(`note-${orderId}`);
+    const operatorNote = noteTextarea?.value?.trim() || '';
+
+    if (window.mainDashboard?.manager?.approveOrder) {
+        window.mainDashboard.manager.approveOrder(orderId, operatorNote);
+    } else {
+        alert('Dashboard система не е готова');
+    }
+};
+
+window.rejectOrderFinal = window.rejectOrderFinal || function(orderId) {
+    const reason = prompt('Причина за отказване:');
+    if (reason?.trim()) {
+        if (window.mainDashboard?.manager?.rejectOrder) {
+            window.mainDashboard.manager.rejectOrder(orderId, reason.trim());
+        } else {
+            alert('Dashboard система не е готова');
+        }
+    }
+};
+
+
 window.toggleOrderDetails = function(orderId) {
     if (window.mainDashboard && window.mainDashboard.ui) {
         window.mainDashboard.ui.toggleOrderDetails(orderId);

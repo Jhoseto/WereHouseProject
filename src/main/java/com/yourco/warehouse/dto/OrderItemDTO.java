@@ -38,6 +38,12 @@ public class OrderItemDTO {
     @JsonProperty("hasStockIssue")
     private boolean hasStockIssue;
 
+    private Integer availableQuantity;
+
+
+
+
+
     // Constructors
     public OrderItemDTO() {}
 
@@ -68,4 +74,9 @@ public class OrderItemDTO {
 
     public boolean isHasStockIssue() { return hasStockIssue; }
     public void setHasStockIssue(boolean hasStockIssue) { this.hasStockIssue = hasStockIssue; }
+
+    public Integer getAvailableQuantity() { return availableQuantity; }
+
+    public void setAvailableQuantity(Integer availableQuantity) {
+        this.availableQuantity = availableQuantity; }
 }

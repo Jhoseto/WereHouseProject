@@ -1188,6 +1188,160 @@ input, textarea {
     box-shadow: 0 2px 8px rgba(108, 117, 125, 0.3);
 }
 
+
+.order-item-row {
+    display: grid;
+    grid-template-columns: 2fr 120px 120px 80px 80px;
+    gap: 15px;
+    padding: 10px 15px;
+    border-bottom: 1px solid #eee;
+    align-items: center;
+}
+
+.items-header {
+    display: grid;
+    grid-template-columns: 2fr 120px 120px 80px 80px;
+    gap: 15px;
+    padding: 10px 15px;
+    background: #f8f9fa;
+    font-weight: 600;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.item-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.item-name {
+    font-weight: 500;
+    color: #2c3e50;
+}
+
+.item-sku {
+    font-size: 0.8rem;
+    color: #6c757d;
+    font-family: monospace;
+}
+
+.item-quantity {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.qty-input {
+    width: 60px;
+    padding: 5px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    text-align: center;
+}
+
+.item-stock {
+    text-align: center;
+}
+
+.stock-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.stock-good .stock-badge {
+    background: #d4edda;
+    color: #155724;
+}
+
+.stock-low .stock-badge {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.stock-insufficient .stock-badge {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.stock-none .stock-badge {
+    background: #f5c6cb;
+    color: #721c24;
+}
+
+.order-actions-panel {
+    margin-top: 20px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+}
+
+.operator-note {
+    margin-bottom: 15px;
+}
+
+.operator-note label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+}
+
+.operator-note textarea {
+    width: 100%;
+    height: 60px;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    resize: vertical;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.btn-approve, .btn-reject {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+}
+
+.btn-approve {
+    background: #28a745;
+    color: white;
+}
+
+.btn-approve:hover {
+    background: #218838;
+}
+
+.btn-reject {
+    background: #dc3545;
+    color: white;
+}
+
+.btn-reject:hover {
+    background: #c82333;
+}
+
+.order-approved {
+    border-left: 4px solid #28a745;
+}
+
+.order-rejected {
+    border-left: 4px solid #dc3545;
+}
+
+
 /* ==========================================
    RESPONSIVE DESIGN - TABLET & DESKTOP
    ========================================== */

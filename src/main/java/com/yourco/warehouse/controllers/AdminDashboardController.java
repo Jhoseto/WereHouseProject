@@ -14,6 +14,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -457,6 +458,56 @@ public class AdminDashboardController {
             return ResponseEntity.status(500)
                     .body(new DashboardDTO("Грешка при възстановяване на промените"));
         }
+
+
     }
+
+
+    @PostMapping("/dashboard/order/{orderId}/validate-inventory")
+    public ResponseEntity<DashboardDTO> validateInventoryForChanges(
+            @PathVariable Long orderId,
+            @RequestBody Map<String, Object> request) {
+
+        try {
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> changes = (List<Map<String, Object>>) request.get("changes");
+
+            DashboardDTO result = dashboardService.validateInventoryForOrderChanges(orderId, changes);
+            return ResponseEntity.ok(result);
+
+        } catch (Exception e) {
+            log.error("Error validating inventory for order {}", orderId, e);
+            return ResponseEntity.status(500).body(new DashboardDTO("Грешка при проверка на наличности"));
+        }
+    }
+
+    @PostMapping("/dashboard/order/{orderId}/approve-with-changes")
+    public ResponseEntity<DashboardDTO> approveOrderWithBatchChanges(
+            @PathVariable Long orderId,
+            @RequestBody Map<String, Object> request) {
+
+        try {
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> changes = (List<Map<String, Object>>) request.get("changes");
+            String operatorNote = (String) request.get("operatorNote");
+            String changesSummary = (String) request.get("changesSummary");
+
+            DashboardDTO response = dashboardService.approveOrderWithBatchChanges(orderId, changes, operatorNote, changesSummary);
+
+            if (response.getSuccess()) {
+                broadcastService.broadcastOrderStatusChange(orderId, "CONFIRMED", "PENDING", new HashMap<>());
+                this.getCounters();
+            }
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            log.error("Error approving order {} with changes", orderId, e);
+            return ResponseEntity.status(500).body(new DashboardDTO("Грешка при одобряване"));
+        }
+    }
+
+
+
 
 }

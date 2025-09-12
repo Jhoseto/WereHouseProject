@@ -3,6 +3,9 @@ package com.yourco.warehouse.service;
 import com.yourco.warehouse.dto.DashboardDTO;
 import com.yourco.warehouse.entity.enums.OrderStatus;
 
+import java.util.List;
+import java.util.Map;
+
 /**
  * DASHBOARD SERVICE INTERFACE - EXTENDED FOR NEW BUSINESS LOGIC
  * =============================================================
@@ -99,7 +102,7 @@ public interface DashboardService {
      * с quantity modification logic. Автоматично track-ва промените
      * за generation на correction message при order approval.
      *
-     * Change tracking позволява на sistem-а да генерира accurate
+     * Change tracking позволява на система да генерира accurate
      * correction messages като "Количеството на Product X е променено
      * от 10 на 8 поради limited availability".
      *
@@ -191,38 +194,32 @@ public interface DashboardService {
     // ==========================================
 
     /**
-     * Проверява дали order има pending modifications
+     * Генерира preview на correction message преди изпращане
      *
-     * Utility метод за UI logic - определя дали да показва modification
-     * indicators, save buttons, или warning messages за unsaved changes.
-     *
-     * @param orderId уникален identifier на поръчката
-     * @return true ако order има pending changes, false otherwise
-     */
-    boolean hasOrderPendingChanges(Long orderId);
-
-    /**
-     * Генерира preview на correction message преди approval
-     *
-     * Позволява на operator да прегледа какво съобщение ще се изпрати
-     * до клиента преди да финализира approval. Полезно за quality control
-     * и ensuring appropriate business communication.
+     * Позволява на operator да review и edit correction message content
+     * преди окончателно одобряване и изпращане до клиента. Useful за
+     * quality control и personalization на customer communication.
      *
      * @param orderId уникален identifier на поръчката
-     * @param operatorNote optional бележка от operator
-     * @return DashboardDTO с preview text на correction message
+     * @param operatorNote optional бележка от operator за включване
+     * @return DashboardDTO с generated message preview
      */
     DashboardDTO previewCorrectionMessage(Long orderId, String operatorNote);
 
     /**
-     * Получава audit trail за order modifications
+     * Получава audit trail за specific order
      *
-     * Връща chronological history на всички changes направени в order-а
-     * включително timestamps, operator names, и change details.
-     * Полезно за compliance, troubleshooting, и business analytics.
+     * Връща chronological history на всички actions выполнени върху
+     * поръчката включително timestamps, operator information, и action details.
+     * Използва се за compliance, troubleshooting, и business analytics.
      *
      * @param orderId уникален identifier на поръчката
-     * @return DashboardDTO с detailed audit trail information
+     * @return DashboardDTO с comprehensive audit trail
      */
     DashboardDTO getOrderAuditTrail(Long orderId);
+
+
+    DashboardDTO validateInventoryForOrderChanges(Long orderId, List<Map<String, Object>> changes);
+
+    DashboardDTO approveOrderWithBatchChanges(Long orderId, List<Map<String, Object>> changes, String operatorNote, String changesSummary);
 }

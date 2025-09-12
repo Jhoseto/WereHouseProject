@@ -513,6 +513,9 @@ class MainDashboard {
 // AUTO-INITIALIZATION
 // ==========================================
 
+window.dashboardApi = null;
+window.showOrderDetails = null;
+window.updateOrderDetailsUI = null;
 /**
  * Auto-initialize dashboard when DOM is ready
  */
@@ -536,6 +539,31 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 });
 
+
+window.updateItemQuantity = function(orderId, productId, newQuantity) {
+    if (window.mainDashboard && window.mainDashboard.manager) {
+        window.mainDashboard.manager.updateProductQuantity(orderId, productId, newQuantity);
+    }
+};
+
+window.approveOrderWithNote = function(orderId) {
+    const noteTextarea = document.getElementById(`operator-note-${orderId}`);
+    const operatorNote = noteTextarea ? noteTextarea.value.trim() : '';
+
+    if (window.mainDashboard && window.mainDashboard.manager) {
+        window.mainDashboard.manager.approveOrder(orderId, operatorNote);
+    }
+};
+
+window.showRejectDialog = function(orderId) {
+    const reason = prompt('Причина за отказване на поръчката:');
+    if (reason && reason.trim()) {
+        if (window.mainDashboard && window.mainDashboard.manager) {
+            window.mainDashboard.manager.rejectOrder(orderId, reason.trim());
+        }
+    }
+};
+
 /**
  * Cleanup on page unload
  */
@@ -544,6 +572,23 @@ window.addEventListener('beforeunload', function() {
         window.mainDashboard.destroy();
     }
 });
+window.showOrderDetails = function(orderData) {
+    let orderId = orderData?.id || orderData?.order?.id || orderData;
+    if (window.toggleOrderDetails) {
+        window.toggleOrderDetails(orderId);
+    }
+};
 
+window.updateOrderDetailsUI = function(orderData) {
+    // Тази функция не е нужна - toggleOrderDetails прави всичко
+    console.log('updateOrderDetailsUI called, delegating to toggleOrderDetails');
+};
+
+// Експортирай dashboardApi глобално
+Object.defineProperty(window, 'dashboardApi', {
+    get: function() {
+        return window.mainDashboard?.api || null;
+    }
+});
 // Export for manual access if needed
 window.MainDashboard = MainDashboard;

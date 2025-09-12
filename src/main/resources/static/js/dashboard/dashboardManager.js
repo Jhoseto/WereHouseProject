@@ -44,6 +44,7 @@ class DashboardManager {
         this.lastUpdate = null;
         this.updateCount = 0;
 
+        this.orderStates = new Map(); // {orderId: {original: {}, pending: {}, inventory: {}}}
         console.log('DashboardManager initialized');
     }
 
@@ -400,7 +401,7 @@ class DashboardManager {
      */
     async getOrderDetails(orderId) {
         try {
-            const response = await this.api.getOrderDetails(orderId);
+            const response = await this.api.getOrderDetailsAndItems(orderId);
 
             if (response.success) {
                 return response.data;
@@ -679,6 +680,149 @@ class DashboardManager {
             this.autoRefreshInterval = null;
             console.log('Auto-refresh stopped');
         }
+    }
+
+    async approveOrder(orderId, operatorNote = '') {
+        try {
+            const response = await this.api.approveOrder(orderId, operatorNote);
+
+            if (response.success) {
+                this.ui.markOrderAsProcessed(orderId, 'approved');
+                this.ui.showSuccessMessage(response.message);
+                this.refreshCurrentTab();
+            } else {
+                this.ui.showErrorMessage(response.message);
+            }
+
+            return response;
+        } catch (error) {
+            console.error('Error approving order:', error);
+            this.ui.showErrorMessage('Грешка при одобряване на поръчката');
+        }
+    }
+
+    async rejectOrder(orderId, rejectionReason) {
+        try {
+            const response = await this.api.rejectOrder(orderId, rejectionReason);
+
+            if (response.success) {
+                this.ui.markOrderAsProcessed(orderId, 'rejected');
+                this.ui.showSuccessMessage(response.message);
+                this.refreshCurrentTab();
+            } else {
+                this.ui.showErrorMessage(response.message);
+            }
+
+            return response;
+        } catch (error) {
+            console.error('Error rejecting order:', error);
+            this.ui.showErrorMessage('Грешка при отказване на поръчката');
+        }
+    }
+
+    initOrderState(orderId, orderData) {
+        this.orderStates.set(orderId, {
+            original: this.cloneOrderData(orderData),
+            pending: new Map(), // {productId: {quantity, action}}
+            inventory: new Map(), // {productId: availableQty}
+            hasChanges: false
+        });
+
+        // Extract inventory data
+        orderData.items.forEach(item => {
+            this.orderStates.get(orderId).inventory.set(
+                item.productId,
+                item.availableQuantity || 0
+            );
+        });
+    }
+
+    cloneOrderData(orderData) {
+        return JSON.parse(JSON.stringify(orderData));
+    }
+
+    updatePendingQuantity(orderId, productId, newQuantity) {
+        const state = this.orderStates.get(orderId);
+        if (!state) return false;
+
+        const original = state.original.items.find(item => item.productId === productId);
+        const available = state.inventory.get(productId);
+
+        // Validation
+        if (newQuantity > available) {
+            this.ui.showInventoryWarning(productId, newQuantity, available);
+            return false;
+        }
+
+        // Track change
+        if (newQuantity === original.quantity) {
+            state.pending.delete(productId);
+        } else {
+            state.pending.set(productId, {
+                quantity: newQuantity,
+                originalQuantity: original.quantity,
+                action: newQuantity === 0 ? 'remove' : 'modify'
+            });
+        }
+
+        state.hasChanges = state.pending.size > 0;
+        this.ui.updateOrderChangeIndicator(orderId, state.hasChanges);
+
+        return true;
+    }
+
+    async processOrderWithChanges(orderId, operatorNote) {
+        const state = this.orderStates.get(orderId);
+        if (!state) return;
+
+        try {
+            // Phase 1: Real-time inventory check
+            const inventoryCheck = await this.api.validateInventoryForChanges(orderId, Array.from(state.pending.entries()));
+
+            if (!inventoryCheck.valid) {
+                const resolution = await this.ui.showInventoryConflictDialog(inventoryCheck.conflicts);
+                if (!resolution) return; // User cancelled
+
+                // Apply resolution (auto-adjust quantities)
+                this.applyInventoryResolution(orderId, resolution);
+            }
+
+            // Phase 2: Generate change summary
+            const changesSummary = this.generateChangesSummary(orderId);
+
+            // Phase 3: Atomic approval
+            const approval = await this.api.approveOrderWithChanges(orderId, {
+                changes: Array.from(state.pending.entries()),
+                operatorNote,
+                changesSummary
+            });
+
+            if (approval.success) {
+                this.ui.showSuccessMessage(approval.message);
+                this.orderStates.delete(orderId);
+                this.refreshCurrentTab();
+            }
+
+        } catch (error) {
+            this.ui.showErrorMessage('Грешка при обработка на поръчката');
+        }
+    }
+
+    generateChangesSummary(orderId) {
+        const state = this.orderStates.get(orderId);
+        const changes = [];
+
+        state.pending.forEach((change, productId) => {
+            const original = state.original.items.find(item => item.productId === productId);
+
+            if (change.action === 'remove') {
+                changes.push(`• Премахнат: ${original.productName}`);
+            } else {
+                changes.push(`• ${original.productName}: ${change.originalQuantity} → ${change.quantity} бр.`);
+            }
+        });
+
+        return changes.join('\n');
     }
 
     // ==========================================

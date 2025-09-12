@@ -286,6 +286,52 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
         return getTotalValueByStatusFast(status.name());
     }
 
+    /**
+     * Намира поръчки по статус и дата на потвърждение
+     */
+    @Query(value = """
+    SELECT DISTINCT o FROM Order o 
+    LEFT JOIN FETCH o.client 
+    LEFT JOIN FETCH o.items oi 
+    LEFT JOIN FETCH oi.product 
+    WHERE o.status = :status 
+    AND o.confirmedAt >= :startDate 
+    AND o.confirmedAt <= :endDate 
+    ORDER BY o.confirmedAt DESC
+    """)
+    @QueryHints({
+            @QueryHint(name = "org.hibernate.readOnly", value = "true"),
+            @QueryHint(name = "org.hibernate.fetchSize", value = "100")
+    })
+    @Transactional(readOnly = true)
+    List<Order> findByStatusAndConfirmedAtBetween(
+            @Param("status") OrderStatus status,
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate
+    );
+
+    /**
+     * Намира поръчки по дата на създаване (submittedAt)
+     */
+    @Query(value = """
+    SELECT DISTINCT o FROM Order o 
+    LEFT JOIN FETCH o.client 
+    LEFT JOIN FETCH o.items oi 
+    LEFT JOIN FETCH oi.product 
+    WHERE o.submittedAt >= :startDate 
+    AND o.submittedAt <= :endDate 
+    ORDER BY o.submittedAt DESC
+    """)
+    @QueryHints({
+            @QueryHint(name = "org.hibernate.readOnly", value = "true"),
+            @QueryHint(name = "org.hibernate.fetchSize", value = "100")
+    })
+    @Transactional(readOnly = true)
+    List<Order> findBySubmittedAtBetween(
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate
+    );
+
     // ==========================================
     // UTILITY METHODS WITH DEFAULT IMPLEMENTATIONS
     // ==========================================
