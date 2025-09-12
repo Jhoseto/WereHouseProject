@@ -69,7 +69,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             status,
             COUNT(*) as count
         FROM orders 
-        WHERE status IN ('PENDING', 'CONFIRMED', 'CANCELLED')
+        WHERE status IN ('PENDING', 'URGENT', 'CONFIRMED', 'CANCELLED')
         GROUP BY status
         """, nativeQuery = true)
     @Cacheable(value = "allOrderCounts", unless = "#result == null")
@@ -327,20 +327,10 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
                 .collect(java.util.stream.Collectors.toList());
     }
 
-    // ==========================================
-    // UPDATE OPERATIONS OPTIMIZED
-    // ==========================================
-
-    /**
-     * Бърза status update без full object loading
-     */
-    @Modifying
-    @Query(value = "UPDATE orders SET status = :newStatus, confirmed_at = :confirmedAt WHERE id = :orderId",
-            nativeQuery = true)
-    @Transactional
-    int updateOrderStatusFast(@Param("orderId") Long orderId,
-                              @Param("newStatus") String newStatus,
-                              @Param("confirmedAt") LocalDateTime confirmedAt);
-
+    @Query("SELECT o FROM Order o WHERE o.status = :status AND o.submittedAt < :cutoffTime")
+    List<Order> findByStatusAndSubmittedAtBefore(
+            @Param("status") OrderStatus status,
+            @Param("cutoffTime") LocalDateTime cutoffTime
+    );
 
 }

@@ -50,18 +50,21 @@
                 <div class="order-status-wrapper">
                     <span class="status-badge"
                           th:classappend="'status-' + ${order.status.name().toLowerCase()}"
-                          th:title="${order.status.name() == 'SUBMITTED' ? 'Изчакваща обработка' :
+                          th:title="${order.status.name() == 'URGENT' ? 'Спешна поръчка' :
+                                   (order.status.name() == 'PENDING' ? 'Изчакваща обработка' :
                                    (order.status.name() == 'CONFIRMED' ? 'Потвърдена от екипа' :
                                    (order.status.name() == 'SHIPPED' ? 'Изпратена за доставка' :
-                                   (order.status.name() == 'CANCELLED' ? 'Поръчката е отменена' : order.status.name())))}">
-                        <i th:class="${order.status.name() == 'SUBMITTED' ? 'bi bi-clock' :
+                                   (order.status.name() == 'CANCELLED' ? 'Поръчката е отменена' : order.status.name()))))}">
+                        <i th:class="${order.status.name() == 'URGENT' ? 'bi bi-exclamation-triangle' :
+                                    (order.status.name() == 'PENDING' ? 'bi bi-clock' :
                                     (order.status.name() == 'CONFIRMED' ? 'bi bi-check-circle' :
                                     (order.status.name() == 'SHIPPED' ? 'bi bi-truck' :
-                                    (order.status.name() == 'CANCELLED' ? 'bi bi-x-circle' : 'bi bi-question-circle')))}"></i>
-                        <span th:text="${order.status.name() == 'SUBMITTED' ? 'Изчакваща' :
+                                    (order.status.name() == 'CANCELLED' ? 'bi bi-x-circle' : 'bi bi-question-circle'))))}"></i>
+                        <span th:text="${order.status.name() == 'URGENT' ? 'Спешна' :
+                                     (order.status.name() == 'PENDING' ? 'Изчакваща' :
                                      (order.status.name() == 'CONFIRMED' ? 'Потвърдена' :
                                      (order.status.name() == 'SHIPPED' ? 'Изпратена' :
-                                     (order.status.name() == 'CANCELLED' ? 'Отменена' : order.status.name())))}">Подадена</span>
+                                     (order.status.name() == 'CANCELLED' ? 'Отменена' : order.status.name()))))}">Подадена</span>
                     </span>
                 </div>
             </div>

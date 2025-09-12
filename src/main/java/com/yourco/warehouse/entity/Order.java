@@ -27,6 +27,12 @@ public class Order {
     private LocalDateTime submittedAt;
     private LocalDateTime confirmedAt;
 
+    @Column(name = "has_modifications")
+    private Boolean hasModifications = false;
+
+    @Column(name = "modification_note")
+    private String modificationNote;
+
     @Column(nullable=false)
     private BigDecimal totalNet = BigDecimal.ZERO;
     @Column(nullable=false)
@@ -51,6 +57,27 @@ public class Order {
     public void setNotes(String notes) { this.notes = notes; }
     public LocalDateTime getSubmittedAt() { return submittedAt; }
     public void setSubmittedAt(LocalDateTime submittedAt) { this.submittedAt = submittedAt; }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Boolean getHasModifications() {
+        return hasModifications;
+    }
+
+    public void setHasModifications(Boolean hasModifications) {
+        this.hasModifications = hasModifications;
+    }
+
+    public String getModificationNote() {
+        return modificationNote;
+    }
+
+    public void setModificationNote(String modificationNote) {
+        this.modificationNote = modificationNote;
+    }
+
     public LocalDateTime getConfirmedAt() { return confirmedAt; }
     public void setConfirmedAt(LocalDateTime confirmedAt) { this.confirmedAt = confirmedAt; }
     public BigDecimal getTotalNet() { return totalNet; }

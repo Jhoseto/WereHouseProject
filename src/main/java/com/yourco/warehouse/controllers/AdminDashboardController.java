@@ -1,6 +1,7 @@
 package com.yourco.warehouse.controllers;
 
 import com.yourco.warehouse.dto.DashboardDTO;
+import com.yourco.warehouse.entity.Order;
 import com.yourco.warehouse.entity.enums.OrderStatus;
 import com.yourco.warehouse.service.DashboardService;
 import com.yourco.warehouse.service.DashboardBroadcastService;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * ADMIN DASHBOARD CONTROLLER - COMPLETE DASHBOARD MANAGEMENT WITH WEBSOCKET
@@ -305,6 +307,13 @@ public class AdminDashboardController {
             String operatorNote = (String) request.get("operatorNote");
             log.info("Approving order {} with operator note: {}", orderId, operatorNote);
 
+            Optional<Order> orderOpt = orderRepository.findById(orderId);
+            if (orderOpt.isEmpty()) {
+                return ResponseEntity.badRequest()
+                        .body(new DashboardDTO("Поръчката не е намерена"));
+            }
+            String originalStatus = orderOpt.get().getStatus().name();
+
             DashboardDTO response = dashboardService.approveOrderWithCorrections(orderId, operatorNote);
 
             if (response.getSuccess()) {
@@ -315,11 +324,10 @@ public class AdminDashboardController {
                 orderData.put("hasCorrections", response.getMessage().contains("корекции"));
 
                 broadcastService.broadcastOrderStatusChange(
-                        orderId, "CONFIRMED", "PENDING", orderData);
+                        orderId, "CONFIRMED", originalStatus, orderData);
 
                 // Trigger automatic counter update broadcast
-                this.getCounters(); // Този call автоматично ще broadcast-не новите counters
-
+                this.getCounters();
                 log.info("Order {} approved and status change broadcasted", orderId);
                 return ResponseEntity.ok(response);
             } else {
@@ -350,6 +358,13 @@ public class AdminDashboardController {
             String rejectionReason = (String) request.get("rejectionReason");
             log.info("Rejecting order {} with reason: {}", orderId, rejectionReason);
 
+            Optional<Order> orderOpt = orderRepository.findById(orderId);
+            if (orderOpt.isEmpty()) {
+                return ResponseEntity.badRequest()
+                        .body(new DashboardDTO("Поръчката не е намерена"));
+            }
+            String originalStatus = orderOpt.get().getStatus().name();
+
             DashboardDTO response = dashboardService.rejectOrderWithNotification(orderId, rejectionReason);
 
             if (response.getSuccess()) {
@@ -359,12 +374,11 @@ public class AdminDashboardController {
                 orderData.put("rejectionReason", rejectionReason);
 
                 broadcastService.broadcastOrderStatusChange(
-                        orderId, "CANCELLED", "PENDING", orderData);
+                        orderId, "CANCELLED", originalStatus, orderData);
 
-                // Trigger automatic counter update
                 this.getCounters();
-
                 log.info("Order {} rejected and status change broadcasted", orderId);
+
                 return ResponseEntity.ok(response);
             } else {
                 log.warn("Order rejection failed for order {}: {}", orderId, response.getMessage());

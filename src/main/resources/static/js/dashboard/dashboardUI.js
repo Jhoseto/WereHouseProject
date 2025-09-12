@@ -4,6 +4,9 @@
  * Handles all visual updates and user interactions
  * Manages DOM manipulation, animations, and modal dialogs
  * Provides clean interface for UI state management
+ *
+ * REFACTORED VERSION - All HTTP requests moved to DashboardApi
+ * Fixed status mapping issues and architectural concerns
  */
 
 class DashboardUI {
@@ -19,6 +22,15 @@ class DashboardUI {
 
         // Animation and transition settings
         this.animationDuration = 300;
+
+        // Status to tab mapping - CORRECTED MAPPING
+        this.statusToTabMapping = {
+            'urgent': 'urgent',
+            'pending': 'warning',
+            'confirmed': 'info',    // FIXED: was 'ready'
+            'cancelled': 'danger',  // ADDED: was missing
+            'activity': 'success'
+        };
 
         console.log('DashboardUI initialized');
     }
@@ -60,11 +72,14 @@ class DashboardUI {
             pendingCount: document.getElementById('pending-count'),
             readyCount: document.getElementById('ready-count'),
             completedCount: document.getElementById('completed-count'),
+            cancelledCount: document.getElementById('cancelled-count'), // ADDED
 
             // Badge elements
             urgentBadge: document.getElementById('urgent-badge'),
             pendingBadge: document.getElementById('pending-badge'),
             readyBadge: document.getElementById('ready-badge'),
+            confirmedBadge: document.getElementById('confirmed-badge'), // ADDED
+            cancelledBadge: document.getElementById('cancelled-badge'), // ADDED
 
             // Tab navigation
             tabButtons: document.querySelectorAll('.tab-btn'),
@@ -97,14 +112,15 @@ class DashboardUI {
             });
         });
 
-        // Status item clicks (top bar navigation)
+        // Status item clicks (top bar navigation) - FIXED MAPPING
         this.elements.statusItems.forEach(item => {
             item.addEventListener('click', (e) => {
                 e.preventDefault();
                 const tabMap = {
                     'urgent': 'urgent',
                     'warning': 'pending',
-                    'info': 'ready',
+                    'info': 'confirmed',    // FIXED: was 'ready'
+                    'danger': 'cancelled',  // ADDED: was missing
                     'success': 'activity'
                 };
 
@@ -139,10 +155,13 @@ class DashboardUI {
             this.animateCounter(this.elements.pendingCount, data.pendingCount);
             this.animateCounter(this.elements.readyCount, data.readyCount);
             this.animateCounter(this.elements.completedCount, data.completedCount);
+            this.animateCounter(this.elements.cancelledCount, data.cancelledCount); // ADDED
 
             this.updateBadge(this.elements.urgentBadge, data.urgentCount);
             this.updateBadge(this.elements.pendingBadge, data.pendingCount);
             this.updateBadge(this.elements.readyBadge, data.readyCount);
+            this.updateBadge(this.elements.confirmedBadge, data.completedCount); // ADDED
+            this.updateBadge(this.elements.cancelledBadge, data.cancelledCount); // ADDED
 
             console.log('✓ Counters updated');
 
@@ -246,14 +265,8 @@ class DashboardUI {
             item.style.background = '';
         });
 
-        const statusMap = {
-            'urgent': 'urgent',
-            'pending': 'warning',
-            'ready': 'info',
-            'activity': 'success'
-        };
-
-        const statusClass = statusMap[tabName];
+        // FIXED: Use the corrected mapping
+        const statusClass = this.statusToTabMapping[tabName];
         if (statusClass) {
             const statusItem = document.querySelector(`.status-item.${statusClass}`);
             if (statusItem) {
@@ -261,6 +274,7 @@ class DashboardUI {
                     'urgent': 'rgba(231, 76, 60, 0.1)',
                     'warning': 'rgba(243, 156, 18, 0.1)',
                     'info': 'rgba(52, 152, 219, 0.1)',
+                    'danger': 'rgba(220, 53, 69, 0.1)',  // ADDED for cancelled
                     'success': 'rgba(39, 174, 96, 0.1)'
                 };
                 statusItem.style.background = colors[statusClass] || '';
@@ -365,43 +379,16 @@ class DashboardUI {
         }
     }
 
-
     // ==========================================
     // COMPATIBILITY METHODS FOR DASHBOARD MANAGER
     // ==========================================
 
     /**
      * Alias method for backward compatibility with DashboardManager
-     * DashboardManager expects this method name but DashboardUI implements updateTabContent
      */
     updateOrdersList(tabName, orders) {
         console.log(`updateOrdersList called for tab: ${tabName} with ${orders?.length || 0} orders`);
         return this.updateTabContent(tabName, orders);
-    }
-
-    /**
-     * Alternative method signature for different calling patterns
-     */
-    renderOrdersList(orders, tabName = 'urgent') {
-        console.log(`renderOrdersList called with ${orders?.length || 0} orders for tab: ${tabName}`);
-        return this.updateTabContent(tabName, orders);
-    }
-
-    /**
-     * Enhanced method with additional validation and error handling
-     */
-    displayOrdersInTab(tabName, orders) {
-        try {
-            if (!Array.isArray(orders)) {
-                console.warn(`Expected orders array for tab ${tabName}, got:`, typeof orders);
-                orders = [];
-            }
-
-            return this.updateTabContent(tabName, orders);
-        } catch (error) {
-            console.error(`Error displaying orders in tab ${tabName}:`, error);
-            return false;
-        }
     }
 
     generateOrderActions(order, tabContext) {
@@ -415,9 +402,10 @@ class DashboardUI {
             'pending': `<button class="order-action action-pick" onclick="startPicking(${order.id})">
                         <i class="bi bi-box-seam"></i> Пикинг
                         </button>`,
-            'ready': `<button class="order-action action-ship" onclick="shipOrder(${order.id})">
-                       <i class="bi bi-truck"></i> Изпрати
-                      </button>`,
+            'confirmed': `<button class="order-action action-ship" onclick="shipOrder(${order.id})">
+                         <i class="bi bi-truck"></i> Изпрати
+                        </button>`,
+            'cancelled': '',
             'activity': ''
         };
 
@@ -459,7 +447,7 @@ class DashboardUI {
     }
 
     /**
-     * Expand order with smooth animation - INTEGRATED FUNCTIONALITY
+     * Expand order with smooth animation
      */
     expandOrder(orderId) {
         try {
@@ -489,7 +477,7 @@ class DashboardUI {
     }
 
     /**
-     * Collapse order - INTEGRATED FUNCTIONALITY
+     * Collapse order
      */
     collapseOrder(orderId) {
         try {
@@ -508,20 +496,22 @@ class DashboardUI {
         }
     }
 
+    /**
+     * Load order items via API - REFACTORED TO USE API
+     */
     async loadOrderItems(orderId) {
         const productList = document.getElementById(`product-list-${orderId}`);
 
         try {
-            const response = await fetch(`/employer/dashboard/order/${orderId}/details`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                    [window.dashboardConfig?.csrfHeader || 'X-CSRF-TOKEN']: window.dashboardConfig?.csrfToken || ''
-                }
-            });
+            // Check if API is available
+            if (!this.manager || !this.manager.api) {
+                console.error('API not available for loading order items');
+                productList.innerHTML = '<div class="error-message">API не е достъпно</div>';
+                return;
+            }
 
-            const result = await response.json();
+            // Use API instead of direct fetch
+            const result = await this.manager.api.getOrderDetailsWithItems(orderId);
 
             if (result.success && result.data) {
                 const order = result.data;
@@ -591,11 +581,11 @@ class DashboardUI {
     }
 
     // ==========================================
-    // PRODUCT OPERATIONS - INTEGRATED WITH VISUAL FEEDBACK
+    // PRODUCT OPERATIONS - REFACTORED TO USE API
     // ==========================================
 
     /**
-     * Update product quantity with visual feedback - INTEGRATED FUNCTIONALITY
+     * Update product quantity with visual feedback - USES API
      */
     async updateProductQuantity(orderId, productId, quantity) {
         try {
@@ -622,7 +612,7 @@ class DashboardUI {
     }
 
     /**
-     * Approve product with visual feedback - INTEGRATED FUNCTIONALITY
+     * Approve product with visual feedback - USES API
      */
     async approveProduct(orderId, productId) {
         try {
@@ -646,21 +636,21 @@ class DashboardUI {
     }
 
     /**
-     * Reject product with modal - INTEGRATED WITH HTML MODAL
+     * Reject product with modal
      */
     rejectProduct(orderId, productId) {
         this.showRejectionModal(orderId, productId);
     }
 
     /**
-     * Reject entire order - INTEGRATED FUNCTIONALITY
+     * Reject entire order
      */
     rejectEntireOrder(orderId) {
         this.showRejectionModal(orderId, null);
     }
 
     /**
-     * Highlight quantity update with visual feedback - INTEGRATED FUNCTIONALITY
+     * Highlight quantity update with visual feedback
      */
     highlightQuantityUpdate(orderId, productId, quantity) {
         try {
@@ -678,7 +668,7 @@ class DashboardUI {
     }
 
     /**
-     * Revert quantity update on error - INTEGRATED FUNCTIONALITY
+     * Revert quantity update on error
      */
     revertQuantityUpdate(orderId, productId) {
         try {
@@ -696,7 +686,7 @@ class DashboardUI {
     }
 
     /**
-     * Mark product as approved - INTEGRATED VISUAL FEEDBACK
+     * Mark product as approved - VISUAL FEEDBACK
      */
     markProductApproved(orderId, productId) {
         try {
@@ -727,7 +717,7 @@ class DashboardUI {
     }
 
     /**
-     * Mark product as rejected - INTEGRATED VISUAL FEEDBACK
+     * Mark product as rejected - VISUAL FEEDBACK
      */
     markProductRejected(orderId, productId, reason) {
         try {
@@ -764,7 +754,7 @@ class DashboardUI {
     }
 
     /**
-     * Find product item in DOM - HELPER FOR INTEGRATED FUNCTIONALITY
+     * Find product item in DOM
      */
     findProductItem(orderId, productId) {
         const productList = document.getElementById(`product-list-${orderId}`);
@@ -815,6 +805,9 @@ class DashboardUI {
         });
     }
 
+    /**
+     * Save order changes - REFACTORED TO USE API
+     */
     async saveOrderChanges(orderId) {
         const productList = document.getElementById(`product-list-${orderId}`);
         const items = productList.querySelectorAll('.product-item');
@@ -847,17 +840,13 @@ class DashboardUI {
                 window.LoaderManager.show('Запазване на промените...');
             }
 
-            const response = await fetch(`/employer/dashboard/order/${orderId}/update-items`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                    [window.dashboardConfig?.csrfHeader || 'X-CSRF-TOKEN']: window.dashboardConfig?.csrfToken || ''
-                },
-                body: JSON.stringify({ changes: changes })
-            });
+            // Check if API is available
+            if (!this.manager || !this.manager.api) {
+                throw new Error('API не е достъпно');
+            }
 
-            const result = await response.json();
+            // Use API instead of direct fetch
+            const result = await this.manager.api.saveOrderItemChanges(orderId, changes);
 
             if (result.success) {
                 const saveButton = document.querySelector(`#order-details-${orderId} .action-save`);
@@ -897,7 +886,7 @@ class DashboardUI {
     // ==========================================
 
     /**
-     * Show rejection modal - INTEGRATED WITH HTML MODAL
+     * Show rejection modal
      */
     showRejectionModal(orderId, productId) {
         try {
@@ -915,7 +904,7 @@ class DashboardUI {
     }
 
     /**
-     * Close rejection modal - INTEGRATED WITH HTML MODAL
+     * Close rejection modal
      */
     closeRejectionModal() {
         try {
@@ -932,7 +921,7 @@ class DashboardUI {
     }
 
     /**
-     * Reset rejection modal - INTEGRATED WITH HTML MODAL
+     * Reset rejection modal
      */
     resetRejectionModal() {
         document.querySelectorAll('.reason-option').forEach(option => {
@@ -945,7 +934,7 @@ class DashboardUI {
     }
 
     /**
-     * Confirm rejection with reason - INTEGRATED FUNCTIONALITY
+     * Confirm rejection with reason - USES API
      */
     async confirmRejection() {
         if (!this.rejectionContext) return;
@@ -997,11 +986,11 @@ class DashboardUI {
     }
 
     // ==========================================
-    // UTILITY METHODS - INTEGRATED FUNCTIONALITY
+    // UTILITY METHODS
     // ==========================================
 
     /**
-     * Format order time for display - INTEGRATED FUNCTIONALITY
+     * Format order time for display
      */
     formatOrderTime(submittedAt) {
         try {
@@ -1024,7 +1013,7 @@ class DashboardUI {
     }
 
     /**
-     * Get order priority based on age and urgency - INTEGRATED FUNCTIONALITY
+     * Get order priority based on age and urgency
      */
     getOrderPriority(order) {
         try {
@@ -1061,7 +1050,7 @@ class DashboardUI {
                         break;
                     case '3':
                         e.preventDefault();
-                        if (this.manager) this.manager.switchTab('ready');
+                        if (this.manager) this.manager.switchTab('confirmed');  // FIXED
                         break;
                     case '4':
                         e.preventDefault();
@@ -1098,7 +1087,7 @@ class DashboardUI {
             const diff = touchStartX - touchEndX;
 
             if (Math.abs(diff) > 50 && this.manager) {
-                const tabs = ['urgent', 'pending', 'ready', 'activity', 'manage'];
+                const tabs = ['urgent', 'pending', 'confirmed', 'cancelled', 'activity', 'manage'];  // UPDATED
                 const currentIndex = tabs.indexOf(this.manager.currentTab);
 
                 if (diff > 0 && currentIndex < tabs.length - 1) {
@@ -1142,6 +1131,20 @@ class DashboardUI {
         } catch (error) {
             console.error('Error updating activity feed:', error);
         }
+    }
+
+    // ==========================================
+    // LOADING AND ERROR STATES
+    // ==========================================
+
+    showLoadingIndicator(show) {
+        // Implement loading indicator logic if needed
+        console.log(`Loading indicator: ${show ? 'shown' : 'hidden'}`);
+    }
+
+    updateConnectionStatus(connected) {
+        // Update connection indicator if needed
+        console.log(`Connection status: ${connected ? 'connected' : 'disconnected'}`);
     }
 }
 

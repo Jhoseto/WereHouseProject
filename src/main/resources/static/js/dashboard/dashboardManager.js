@@ -179,11 +179,11 @@ class DashboardManager {
      */
     async loadTabData(tabName) {
         const statusMap = {
-            'urgent': 'PENDING',   // всички необработени поръчки
-            'pending': 'PENDING',  // същите като urgent, но UI може да ги филтрира допълнително
-            'completed': 'SHIPPED',  // доставени поръчки
-            'cancelled': 'CANCELLED',// отменени поръчки
-            'activity': null          // специален случай
+            'urgent': 'URGENT',
+            'pending': 'PENDING',
+            'confirmed': 'CONFIRMED',
+            'cancelled': 'CANCELLED',
+            'activity': null
         };
 
         try {
@@ -294,10 +294,10 @@ class DashboardManager {
 
             if (newStatus) {
                 const tabMap = {
+                    'URGENT': 'urgent',
                     'PENDING': 'pending',
-                    'CONFIRMED': 'confimed',
-                    'PICKED': 'ready',
-                    'SHIPPED': 'completed'
+                    'CONFIRMED': 'confirmed',
+                    'CANCELLED': 'cancelled'
                 };
                 if (newStatus in tabMap) {
                     this.addOrderToTab(orderId, newStatus, orderData);
@@ -321,10 +321,10 @@ class DashboardManager {
 
             const { orderId, orderData } = data;
             const tabMap = {
-                'PENDING': 'urgent',
-                'CONFIRMED': 'pending',
-                'PICKED': 'ready',
-                'SHIPPED': 'completed'
+                'URGENT': 'urgent',
+                'PENDING': 'pending',
+                'CONFIRMED': 'confirmed',
+                'CANCELLED': 'cancelled'
             };
 
             if (orderData.status in tabMap) {
@@ -690,10 +690,10 @@ class DashboardManager {
      */
     removeOrderFromTab(orderId, status) {
         const tabMap = {
-            'PENDING': 'urgent',
-            'CONFIRMED': 'pending',
-            'PICKED': 'ready',
-            'SHIPPED': 'completed'
+            'URGENT': 'urgent',
+            'PENDING': 'pending',
+            'CONFIRMED': 'confirmed',
+            'CANCELLED': 'cancelled'
         };
 
         const tabName = tabMap[status];
@@ -713,10 +713,10 @@ class DashboardManager {
      */
     addOrderToTab(orderId, status, orderData) {
         const tabMap = {
-            'PENDING': 'urgent',
-            'CONFIRMED': 'pending',
-            'PICKED': 'ready',
-            'SHIPPED': 'completed'
+            'URGENT': 'urgent',
+            'PENDING': 'pending',
+            'CONFIRMED': 'confirmed',
+            'CANCELLED': 'cancelled'
         };
 
         const tabName = tabMap[status];
@@ -758,9 +758,11 @@ class DashboardManager {
 
     showOrderUpdateNotification(orderId, newStatus) {
         const statusMap = {
-            'CONFIRMED': 'потвърдена',
-            'SHIPPED': 'изпратена',
-            'CANCELLED': 'отказана'
+            'urgent': 'URGENT',
+            'pending': 'PENDING',
+            'confirmed': 'CONFIRMED',  // ← Това е ключово!
+            'cancelled': 'CANCELLED',
+            'activity': null
         };
 
         const statusText = statusMap[newStatus] || 'обновена';

@@ -41,20 +41,20 @@
     <!-- Compact status overview -->
     <div class="status-bar">
         <div class="status-item urgent" onclick="switchTab('urgent')">
-            <div class="status-number" id="urgent-count" th:text="${urgentCount ?: 0}">0</div>
-            <div class="status-text">Спешни/Приоритетни поръчки</div>
+            <div class="status-number" id="urgent-count">0</div>
+            <div class="status-text">Спешни поръчки</div>
         </div>
         <div class="status-item warning" onclick="switchTab('pending')">
-            <div class="status-number" id="pending-count" th:text="${pendingCount ?: 0}">0</div>
-            <div class="status-text">Чакащи одобрение поръчки</div>
+            <div class="status-number" id="pending-count">0</div>
+            <div class="status-text">Чакащи обработка</div>
         </div>
-        <div class="status-item success" onclick="switchTab('stats')">
-            <div class="status-number" id="completed-count" th:text="${confirmedCount ?: 0}">0</div>
-            <div class="status-text">Одобрени поръчки</div>
+        <div class="status-item info" onclick="switchTab('confirmed')">
+            <div class="status-number" id="completed-count">0</div>
+            <div class="status-text">Обработени поръчки</div>
         </div>
-        <div class="status-item success" onclick="switchTab('stats')">
-            <div class="status-number" id="canceled-count" th:text="${canceledCount ?: 0}">0</div>
-            <div class="status-text">Одобрени поръчки</div>
+        <div class="status-item danger" onclick="switchTab('cancelled')">
+            <div class="status-number" id="cancelled-count">0</div>
+            <div class="status-text">Отказани поръчки</div>
         </div>
     </div>
 </header>
@@ -103,15 +103,31 @@
         </div>
     </div>
 
-    <!-- Ready Orders Tab -->
-    <div class="tab-content" id="ready-tab">
+    <!-- Confirmed Orders Tab -->
+    <div class="tab-content" id="confirmed-tab">
         <div class="panel">
             <div class="panel-header">
-                <div class="panel-title">Обработени</div>
-                <div class="panel-badge" id="ready-badge" th:text="${confirmedCount ?: 0}">0</div>
+                <div class="panel-title">Обработени поръчки</div>
+                <div class="panel-badge" id="confirmed-badge">0</div>
             </div>
             <div class="panel-content">
-                <!-- Ready orders content -->
+                <div id="confirmed-orders-container">
+                    <!-- JavaScript ще зареди поръчките тук -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-content" id="cancelled-tab">
+        <div class="panel">
+            <div class="panel-header">
+                <div class="panel-title">Отказани поръчки</div>
+                <div class="panel-badge" id="cancelled-badge">0</div>
+            </div>
+            <div class="panel-content">
+                <div id="cancelled-orders-container">
+                    <!-- JavaScript ще зареди поръчките тук -->
+                </div>
             </div>
         </div>
     </div>

@@ -19,8 +19,8 @@ class DashboardApi {
         this.wsUrl = this.getWebSocketUrl();
 
         // HTTP client settings
-        this.csrfToken = window.csrfToken || '';
-        this.csrfHeader = window.csrfHeader || 'X-CSRF-TOKEN';
+        this.csrfToken = window.dashboardConfig?.csrfToken || window.csrfToken || '';
+        this.csrfHeader = window.dashboardConfig?.csrfHeader || window.csrfHeader || 'X-CSRF-TOKEN';
 
         // WebSocket connection management
         this.ws = null;
@@ -96,7 +96,6 @@ class DashboardApi {
             }
 
             // Създаване на SockJS connection към правилния endpoint
-            // SockJS автоматично добавя необходимите path suffixes за transport negotiation
             const sockJSUrl = this.wsUrl.replace('ws://', 'http://').replace('wss://', 'https://');
             this.sockjs = new SockJS(sockJSUrl);
 
@@ -125,11 +124,10 @@ class DashboardApi {
         };
 
         // Heartbeat configuration за connection health monitoring
-        // Изпраща heartbeat на всеки 10 секунди, очаква от сървъра на всеки 10 секунди
         this.stompClient.heartbeat.outgoing = 10000;
         this.stompClient.heartbeat.incoming = 10000;
 
-        // Connection timeout - ако не се свърже в 15 секунди, счита се за неуспешна
+        // Connection timeout
         this.stompClient.connectionTimeout = 15000;
 
         console.log('✓ STOMP client configured for dashboard communication');
@@ -142,14 +140,8 @@ class DashboardApi {
         return new Promise((resolve, reject) => {
             console.log('Establishing STOMP connection over SockJS...');
 
-            // STOMP connection headers - може да включват authentication info
-            const connectHeaders = {
-                // Може да добавите authentication headers тук ако е необходимо
-                // 'Authorization': 'Bearer ' + token,
-                // 'X-CSRF-TOKEN': this.csrfToken
-            };
+            const connectHeaders = {};
 
-            // Success callback - извиква се при успешна връзка
             const onConnect = (frame) => {
                 console.log('✓ STOMP connected successfully');
                 console.log('STOMP Server Info:', frame.headers);
@@ -157,10 +149,8 @@ class DashboardApi {
                 this.wsConnected = true;
                 this.wsReconnectAttempts = 0;
 
-                // Subscribe to dashboard channels след успешна връзка
                 this.subscribeToChannels();
 
-                // Notify connection status callbacks
                 if (this.onConnectionStatus) {
                     this.onConnectionStatus(true);
                 }
@@ -168,27 +158,22 @@ class DashboardApi {
                 resolve();
             };
 
-            // Error callback - извиква се при connection failure
             const onError = (error) => {
                 console.error('STOMP connection failed:', error);
                 this.wsConnected = false;
 
-                // Notify connection status callbacks
                 if (this.onConnectionStatus) {
                     this.onConnectionStatus(false);
                 }
 
-                // Schedule reconnection attempt
                 if (this.wsReconnectAttempts < this.maxReconnectAttempts) {
                     this.scheduleReconnect();
-                    // Don't reject immediately - let reconnection logic handle it
-                    resolve(); // Resolve but with failed state
+                    resolve();
                 } else {
                     reject(error);
                 }
             };
 
-            // SockJS connection event handlers
             this.sockjs.onclose = (event) => {
                 console.log('SockJS connection closed:', event.code, event.reason);
                 this.wsConnected = false;
@@ -197,13 +182,11 @@ class DashboardApi {
                     this.onConnectionStatus(false);
                 }
 
-                // Auto-reconnect unless it's an intentional disconnect
                 if (event.code !== 1000 && this.wsReconnectAttempts < this.maxReconnectAttempts) {
                     this.scheduleReconnect();
                 }
             };
 
-            // Initiate STOMP connection
             this.stompClient.connect(connectHeaders, onConnect, onError);
         });
     }
@@ -267,7 +250,6 @@ class DashboardApi {
                 const data = JSON.parse(message.body);
                 console.warn('Received urgent alert:', data.alertType, data.alertMessage);
 
-                // Urgent alerts might need special handling
                 if (window.toastManager) {
                     window.toastManager.error(data.alertMessage, data.alertType);
                 }
@@ -378,7 +360,7 @@ class DashboardApi {
     // ==========================================
 
     /**
-     * Get detailed order data with all items
+     * Get detailed order data with all items - ОСНОВЕН МЕТОД ЗА ORDER DETAILS
      */
     async getOrderDetails(orderId) {
         const cacheKey = `orderDetails_${orderId}`;
@@ -398,6 +380,14 @@ class DashboardApi {
             console.error(`Error fetching order details for ${orderId}:`, error);
             throw error;
         }
+    }
+
+    /**
+     * Get order details with all items for expanded view - АЛИАС МЕТОД
+     * Това е същият като getOrderDetails но с по-описателно име
+     */
+    async getOrderDetailsWithItems(orderId) {
+        return await this.getOrderDetails(orderId);
     }
 
     /**
@@ -421,6 +411,95 @@ class DashboardApi {
 
         } catch (error) {
             console.error(`Error updating quantity for product ${productId} in order ${orderId}:`, error);
+            throw error;
+        }
+    }
+
+    /**
+     * Save order item changes - НУЖЕН МЕТОД ЗА UI
+     */
+    async saveOrderItemChanges(orderId, changes) {
+        try {
+            const requestData = { changes: changes };
+            const response = await this.makeRequest('POST', `/order/${orderId}/update-items`, requestData);
+            const data = await response.json();
+
+            this.clearOrderCache(orderId);
+            return data;
+        } catch (error) {
+            console.error(`Error saving changes for order ${orderId}:`, error);
+            throw error;
+        }
+    }
+
+    /**
+     * Approve single product - НУЖЕН МЕТОД ЗА UI
+     */
+    async approveProduct(orderId, productId) {
+        try {
+            const requestData = {
+                orderId: orderId,
+                productId: productId,
+                action: 'approve'
+            };
+
+            const response = await this.makeRequest('POST', `/order/${orderId}/product/${productId}/approve`, requestData);
+            const data = await response.json();
+
+            this.clearOrderCache(orderId);
+            return data;
+
+        } catch (error) {
+            console.error(`Error approving product ${productId} in order ${orderId}:`, error);
+            throw error;
+        }
+    }
+
+    /**
+     * Reject single product - НУЖЕН МЕТОД ЗА UI
+     */
+    async rejectProduct(orderId, productId, reason) {
+        try {
+            const requestData = {
+                orderId: orderId,
+                productId: productId,
+                rejectionReason: reason,
+                action: 'reject'
+            };
+
+            const response = await this.makeRequest('POST', `/order/${orderId}/product/${productId}/reject`, requestData);
+            const data = await response.json();
+
+            this.clearOrderCache(orderId);
+            return data;
+
+        } catch (error) {
+            console.error(`Error rejecting product ${productId} in order ${orderId}:`, error);
+            throw error;
+        }
+    }
+
+    /**
+     * Cancel entire order - НУЖЕН МЕТОД ЗА UI
+     */
+    async cancelOrder(orderId, reason) {
+        try {
+            const requestData = {
+                orderId: orderId,
+                rejectionReason: reason,
+                action: 'cancel'
+            };
+
+            const response = await this.makeRequest('POST', `/order/${orderId}/cancel`, requestData);
+            const data = await response.json();
+
+            this.clearOrderCache(orderId);
+            this.clearCache(); // Clear all cache since counters will change
+
+            return data;
+
+        } catch (error) {
+            console.error(`Error canceling order ${orderId}:`, error);
             throw error;
         }
     }
@@ -493,9 +572,7 @@ class DashboardApi {
     async approveOrder(orderId, operatorNote = '') {
         try {
             const requestData = {
-                orderId: orderId,
-                operatorNote: operatorNote,
-                action: 'approve'
+                operatorNote: operatorNote
             };
 
             const response = await this.makeRequest('POST', `/order/${orderId}/approve`, requestData);
@@ -518,9 +595,7 @@ class DashboardApi {
     async rejectOrder(orderId, rejectionReason) {
         try {
             const requestData = {
-                orderId: orderId,
-                rejectionReason: rejectionReason,
-                action: 'reject'
+                rejectionReason: rejectionReason
             };
 
             const response = await this.makeRequest('POST', `/order/${orderId}/reject`, requestData);
@@ -582,6 +657,7 @@ class DashboardApi {
             method: method,
             headers: {
                 'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
                 [this.csrfHeader]: this.csrfToken
             }
         };
@@ -650,9 +726,20 @@ class DashboardApi {
      * Cleanup connections and resources
      */
     destroy() {
-        if (this.ws) {
-            this.ws.close(1000, 'Dashboard closing');
-            this.ws = null;
+        if (this.stompClient && this.wsConnected) {
+            // Unsubscribe from all channels
+            if (this.counterSubscription) this.counterSubscription.unsubscribe();
+            if (this.orderSubscription) this.orderSubscription.unsubscribe();
+            if (this.alertSubscription) this.alertSubscription.unsubscribe();
+
+            // Disconnect STOMP
+            this.stompClient.disconnect(() => {
+                console.log('STOMP client disconnected');
+            });
+        }
+
+        if (this.sockjs) {
+            this.sockjs.close();
         }
 
         this.clearCache();

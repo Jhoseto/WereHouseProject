@@ -15,9 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -78,7 +76,7 @@ public class DashboardServiceImpl implements DashboardService {
             DashboardDTO dashboard = new DashboardDTO();
 
             // Основни броячи - optimized queries за минимален database impact
-            dashboard.setUrgentCount(orderRepository.countByStatus(OrderStatus.PENDING));
+            dashboard.setUrgentCount(orderRepository.countByStatus(OrderStatus.URGENT));
             dashboard.setPendingCount(orderRepository.countByStatus(OrderStatus.PENDING));
             dashboard.setCompletedCount(orderRepository.countByStatus(OrderStatus.CONFIRMED));
             dashboard.setCancelledCount(orderRepository.countByStatus(OrderStatus.CANCELLED));
@@ -203,7 +201,11 @@ public class DashboardServiceImpl implements DashboardService {
         try {
             log.debug("Loading detailed information for order: {}", orderId);
 
-            Optional<Order> orderOpt = orderRepository.findById(orderId);
+            // ❌ СТАРИЯТ КОД (не зарежда items):
+            // Optional<Order> orderOpt = orderRepository.findById(orderId);
+
+            // ✅ НОВИЯТ КОД (зарежда items с FETCH JOIN):
+            Optional<Order> orderOpt = orderRepository.findByIdWithItems(orderId);
 
             if (orderOpt.isEmpty()) {
                 log.warn("Order not found: {}", orderId);
@@ -211,22 +213,24 @@ public class DashboardServiceImpl implements DashboardService {
             }
 
             Order order = orderOpt.get();
+
+            // Използвай mapper-а за конвертиране
             OrderDTO orderDTO = orderMapper.toDTO(order);
 
             DashboardDTO response = new DashboardDTO();
-            // TODO: Set order details data structure
-            // response.setOrderDetails(orderDTO);
-            // response.setOrderItems(getOrderItems(orderId));
-            // response.setChangeHistory(getOrderChangeHistory(orderId));
-
+            response.setSuccess(true);
+            response.set(orderDTO); // Връщай DTO, не entity
             response.setMessage("Детайлите на поръчката са заредени успешно");
 
-            log.info("Order details loaded for order {} (status: {})", orderId, order.getStatus());
+            log.info("Order details loaded for order {} with {} items",
+                    orderId, orderDTO.getItems().size());
             return response;
 
         } catch (Exception e) {
             log.error("Грешка при зареждане на детайли за поръчка {}", orderId, e);
-            return new DashboardDTO("Грешка при зареждане на детайлите на поръчката: " + e.getMessage());
+            DashboardDTO errorResponse = new DashboardDTO("Грешка при зареждане на детайлите: " + e.getMessage());
+            errorResponse.setSuccess(false);
+            return errorResponse;
         }
     }
 
