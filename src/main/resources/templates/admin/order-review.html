@@ -73,7 +73,7 @@
         </div>
 
         <!-- Order Statistics Panel -->
-        <div class="order-statistics">
+        <div id="order-statistics" class="order-statistics">
             <div class="stat-card">
                 <div class="stat-icon urgent">
                     <i class="bi bi-exclamation-triangle"></i>
@@ -99,7 +99,7 @@
                     <i class="bi bi-check-circle"></i>
                 </div>
                 <div class="stat-content">
-                    <div class="stat-value" id="available-items">0</div>
+                    <div class="stat-value" id="available-items" th:text="${orderItemsCount}">0</div>
                     <div class="stat-label">Налични</div>
                 </div>
             </div>
@@ -109,7 +109,7 @@
                     <i class="bi bi-currency-dollar"></i>
                 </div>
                 <div class="stat-content">
-                    <div class="stat-value" id="order-total">0.00 лв</div>
+                    <div class="stat-value" id="order-total" th:text="${orderData?.totalGross + ' лв'}">0.00 лв</div>
                     <div class="stat-label">Обща стойност</div>
                 </div>
             </div>
@@ -117,7 +117,6 @@
 
         <!-- Catalog-style Controls -->
         <div class="catalog-controls">
-
             <!-- Search and Basic Filters -->
             <div class="primary-controls">
                 <div class="search-container">
@@ -125,7 +124,7 @@
                         <input type="text"
                                id="product-search"
                                class="search-input"
-                               placeholder="Търсене по име, SKU или категория..."
+                               placeholder="Търсене по име, SKU або категория..."
                                autocomplete="off">
                         <button type="button" id="clear-search" class="clear-search hidden">
                             <i class="bi bi-x"></i>
@@ -135,11 +134,11 @@
 
                 <!-- View mode switcher -->
                 <div class="view-controls">
-                    <button type="button" id="grid-view" class="view-btn active">
+                    <button type="button" id="grid-view" class="view-btn">
                         <i class="bi bi-grid-3x2"></i>
                         Карти
                     </button>
-                    <button type="button" id="table-view" class="view-btn">
+                    <button type="button" id="table-view" class="view-btn active">
                         <i class="bi bi-table"></i>
                         Таблица
                     </button>
@@ -212,7 +211,7 @@
 
         <!-- Main catalog container for order items -->
         <div id="order-items-container" class="order-items-container hidden">
-            <!-- Order items will be rendered here by orderReviewCatalog.js -->
+            <!-- Order items will be rendered here by JavaScript -->
         </div>
 
         <!-- Empty state -->
@@ -244,8 +243,8 @@
 </section>
 
 <!-- Order Approval Controls - Fixed position for easy access -->
-<div class="approval-controls-overlay">
-    <div class="approval-controls">
+<div class="approval-controls-overlay" style="display: none;">
+    <div id="approval-controls" class="approval-controls">
         <div class="controls-content">
             <div class="approval-summary">
                 <span id="changes-count">0 промени</span>
@@ -269,8 +268,8 @@
     </div>
 </div>
 
-<!-- Rejection Modal (reuse existing modal from dashboard) -->
-<div class="modal-overlay" id="rejection-modal">
+<!-- Rejection Modal -->
+<div class="modal-overlay hidden" id="rejection-modal">
     <div class="modal">
         <div class="modal-header">
             <h4>Отказване на поръчката</h4>
@@ -321,12 +320,16 @@
 
 <!-- Order data for JavaScript initialization -->
 <script th:inline="javascript">
+    // Prevent automatic catalog initialization
+    window.preventCatalogAutoInit = true;
+
+    // Order review configuration
     window.orderReviewConfig = {
         orderId: /*[[${orderId}]]*/ null,
         clientId: /*[[${clientInfo?.id}]]*/ null,
         csrfToken: /*[[${csrfToken}]]*/ '',
         csrfHeader: /*[[${csrfHeader}]]*/ '',
-        dashboardMode: 'review', // Indicates this is review mode, not client catalog
+        dashboardMode: 'review',
         orderData: /*[[${orderData}]]*/ {},
         clientHistory: /*[[${clientHistory}]]*/ {}
     };
@@ -340,9 +343,8 @@
 <script src="/js/dashboard/dashboardManager.js"></script>
 
 <!-- Order Review specific scripts -->
-<script src="/js/catalog.js"></script> <!-- Base catalog functionality -->
-<script src="/js/dashboard/orderReviewCatalog.js"></script> <!-- Our OrderReviewCatalog class -->
-<script src="/js/order-review-main.js"></script> <!-- Main initialization script -->
+<script src="/js/dashboard/orderReviewCatalog.js"></script>
+<script src="/js/dashboard/order-review-main.js"></script>
 
 </body>
 </html>

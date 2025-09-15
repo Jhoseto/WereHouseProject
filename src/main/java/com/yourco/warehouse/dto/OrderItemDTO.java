@@ -40,6 +40,9 @@ public class OrderItemDTO {
 
     private Integer availableQuantity;
 
+    @JsonProperty("category")
+    private String category;
+
 
 
 
@@ -79,4 +82,12 @@ public class OrderItemDTO {
 
     public void setAvailableQuantity(Integer availableQuantity) {
         this.availableQuantity = availableQuantity; }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
+    }
 }

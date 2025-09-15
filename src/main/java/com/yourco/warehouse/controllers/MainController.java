@@ -1,6 +1,8 @@
 package com.yourco.warehouse.controllers;
 
 import com.yourco.warehouse.dto.DashboardDTO;
+import com.yourco.warehouse.dto.OrderDTO;
+import com.yourco.warehouse.dto.OrderItemDTO;
 import com.yourco.warehouse.entity.Order;
 import com.yourco.warehouse.entity.UserEntity;
 import com.yourco.warehouse.service.DashboardService;
@@ -14,12 +16,13 @@ import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.support.RequestContextUtils;
 
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Controller
 public class MainController {
@@ -189,6 +192,85 @@ public class MainController {
             model.addAttribute("errorMessage", "Възникна грешка при зареждане на dashboard данните");
 
             return "admin/main-dashboard";
+        }
+    }
+
+    /**
+     * HTML TEMPLATE за order review страницата
+     * Този метод служи само HTML страници, не JSON данни
+     */
+    @GetMapping("/employer/dashboard/order/{orderId}/detailOrder")
+    public String getOrderReviewPage(@PathVariable Long orderId,
+                                     Model model,
+                                     HttpServletRequest request) {
+        try {
+            // Зареждаме order данните
+            DashboardDTO orderDetails = dashboardService.getOrderDetails(orderId);
+
+            if (!orderDetails.getSuccess()) {
+                return "redirect:/employer/dashboard?error=order-not-found";
+            }
+
+            OrderDTO order = orderDetails.getOrder();
+            if (order == null) {
+                return "redirect:/employer/dashboard?error=data-unavailable";
+            }
+
+            // ✅ ОСНОВНИ ДАННИ за template
+            model.addAttribute("order", order);
+            model.addAttribute("orderId", orderId);
+
+            // ✅ JAVASCRIPT CONFIG - Това е критично!
+            // JavaScript-ът в template-а очаква orderData, не order
+            model.addAttribute("orderData", order);
+
+            // ✅ КЛИЕНТСКА ИНФОРМАЦИЯ
+            Map<String, Object> clientInfo = new HashMap<>();
+            if (order.getClientName() != null && !order.getClientName().trim().isEmpty()) {
+                clientInfo.put("id", order.getClientId() != null ? order.getClientId() : 0L);
+                clientInfo.put("name", order.getClientName());
+                clientInfo.put("lastOrderDate", ""); // TODO: Implement if needed
+                clientInfo.put("orderFrequency", ""); // TODO: Implement if needed
+            }
+            model.addAttribute("clientInfo", clientInfo);
+
+            // ✅ КЛИЕНТСКА ИСТОРИЯ за JavaScript
+            Map<String, Object> clientHistory = new HashMap<>();
+            clientHistory.put("totalOrders", 0); // TODO: Implement if needed
+            clientHistory.put("averageOrderValue", 0); // TODO: Implement if needed
+            clientHistory.put("preferredCategories", new ArrayList<>());
+            model.addAttribute("clientHistory", clientHistory);
+
+            // ✅ КАТЕГОРИИ за dropdown filter
+            Set<String> categories = new HashSet<>();
+            if (order.getItems() != null) {
+                categories = order.getItems().stream()
+                        .map(OrderItemDTO::getCategory)
+                        .filter(Objects::nonNull)
+                        .filter(category -> !category.trim().isEmpty())
+                        .collect(Collectors.toSet());
+            }
+            model.addAttribute("categories", categories);
+
+            // ✅ CSRF TOKENS за JavaScript заявки
+            CsrfToken csrfToken = (CsrfToken) request.getAttribute(CsrfToken.class.getName());
+            if (csrfToken != null) {
+                model.addAttribute("csrfToken", csrfToken.getToken());
+                model.addAttribute("csrfHeader", csrfToken.getHeaderName());
+            } else {
+                model.addAttribute("csrfToken", "");
+                model.addAttribute("csrfHeader", "X-CSRF-TOKEN");
+            }
+
+            // ✅ METADATA за по-добър UX
+            model.addAttribute("pageTitle", "Order Review - Order #" + orderId);
+            model.addAttribute("orderItemsCount", order.getItems() != null ? order.getItems().size() : 0);
+
+            // Връщаме template name (това работи защото сме @Controller, не @RestController)
+            return "admin/order-review";
+
+        } catch (Exception e) {
+            return "redirect:/employer/dashboard?error=system-error";
         }
     }
 

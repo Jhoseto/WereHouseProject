@@ -12,7 +12,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
@@ -173,60 +172,66 @@ public class AdminDashboardController {
     // ==========================================
 
     /**
-     * Show detailed order review interface for Review Officers
-     * MODIFIED: Converted from API endpoint to template endpoint
-     * Now serves the new catalog-style order review page directly
+     * JSON API за order details - ЗА JAVASCRIPT ЗАЯВКИ
+     * Този endpoint връща само JSON данни за AJAX заявките от JavaScript-а
      */
-    @GetMapping("/dashboard/order/{orderId}/details")
-    public String getOrderDetails(@PathVariable Long orderId, Model model) {
-        try {
-            log.debug("Loading order review interface for order: {}", orderId);
+    // В AdminDashboardController.java промени endpoint-а от /details на /data
 
-            // Load comprehensive order details using existing service
+    /**
+     * JSON API за order данни - ЗА JAVASCRIPT И REAL-TIME UPDATES
+     * ПРОМЕНЕН ENDPOINT: /dashboard/order/{orderId}/data (вместо /details)
+     *
+     * Този endpoint служи само JSON данни за:
+     * - AJAX заявки от JavaScript-а
+     * - Real-time обновления през WebSocket
+     * - Inventory synchronization
+     */
+    @GetMapping("/dashboard/order/{orderId}/orderDetailData")
+    public ResponseEntity<Map<String, Object>> getOrderData(@PathVariable Long orderId) {
+        try {
+
+            // Използваме същия service като HTML endpoint-а
             DashboardDTO orderDetails = dashboardService.getOrderDetails(orderId);
 
             if (!orderDetails.getSuccess()) {
-                log.warn("Failed to load order details for {}: {}", orderId, orderDetails.getMessage());
-                // Redirect back to dashboard with error parameter
-                return "redirect:/employer/dashboard?error=order-not-found";
+                log.warn("Failed to load order data for JSON API {}: {}", orderId, orderDetails.getMessage());
+                return ResponseEntity.status(404).body(Map.of(
+                        "success", false,
+                        "message", orderDetails.getMessage()
+                ));
             }
 
-            // Extract order data from DTO for template usage
             OrderDTO order = orderDetails.getOrder();
             if (order == null) {
-                log.error("Order data is null in successful response for order {}", orderId);
-                return "redirect:/employer/dashboard?error=data-unavailable";
+                log.error("Order data is null in JSON API response for order {}", orderId);
+                return ResponseEntity.status(500).body(Map.of(
+                        "success", false,
+                        "message", "Order data unavailable"
+                ));
             }
 
-            // Add order data to model for Thymeleaf template
-            model.addAttribute("order", order);
+            // Структурираме JSON отговора точно както JavaScript-ът очаква
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("data", order); // JavaScript в orderReviewCatalog.js очаква data.items
+            response.put("message", "Order data loaded successfully");
+            response.put("orderId", orderId);
+            response.put("itemsCount", order.getItems() != null ? order.getItems().size() : 0);
 
-            // Generate categories for filter dropdown from order items
-            Set<String> categories = new HashSet<>();
-            if (order.getItems() != null) {
-                categories = order.getItems().stream()
-                        .map(item -> item.getCategory())
-                        .filter(Objects::nonNull)
-                        .filter(category -> !category.trim().isEmpty())
-                        .collect(Collectors.toSet());
-            }
-            model.addAttribute("categories", categories);
+            // Добавяме timestamp за real-time tracking
+            response.put("timestamp", java.time.LocalDateTime.now());
 
-            // Add metadata for better user experience
-            model.addAttribute("pageTitle", "Order Review - Order #" + orderId);
-            model.addAttribute("orderItemsCount", order.getItems() != null ? order.getItems().size() : 0);
-
-            log.info("Order review interface loaded successfully for order {}", orderId);
-
-            // Return the new order review template
-            return "order-review";
+            return ResponseEntity.ok(response);
 
         } catch (Exception e) {
-            log.error("Critical error loading order review for order {}", orderId, e);
-            // Fallback to dashboard with clear error indication
-            return "redirect:/employer/dashboard?error=system-error";
+            log.error("Critical error in JSON API for order data {}", orderId, e);
+            return ResponseEntity.status(500).body(Map.of(
+                    "success", false,
+                    "message", "System error occurred"
+            ));
         }
     }
+
 
     /**
      * Update product quantity in order with change tracking

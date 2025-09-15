@@ -117,6 +117,9 @@ public class OrderMapper {
                 dto.setProductSku(orderItem.getProduct().getSku());
                 dto.setProductName(orderItem.getProduct().getName());
 
+                // ✅ НОВО: Добавяме category mapping
+                dto.setCategory(orderItem.getProduct().getCategory());
+
                 // Stock информация
                 Integer availableStock = orderItem.getProduct().getQuantityAvailable();
                 dto.setAvailableStock(availableStock != null ? availableStock : 0);
@@ -132,6 +135,7 @@ public class OrderMapper {
                 dto.setProductId(null);
                 dto.setProductSku("N/A");
                 dto.setProductName("Продуктът не е достъпен");
+                dto.setCategory("Неизвестна"); // ✅ НОВО: fallback за category
                 dto.setAvailableStock(0);
                 dto.setHasStockIssue(true);
             }
@@ -139,6 +143,7 @@ public class OrderMapper {
             dto.setProductId(null);
             dto.setProductSku("N/A");
             dto.setProductName("Неизвестен продукт");
+            dto.setCategory("Неизвестна"); // ✅ НОВО: fallback за category
             dto.setAvailableStock(0);
             dto.setHasStockIssue(true);
         }

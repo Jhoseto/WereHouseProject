@@ -39,7 +39,6 @@ public class DashboardServiceImpl implements DashboardService {
                                 OrderMapper orderMapper) {
         this.orderRepository = orderRepository;
         this.orderMapper = orderMapper;
-        log.info("DashboardServiceImpl initialized with enhanced order management capabilities");
     }
 
     // ==========================================
@@ -71,9 +70,7 @@ public class DashboardServiceImpl implements DashboardService {
             dashboard.setActiveClients(getTodayActiveClients(startOfDay, endOfDay));
 
             dashboard.setMessage("Dashboard данните са заредени успешно");
-            log.info("Full dashboard loaded: urgent={}, pending={}, completed={}, cancelled={}",
-                    dashboard.getUrgentCount(), dashboard.getPendingCount(),
-                    dashboard.getCompletedCount(), dashboard.getCancelledCount());
+
 
             return dashboard;
 
@@ -112,6 +109,7 @@ public class DashboardServiceImpl implements DashboardService {
     }
 
     @Override
+    @Transactional
     public DashboardDTO getOrdersByStatus(OrderStatus status, int limit) {
         try {
             log.debug("Fetching orders by status: {} (limit: {})", status, limit);
@@ -129,9 +127,6 @@ public class DashboardServiceImpl implements DashboardService {
             dashboard.setOrders(orderDTOs);
             dashboard.setMessage(String.format("Намерени са %d поръчки със статус %s",
                     orderDTOs.size(), status.name()));
-
-            log.info("Retrieved {} orders with status {} (requested limit: {})",
-                    orderDTOs.size(), status, limit);
 
             return dashboard;
 
@@ -166,8 +161,6 @@ public class DashboardServiceImpl implements DashboardService {
             response.setOrder(orderDTO);
             response.setMessage("Детайлите на поръчката са заредени успешно");
 
-            log.info("Order details loaded for order {} with {} items",
-                    orderId, orderDTO.getItems() != null ? orderDTO.getItems().size() : 0);
             return response;
 
         } catch (Exception e) {
@@ -227,7 +220,6 @@ public class DashboardServiceImpl implements DashboardService {
     @Transactional // Write operation
     public DashboardDTO updateProductQuantity(Long orderId, Long productId, Integer newQuantity) {
         try {
-            log.info("Updating product {} quantity to {} in order {}", productId, newQuantity, orderId);
 
             if (newQuantity < 0) {
                 return new DashboardDTO("Количеството не може да бъде отрицателно");
@@ -268,8 +260,6 @@ public class DashboardServiceImpl implements DashboardService {
             response.setMessage(String.format("Количеството на продукта е обновено от %s на %d",
                     oldQuantity, newQuantity));
 
-            log.info("Product {} quantity updated in order {} from {} to {}",
-                    productId, orderId, oldQuantity, newQuantity);
             return response;
 
         } catch (Exception e) {
@@ -282,7 +272,6 @@ public class DashboardServiceImpl implements DashboardService {
     @Transactional // Write operation
     public DashboardDTO removeProductFromOrder(Long orderId, Long productId, String reason) {
         try {
-            log.info("Removing product {} from order {} with reason: {}", productId, orderId, reason);
 
             if (reason == null || reason.trim().isEmpty()) {
                 return new DashboardDTO("Причината за премахване е задължителна");
@@ -324,7 +313,6 @@ public class DashboardServiceImpl implements DashboardService {
             response.setSuccess(true);
             response.setMessage(String.format("Продуктът '%s' е премахнат от поръчката", productName));
 
-            log.info("Product {} ({}) removed from order {}", productId, productName, orderId);
             return response;
 
         } catch (Exception e) {
@@ -337,7 +325,6 @@ public class DashboardServiceImpl implements DashboardService {
     @Transactional // Write operation
     public DashboardDTO resetOrderToOriginalState(Long orderId) {
         try {
-            log.info("Resetting order {} to original state", orderId);
 
             Optional<Order> orderOpt = orderRepository.findById(orderId);
             if (orderOpt.isEmpty()) {
@@ -359,7 +346,6 @@ public class DashboardServiceImpl implements DashboardService {
             response.setSuccess(true);
             response.setMessage("Поръчката е възстановена в оригиналното състояние");
 
-            log.info("Order {} reset to original state", orderId);
             return response;
 
         } catch (Exception e) {
@@ -376,7 +362,6 @@ public class DashboardServiceImpl implements DashboardService {
     @Transactional // Critical write operation
     public DashboardDTO approveOrderWithCorrections(Long orderId, String operatorNote) {
         try {
-            log.info("Approving order {} with operator note: {}", orderId, operatorNote);
 
             Optional<Order> orderOpt = orderRepository.findById(orderId);
             if (orderOpt.isEmpty()) {
@@ -416,7 +401,6 @@ public class DashboardServiceImpl implements DashboardService {
                 response.setMessage("Поръчката е одобрена без корекции.");
             }
 
-            log.info("Order {} approved successfully by operator", orderId);
             return response;
 
         } catch (Exception e) {
@@ -429,7 +413,6 @@ public class DashboardServiceImpl implements DashboardService {
     @Transactional // Critical write operation
     public DashboardDTO rejectOrderWithNotification(Long orderId, String rejectionReason) {
         try {
-            log.info("Rejecting order {} with reason: {}", orderId, rejectionReason);
 
             if (rejectionReason == null || rejectionReason.trim().isEmpty()) {
                 return new DashboardDTO("Причината за отказ е задължителна");
@@ -458,7 +441,6 @@ public class DashboardServiceImpl implements DashboardService {
             response.setSuccess(true);
             response.setMessage("Поръчката е отказана успешно. Клиентът ще получи уведомление.");
 
-            log.info("Order {} rejected successfully with reason: {}", orderId, rejectionReason);
             return response;
 
         } catch (Exception e) {

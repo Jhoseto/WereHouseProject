@@ -366,7 +366,7 @@ class DashboardUI {
                         console.log(`Navigating to order review for order ${orderIdToReview}`);
 
                         // Navigate to the new order review interface
-                        window.location.href = `/employer/dashboard/order/${orderIdToReview}/review`;
+                        window.location.href = `/employer/dashboard/order/${orderIdToReview}/detailOrder`;
                     });
                 }
 
@@ -444,7 +444,7 @@ class DashboardUI {
                 result = await this.manager.api.getOrderDetails(orderId);
             } else {
                 // Fallback към direct fetch
-                const response = await fetch(`/employer/dashboard/order/${orderId}/details`);
+                const response = await fetch(`/employer/dashboard/order/${orderId}/detailOrder`);
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 result = await response.json();
             }

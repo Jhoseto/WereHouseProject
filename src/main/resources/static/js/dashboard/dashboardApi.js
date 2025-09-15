@@ -366,7 +366,7 @@ class DashboardApi {
         const cacheKey = `orderDetails_${orderId}`;
 
         try {
-            const response = await this.makeRequest('GET', `/order/${orderId}/details`);
+            const response = await this.makeRequest('GET', `/order/${orderId}/orderDetailData`);
             const data = await response.json();
 
             this.cache.set(cacheKey, {
