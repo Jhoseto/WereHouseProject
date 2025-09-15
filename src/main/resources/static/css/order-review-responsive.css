@@ -1,0 +1,729 @@
+/**
+ * ORDER REVIEW RESPONSIVE CSS - MOBILE-FIRST PROFESSIONAL INTERFACE
+ * ================================================================
+ * Mobile optimization for Review Officers and Warehouse Pickers workflow.
+ * Transforms desktop information-dense interface into thumb-friendly mobile experience
+ * while preserving all critical business functionality.
+ *
+ * Design Philosophy:
+ * - Mobile-first approach ensures core functionality works on all devices
+ * - Touch targets meet accessibility standards (44px minimum)
+ * - Information hierarchy optimized for vertical scrolling patterns
+ * - Context-sensitive layouts adapt to different mobile use cases
+ * - Performance optimized for warehouse WiFi conditions
+ *
+ * Target Users:
+ * - Review Officers doing quick mobile reviews
+ * - Warehouse Pickers accessing order details while mobile
+ * - Emergency desktop access from mobile devices
+ */
+
+/* ==========================================
+   MOBILE-FIRST BASE STYLES
+   ========================================== */
+
+/* Enhance touch interaction and prevent zoom issues */
+html {
+    -webkit-text-size-adjust: 100%; /* Prevent iOS text size adjustment */
+    -ms-text-size-adjust: 100%;     /* Prevent Windows Phone text size adjustment */
+    touch-action: manipulation;      /* Remove 300ms tap delay */
+}
+
+/* Mobile-optimized body settings */
+body {
+    /* Prevent horizontal scroll on mobile */
+    overflow-x: hidden;
+
+    /* Optimize mobile scrolling performance */
+    -webkit-overflow-scrolling: touch;
+
+    /* Prevent text selection during touch interactions */
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    user-select: none;
+
+    /* Improve mobile rendering performance */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Allow text selection in input elements and text areas */
+input, textarea, [contenteditable] {
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    user-select: text;
+}
+
+/* ==========================================
+   MOBILE BREAKPOINTS AND CONTAINER ADJUSTMENTS
+   ========================================== */
+
+/* Mobile Portrait: 320px - 767px */
+@media (max-width: 767px) {
+
+    /* Reduce container padding for maximum screen utilization */
+    .container {
+        padding: 0 var(--space-4); /* 16px sides instead of 24px */
+        max-width: 100%;
+    }
+
+    /* Reduce vertical spacing between major sections */
+    .order-review-section {
+        padding: var(--space-4) 0; /* 16px top/bottom instead of 24px */
+    }
+
+    /* ==========================================
+       MOBILE HEADER OPTIMIZATION
+       ========================================== */
+
+    /* Stack header elements vertically for mobile */
+    .review-header {
+        flex-direction: column;
+        gap: var(--space-4);
+        padding: var(--space-4); /* Reduce padding for mobile */
+        margin-bottom: var(--space-4);
+    }
+
+    /* Optimize title for mobile reading */
+    .review-title h1 {
+        font-size: var(--text-xl); /* Smaller title for mobile screens */
+        flex-wrap: wrap; /* Allow title to wrap if needed */
+    }
+
+    .review-subtitle {
+        font-size: var(--text-sm);
+        line-height: 1.4;
+    }
+
+    /* Stack client context information for better mobile readability */
+    .client-context {
+        margin-top: var(--space-3);
+        padding: var(--space-3);
+    }
+
+    .client-meta {
+        flex-direction: column; /* Stack email and status vertically */
+        gap: var(--space-2);
+    }
+
+    /* ==========================================
+       WORKFLOW INDICATORS - MOBILE OPTIMIZATION
+       ========================================== */
+
+    /* Workflow indicators become horizontal scrollable on mobile */
+    .workflow-indicators {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: var(--space-2); /* Space for scroll indicator */
+        gap: var(--space-3);
+
+        /* Hide scrollbar but keep functionality */
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    .workflow-indicators::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* Ensure workflow steps have minimum touch target size */
+    .workflow-step {
+        min-width: 80px; /* Prevent shrinking below readable size */
+        flex-shrink: 0;   /* Prevent compression */
+        padding: var(--space-2) var(--space-3);
+    }
+
+    .workflow-step i {
+        font-size: var(--text-base); /* Slightly smaller icons for mobile */
+    }
+
+    .workflow-step span {
+        font-size: 0.7rem; /* Smaller text but still readable */
+    }
+
+    /* ==========================================
+       STATISTICS PANEL - MOBILE GRID OPTIMIZATION
+       ========================================== */
+
+    /* Statistics become 2x2 grid on mobile for better touch access */
+    .order-statistics {
+        grid-template-columns: 1fr 1fr; /* Two columns on mobile */
+        gap: var(--space-3);
+        margin-bottom: var(--space-6);
+    }
+
+    /* Optimize stat cards for mobile interaction */
+    .stat-card {
+        padding: var(--space-4); /* Reduce padding but maintain touch targets */
+        min-height: 100px; /* Ensure adequate touch target size */
+        flex-direction: column; /* Stack icon and content vertically */
+        text-align: center;
+        gap: var(--space-2);
+    }
+
+    /* Smaller but still prominent stat icons */
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        font-size: var(--text-xl);
+        margin: 0 auto; /* Center the icon */
+    }
+
+    /* Optimize stat text for mobile readability */
+    .stat-value {
+        font-size: var(--text-lg); /* Smaller but still prominent */
+    }
+
+    .stat-label {
+        font-size: 0.7rem; /* Compact but readable */
+    }
+
+    /* ==========================================
+       CATALOG CONTROLS - MOBILE-FIRST INTERACTION
+       ========================================== */
+
+    /* Stack catalog controls vertically for mobile */
+    .catalog-controls {
+        padding: var(--space-4);
+        margin-bottom: var(--space-4);
+    }
+
+    /* Primary controls stack on mobile */
+    .primary-controls {
+        flex-direction: column;
+        gap: var(--space-4);
+        margin-bottom: var(--space-4);
+    }
+
+    /* Search takes full width on mobile */
+    .search-container {
+        max-width: 100%;
+    }
+
+    /* Enhance search input for mobile typing */
+    .search-input {
+        font-size: 16px; /* Prevent iOS zoom on focus */
+        padding: var(--space-4); /* Larger touch target */
+        border-radius: var(--radius-md); /* More prominent on mobile */
+    }
+
+    /* View controls become full-width toggle on mobile */
+    .view-controls {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .view-btn {
+        flex: 1; /* Equal width buttons */
+        justify-content: center;
+        padding: var(--space-3) var(--space-4);
+        font-size: var(--text-base); /* Larger text for mobile */
+    }
+
+    /* ==========================================
+       ADVANCED FILTERS - MOBILE ACCORDION STYLE
+       ========================================== */
+
+    /* Advanced filters become single column on mobile */
+    .advanced-filters {
+        grid-template-columns: 1fr; /* Single column layout */
+        gap: var(--space-3);
+    }
+
+    /* Enhance filter selects for mobile interaction */
+    .filter-select {
+        padding: var(--space-4); /* Larger touch targets */
+        font-size: 16px; /* Prevent iOS zoom */
+        border-radius: var(--radius-md);
+        background-image: url("data:image/svg+xml;charset=UTF-8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><polyline points='6,9 12,15 18,9'></polyline></svg>");
+        background-repeat: no-repeat;
+        background-position: right var(--space-3) center;
+        background-size: 16px;
+        appearance: none; /* Remove default mobile select styling */
+    }
+
+    /* Mobile-optimized clear filters button */
+    .btn-clear-filters {
+        width: 100%; /* Full width on mobile */
+        justify-content: center;
+        padding: var(--space-4);
+        font-size: var(--text-base);
+    }
+
+    /* ==========================================
+       MOBILE LOADING AND EMPTY STATES
+       ========================================== */
+
+    .loading-state,
+    .empty-state {
+        padding: var(--space-8) var(--space-4); /* Reduce horizontal padding */
+        margin: var(--space-4) 0;
+    }
+
+    .loading-spinner {
+        width: 40px; /* Smaller spinner for mobile */
+        height: 40px;
+    }
+
+    .empty-icon {
+        font-size: 3rem; /* Smaller but still prominent */
+    }
+
+    /* ==========================================
+       CORRECTION PREVIEW - MOBILE OPTIMIZATION
+       ========================================== */
+
+    .correction-preview-panel {
+        margin: var(--space-4) 0;
+        border-radius: var(--radius-base); /* Less rounded on mobile */
+    }
+
+    .preview-header {
+        padding: var(--space-3);
+        font-size: var(--text-sm);
+    }
+
+    .preview-content {
+        padding: var(--space-3);
+    }
+
+    #correction-summary {
+        font-size: 0.8rem; /* Smaller monospace text for mobile */
+        line-height: 1.4;
+    }
+
+    /* ==========================================
+       MOBILE APPROVAL CONTROLS - THUMB-FRIENDLY
+       ========================================== */
+
+    /* Optimize approval overlay for mobile interaction */
+    .approval-controls-overlay {
+        /* Add safe area insets for iPhone X and newer */
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .approval-controls {
+        padding: var(--space-3) var(--space-4);
+    }
+
+    /* Stack approval content on mobile */
+    .controls-content {
+        flex-direction: column;
+        gap: var(--space-3);
+    }
+
+    /* Center approval summary on mobile */
+    .approval-summary {
+        text-align: center;
+        order: 2; /* Move below actions for better mobile UX */
+    }
+
+    /* Make approval actions thumb-friendly */
+    .approval-actions {
+        order: 1;
+        width: 100%;
+        justify-content: center;
+        gap: var(--space-2);
+    }
+
+    /* Mobile-optimized action buttons */
+    .btn-secondary,
+    .btn-danger,
+    .btn-success {
+        min-height: 44px; /* iOS recommended touch target */
+        padding: var(--space-3) var(--space-4);
+        font-size: var(--text-sm);
+        border-radius: var(--radius-md);
+
+        /* Optimize for thumb interaction */
+        flex: 1;
+        max-width: 120px; /* Prevent buttons from becoming too wide */
+        justify-content: center;
+    }
+
+    /* Ensure approve button is most prominent on mobile */
+    .btn-success {
+        font-weight: 700;
+        min-width: 100px;
+    }
+
+    /* ==========================================
+       MOBILE MODAL OPTIMIZATION
+       ========================================== */
+
+    /* Full-screen modal approach on mobile */
+    .modal {
+        width: calc(100vw - var(--space-4));
+        max-width: none;
+        margin: var(--space-2);
+        max-height: calc(100vh - var(--space-4));
+
+        /* Ensure modal appears above mobile keyboards */
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+
+    /* Optimize modal header for mobile */
+    .modal-header {
+        padding: var(--space-4);
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+
+    .modal-header h4 {
+        font-size: var(--text-lg);
+    }
+
+    /* Enhance modal close button for mobile */
+    .modal-close {
+        min-width: 44px;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Optimize modal body for mobile scrolling */
+    .modal-body {
+        padding: var(--space-4);
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Make reason options thumb-friendly */
+    .reason-option {
+        padding: var(--space-4);
+        min-height: 60px; /* Adequate touch target */
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    /* Optimize textarea for mobile */
+    .form-textarea {
+        min-height: 100px; /* Larger mobile textarea */
+        font-size: 16px; /* Prevent iOS zoom */
+        padding: var(--space-4);
+    }
+
+    /* Stack modal footer buttons on mobile */
+    .modal-footer {
+        padding: var(--space-4);
+        flex-direction: column;
+        gap: var(--space-3);
+    }
+
+    .modal-footer .btn-secondary,
+    .modal-footer .btn-danger {
+        width: 100%;
+        justify-content: center;
+        min-height: 44px;
+        font-size: var(--text-base);
+    }
+}
+
+/* ==========================================
+   TABLET LANDSCAPE: 768px - 1023px
+   ========================================== */
+
+@media (min-width: 768px) and (max-width: 1023px) {
+
+    /* Tablet gets intermediate sizing between mobile and desktop */
+    .container {
+        padding: 0 var(--space-5); /* 20px sides */
+        max-width: 1200px;
+    }
+
+    /* Tablet header remains horizontal but with reduced spacing */
+    .review-header {
+        padding: var(--space-6);
+        gap: var(--space-6);
+    }
+
+    /* Statistics optimal for tablet in 3+1 or 2+2 layout */
+    .order-statistics {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: var(--space-4);
+    }
+
+    /* Tablet catalog controls get hybrid layout */
+    .primary-controls {
+        flex-direction: row;
+        gap: var(--space-4);
+    }
+
+    .search-container {
+        max-width: 400px; /* Constrain search width on tablet */
+    }
+
+    /* Advanced filters use 2-column layout on tablet */
+    .advanced-filters {
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--space-4);
+    }
+
+    /* Tablet approval controls remain horizontal */
+    .controls-content {
+        flex-direction: row;
+    }
+
+    .approval-summary {
+        order: 1;
+        text-align: left;
+    }
+
+    .approval-actions {
+        order: 2;
+        width: auto;
+    }
+
+    /* Tablet modal gets desktop sizing */
+    .modal {
+        max-width: 600px;
+        width: calc(100% - var(--space-8));
+    }
+}
+
+/* ==========================================
+   SMALL DESKTOP: 1024px - 1279px
+   ========================================== */
+
+@media (min-width: 1024px) and (max-width: 1279px) {
+
+    /* Small desktop uses most desktop styles with slight adjustments */
+    .container {
+        max-width: 1200px;
+        padding: 0 var(--space-6);
+    }
+
+    /* Statistics get full 4-column layout */
+    .order-statistics {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
+    /* Advanced filters get 3-column layout for better space utilization */
+    .advanced-filters {
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--space-4);
+    }
+}
+
+/* ==========================================
+   LARGE DESKTOP: 1280px and above
+   ========================================== */
+
+@media (min-width: 1280px) {
+
+    /* Large desktop gets maximum width and spacing */
+    .container {
+        max-width: 1400px;
+        padding: 0 var(--space-8);
+    }
+
+    /* Increased spacing for large screens */
+    .order-review-section {
+        padding: var(--space-8) 0;
+    }
+
+    .review-header {
+        padding: var(--space-10);
+        margin-bottom: var(--space-8);
+    }
+
+    /* Advanced filters get full 4-column layout plus actions */
+    .advanced-filters {
+        grid-template-columns: repeat(4, 1fr) auto;
+        gap: var(--space-5);
+    }
+}
+
+/* ==========================================
+   HIGH CONTRAST AND ACCESSIBILITY ENHANCEMENTS
+   ========================================== */
+
+/* Enhance contrast for users with visual difficulties */
+@media (prefers-contrast: high) {
+
+    :root {
+        --status-available: #1a5f2e;
+        --status-partial: #b8610a;
+        --status-unavailable: #b91c1c;
+        --neutral-700: #1f2937;
+        --neutral-900: #111827;
+    }
+
+    .stat-card,
+    .catalog-controls,
+    .review-header {
+        border: 2px solid var(--neutral-300);
+    }
+
+    .view-btn,
+    .filter-select,
+    .btn-secondary,
+    .btn-danger,
+    .btn-success {
+        border-width: 2px;
+    }
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+
+    .loading-spinner {
+        animation: none;
+        opacity: 0.6;
+    }
+}
+
+/* ==========================================
+   PRINT STYLES FOR MOBILE COMPATIBILITY
+   ========================================== */
+
+@media print {
+
+    /* Hide interactive elements when printing */
+    .approval-controls-overlay,
+    .view-controls,
+    .advanced-filters,
+    .btn-clear-filters {
+        display: none !important;
+    }
+
+    /* Optimize layout for print */
+    .order-review-section {
+        background: white;
+        padding: 0;
+    }
+
+    .stat-card,
+    .review-header,
+    .catalog-controls {
+        box-shadow: none;
+        border: 1px solid #ccc;
+    }
+
+    /* Ensure text is readable when printed */
+    body {
+        color: black;
+        background: white;
+        font-size: 12pt;
+    }
+}
+
+/* ==========================================
+   LANDSCAPE MOBILE OPTIMIZATION
+   ========================================== */
+
+@media (max-width: 767px) and (orientation: landscape) {
+
+    /* Reduce vertical spacing in landscape mode */
+    .order-review-section {
+        padding: var(--space-2) 0;
+    }
+
+    .review-header {
+        padding: var(--space-3);
+        margin-bottom: var(--space-3);
+    }
+
+    /* Statistics in landscape mobile become horizontal scroll */
+    .order-statistics {
+        grid-template-columns: repeat(4, minmax(200px, 1fr));
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        gap: var(--space-3);
+        padding-bottom: var(--space-2);
+    }
+
+    .stat-card {
+        flex-shrink: 0;
+        min-width: 180px;
+    }
+
+    /* Approval controls take less vertical space in landscape */
+    .approval-controls-overlay {
+        position: fixed;
+        bottom: 0;
+    }
+
+    .approval-controls {
+        padding: var(--space-2) var(--space-4);
+    }
+}
+
+/* ==========================================
+   PERFORMANCE OPTIMIZATIONS FOR MOBILE
+   ========================================== */
+
+/* Optimize animations for mobile devices */
+@media (max-width: 767px) {
+
+    /* Use transform instead of changing layout properties */
+    .stat-card:hover,
+    .view-btn:hover,
+    .btn-secondary:hover,
+    .btn-danger:hover,
+    .btn-success:hover {
+        transform: none; /* Disable hover transforms on mobile */
+    }
+
+    /* Use will-change for better mobile performance */
+    .modal {
+        will-change: transform, opacity;
+    }
+
+    .approval-controls-overlay {
+        will-change: transform;
+    }
+
+    /* Optimize scrolling performance */
+    .workflow-indicators,
+    .order-statistics {
+        will-change: scroll-position;
+    }
+}
+
+/* ==========================================
+   DARK MODE SUPPORT (if needed for night shifts)
+   ========================================== */
+
+@media (prefers-color-scheme: dark) {
+
+    :root {
+        --neutral-50: #1f2937;
+        --neutral-100: #374151;
+        --neutral-200: #4b5563;
+        --neutral-300: #6b7280;
+        --neutral-500: #9ca3af;
+        --neutral-700: #d1d5db;
+        --neutral-900: #f9fafb;
+        --review-primary: #60a5fa;
+        --review-secondary: #3b82f6;
+    }
+
+    body {
+        background-color: #111827;
+        color: var(--neutral-700);
+    }
+
+    .stat-card,
+    .review-header,
+    .catalog-controls,
+    .order-items-container,
+    .modal {
+        background-color: var(--neutral-50);
+        border-color: var(--neutral-200);
+    }
+}

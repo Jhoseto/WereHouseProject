@@ -32,7 +32,6 @@ class DashboardManager {
         this.orderChanges = new Map(); // Track changes for each order
 
         // UI state tracking
-        this.expandedOrders = new Set();
         this.modifiedOrders = new Set();
 
         // Auto-refresh configuration
@@ -72,9 +71,6 @@ class DashboardManager {
             });
 
             this.ui.setManager(this);
-
-            // Load initial data
-            await this.loadInitialData();
 
             // Start auto-refresh as fallback for WebSocket
             this.startAutoRefresh();
@@ -370,31 +366,6 @@ class DashboardManager {
     // ORDER MANAGEMENT OPERATIONS
     // ==========================================
 
-    /**
-     * Toggle order details expand/collapse
-     */
-    async toggleOrderDetails(orderId) {
-        try {
-            if (this.expandedOrders.has(orderId)) {
-                // Collapse order
-                this.expandedOrders.delete(orderId);
-                this.ui.collapseOrderDetails(orderId);
-
-            } else {
-                // Expand order - load details if not cached
-                const orderData = await this.getOrderDetails(orderId);
-
-                if (orderData) {
-                    this.expandedOrders.add(orderId);
-                    this.ui.expandOrderDetails(orderId, orderData);
-                }
-            }
-
-        } catch (error) {
-            console.error(`Error toggling order details for ${orderId}:`, error);
-            this.showErrorNotification('Грешка при зареждане на детайлите на поръчката');
-        }
-    }
 
     /**
      * Get order details with caching
@@ -609,7 +580,6 @@ class DashboardManager {
 
             // Clear cache and reload
             this.api.clearCache();
-            await this.loadInitialData();
 
             this.showSuccessNotification('Данните са обновени');
 

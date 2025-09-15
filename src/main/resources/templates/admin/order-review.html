@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      lang="bg">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Преглед на поръчка | Review Dashboard</title>
+
+    <!-- Core project imports -->
+    <div th:replace="~{fragments/topHtmlImports :: topImports}"></div>
+
+    <!-- Order Review specific stylesheets -->
+    <link rel="stylesheet" href="/css/order-review-catalog.css">
+    <link rel="stylesheet" href="/css/order-review-responsive.css">
+</head>
+<body>
+
+<!-- Flash Messages for server-side notifications -->
+<div th:replace="~{fragments/toastSystem :: flashData}"></div>
+
+<!-- Navigation -->
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+
+<!-- Toast notification container -->
+<div th:replace="~{fragments/toastSystem.html :: toastContainer}"></div>
+
+<!-- Main Order Review Interface -->
+<section class="order-review-section">
+    <div class="container">
+
+        <!-- Order Review Header -->
+        <div class="review-header">
+            <div class="header-main">
+                <div class="review-title">
+                    <h1>
+                        <i class="bi bi-clipboard-check"></i>
+                        Преглед на поръчка №<span id="order-number" th:text="${orderId}">123</span>
+                    </h1>
+                    <div class="review-subtitle">
+                        Catalog-style интерфейс за професионален review
+                    </div>
+                </div>
+
+                <!-- Client context information -->
+                <div class="client-context" th:if="${clientInfo}">
+                    <div class="client-name">
+                        <i class="bi bi-building"></i>
+                        <span th:text="${clientInfo.name}">Клиент ООД</span>
+                    </div>
+                    <div class="client-meta">
+                        <span class="last-order">Последна поръчка: <span th:text="${clientInfo.lastOrderDate}">15.12.2024</span></span>
+                        <span class="order-frequency">Честота: <span th:text="${clientInfo.orderFrequency}">Седмична</span></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order status and workflow indicators -->
+            <div class="workflow-indicators">
+                <div class="workflow-step active" id="workflow-analysis">
+                    <i class="bi bi-search"></i>
+                    <span>Анализ</span>
+                </div>
+                <div class="workflow-step" id="workflow-corrections">
+                    <i class="bi bi-pencil-square"></i>
+                    <span>Корекции</span>
+                </div>
+                <div class="workflow-step" id="workflow-approval">
+                    <i class="bi bi-check-circle"></i>
+                    <span>Одобрение</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Order Statistics Panel -->
+        <div class="order-statistics">
+            <div class="stat-card">
+                <div class="stat-icon urgent">
+                    <i class="bi bi-exclamation-triangle"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value" id="unavailable-items">0</div>
+                    <div class="stat-label">Липсващи</div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon warning">
+                    <i class="bi bi-dash-circle"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value" id="partial-items">0</div>
+                    <div class="stat-label">Частично</div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon success">
+                    <i class="bi bi-check-circle"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value" id="available-items">0</div>
+                    <div class="stat-label">Налични</div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon info">
+                    <i class="bi bi-currency-dollar"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value" id="order-total">0.00 лв</div>
+                    <div class="stat-label">Обща стойност</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Catalog-style Controls -->
+        <div class="catalog-controls">
+
+            <!-- Search and Basic Filters -->
+            <div class="primary-controls">
+                <div class="search-container">
+                    <div class="search-box">
+                        <input type="text"
+                               id="product-search"
+                               class="search-input"
+                               placeholder="Търсене по име, SKU или категория..."
+                               autocomplete="off">
+                        <button type="button" id="clear-search" class="clear-search hidden">
+                            <i class="bi bi-x"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- View mode switcher -->
+                <div class="view-controls">
+                    <button type="button" id="grid-view" class="view-btn active">
+                        <i class="bi bi-grid-3x2"></i>
+                        Карти
+                    </button>
+                    <button type="button" id="table-view" class="view-btn">
+                        <i class="bi bi-table"></i>
+                        Таблица
+                    </button>
+                </div>
+            </div>
+
+            <!-- Advanced Filters for Review Officers -->
+            <div class="advanced-filters">
+                <div class="filter-group">
+                    <label for="availability-filter" class="filter-label">
+                        <i class="bi bi-box"></i> Наличност
+                    </label>
+                    <select id="availability-filter" class="filter-select">
+                        <option value="">Всички артикули</option>
+                        <option value="available">Налични</option>
+                        <option value="partial">Частично налични</option>
+                        <option value="unavailable">Липсващи</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="priority-filter" class="filter-label">
+                        <i class="bi bi-flag"></i> Приоритет
+                    </label>
+                    <select id="priority-filter" class="filter-select">
+                        <option value="">Всички</option>
+                        <option value="critical">Критични</option>
+                        <option value="high">Високи</option>
+                        <option value="normal">Нормални</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="category-filter" class="filter-label">
+                        <i class="bi bi-collection"></i> Категория
+                    </label>
+                    <select id="category-filter" class="filter-select">
+                        <option value="">Всички категории</option>
+                        <!-- Categories will be populated by JavaScript -->
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="sort-filter" class="filter-label">
+                        <i class="bi bi-sort-down"></i> Сортиране
+                    </label>
+                    <select id="sort-filter" class="filter-select">
+                        <option value="priority">По приоритет</option>
+                        <option value="availability">По наличност</option>
+                        <option value="name">По име</option>
+                        <option value="quantity">По количество</option>
+                        <option value="category">По категория</option>
+                    </select>
+                </div>
+
+                <div class="filter-actions">
+                    <button type="button" id="clear-filters" class="btn-clear-filters">
+                        <i class="bi bi-arrow-counterclockwise"></i>
+                        Изчисти
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading state -->
+        <div id="loading-state" class="loading-state">
+            <div class="loading-spinner"></div>
+            <p>Зареждане на поръчката...</p>
+        </div>
+
+        <!-- Main catalog container for order items -->
+        <div id="order-items-container" class="order-items-container hidden">
+            <!-- Order items will be rendered here by orderReviewCatalog.js -->
+        </div>
+
+        <!-- Empty state -->
+        <div id="empty-state" class="empty-state hidden">
+            <div class="empty-icon">
+                <i class="bi bi-inbox"></i>
+            </div>
+            <h3>Няма артикули в поръчката</h3>
+            <p>Тази поръчка не съдържа артикули за преглед.</p>
+        </div>
+
+        <!-- Correction Preview Panel -->
+        <div id="correction-preview" class="correction-preview-panel hidden">
+            <div class="preview-header">
+                <i class="bi bi-info-circle"></i>
+                <strong>Преглед на корекции</strong>
+                <button type="button" class="preview-close">
+                    <i class="bi bi-x"></i>
+                </button>
+            </div>
+            <div class="preview-content">
+                <div id="correction-summary">
+                    <!-- Correction details will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<!-- Order Approval Controls - Fixed position for easy access -->
+<div class="approval-controls-overlay">
+    <div class="approval-controls">
+        <div class="controls-content">
+            <div class="approval-summary">
+                <span id="changes-count">0 промени</span>
+                <span id="approval-status">Готов за одобрение</span>
+            </div>
+            <div class="approval-actions">
+                <button type="button" id="preview-corrections" class="btn-secondary">
+                    <i class="bi bi-eye"></i>
+                    Преглед
+                </button>
+                <button type="button" id="reject-order" class="btn-danger">
+                    <i class="bi bi-x-circle"></i>
+                    Отказ
+                </button>
+                <button type="button" id="approve-order" class="btn-success">
+                    <i class="bi bi-check-circle"></i>
+                    Одобри
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Rejection Modal (reuse existing modal from dashboard) -->
+<div class="modal-overlay" id="rejection-modal">
+    <div class="modal">
+        <div class="modal-header">
+            <h4>Отказване на поръчката</h4>
+            <button type="button" class="modal-close">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+
+        <div class="modal-body">
+            <div class="reason-options">
+                <div class="reason-option" data-reason="Няма в наличност">
+                    <strong>Няма в наличност</strong>
+                    <small>Артикули не са налични в склада</small>
+                </div>
+                <div class="reason-option" data-reason="Невъзможна доставка в срок">
+                    <strong>Невъзможна доставка в срок</strong>
+                    <small>Не можем да доставим в исканото време</small>
+                </div>
+                <div class="reason-option" data-reason="Проблем с качеството">
+                    <strong>Проблем с качеството</strong>
+                    <small>Продуктите не отговарят на стандартите</small>
+                </div>
+                <div class="reason-option" data-reason="Корекции отказани от клиента">
+                    <strong>Корекции отказани от клиента</strong>
+                    <small>Клиентът не приема предложените промени</small>
+                </div>
+            </div>
+
+            <div class="custom-reason">
+                <label for="rejection-note">Допълнителна бележка:</label>
+                <textarea id="rejection-note"
+                          class="form-textarea"
+                          placeholder="Опишете причината за отказване..."
+                          rows="3"></textarea>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" class="btn-secondary" id="cancel-rejection">
+                Отказ
+            </button>
+            <button type="button" class="btn-danger" id="confirm-rejection">
+                Потвърди отказването
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Order data for JavaScript initialization -->
+<script th:inline="javascript">
+    window.orderReviewConfig = {
+        orderId: /*[[${orderId}]]*/ null,
+        clientId: /*[[${clientInfo?.id}]]*/ null,
+        csrfToken: /*[[${csrfToken}]]*/ '',
+        csrfHeader: /*[[${csrfHeader}]]*/ '',
+        dashboardMode: 'review', // Indicates this is review mode, not client catalog
+        orderData: /*[[${orderData}]]*/ {},
+        clientHistory: /*[[${clientHistory}]]*/ {}
+    };
+</script>
+
+<!-- Core project scripts -->
+<div th:replace="~{fragments/bottomHtmlImports :: bottomImports}"></div>
+
+<!-- Dashboard integration scripts -->
+<script src="/js/dashboard/dashboardApi.js"></script>
+<script src="/js/dashboard/dashboardManager.js"></script>
+
+<!-- Order Review specific scripts -->
+<script src="/js/catalog.js"></script> <!-- Base catalog functionality -->
+<script src="/js/dashboard/orderReviewCatalog.js"></script> <!-- Our OrderReviewCatalog class -->
+<script src="/js/order-review-main.js"></script> <!-- Main initialization script -->
+
+</body>
+</html>

@@ -1,0 +1,943 @@
+/**
+ * ORDER REVIEW CATALOG CSS - PROFESSIONAL B2B INTERFACE
+ * =====================================================
+ * Professional styling for Review Officers workflow optimization.
+ * Every design decision serves specific business purposes and cognitive efficiency.
+ *
+ * Design Philosophy:
+ * - Information hierarchy supports fast decision making
+ * - Status indicators provide immediate visual feedback
+ * - Color coding follows warehouse industry conventions
+ * - Spacing optimized for scanning large datasets
+ * - Typography enhances readability under work pressure
+ */
+
+/* ==========================================
+   CSS CUSTOM PROPERTIES - DESIGN SYSTEM
+   ========================================== */
+
+:root {
+    /* ORDER REVIEW SPECIFIC COLORS */
+    --review-primary: #2c3e50;           /* Professional dark blue for headers */
+    --review-secondary: #3498db;         /* Interactive blue for buttons and links */
+
+    /* STATUS COLORS - WAREHOUSE OPERATIONS STANDARD */
+    --status-available: #27ae60;         /* Green - items in stock */
+    --status-available-light: #d5f4e6;   /* Light green background */
+    --status-available-border: #1e8449;  /* Dark green borders */
+
+    --status-partial: #f39c12;           /* Orange - partial stock */
+    --status-partial-light: #fef9e7;     /* Light orange background */
+    --status-partial-border: #d68910;    /* Dark orange borders */
+
+    --status-unavailable: #e74c3c;       /* Red - out of stock */
+    --status-unavailable-light: #fdedec; /* Light red background */
+    --status-unavailable-border: #cb4335; /* Dark red borders */
+
+    --status-pending: #8e44ad;           /* Purple - awaiting decision */
+    --status-pending-light: #f4ecf7;     /* Light purple background */
+    --status-pending-border: #7d3c98;    /* Dark purple borders */
+
+    /* NEUTRAL COLORS FOR INTERFACE ELEMENTS */
+    --neutral-50: #f8f9fa;               /* Light backgrounds */
+    --neutral-100: #e9ecef;              /* Border colors */
+    --neutral-200: #dee2e6;              /* Subtle dividers */
+    --neutral-300: #ced4da;              /* Input borders */
+    --neutral-500: #6c757d;              /* Secondary text */
+    --neutral-700: #495057;              /* Primary text */
+    --neutral-900: #212529;              /* Headings */
+
+    /* SPACING SYSTEM - OPTIMIZED FOR PROFESSIONAL USE */
+    --space-1: 0.25rem;   /* 4px - tight spacing */
+    --space-2: 0.5rem;    /* 8px - small gaps */
+    --space-3: 0.75rem;   /* 12px - medium spacing */
+    --space-4: 1rem;      /* 16px - standard spacing */
+    --space-5: 1.25rem;   /* 20px - comfortable spacing */
+    --space-6: 1.5rem;    /* 24px - section spacing */
+    --space-8: 2rem;      /* 32px - large spacing */
+    --space-10: 2.5rem;   /* 40px - major sections */
+    --space-12: 3rem;     /* 48px - page sections */
+
+    /* TYPOGRAPHY SCALE - PROFESSIONAL READABILITY */
+    --text-xs: 0.75rem;   /* 12px - small labels */
+    --text-sm: 0.875rem;  /* 14px - body text */
+    --text-base: 1rem;    /* 16px - standard text */
+    --text-lg: 1.125rem;  /* 18px - emphasized text */
+    --text-xl: 1.25rem;   /* 20px - small headings */
+    --text-2xl: 1.5rem;   /* 24px - section headings */
+    --text-3xl: 1.875rem; /* 30px - page headings */
+
+    /* SHADOWS AND ELEVATIONS */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --shadow-base: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07), 0 2px 4px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05);
+
+    /* BORDER RADIUS VALUES */
+    --radius-sm: 0.25rem;  /* 4px - small elements */
+    --radius-base: 0.375rem; /* 6px - standard elements */
+    --radius-md: 0.5rem;   /* 8px - cards and panels */
+    --radius-lg: 0.75rem;  /* 12px - major sections */
+
+    /* TRANSITION TIMINGS */
+    --transition-fast: 150ms ease-in-out;
+    --transition-base: 200ms ease-in-out;
+    --transition-slow: 300ms ease-in-out;
+}
+
+/* ==========================================
+   RESET AND BASE STYLES
+   ========================================== */
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+/* Base styles optimized for professional use */
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    font-size: var(--text-sm);
+    line-height: 1.5;
+    color: var(--neutral-700);
+    background-color: var(--neutral-50);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Professional typography hierarchy */
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+    color: var(--neutral-900);
+    line-height: 1.25;
+}
+
+h1 { font-size: var(--text-3xl); }
+h2 { font-size: var(--text-2xl); }
+h3 { font-size: var(--text-xl); }
+h4 { font-size: var(--text-lg); }
+
+/* ==========================================
+   ORDER REVIEW SECTION LAYOUT
+   ========================================== */
+
+.order-review-section {
+    min-height: calc(100vh - 80px); /* Account for navigation */
+    padding: var(--space-6) 0;
+    background: linear-gradient(135deg, var(--neutral-50) 0%, #f1f3f4 100%);
+}
+
+.container {
+    max-width: 1400px; /* Wide layout for professional use */
+    margin: 0 auto;
+    padding: 0 var(--space-6);
+}
+
+/* ==========================================
+   REVIEW HEADER - CONTEXTUAL INFORMATION
+   ========================================== */
+
+.review-header {
+    background: white;
+    border-radius: var(--radius-lg);
+    padding: var(--space-8);
+    margin-bottom: var(--space-6);
+    box-shadow: var(--shadow-base);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: var(--space-8);
+}
+
+.header-main {
+    flex: 1;
+}
+
+.review-title h1 {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    color: var(--review-primary);
+    margin-bottom: var(--space-2);
+}
+
+.review-title h1 i {
+    color: var(--review-secondary);
+    font-size: var(--text-2xl);
+}
+
+.review-subtitle {
+    color: var(--neutral-500);
+    font-size: var(--text-base);
+    font-weight: 500;
+}
+
+/* Client context styling */
+.client-context {
+    margin-top: var(--space-6);
+    padding: var(--space-4);
+    background: var(--neutral-50);
+    border-radius: var(--radius-base);
+    border-left: 4px solid var(--review-secondary);
+}
+
+.client-name {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-weight: 600;
+    color: var(--neutral-900);
+    margin-bottom: var(--space-1);
+}
+
+.client-meta {
+    display: flex;
+    gap: var(--space-4);
+    font-size: var(--text-sm);
+    color: var(--neutral-500);
+}
+
+.client-email {
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+    background: var(--neutral-100);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+}
+
+/* ==========================================
+   WORKFLOW INDICATORS - PROGRESS TRACKING
+   ========================================== */
+
+.workflow-indicators {
+    display: flex;
+    gap: var(--space-4);
+    align-items: center;
+}
+
+.workflow-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-3);
+    border-radius: var(--radius-base);
+    transition: all var(--transition-base);
+    cursor: pointer;
+    position: relative;
+}
+
+.workflow-step i {
+    font-size: var(--text-lg);
+    color: var(--neutral-300);
+    transition: color var(--transition-fast);
+}
+
+.workflow-step span {
+    font-size: var(--text-xs);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--neutral-500);
+}
+
+/* Active workflow step styling */
+.workflow-step.active {
+    background: var(--review-secondary);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.workflow-step.active i {
+    color: white;
+}
+
+.workflow-step.active span {
+    color: white;
+}
+
+/* Completed workflow step */
+.workflow-step.completed {
+    background: var(--status-available);
+    color: white;
+}
+
+.workflow-step.completed i {
+    color: white;
+}
+
+.workflow-step.completed span {
+    color: white;
+}
+
+/* ==========================================
+   ORDER STATISTICS PANEL - KEY METRICS
+   ========================================== */
+
+.order-statistics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--space-4);
+    margin-bottom: var(--space-8);
+}
+
+.stat-card {
+    background: white;
+    border-radius: var(--radius-md);
+    padding: var(--space-6);
+    box-shadow: var(--shadow-base);
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    transition: all var(--transition-base);
+    border: 1px solid var(--neutral-100);
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--text-2xl);
+    flex-shrink: 0;
+}
+
+/* Status-specific icon styling */
+.stat-icon.urgent {
+    background: var(--status-unavailable-light);
+    color: var(--status-unavailable);
+    border: 2px solid var(--status-unavailable-border);
+}
+
+.stat-icon.warning {
+    background: var(--status-partial-light);
+    color: var(--status-partial);
+    border: 2px solid var(--status-partial-border);
+}
+
+.stat-icon.success {
+    background: var(--status-available-light);
+    color: var(--status-available);
+    border: 2px solid var(--status-available-border);
+}
+
+.stat-icon.info {
+    background: var(--review-secondary);
+    color: white;
+    border: 2px solid var(--review-secondary);
+}
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-value {
+    font-size: var(--text-2xl);
+    font-weight: 700;
+    color: var(--neutral-900);
+    line-height: 1;
+    margin-bottom: var(--space-1);
+}
+
+.stat-label {
+    font-size: var(--text-sm);
+    color: var(--neutral-500);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* ==========================================
+   CATALOG CONTROLS - FILTERING AND SEARCH
+   ========================================== */
+
+.catalog-controls {
+    background: white;
+    border-radius: var(--radius-lg);
+    padding: var(--space-6);
+    margin-bottom: var(--space-6);
+    box-shadow: var(--shadow-base);
+    border: 1px solid var(--neutral-100);
+}
+
+.primary-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-6);
+    gap: var(--space-6);
+}
+
+/* Search box styling */
+.search-container {
+    flex: 1;
+    max-width: 500px;
+}
+
+.search-box {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.search-input {
+    width: 100%;
+    padding: var(--space-3) var(--space-4);
+    padding-right: var(--space-10);
+    border: 2px solid var(--neutral-200);
+    border-radius: var(--radius-base);
+    font-size: var(--text-base);
+    transition: all var(--transition-fast);
+    background: white;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: var(--review-secondary);
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.clear-search {
+    position: absolute;
+    right: var(--space-3);
+    background: none;
+    border: none;
+    color: var(--neutral-500);
+    cursor: pointer;
+    padding: var(--space-1);
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-fast);
+}
+
+.clear-search:hover {
+    background: var(--neutral-100);
+    color: var(--neutral-700);
+}
+
+.clear-search.hidden {
+    display: none;
+}
+
+/* View mode controls */
+.view-controls {
+    display: flex;
+    gap: var(--space-2);
+    background: var(--neutral-50);
+    padding: var(--space-1);
+    border-radius: var(--radius-base);
+    border: 1px solid var(--neutral-200);
+}
+
+.view-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-4);
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: var(--text-sm);
+    font-weight: 500;
+    color: var(--neutral-500);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.view-btn:hover {
+    background: white;
+    color: var(--neutral-700);
+}
+
+.view-btn.active {
+    background: var(--review-secondary);
+    color: white;
+    box-shadow: var(--shadow-sm);
+}
+
+/* Advanced filters */
+.advanced-filters {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--space-4);
+    align-items: end;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.filter-label {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+    font-weight: 500;
+    color: var(--neutral-700);
+}
+
+.filter-label i {
+    color: var(--review-secondary);
+    font-size: var(--text-base);
+}
+
+.filter-select {
+    padding: var(--space-3);
+    border: 1px solid var(--neutral-300);
+    border-radius: var(--radius-base);
+    font-size: var(--text-sm);
+    background: white;
+    color: var(--neutral-700);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.filter-select:focus {
+    outline: none;
+    border-color: var(--review-secondary);
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.filter-actions {
+    display: flex;
+    align-items: end;
+}
+
+.btn-clear-filters {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    background: var(--neutral-100);
+    border: 1px solid var(--neutral-300);
+    border-radius: var(--radius-base);
+    font-size: var(--text-sm);
+    font-weight: 500;
+    color: var(--neutral-700);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.btn-clear-filters:hover {
+    background: var(--neutral-200);
+    transform: translateY(-1px);
+}
+
+/* ==========================================
+   LOADING AND EMPTY STATES
+   ========================================== */
+
+.loading-state {
+    text-align: center;
+    padding: var(--space-12) var(--space-6);
+    background: white;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-base);
+}
+
+.loading-spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid var(--neutral-200);
+    border-top: 4px solid var(--review-secondary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto var(--space-4);
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading-state p {
+    font-size: var(--text-lg);
+    color: var(--neutral-500);
+    font-weight: 500;
+}
+
+.empty-state {
+    text-align: center;
+    padding: var(--space-12) var(--space-6);
+    background: white;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-base);
+}
+
+.empty-icon {
+    font-size: 4rem;
+    color: var(--neutral-300);
+    margin-bottom: var(--space-4);
+}
+
+.empty-state h3 {
+    color: var(--neutral-700);
+    margin-bottom: var(--space-2);
+}
+
+.empty-state p {
+    color: var(--neutral-500);
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.hidden {
+    display: none;
+}
+
+/* ==========================================
+   ORDER ITEMS CONTAINER - CATALOG DISPLAY
+   ========================================== */
+
+.order-items-container {
+    background: white;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-base);
+    border: 1px solid var(--neutral-100);
+    min-height: 400px;
+}
+
+/* This container will be populated by OrderReviewCatalog.js
+   with either grid cards or table layout depending on view mode */
+
+/* ==========================================
+   CORRECTION PREVIEW PANEL
+   ========================================== */
+
+.correction-preview-panel {
+    background: var(--status-pending-light);
+    border: 2px solid var(--status-pending-border);
+    border-radius: var(--radius-md);
+    margin: var(--space-6) 0;
+    overflow: hidden;
+    box-shadow: var(--shadow-base);
+}
+
+.preview-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-4);
+    background: var(--status-pending);
+    color: white;
+}
+
+.preview-header i {
+    margin-right: var(--space-2);
+}
+
+.preview-close {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    padding: var(--space-1);
+    border-radius: var(--radius-sm);
+    transition: background var(--transition-fast);
+}
+
+.preview-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.preview-content {
+    padding: var(--space-4);
+}
+
+#correction-summary {
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+    font-size: var(--text-sm);
+    line-height: 1.6;
+    white-space: pre-wrap;
+    color: var(--neutral-700);
+}
+
+/* ==========================================
+   APPROVAL CONTROLS OVERLAY - FIXED ACTIONS
+   ========================================== */
+
+.approval-controls-overlay {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid var(--neutral-200);
+    box-shadow: 0 -4px 6px rgba(0, 0, 0, 0.05);
+    z-index: 1000;
+}
+
+.approval-controls {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: var(--space-4) var(--space-6);
+}
+
+.controls-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-6);
+}
+
+.approval-summary {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+#changes-count {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--neutral-700);
+}
+
+#approval-status {
+    font-size: var(--text-xs);
+    color: var(--neutral-500);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.approval-actions {
+    display: flex;
+    gap: var(--space-3);
+    align-items: center;
+}
+
+/* Action button styles */
+.btn-secondary {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-5);
+    background: var(--neutral-100);
+    border: 1px solid var(--neutral-300);
+    border-radius: var(--radius-base);
+    font-size: var(--text-sm);
+    font-weight: 500;
+    color: var(--neutral-700);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.btn-secondary:hover {
+    background: var(--neutral-200);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+}
+
+.btn-danger {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-5);
+    background: var(--status-unavailable);
+    border: 1px solid var(--status-unavailable-border);
+    border-radius: var(--radius-base);
+    font-size: var(--text-sm);
+    font-weight: 500;
+    color: white;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.btn-danger:hover {
+    background: var(--status-unavailable-border);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+}
+
+.btn-success {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-6);
+    background: var(--status-available);
+    border: 1px solid var(--status-available-border);
+    border-radius: var(--radius-base);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: white;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.btn-success:hover {
+    background: var(--status-available-border);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+/* ==========================================
+   MODAL STYLING - REJECTION DIALOG
+   ========================================== */
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    backdrop-filter: blur(4px);
+}
+
+.modal {
+    background: white;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    max-width: 500px;
+    width: calc(100% - var(--space-8));
+    max-height: calc(100vh - var(--space-8));
+    overflow: hidden;
+    animation: modalAppear 0.2s ease-out;
+}
+
+@keyframes modalAppear {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-6);
+    border-bottom: 1px solid var(--neutral-200);
+    background: var(--neutral-50);
+}
+
+.modal-header h4 {
+    color: var(--neutral-900);
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    color: var(--neutral-500);
+    cursor: pointer;
+    padding: var(--space-1);
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-fast);
+}
+
+.modal-close:hover {
+    background: var(--neutral-200);
+    color: var(--neutral-700);
+}
+
+.modal-body {
+    padding: var(--space-6);
+}
+
+.reason-options {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    margin-bottom: var(--space-6);
+}
+
+.reason-option {
+    padding: var(--space-4);
+    border: 2px solid var(--neutral-200);
+    border-radius: var(--radius-base);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.reason-option:hover {
+    border-color: var(--review-secondary);
+    background: rgba(52, 152, 219, 0.05);
+}
+
+.reason-option.selected {
+    border-color: var(--review-secondary);
+    background: rgba(52, 152, 219, 0.1);
+}
+
+.reason-option strong {
+    display: block;
+    color: var(--neutral-900);
+    margin-bottom: var(--space-1);
+}
+
+.reason-option small {
+    color: var(--neutral-500);
+    font-size: var(--text-sm);
+}
+
+.custom-reason {
+    margin-top: var(--space-4);
+}
+
+.custom-reason label {
+    display: block;
+    margin-bottom: var(--space-2);
+    font-weight: 500;
+    color: var(--neutral-700);
+}
+
+.form-textarea {
+    width: 100%;
+    padding: var(--space-3);
+    border: 1px solid var(--neutral-300);
+    border-radius: var(--radius-base);
+    font-size: var(--text-sm);
+    font-family: inherit;
+    resize: vertical;
+    transition: border-color var(--transition-fast);
+}
+
+.form-textarea:focus {
+    outline: none;
+    border-color: var(--review-secondary);
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-3);
+    padding: var(--space-6);
+    border-top: 1px solid var(--neutral-200);
+    background: var(--neutral-50);
+}
+
+/* ==========================================
+   UTILITY CLASSES
+   ========================================== */
+
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+.font-medium { font-weight: 500; }
+.font-semibold { font-weight: 600; }
+.font-bold { font-weight: 700; }
+
+.mb-2 { margin-bottom: var(--space-2); }
+.mb-4 { margin-bottom: var(--space-4); }
+.mb-6 { margin-bottom: var(--space-6); }
+
+.mt-2 { margin-top: var(--space-2); }
+.mt-4 { margin-top: var(--space-4); }
+.mt-6 { margin-top: var(--space-6); }

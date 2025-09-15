@@ -1,6 +1,7 @@
 package com.yourco.warehouse.controllers;
 
 import com.yourco.warehouse.dto.DashboardDTO;
+import com.yourco.warehouse.dto.OrderDTO;
 import com.yourco.warehouse.entity.Order;
 import com.yourco.warehouse.entity.enums.OrderStatus;
 import com.yourco.warehouse.service.DashboardService;
@@ -11,12 +12,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * ADMIN DASHBOARD CONTROLLER - COMPLETE DASHBOARD MANAGEMENT WITH WEBSOCKET
@@ -174,31 +173,58 @@ public class AdminDashboardController {
     // ==========================================
 
     /**
-     * Get detailed order information with all items
-     *
-     * Ново: поддържа expanded order details за dashboard UI.
-     * Връща comprehensive order data включително всички items,
-     * current modifications, и change history за operator review.
+     * Show detailed order review interface for Review Officers
+     * MODIFIED: Converted from API endpoint to template endpoint
+     * Now serves the new catalog-style order review page directly
      */
     @GetMapping("/dashboard/order/{orderId}/details")
-    public ResponseEntity<DashboardDTO> getOrderDetails(@PathVariable Long orderId) {
+    public String getOrderDetails(@PathVariable Long orderId, Model model) {
         try {
-            log.debug("Fetching detailed information for order: {}", orderId);
+            log.debug("Loading order review interface for order: {}", orderId);
 
+            // Load comprehensive order details using existing service
             DashboardDTO orderDetails = dashboardService.getOrderDetails(orderId);
 
-            if (orderDetails.getSuccess()) {
-                log.info("Order details loaded for order {}", orderId);
-                return ResponseEntity.ok(orderDetails);
-            } else {
+            if (!orderDetails.getSuccess()) {
                 log.warn("Failed to load order details for {}: {}", orderId, orderDetails.getMessage());
-                return ResponseEntity.status(500).body(orderDetails);
+                // Redirect back to dashboard with error parameter
+                return "redirect:/employer/dashboard?error=order-not-found";
             }
 
+            // Extract order data from DTO for template usage
+            OrderDTO order = orderDetails.getOrder();
+            if (order == null) {
+                log.error("Order data is null in successful response for order {}", orderId);
+                return "redirect:/employer/dashboard?error=data-unavailable";
+            }
+
+            // Add order data to model for Thymeleaf template
+            model.addAttribute("order", order);
+
+            // Generate categories for filter dropdown from order items
+            Set<String> categories = new HashSet<>();
+            if (order.getItems() != null) {
+                categories = order.getItems().stream()
+                        .map(item -> item.getCategory())
+                        .filter(Objects::nonNull)
+                        .filter(category -> !category.trim().isEmpty())
+                        .collect(Collectors.toSet());
+            }
+            model.addAttribute("categories", categories);
+
+            // Add metadata for better user experience
+            model.addAttribute("pageTitle", "Order Review - Order #" + orderId);
+            model.addAttribute("orderItemsCount", order.getItems() != null ? order.getItems().size() : 0);
+
+            log.info("Order review interface loaded successfully for order {}", orderId);
+
+            // Return the new order review template
+            return "order-review";
+
         } catch (Exception e) {
-            log.error("Error fetching order details for order {}", orderId, e);
-            return ResponseEntity.status(500)
-                    .body(new DashboardDTO("Грешка при зареждане на детайлите на поръчката"));
+            log.error("Critical error loading order review for order {}", orderId, e);
+            // Fallback to dashboard with clear error indication
+            return "redirect:/employer/dashboard?error=system-error";
         }
     }
 

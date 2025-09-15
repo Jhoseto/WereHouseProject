@@ -18,7 +18,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.support.RequestContextUtils;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -174,7 +173,7 @@ public class MainController {
                 model.addAttribute("csrfHeader", "X-CSRF-TOKEN");
             }
 
-            return "main-dashboard";
+            return "admin/main-dashboard";
 
         } catch (Exception e) {
             // Error fallback - запазваме същата структура
@@ -189,7 +188,7 @@ public class MainController {
             model.addAttribute("initialDashboardData", errorData);
             model.addAttribute("errorMessage", "Възникна грешка при зареждане на dashboard данните");
 
-            return "main-dashboard";
+            return "admin/main-dashboard";
         }
     }
 

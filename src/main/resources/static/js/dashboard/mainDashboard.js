@@ -210,11 +210,6 @@ class MainDashboard {
 
         // ===== ORDER INTERACTION FUNCTIONS =====
 
-        window.toggleOrderDetails = (orderId) => {
-            if (this.isReady()) {
-                return this.manager.toggleOrderDetails(orderId);
-            }
-        };
 
         window.updateProductQuantity = (orderId, productId, quantity) => {
             if (this.isReady()) {
@@ -426,7 +421,6 @@ class MainDashboard {
 
         window.refreshDashboard = noOp;
         window.switchTab = noOp;
-        window.toggleOrderDetails = noOp;
         window.updateProductQuantity = noOp;
         window.approveOrder = noOp;
         window.rejectOrder = noOp;
@@ -577,11 +571,6 @@ window.showOrderDetails = function(orderData) {
     if (window.toggleOrderDetails) {
         window.toggleOrderDetails(orderId);
     }
-};
-
-window.updateOrderDetailsUI = function(orderData) {
-    // Тази функция не е нужна - toggleOrderDetails прави всичко
-    console.log('updateOrderDetailsUI called, delegating to toggleOrderDetails');
 };
 
 // Експортирай dashboardApi глобално

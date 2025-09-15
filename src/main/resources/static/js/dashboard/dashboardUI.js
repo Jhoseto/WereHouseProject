@@ -297,8 +297,10 @@ class DashboardUI {
                 return;
             }
 
+            // Clear existing content to prevent duplicate entries
             tabElement.innerHTML = "";
 
+            // Show empty state when no orders are available
             if (safeOrders.length === 0) {
                 tabElement.innerHTML = `
                 <div style="text-align: center; padding: 40px; color: #888;">
@@ -309,11 +311,13 @@ class DashboardUI {
                 return;
             }
 
+            // Generate order cards with navigation functionality
             safeOrders.forEach((order, index) => {
                 const orderElement = document.createElement("div");
                 orderElement.className = "order-item";
                 orderElement.dataset.orderId = order.id || index;
 
+                // Extract order data with fallback values for robustness
                 const orderId = order.id || "N/A";
                 const customerName = order.customerName || order.customerInfo || "Неизвестен клиент";
                 const status = order.status || "Неизвестен статус";
@@ -322,8 +326,9 @@ class DashboardUI {
                     : "Неизвестно време";
                 const priority = this.getOrderPriority(order);
 
+                // Generate HTML with new clickable navigation structure
                 orderElement.innerHTML = `
-                <div class="order-summary">
+                <div class="order-summary clickable-order" data-order-id="${order.id}">
                     <div class="order-priority priority-${priority}"></div>
                     <div class="order-info">
                         <div class="order-header">
@@ -333,49 +338,57 @@ class DashboardUI {
                         <div class="order-client">${customerName}</div>
                         <div class="order-meta">
                             <span>Статус: ${status}</span>
-                            <i class="bi bi-chevron-down expand-icon" id="expand-icon-${order.id}"></i>
+                            <div class="review-indicator">
+                                <i class="bi bi-arrow-right-circle review-arrow"></i>
+                                <span class="review-text">Review</span>
+                            </div>
                         </div>
-                    </div>
-                </div>
-                
-                <!-- Expandable Details -->
-                <div class="order-details" id="order-details-${order.id}" style="display: none;">
-                    <div class="details-header">
-                        <div class="details-title">Детайли на поръчката</div>
-                        <div class="order-total">Общо: ${order.totalGross || "0.00"} лв</div>
-                    </div>
-                    
-                    <div class="product-list" id="product-list-${order.id}">
-                        <div class="loading-items">
-                            <i class="bi bi-hourglass-split"></i> Зареждане на артикули...
-                        </div>
-                    </div>
-                    
-                    <div class="order-actions">
-                        ${this.generateOrderActions(order, tabName)}
-                        <button class="order-action action-save" data-order-id="${order.id}" style="display: none;">
-                            <i class="bi bi-check2"></i> Запази промените
-                        </button>
                     </div>
                 </div>
             `;
 
-                // 📌 Закачаме listener за разпъване на детайлите
-                const summaryElement = orderElement.querySelector(".order-summary");
-                summaryElement.addEventListener("click", () => this.toggleOrderDetails(order.id));
+                // Add navigation event listener to replace old expand/collapse functionality
+                const clickableOrder = orderElement.querySelector('.clickable-order');
+                if (clickableOrder) {
+                    clickableOrder.addEventListener('click', (e) => {
+                        e.preventDefault();
 
-                // 📌 Закачаме listener за бутона "Запази промените"
-                const saveButton = orderElement.querySelector(".action-save");
-                if (saveButton) {
-                    saveButton.addEventListener("click", () => this.saveOrderChanges(order.id));
+                        // Extract order ID and validate it exists
+                        const orderIdToReview = clickableOrder.dataset.orderId;
+                        if (!orderIdToReview || orderIdToReview === 'undefined') {
+                            console.error('Invalid order ID for navigation:', orderIdToReview);
+                            if (window.toastManager) {
+                                window.toastManager.error('Unable to open order review. Invalid order ID.');
+                            }
+                            return;
+                        }
+
+                        console.log(`Navigating to order review for order ${orderIdToReview}`);
+
+                        // Navigate to the new order review interface
+                        window.location.href = `/employer/dashboard/order/${orderIdToReview}/review`;
+                    });
                 }
 
+                // Add the completed order element to the tab container
                 tabElement.appendChild(orderElement);
             });
 
             console.log(`✅ ${tabName} tab content updated with ${safeOrders.length} orders`);
+
         } catch (err) {
             console.error(`❌ Error updating ${tabName} tab content:`, err);
+
+            // Show error state to user if something goes wrong
+            const tabElement = document.querySelector(`#${tabName}-tab .panel-content`);
+            if (tabElement) {
+                tabElement.innerHTML = `
+                <div style="text-align: center; padding: 40px; color: #dc3545;">
+                    <i class="bi bi-exclamation-triangle" style="font-size: 2rem; margin-bottom: 10px; display: block;"></i>
+                    <p>Грешка при зареждане на поръчките. Моля опитайте отново.</p>
+                </div>
+            `;
+            }
         }
     }
 
@@ -412,89 +425,6 @@ class DashboardUI {
         return actions[tabContext] || '';
     }
 
-    // ==========================================
-    // EXPANDABLE ORDER DETAILS FUNCTIONALITY
-    // ==========================================
-
-    async toggleOrderDetails(orderId) {
-        const detailsDiv = document.getElementById(`order-details-${orderId}`);
-        const expandIcon = document.getElementById(`expand-icon-${orderId}`);
-
-        if (!detailsDiv || !expandIcon) {
-            console.warn(`Order details elements not found for ID: ${orderId}`);
-            return;
-        }
-
-        if (detailsDiv.style.display === 'none') {
-            this.expandOrder(orderId);
-            detailsDiv.style.display = 'block';
-            expandIcon.className = 'bi bi-chevron-up expand-icon';
-
-            await this.loadOrderItems(orderId);
-
-            if (this.manager && this.manager.expandedOrders) {
-                this.manager.expandedOrders.add(orderId);
-            }
-        } else {
-            this.collapseOrder(orderId);
-            detailsDiv.style.display = 'none';
-            expandIcon.className = 'bi bi-chevron-down expand-icon';
-
-            if (this.manager && this.manager.expandedOrders) {
-                this.manager.expandedOrders.delete(orderId);
-            }
-        }
-    }
-
-    /**
-     * Expand order with smooth animation
-     */
-    expandOrder(orderId) {
-        try {
-            const orderItem = document.querySelector(`[data-order-id="${orderId}"]`);
-            const details = document.getElementById(`order-details-${orderId}`);
-
-            if (!orderItem || !details) {
-                console.warn(`Order elements not found for ID: ${orderId}`);
-                return;
-            }
-
-            orderItem.classList.add('expanded');
-            details.classList.add('expanded');
-
-            setTimeout(() => {
-                details.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'nearest'
-                });
-            }, this.animationDuration);
-
-            console.log(`✓ Order ${orderId} expanded`);
-
-        } catch (error) {
-            console.error(`Error expanding order ${orderId}:`, error);
-        }
-    }
-
-    /**
-     * Collapse order
-     */
-    collapseOrder(orderId) {
-        try {
-            const orderItem = document.querySelector(`[data-order-id="${orderId}"]`);
-            const details = document.getElementById(`order-details-${orderId}`);
-
-            if (!orderItem || !details) return;
-
-            orderItem.classList.remove('expanded');
-            details.classList.remove('expanded');
-
-            console.log(`✓ Order ${orderId} collapsed`);
-
-        } catch (error) {
-            console.error(`Error collapsing order ${orderId}:`, error);
-        }
-    }
 
     /**
      * Load order items via API - REFACTORED TO USE API
