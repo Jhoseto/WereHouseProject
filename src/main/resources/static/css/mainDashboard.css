@@ -7,7 +7,7 @@
  */
 
 /* ==========================================
-   COLOR SYSTEM - CONSISTENT ACROSS ALL ELEMENTS
+   1. COLOR SYSTEM - CONSISTENT ACROSS ALL ELEMENTS
    ========================================== */
 :root {
     /* CORE STATUS COLORS - Used consistently throughout */
@@ -53,7 +53,7 @@
 }
 
 /* ==========================================
-   RESET & BASE STYLES - MOBILE OPTIMIZED
+   2. RESET & BASE STYLES - MOBILE OPTIMIZED
    ========================================== */
 * {
     margin: 0;
@@ -84,7 +84,7 @@ input, textarea {
 }
 
 /* ==========================================
-   HEADER SECTION - MOBILE FIRST
+   3. HEADER SECTION - MOBILE FIRST
    ========================================== */
 .header {
     background: var(--color-white);
@@ -145,7 +145,7 @@ input, textarea {
 }
 
 /* ==========================================
-   STATUS BAR - PERFECT COLOR CONSISTENCY
+   4. STATUS BAR - PERFECT COLOR CONSISTENCY
    ========================================== */
 .status-bar {
     display: flex;
@@ -228,7 +228,7 @@ input, textarea {
 }
 
 /* ==========================================
-   TAB NAVIGATION - MOBILE OPTIMIZED
+   5. TAB NAVIGATION - MOBILE OPTIMIZED
    ========================================== */
 .tab-nav {
     background: var(--color-white);
@@ -279,7 +279,7 @@ input, textarea {
 }
 
 /* ==========================================
-   CONTENT AREA - MOBILE FIRST
+   6. CONTENT AREA - MOBILE FIRST
    ========================================== */
 .content {
     padding: 16px;
@@ -301,7 +301,7 @@ input, textarea {
 }
 
 /* ==========================================
-   SMART PANELS - MOBILE OPTIMIZED
+   7. SMART PANELS - MOBILE OPTIMIZED
    ========================================== */
 .panel {
     background: var(--color-white);
@@ -351,7 +351,7 @@ input, textarea {
 }
 
 /* ==========================================
-   ORDER ITEMS & EXPANDABLE DETAILS - MOBILE FIRST
+   8. ORDER ITEMS & EXPANDABLE DETAILS - MOBILE FIRST
    ========================================== */
 .order-item {
     border-bottom: 1px solid var(--color-border);
@@ -464,7 +464,7 @@ input, textarea {
 }
 
 /* ==========================================
-   ORDER ACTIONS - MOBILE OPTIMIZED
+   9. ORDER ACTIONS - MOBILE OPTIMIZED
    ========================================== */
 .order-actions {
     display: flex;
@@ -555,7 +555,7 @@ input, textarea {
 }
 
 /* ==========================================
-   EXPANDABLE ORDER DETAILS - MOBILE FIRST
+   10. EXPANDABLE ORDER DETAILS - MOBILE FIRST
    ========================================== */
 .order-details {
     display: none;
@@ -604,7 +604,7 @@ input, textarea {
 }
 
 /* ==========================================
-   PRODUCT LIST & ITEMS - MOBILE OPTIMIZED
+   11. PRODUCT LIST & ITEMS - MOBILE OPTIMIZED
    ========================================== */
 .product-list {
     padding: 16px;
@@ -824,7 +824,7 @@ input, textarea {
 }
 
 /* ==========================================
-   STATISTICS GRID - MOBILE FIRST
+   12. STATISTICS GRID - MOBILE FIRST
    ========================================== */
 .stats-grid {
     display: grid;
@@ -878,7 +878,7 @@ input, textarea {
 }
 
 /* ==========================================
-   NAVIGATION GRID - MOBILE OPTIMIZED
+   13. NAVIGATION GRID - MOBILE OPTIMIZED
    ========================================== */
 .nav-grid {
     display: grid;
@@ -931,7 +931,7 @@ input, textarea {
 }
 
 /* ==========================================
-   ACTIVITY FEED - STATUS CONSISTENT COLORS
+   14. ACTIVITY FEED - STATUS CONSISTENT COLORS
    ========================================== */
 .activity-item {
     display: flex;
@@ -989,7 +989,7 @@ input, textarea {
 }
 
 /* ==========================================
-   REJECTION MODAL - MOBILE FIRST
+   15. REJECTION MODAL - MOBILE FIRST
    ========================================== */
 .modal-overlay {
     position: fixed;
@@ -1141,7 +1141,7 @@ input, textarea {
 }
 
 /* ==========================================
-   STATUS BADGES FOR ORDERS - PERFECT CONSISTENCY
+   16. STATUS BADGES FOR ORDERS - PERFECT CONSISTENCY
    ========================================== */
 .status-badge {
     display: inline-flex;
@@ -1188,88 +1188,169 @@ input, textarea {
     box-shadow: 0 2px 8px rgba(108, 117, 125, 0.3);
 }
 
+/* ============================
+   ORDER DETAIL GRID - APPLE/TESLA STYLE
+   ============================ */
 
-.order-item-row {
-    display: grid;
-    grid-template-columns: 2fr 120px 120px 80px 80px;
-    gap: 15px;
-    padding: 10px 15px;
-    border-bottom: 1px solid #eee;
-    align-items: center;
+/* Main Container */
+.order-detail-grid {
+    background: #fff;
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
+/* Header Row */
 .items-header {
     display: grid;
-    grid-template-columns: 2fr 120px 120px 80px 80px;
-    gap: 15px;
-    padding: 10px 15px;
-    background: #f8f9fa;
+    grid-template-columns: 3fr 100px 80px 80px 100px;
+    padding: 10px 16px;
+    background: #fafafa;
+    border-bottom: 1px solid #ebebeb;
     font-weight: 600;
-    border-bottom: 2px solid #dee2e6;
+    font-size: 13px;
+    color: #222;
 }
 
+/* Data Rows */
+.order-item-row {
+    display: grid;
+    grid-template-columns: 3fr 100px 80px 80px 100px;
+    padding: 12px 16px;
+    border-bottom: 1px solid #f0f0f0;
+    align-items: center;
+    font-size: 13px;
+}
+
+.order-item-row:last-child {
+    border-bottom: none;
+}
+
+.order-item-row:hover {
+    background: #fafafa;
+}
+
+/* Product Info */
 .item-info {
     display: flex;
     flex-direction: column;
+    gap: 2px;
 }
 
 .item-name {
+    font-size: 14px;
     font-weight: 500;
-    color: #2c3e50;
+    color: #111;
+    margin: 0;
+    line-height: 1.3;
 }
 
 .item-sku {
-    font-size: 0.8rem;
-    color: #6c757d;
-    font-family: monospace;
+    font-size: 11px;
+    color: #777;
+    font-family: ui-monospace, monospace;
 }
 
+/* Quantity */
 .item-quantity {
-    display: flex;
-    align-items: center;
-    gap: 5px;
+    text-align: center;
 }
 
 .qty-input {
     width: 60px;
-    padding: 5px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
+    height: 28px;
+    border: 1px solid #d0d0d0;
+    border-radius: 6px;
     text-align: center;
+    font-size: 13px;
+    font-weight: 500;
+    color: #222;
+    background: #fff;
+    transition: border 0.2s ease, box-shadow 0.2s ease;
 }
 
+.qty-input:focus {
+    border-color: #007aff;
+    box-shadow: 0 0 0 2px rgba(0,122,255,0.2);
+    outline: none;
+}
+
+/* Stock Status */
 .item-stock {
     text-align: center;
 }
 
 .stock-badge {
     display: inline-block;
-    padding: 2px 8px;
-    border-radius: 12px;
-    font-size: 0.8rem;
-    font-weight: 500;
+    min-width: 60px;
+    padding: 3px 6px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    line-height: 1.2;
 }
 
+/* Stock States */
 .stock-good .stock-badge {
-    background: #d4edda;
-    color: #155724;
+    background: #e6f7ec;
+    color: #207544;
 }
 
 .stock-low .stock-badge {
-    background: #fff3cd;
-    color: #856404;
+    background: #fff6e0;
+    color: #9b6b00;
 }
 
 .stock-insufficient .stock-badge {
-    background: #f8d7da;
-    color: #721c24;
+    background: #ffecec;
+    color: #b20000;
 }
 
 .stock-none .stock-badge {
-    background: #f5c6cb;
-    color: #721c24;
+    background: #f5f5f5;
+    color: #666;
 }
 
+/* Pricing */
+.item-price,
+.item-total {
+    text-align: right;
+    font-weight: 600;
+    font-size: 13px;
+    color: #111;
+}
+
+.item-total {
+    font-weight: 700;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .items-header {
+        display: none;
+    }
+
+    .order-item-row {
+        grid-template-columns: 1fr;
+        padding: 12px;
+        border: 1px solid #eee;
+        border-radius: 8px;
+        margin-bottom: 8px;
+    }
+
+    .item-quantity,
+    .item-stock,
+    .item-price,
+    .item-total {
+        text-align: left;
+    }
+}
+
+/* ==========================================
+   18. ORDER MANAGEMENT PANEL
+   ========================================== */
 .order-actions-panel {
     margin-top: 20px;
     padding: 15px;
@@ -1341,9 +1422,8 @@ input, textarea {
     border-left: 4px solid #dc3545;
 }
 
-
 /* ==========================================
-   RESPONSIVE DESIGN - TABLET & DESKTOP
+   19. RESPONSIVE DESIGN - TABLET & DESKTOP
    ========================================== */
 @media (min-width: 768px) {
     .content {
@@ -1423,7 +1503,7 @@ input, textarea {
 }
 
 /* ==========================================
-   TOUCH OPTIMIZATIONS - MOBILE DEVICES
+   20. TOUCH OPTIMIZATIONS - MOBILE DEVICES
    ========================================== */
 @media (pointer: coarse) {
     /* Ensure all interactive elements meet touch targets */
@@ -1456,7 +1536,7 @@ input, textarea {
 }
 
 /* ==========================================
-   LOADING STATES - MOBILE OPTIMIZED
+   21. LOADING STATES - MOBILE OPTIMIZED
    ========================================== */
 .loading {
     opacity: 0.6;
@@ -1485,7 +1565,7 @@ input, textarea {
 }
 
 /* ==========================================
-   ACCESSIBILITY & FOCUS STATES
+   22. ACCESSIBILITY & FOCUS STATES
    ========================================== */
 *:focus {
     outline: 2px solid var(--color-secondary);
@@ -1523,7 +1603,7 @@ input, textarea {
 }
 
 /* ==========================================
-   DARK MODE SUPPORT (Future-ready)
+   23. DARK MODE SUPPORT (Future-ready)
    ========================================== */
 @media (prefers-color-scheme: dark) {
     :root {
