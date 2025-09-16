@@ -114,38 +114,50 @@ class OrderReviewCatalog {
     }
 
     async loadOrderItems() {
-        const response = await fetch(`/employer/dashboard/order/${this.orderId}/orderDetailData`);
-        const orderData = await response.json();
+        try {
+            const response = await window.dashboardApi.getOrderDetailsAndItems(this.orderId);
 
-        if (!orderData.success) {
-            throw new Error(orderData.message || 'Failed to load order data');
-        }
+            if (!response.success) {
+                throw new Error(response.message || 'Failed to load order data');
+            }
 
-        // Store original state for comparison
-        orderData.data.items.forEach(item => {
-            this.originalOrderItems.set(item.productId, {
-                quantity: item.quantity,
-                price: item.price,
-                available: (item.availableStock || 0) >= item.quantity
+
+            const orderData = response.data || response;
+            const items = orderData.items || [];
+
+            if (!items.length) {
+                throw new Error('No items found in order');
+            }
+
+            // Store original state
+            items.forEach(item => {
+                this.originalOrderItems.set(item.productId, {
+                    quantity: item.quantity,
+                    price: item.price,
+                    available: (item.availableStock || 0) >= item.quantity
+                });
             });
-        });
 
-        // Transform order items to internal format
-        this.products = orderData.data.items.map(item => ({
-            id: item.productId,
-            name: item.productName || 'Неизвестен продукт',
-            sku: item.productSku || 'N/A',
-            price: item.price || 0,
-            category: item.category || 'Некатегоризиран',
-            orderedQuantity: item.quantity || 0,
-            availableStock: item.availableStock || 0,
-            unit: item.unit || 'бр',
-            available: (item.availableStock || 0) >= item.quantity,
-            imageUrl: '/images/products/default.jpg',
-            hasStockIssue: item.hasStockIssue || false
-        }));
+            // Transform to internal format
+            this.products = items.map(item => ({
+                id: item.productId || item.id,
+                name: item.productName || item.name || 'Неизвестен продукт',
+                sku: item.productSku || item.sku || 'N/A',
+                price: item.price || item.unitPrice || 0,
+                category: item.category || 'Некатегоризиран',
+                orderedQuantity: item.quantity || item.orderedQuantity || 0,
+                availableStock: item.availableStock || item.stock || item.available || 0,
+                unit: item.unit || item.measurementUnit || 'бр',
+                available: (item.availableStock || item.stock || 0) >= (item.quantity || 0),
+                hasStockIssue: item.hasStockIssue || false
+            }));
 
-        this.filteredProducts = [...this.products];
+            this.filteredProducts = [...this.products];
+
+        } catch (error) {
+            console.error('Load order items error:', error);
+            throw error;
+        }
     }
 
     populateFilters() {
@@ -294,39 +306,55 @@ class OrderReviewCatalog {
         const correctedQty = this.modifiedItems.get(product.id)?.newQuantity || product.orderedQuantity;
         const isModified = this.modifiedItems.has(product.id);
 
+        // Изчисли цени с и без ДДС
+        const priceWithVAT = product.price;
+        const priceWithoutVAT = (product.price / 1.20).toFixed(2);
+        const vatAmount = (product.price - (product.price / 1.20)).toFixed(2);
+        const totalWithoutVAT = (priceWithoutVAT * correctedQty).toFixed(2);
+        const totalWithVAT = (priceWithVAT * correctedQty).toFixed(2);
+
         return `
-            <tr class="review-row ${status.className} ${isModified ? 'modified' : ''}" data-product-id="${product.id}">
-                <td class="product-info">
-                    <div class="product-details">
-                        <strong>${product.name}</strong>
-                        <small>SKU: ${product.sku}</small>
+        <tr class="review-row ${status.className} ${isModified ? 'modified' : ''}" data-product-id="${product.id}">
+            <td class="product-info">
+                <div class="product-details">
+                    <strong>${product.name}</strong>
+                    <small>SKU: ${product.sku} | Категория: ${product.category}</small>
+                    <div class="price-info">
+                        <small>Цена без ДДС: ${priceWithoutVAT} лв</small>
+                        <small>Цена с ДДС: ${priceWithVAT} лв</small>
+                        <small>ДДС (20%): ${vatAmount} лв</small>
                     </div>
-                </td>
-                <td class="ordered-quantity">
-                    <span class="quantity-value">${product.orderedQuantity}</span>
-                    <small class="quantity-unit">${product.unit}</small>
-                </td>
-                <td class="stock-level ${product.available ? 'available' : 'unavailable'}">
-                    <span class="stock-value">${product.availableStock}</span>
-                    <small class="stock-indicator">${status.stockText}</small>
-                </td>
-                <td class="correction-controls">
-                    <div class="quantity-adjuster">
-                        <button type="button" class="qty-btn minus" data-action="decrease">−</button>
-                        <input type="number" class="correction-input" value="${correctedQty}" 
-                               min="0" max="${product.availableStock}" data-product-id="${product.id}">
-                        <button type="button" class="qty-btn plus" data-action="increase">+</button>
-                    </div>
-                </td>
-                <td class="status-indicator">
-                    <span class="status-badge ${status.className}">${status.text}</span>
-                </td>
-                <td class="row-actions">
-                    <button type="button" class="action-btn approve-item" title="Одобри позиция" data-product-id="${product.id}">✓</button>
-                    <button type="button" class="action-btn remove-item" title="Премахни от поръчката" data-product-id="${product.id}">✗</button>
-                </td>
-            </tr>
-        `;
+                </div>
+            </td>
+            <td class="ordered-quantity">
+                <span class="quantity-value">${product.orderedQuantity}</span>
+                <small class="quantity-unit">${product.unit}</small>
+            </td>
+            <td class="stock-level ${product.available ? 'available' : 'unavailable'}">
+                <span class="stock-value">${product.availableStock}</span>
+                <small class="stock-indicator">${status.stockText}</small>
+            </td>
+            <td class="correction-controls">
+                <div class="quantity-adjuster">
+                    <button type="button" class="qty-btn minus" data-action="decrease">−</button>
+                    <input type="number" class="correction-input" value="${correctedQty}" 
+                           min="0" max="${product.availableStock}" data-product-id="${product.id}">
+                    <button type="button" class="qty-btn plus" data-action="increase">+</button>
+                </div>
+            </td>
+            <td class="status-indicator">
+                <span class="status-badge ${status.className}">${status.text}</span>
+                <div class="total-info">
+                    <small>Общо без ДДС: ${totalWithoutVAT} лв</small>
+                    <small>Общо с ДДС: ${totalWithVAT} лв</small>
+                </div>
+            </td>
+            <td class="row-actions">
+                <button type="button" class="action-btn approve-item" title="Одобри позиция" data-product-id="${product.id}">✓</button>
+                <button type="button" class="action-btn remove-item" title="Премахни от поръчката" data-product-id="${product.id}">✗</button>
+            </td>
+        </tr>
+    `;
     }
 
     renderGridView() {
@@ -344,23 +372,27 @@ class OrderReviewCatalog {
         const correctedQty = this.modifiedItems.get(product.id)?.newQuantity || product.orderedQuantity;
         const isModified = this.modifiedItems.has(product.id);
 
+        // Изчисли цени с и без ДДС
+        const priceWithVAT = product.price;
+        const priceWithoutVAT = (product.price / 1.20).toFixed(2);
+        const vatAmount = (product.price - (product.price / 1.20)).toFixed(2);
+        const totalWithoutVAT = (priceWithoutVAT * correctedQty).toFixed(2);
+        const totalWithVAT = (priceWithVAT * correctedQty).toFixed(2);
+
         return `
-            <div class="product-card ${status.className} ${isModified ? 'modified' : ''}" data-product-id="${product.id}">
-                <div class="card-header">
-                    <h3 class="product-name">${product.name}</h3>
-                    <span class="product-sku">SKU: ${product.sku}</span>
+             <div class="product-card ${status.className} ${isModified ? 'modified' : ''}" data-product-id="${product.id}">
+            <div class="card-header">
+                <h3 class="product-name">${product.name}</h3>
+                <span class="product-sku">SKU: ${product.sku}</span>
+                <span class="product-category">Категория: ${product.category}</span>
+            </div>
+            
+            <div class="card-body">
+                <div class="price-details">
+                    <div>Без ДДС: ${priceWithoutVAT} лв</div>
+                    <div>С ДДС: ${priceWithVAT} лв</div>
+                    <div>ДДС: ${vatAmount} лв</div>
                 </div>
-                
-                <div class="card-body">
-                    <div class="quantity-info">
-                        <div class="ordered">
-                            <label>Поръчано:</label>
-                            <span>${product.orderedQuantity} ${product.unit}</span>
-                        </div>
-                        <div class="available">
-                            <label>Наличност:</label>
-                            <span class="${product.available ? 'in-stock' : 'out-of-stock'}">${product.availableStock} ${product.unit}</span>
-                        </div>
                     </div>
                     
                     <div class="correction-section">
@@ -382,6 +414,10 @@ class OrderReviewCatalog {
                         <button type="button" class="action-btn approve-item" title="Одобри позиция" data-product-id="${product.id}">✓</button>
                         <button type="button" class="action-btn remove-item" title="Премахни от поръчката" data-product-id="${product.id}">✗</button>
                     </div>
+                </div>
+                <div class="total-summary">
+                    <div>Общо без ДДС: ${totalWithoutVAT} лв</div>
+                    <div>Общо с ДДС: ${totalWithVAT} лв</div>
                 </div>
             </div>
         `;
@@ -480,6 +516,7 @@ class OrderReviewCatalog {
             this.onQuantityChange(productId, oldQuantity, newQuantity);
         }
     }
+
 
     approveItem(productId) {
         const container = document.querySelector(`[data-product-id="${productId}"]`);
@@ -641,12 +678,90 @@ class OrderReviewCatalog {
         }
     }
 
+
     getModifiedItems() {
         return this.modifiedItems;
     }
 
     getOriginalItems() {
         return this.originalOrderItems;
+    }
+
+    hasUnsavedChanges() {
+        return this.modifiedItems.size > 0;
+    }
+
+    getChangesSummary() {
+        const changes = [];
+        this.modifiedItems.forEach((change, productId) => {
+            const product = this.products.find(p => p.id === productId);
+            if (product) {
+                if (change.changeType === 'removed') {
+                    changes.push(`${product.name} - премахнат`);
+                } else {
+                    changes.push(`${product.name}: ${change.originalQuantity} → ${change.newQuantity}`);
+                }
+            }
+        });
+        return changes;
+    }
+
+    async handleOrderApproval() {
+        try {
+            this.showApprovalInProgress();
+
+            // Вземи всички промени
+            const modifications = this.orderReviewCatalog.getModifiedItems();
+            const changes = Array.from(modifications.entries()).map(([productId, change]) => ({
+                productId: productId,
+                originalQuantity: change.originalQuantity,
+                newQuantity: change.newQuantity,
+                changeType: change.changeType
+            }));
+
+            // Изпрати към backend
+            if (changes.length > 0) {
+                const result = await this.dashboardApi.approveOrderWithBatchChanges(
+                    this.currentOrderId,
+                    changes,
+                    this.generateCorrectionNote()
+                );
+            } else {
+                const result = await this.dashboardManager.approveOrder(this.currentOrderId, '');
+            }
+        } catch (error) {
+            this.handleApprovalError(error);
+        }
+    }
+
+    handleCorrectionPreview() {
+        const preview = document.getElementById('correction-preview');
+        const summary = document.getElementById('correction-summary');
+
+        if (preview && summary) {
+            const originalItems = this.orderReviewCatalog.getOriginalItems();
+            const modifiedItems = this.orderReviewCatalog.getModifiedItems();
+
+            let html = '<div class="changes-comparison"><h4>Сравнение:</h4><table>';
+
+            modifiedItems.forEach((change, productId) => {
+                const original = originalItems.get(productId);
+                const product = this.orderData.items.find(item => item.productId === productId);
+
+                html += `
+                <tr>
+                    <td>${product?.productName}</td>
+                    <td>Оригинал: ${original.quantity}</td>
+                    <td>Ново: ${change.newQuantity}</td>
+                    <td class="change-type">${change.changeType === 'removed' ? 'Премахнат' : 'Променен'}</td>
+                </tr>
+            `;
+            });
+
+            html += '</table></div>';
+            summary.innerHTML = html;
+            preview.classList.remove('hidden');
+        }
     }
 
     destroy() {

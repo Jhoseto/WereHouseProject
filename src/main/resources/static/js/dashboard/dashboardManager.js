@@ -106,17 +106,11 @@ class DashboardManager {
                     cancelledCount: dashboardResponse.cancelledCount || 0
                 };
 
-                // Initialize empty arrays for all tabs to avoid undefined issues
-                const tabs = ['urgent', 'pending', 'ready', 'completed', 'activity'];
-                tabs.forEach(tab => {
-                    if (!this.loadedOrders.has(tab)) this.loadedOrders.set(tab, []);
-                });
-
-                // Update UI with initial data
+                // Update UI with initial data ВЕДНАГА
                 this.ui.updateCounters(this.currentCounters);
                 this.ui.updateDailyStats(dashboardResponse);
 
-                // Load orders for current tab
+                // Load orders for current tab БЕЗ tab switching
                 await this.loadTabData(this.currentTab);
 
                 console.log('✓ Initial data loaded successfully');
@@ -652,43 +646,8 @@ class DashboardManager {
         }
     }
 
-    async approveOrder(orderId, operatorNote = '') {
-        try {
-            const response = await this.api.approveOrder(orderId, operatorNote);
 
-            if (response.success) {
-                this.ui.markOrderAsProcessed(orderId, 'approved');
-                this.ui.showSuccessMessage(response.message);
-                this.refreshCurrentTab();
-            } else {
-                this.ui.showErrorMessage(response.message);
-            }
 
-            return response;
-        } catch (error) {
-            console.error('Error approving order:', error);
-            this.ui.showErrorMessage('Грешка при одобряване на поръчката');
-        }
-    }
-
-    async rejectOrder(orderId, rejectionReason) {
-        try {
-            const response = await this.api.rejectOrder(orderId, rejectionReason);
-
-            if (response.success) {
-                this.ui.markOrderAsProcessed(orderId, 'rejected');
-                this.ui.showSuccessMessage(response.message);
-                this.refreshCurrentTab();
-            } else {
-                this.ui.showErrorMessage(response.message);
-            }
-
-            return response;
-        } catch (error) {
-            console.error('Error rejecting order:', error);
-            this.ui.showErrorMessage('Грешка при отказване на поръчката');
-        }
-    }
 
     initOrderState(orderId, orderData) {
         this.orderStates.set(orderId, {

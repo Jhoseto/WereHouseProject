@@ -26,10 +26,10 @@ class DashboardUI {
         // Status to tab mapping - CORRECTED MAPPING
         this.statusToTabMapping = {
             'urgent': 'urgent',
-            'pending': 'warning',
-            'confirmed': 'info',    // FIXED: was 'ready'
-            'cancelled': 'danger',  // ADDED: was missing
-            'activity': 'success'
+            'pending': 'pending',     // ПРОМЕНЕНО: беше 'warning'
+            'confirmed': 'confirmed', // ПРОМЕНЕНО: беше 'info'
+            'cancelled': 'cancelled', // ПРОМЕНЕНО: беше 'danger'
+            'activity': 'activity'
         };
 
         console.log('DashboardUI initialized');
@@ -261,25 +261,29 @@ class DashboardUI {
     }
 
     updateStatusBarSelection(tabName) {
+        // ДОБАВИ проверка да не прави ненужни промени
+        if (this.lastSelectedTab === tabName) return;
+
         this.elements.statusItems.forEach(item => {
             item.style.background = '';
         });
 
-        // FIXED: Use the corrected mapping
         const statusClass = this.statusToTabMapping[tabName];
         if (statusClass) {
             const statusItem = document.querySelector(`.status-item.${statusClass}`);
             if (statusItem) {
                 const colors = {
                     'urgent': 'rgba(231, 76, 60, 0.1)',
-                    'warning': 'rgba(243, 156, 18, 0.1)',
-                    'info': 'rgba(52, 152, 219, 0.1)',
-                    'danger': 'rgba(220, 53, 69, 0.1)',  // ADDED for cancelled
-                    'success': 'rgba(39, 174, 96, 0.1)'
+                    'pending': 'rgba(243, 156, 18, 0.1)',
+                    'confirmed': 'rgba(52, 152, 219, 0.1)',
+                    'cancelled': 'rgba(220, 53, 69, 0.1)',
+                    'activity': 'rgba(39, 174, 96, 0.1)'
                 };
                 statusItem.style.background = colors[statusClass] || '';
             }
         }
+
+        this.lastSelectedTab = tabName;
     }
 
     // ==========================================
@@ -1208,55 +1212,6 @@ window.rejectOrderFinal = window.rejectOrderFinal || function(orderId) {
         } else {
             alert('Dashboard система не е готова');
         }
-    }
-};
-
-
-window.toggleOrderDetails = function(orderId) {
-    if (window.mainDashboard && window.mainDashboard.ui) {
-        window.mainDashboard.ui.toggleOrderDetails(orderId);
-    }
-};
-
-window.markOrderAsModified = function(orderId) {
-    if (window.mainDashboard && window.mainDashboard.ui) {
-        window.mainDashboard.ui.markOrderAsModified(orderId);
-    }
-};
-
-window.toggleItemAvailability = function(orderId, itemId, checkbox) {
-    if (window.mainDashboard && window.mainDashboard.ui) {
-        window.mainDashboard.ui.toggleItemAvailability(orderId, itemId, checkbox);
-    }
-};
-
-window.saveOrderChanges = function(orderId) {
-    if (window.mainDashboard && window.mainDashboard.ui) {
-        window.mainDashboard.ui.saveOrderChanges(orderId);
-    }
-};
-
-window.updateProductQuantity = function(orderId, productId, quantity) {
-    if (window.mainDashboard && window.mainDashboard.ui) {
-        window.mainDashboard.ui.updateProductQuantity(orderId, productId, quantity);
-    }
-};
-
-window.approveProduct = function(orderId, productId) {
-    if (window.mainDashboard && window.mainDashboard.ui) {
-        window.mainDashboard.ui.approveProduct(orderId, productId);
-    }
-};
-
-window.rejectProduct = function(orderId, productId) {
-    if (window.mainDashboard && window.mainDashboard.ui) {
-        window.mainDashboard.ui.rejectProduct(orderId, productId);
-    }
-};
-
-window.rejectEntireOrder = function(orderId) {
-    if (window.mainDashboard && window.mainDashboard.ui) {
-        window.mainDashboard.ui.rejectEntireOrder(orderId);
     }
 };
 

@@ -318,6 +318,10 @@
     </div>
 </div>
 
+<!-- Include Footer Fragment -->
+<div th:replace="~{fragments/footer :: footer}"></div>
+
+
 <!-- Order data for JavaScript initialization -->
 <script th:inline="javascript">
     // Prevent automatic catalog initialization
@@ -331,16 +335,17 @@
         csrfHeader: /*[[${csrfHeader}]]*/ '',
         dashboardMode: 'review',
         orderData: /*[[${orderData}]]*/ {},
-        clientHistory: /*[[${clientHistory}]]*/ {}
+        clientHistory: /*[[${clientHistory}]]*/ {},
+        waitForMainDashboard: true
     };
 </script>
 
 <!-- Core project scripts -->
 <div th:replace="~{fragments/bottomHtmlImports :: bottomImports}"></div>
 
-<!-- Dashboard integration scripts -->
 <script src="/js/dashboard/dashboardApi.js"></script>
 <script src="/js/dashboard/dashboardManager.js"></script>
+<script src="/js/dashboard/dashboardUI.js"></script>
 
 <!-- Order Review specific scripts -->
 <script src="/js/dashboard/orderReviewCatalog.js"></script>

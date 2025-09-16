@@ -53,15 +53,24 @@ class OrderReviewOrchestrator {
         }
     }
 
+
     async initializeDashboardInfrastructure() {
-        if (window.mainDashboard && window.mainDashboard.api) {
+        if (window.mainDashboard && window.mainDashboard.api && window.mainDashboard.manager) {
             this.dashboardApi = window.mainDashboard.api;
             this.dashboardManager = window.mainDashboard.manager;
+            console.log('Using existing dashboard infrastructure');
         } else {
+            console.warn('MainDashboard not available, creating standalone instances');
             this.dashboardApi = new DashboardApi();
             await this.dashboardApi.initialize();
+
+            window.dashboardApi = this.dashboardApi;
+
+            const ui = new DashboardUI();
+            ui.initialize();
+
             this.dashboardManager = new DashboardManager();
-            await this.dashboardManager.initialize(this.dashboardApi, null);
+            await this.dashboardManager.initialize(this.dashboardApi, ui);
         }
     }
 
@@ -116,9 +125,21 @@ class OrderReviewOrchestrator {
         this.addEventHandler('cancel-rejection', 'click', () => this.handleRejectionCancellation());
 
         // Modal close handlers
-        document.querySelectorAll('.modal-close').forEach(btn => {
-            this.addEventHandler(btn, 'click', () => this.handleModalClose());
+        document.querySelectorAll('.modal-close, .preview-close').forEach(btn => {
+            this.addEventHandler(btn, 'click', () => {
+                this.hideRejectionModal();
+                this.hideCorrectionPreview();
+            });
         });
+
+        const modal = document.getElementById('rejection-modal');
+        if (modal) {
+            this.addEventHandler(modal, 'click', (e) => {
+                if (e.target === modal) {
+                    this.hideRejectionModal();
+                }
+            });
+        }
 
         // Workflow steps
         document.querySelectorAll('.workflow-step').forEach((step, index) => {
@@ -140,30 +161,66 @@ class OrderReviewOrchestrator {
                 `Поръчка ${this.currentOrderId} заредена с ${this.orderData.items?.length || 0} артикула.`
             );
         }
+
+        setTimeout(() => {
+            const overlay = document.querySelector('.approval-controls-overlay');
+            if (overlay) overlay.style.display = 'block';
+        }, 300);
     }
 
     // Event Handlers
     async handleOrderApproval() {
         try {
             this.showApprovalInProgress();
-            const correctionNote = this.generateCorrectionNote();
-            const validationResult = await this.performFinalValidation();
 
-            if (!validationResult.success) {
-                this.handleValidationFailure(validationResult);
-                return;
-            }
+            // Провери дали има промени
+            const hasLocalChanges = this.orderReviewCatalog.hasUnsavedChanges();
+            const hasTrackedChanges = this.changeTracker.size > 0;
 
-            const approvalResult = await this.dashboardManager.approveOrder(
-                this.currentOrderId,
-                correctionNote
-            );
+            if (!hasLocalChanges && !hasTrackedChanges) {
+                // Директно одобри без корекции
+                const result = await this.dashboardManager.approveOrder(this.currentOrderId, '');
 
-            if (approvalResult.success) {
-                this.handleApprovalSuccess(approvalResult);
+                if (result.success) {
+                    this.handleApprovalSuccess(result);
+                } else {
+                    this.handleApprovalFailure(result);
+                }
+
             } else {
-                this.handleApprovalFailure(approvalResult);
+                // Одобри с корекции
+                const correctionNote = this.generateCorrectionNote();
+                const modifications = this.orderReviewCatalog.getModifiedItems();
+
+                // Валидира промените
+                const validationResult = await this.performFinalValidation();
+                if (!validationResult.success) {
+                    this.handleValidationFailure(validationResult);
+                    return;
+                }
+
+                // Подготви данните за промените
+                const changes = Array.from(modifications.entries()).map(([productId, change]) => ({
+                    productId: productId,
+                    originalQuantity: change.originalQuantity,
+                    newQuantity: change.newQuantity,
+                    changeType: change.changeType
+                }));
+
+                // Изпрати заявката
+                const result = await this.dashboardApi.approveOrderWithBatchChanges(
+                    this.currentOrderId,
+                    changes,
+                    correctionNote
+                );
+
+                if (result.success) {
+                    this.handleApprovalSuccess(result);
+                } else {
+                    this.handleApprovalFailure(result);
+                }
             }
+
         } catch (error) {
             this.handleApprovalError(error);
         } finally {
@@ -176,7 +233,32 @@ class OrderReviewOrchestrator {
     }
 
     handleCorrectionPreview() {
-        this.showCorrectionPreview();
+        const preview = document.getElementById('correction-preview');
+        const summary = document.getElementById('correction-summary');
+
+        if (preview && summary) {
+            if (this.changeTracker.size === 0) {
+                summary.innerHTML = '<p class="no-changes"> Няма направени корекции. Поръчката ще бъде одобрена както е поръчана.</p>';
+            } else {
+                const correctionNote = this.generateCorrectionNote();
+                const changesList = this.orderReviewCatalog.getChangesSummary();
+
+                summary.innerHTML = `
+                <div class="changes-overview">
+                    <h4>Обобщение на промените:</h4>
+                    <ul class="changes-list">
+                        ${changesList.map(change => `<li>${change}</li>`).join('')}
+                    </ul>
+                </div>
+                <div class="client-message">
+                    <h4>Съобщение до клиента:</h4>
+                    <div class="message-preview">${correctionNote.replace(/\n/g, '<br>')}</div>
+                </div>
+            `;
+            }
+
+            preview.classList.remove('hidden');
+        }
     }
 
     handleRejectionConfirmation() {
@@ -224,26 +306,36 @@ class OrderReviewOrchestrator {
     // Business Logic Methods
     async performFinalValidation() {
         try {
-            const modificationsToValidate = {
-                orderId: this.currentOrderId,
-                modifications: Array.from(this.changeTracker.entries()),
-                timestamp: new Date().toISOString()
-            };
+            // Вместо да правим HTTP заявка, валидираме локално
+            const invalidItems = [];
 
-            const response = await fetch('/employer/dashboard/validate-order-approval', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    [this.config.csrfHeader]: this.config.csrfToken
-                },
-                body: JSON.stringify(modificationsToValidate)
+            this.changeTracker.forEach((change, productId) => {
+                const product = this.orderData.items.find(item => item.productId === productId);
+                if (product && change.newQuantity > product.availableStock) {
+                    invalidItems.push({
+                        productName: product.productName,
+                        requested: change.newQuantity,
+                        available: product.availableStock
+                    });
+                }
             });
 
-            return await response.json();
+            if (invalidItems.length > 0) {
+                return {
+                    success: false,
+                    errors: invalidItems.map(item =>
+                        `${item.productName}: искани ${item.requested}, налични ${item.available}`
+                    ),
+                    canProceed: false
+                };
+            }
+
+            return { success: true, canProceed: true };
+
         } catch (error) {
             return {
                 success: false,
-                errors: ['Unable to perform final validation. Please try again.'],
+                errors: ['Грешка при валидация на наличностите'],
                 canProceed: false
             };
         }
@@ -252,17 +344,28 @@ class OrderReviewOrchestrator {
     generateCorrectionNote() {
         if (this.changeTracker.size === 0) return '';
 
-        let note = 'Корекции в поръчката:\n';
+        let note = 'Корекции в поръчката:\n\n';
+        let hasRemovals = false;
+        let hasQuantityChanges = false;
+
         this.changeTracker.forEach((change, productId) => {
             const product = this.orderData.items.find(item => item.productId === productId);
             if (product) {
                 if (change.changeType === 'removed') {
-                    note += `• ${product.productName} - премахнат от поръчката\n`;
-                } else {
-                    note += `• ${product.productName} - количество променено от ${change.originalQuantity} на ${change.newQuantity}\n`;
+                    note += `❌ ${product.productName} - премахнат от поръчката\n`;
+                    hasRemovals = true;
+                } else if (change.changeType === 'modified') {
+                    note += `📝 ${product.productName} - количество променено от ${change.originalQuantity} на ${change.newQuantity}\n`;
+                    hasQuantityChanges = true;
                 }
             }
         });
+
+        note += '\nПричини за промените:\n';
+        if (hasRemovals) note += '• Липса на наличност в склада\n';
+        if (hasQuantityChanges) note += '• Корекция според реалните наличности\n';
+
+        note += '\nИзвиняваме се за неудобството!';
 
         return note;
     }
@@ -450,11 +553,29 @@ class OrderReviewOrchestrator {
     setupCatalogEventHandlers() {
         if (this.orderReviewCatalog) {
             this.orderReviewCatalog.onQuantityChange = (productId, oldQty, newQty) => {
-                this.trackChange(productId, { originalQuantity: oldQty, newQuantity: newQty, changeType: 'modified' });
+                const product = this.orderData.items.find(item => item.productId === productId);
+                this.trackChange(productId, {
+                    originalQuantity: oldQty,
+                    newQuantity: newQty,
+                    changeType: newQty === 0 ? 'removed' : 'modified',
+                    productName: product?.productName || 'Неизвестен продукт'
+                });
             };
 
             this.orderReviewCatalog.onItemRemove = (productId) => {
-                this.trackChange(productId, { changeType: 'removed' });
+                const product = this.orderData.items.find(item => item.productId === productId);
+                this.trackChange(productId, {
+                    changeType: 'removed',
+                    productName: product?.productName || 'Неизвестен продукт'
+                });
+            };
+
+            // ДОБАВИ callback за approve individual items
+            this.orderReviewCatalog.onItemApprove = (productId) => {
+                this.trackChange(productId, {
+                    changeType: 'approved',
+                    productName: this.orderData.items.find(item => item.productId === productId)?.productName
+                });
             };
         }
     }
@@ -466,9 +587,25 @@ class OrderReviewOrchestrator {
 
     updateChangesDisplay() {
         const changesCount = document.getElementById('changes-count');
+        const approvalStatus = document.getElementById('approval-status');
+
         if (changesCount) {
             const count = this.changeTracker.size;
             changesCount.textContent = `${count} ${count === 1 ? 'промяна' : 'промени'}`;
+        }
+
+        if (approvalStatus) {
+            const hasChanges = this.changeTracker.size > 0;
+            approvalStatus.textContent = hasChanges ?
+                'Има промени - ще се изпрати съобщение до клиента' :
+                'Готов за одобрение';
+            approvalStatus.className = hasChanges ? 'has-changes' : 'no-changes';
+        }
+
+        // Покажи approval controls overlay
+        const overlay = document.querySelector('.approval-controls-overlay');
+        if (overlay) {
+            overlay.style.display = 'block';
         }
     }
 
@@ -560,7 +697,22 @@ window.addEventListener('beforeunload', function() {
 
 // Auto-initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
-    setTimeout(initializeOrderReviewSystem, 100);
+    // Изчакай главната dashboard система да се инициализира първо
+    if (window.orderReviewConfig) {
+        if (window.mainDashboard?.isInitialized) {
+            initializeOrderReviewSystem();
+        } else {
+            // Изчакай 500ms и опитай отново
+            setTimeout(() => {
+                if (window.mainDashboard?.isInitialized) {
+                    initializeOrderReviewSystem();
+                } else {
+                    console.warn('MainDashboard not ready, initializing standalone order review');
+                    initializeOrderReviewSystem();
+                }
+            }, 500);
+        }
+    }
 });
 
 // Export for manual access

@@ -165,6 +165,7 @@ class MainDashboard {
         if (!managerSuccess) {
             throw new Error('Failed to initialize Dashboard Manager');
         }
+        await this.manager.loadInitialData();
 
         console.log('✓ All components initialized');
     }
@@ -203,8 +204,10 @@ class MainDashboard {
         };
 
         window.switchTab = (tabName) => {
-            if (this.isReady()) {
+            if (this.isReady() && this.manager) {
                 return this.manager.switchTab(tabName);
+            } else {
+                console.warn('Dashboard not ready for tab switching');
             }
         };
 

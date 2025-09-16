@@ -191,6 +191,10 @@ class DashboardApi {
         });
     }
 
+    async getOrderDetails(orderId) {
+        return await this.getOrderDetailsAndItems(orderId);
+    }
+
     /**
      * Subscribe to dashboard-specific channels using STOMP subscriptions
      */
@@ -726,6 +730,29 @@ class DashboardApi {
         }
     }
 
+
+    /**
+    * Approve order with batch changes
+    */
+    async approveOrderWithBatchChanges(orderId, changes, operatorNote) {
+        try {
+            const requestData = {
+                changes: changes,
+                operatorNote: operatorNote,
+                changesSummary: `${changes.length} промени направени`
+            };
+
+            const response = await this.makeRequest('POST', `/order/${orderId}/approve-with-changes`, requestData);
+            const data = await response.json();
+
+            this.clearOrderCache(orderId);
+            return data;
+        } catch (error) {
+            console.error(`Error approving order ${orderId} with changes:`, error);
+            throw error;
+        }
+    }
+
     // ==========================================
     // CACHE MANAGEMENT
     // ==========================================
@@ -736,13 +763,17 @@ class DashboardApi {
     clearOrderCache(orderId) {
         const keysToDelete = [];
         for (const key of this.cache.keys()) {
-            if (key.includes(`order`) && key.includes(orderId)) {
+            if (key.includes('order') && (key.includes(orderId) || key.includes(`_${orderId}_`))) {
                 keysToDelete.push(key);
             }
         }
-
         keysToDelete.forEach(key => this.cache.delete(key));
-        console.log(`Cleared cache for order ${orderId}`);
+
+        this.cache.delete('fullDashboard');
+        this.cache.delete(`orders_URGENT_10`);
+        this.cache.delete(`orders_PENDING_10`);
+
+        console.log(`Cleared cache for order ${orderId}, deleted ${keysToDelete.length} entries`);
     }
 
     /**
