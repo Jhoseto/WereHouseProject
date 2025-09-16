@@ -5,6 +5,7 @@ import com.yourco.warehouse.dto.OrderDTO;
 import com.yourco.warehouse.dto.OrderItemDTO;
 import com.yourco.warehouse.entity.Order;
 import com.yourco.warehouse.entity.UserEntity;
+import com.yourco.warehouse.entity.enums.OrderStatus;
 import com.yourco.warehouse.service.DashboardService;
 import com.yourco.warehouse.service.UserService;
 import com.yourco.warehouse.service.OrderService;
@@ -97,7 +98,8 @@ public class MainController {
 
 
     /**
-     * Страница със списък на поръчките на клиента
+     ** Страница със списък на поръчките на клиент
+     * ПОПРАВЕНА ЛОГИКА: правилни counters според новите статуси
      */
     @GetMapping("/orders")
     public String listOrders(Model model, Authentication authentication) {
@@ -115,25 +117,41 @@ public class MainController {
             model.addAttribute("orders", orders);
             model.addAttribute("pageTitle", "Моите поръчки");
 
-            // ✅ Логика за броячи на статуси
+            // ✅ ПОПРАВЕНА ЛОГИКА: правилни broячи на статуси
+
+            // "Чакащи потвърждение" = PENDING + URGENT (групирани заедно)
             long submittedCount = orders.stream()
-                    .filter(o -> o.getStatus() != null && o.getStatus().name().equals("PENDING"))
+                    .filter(o -> o.getStatus() != null &&
+                            (o.getStatus() == OrderStatus.PENDING ||
+                                    o.getStatus() == OrderStatus.URGENT))
                     .count();
 
+            // "Потвърдени" = CONFIRMED (обработени, чакат изпращане)
             long confirmedCount = orders.stream()
-                    .filter(o -> o.getStatus() != null && o.getStatus().name().equals("CONFIRMED"))
+                    .filter(o -> o.getStatus() != null &&
+                            o.getStatus() == OrderStatus.CONFIRMED)
                     .count();
 
+            // "Изпратени" = SHIPPED (изпратени за доставка)
+            long shippedCount = orders.stream()
+                    .filter(o -> o.getStatus() != null &&
+                            o.getStatus() == OrderStatus.SHIPPED)
+                    .count();
+
+            // "Отменени" = CANCELLED (отказани поръчки)
             long cancelledCount = orders.stream()
-                    .filter(o -> o.getStatus() != null && o.getStatus().name().equals("CANCELLED"))
+                    .filter(o -> o.getStatus() != null &&
+                            o.getStatus() == OrderStatus.CANCELLED)
                     .count();
 
-            // ✅ Добавяме в модела
-            model.addAttribute("submittedCount", submittedCount);
-            model.addAttribute("confirmedCount", confirmedCount);
-            model.addAttribute("cancelledCount", cancelledCount);
+            // ✅ Добавяме всички counters в модела
+            model.addAttribute("submittedCount", submittedCount);  // PENDING + URGENT
+            model.addAttribute("confirmedCount", confirmedCount);   // CONFIRMED
+            model.addAttribute("shippedCount", shippedCount);       // SHIPPED
+            model.addAttribute("cancelledCount", cancelledCount);   // CANCELLED
 
-            return "order";
+            return "order"; // връща order.html template
+
         } catch (Exception e) {
             model.addAttribute("error", "Възникна грешка при зареждане на поръчките");
             return "error/general";

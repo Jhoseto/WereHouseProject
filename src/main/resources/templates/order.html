@@ -7,7 +7,7 @@
     <meta name="description" content="Преглед на всички ваши поръчки и техният статус в системата на Съни Комерс.">
 
     <th:block th:replace="~{fragments/topHtmlImports :: topImports}"></th:block>
-    <link rel="stylesheet" href="/css/orders.css">
+    <link rel="stylesheet" href="/css/orders-client.css">
 </head>
 <body>
 
@@ -67,6 +67,72 @@
                 </div>
             </div>
 
+            <!-- ✅ ПОПРАВЕНИ СТАТИСТИКИ: правилни counters и статуси -->
+            <div th:unless="${orders.isEmpty()}" class="orders-stats">
+                <div class="stats-header">
+                    <h3>
+                        <i class="bi bi-graph-up"></i>
+                        Статистика
+                    </h3>
+                </div>
+                <div class="stats-grid">
+                    <!-- Общо поръчки -->
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="bi bi-collection"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-number" th:text="${orders.size()}">0</div>
+                            <div class="stat-label">Общо поръчки</div>
+                        </div>
+                    </div>
+
+                    <!-- ✅ Чакащи потвърждение = PENDING + URGENT -->
+                    <div class="stat-card stat-pending">
+                        <div class="stat-icon">
+                            <i class="bi bi-hourglass-split"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-number" th:text="${submittedCount}">0</div>
+                            <div class="stat-label">Чакащи потвърждение</div>
+                        </div>
+                    </div>
+
+                    <!-- ✅ Потвърдени = CONFIRMED -->
+                    <div class="stat-card stat-confirmed">
+                        <div class="stat-icon">
+                            <i class="bi bi-check-circle"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-number" th:text="${confirmedCount}">0</div>
+                            <div class="stat-label">Потвърдени</div>
+                        </div>
+                    </div>
+
+                    <!-- ✅ Изпратени = SHIPPED -->
+                    <div class="stat-card stat-shipped">
+                        <div class="stat-icon">
+                            <i class="bi bi-truck"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-number" th:text="${shippedCount}">0</div>
+                            <div class="stat-label">Изпратени</div>
+                        </div>
+                    </div>
+
+                    <!-- Отменени = CANCELLED -->
+                    <div class="stat-card stat-cancelled">
+                        <div class="stat-icon">
+                            <i class="bi bi-x-circle"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-number" th:text="${cancelledCount}">0</div>
+                            <div class="stat-label">Отменени</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Orders Table -->
             <div th:unless="${orders.isEmpty()}" class="orders-table-wrapper">
                 <div class="table-container">
@@ -96,40 +162,67 @@
                         </tr>
                         </thead>
                         <tbody class="table-body">
-                        <tr th:each="order : ${orders}"
-                            class="order-row"
-                            th:classappend="${order.status.name() == 'SUBMITTED' ? 'row-pending' : ''}">
+                        <!-- ✅ ПОПРАВЕНО: th:switch подход за ясна логика -->
+                        <tr th:each="order : ${orders}" class="order-row"
+                            th:classappend="${order.status.name() == 'PENDING' || order.status.name() == 'URGENT' ? 'row-pending' : ''}">
 
-                            <!-- Order ID -->
+                            <!-- Order ID Column -->
                             <td class="order-id-cell">
                                 <div class="order-info">
                                     <span class="order-number">#<span th:text="${order.id}">1</span></span>
                                     <span class="order-items-count">
-                                            <i class="bi bi-box"></i>
-                                            <span th:text="${order.items.size()}">3</span> артикула
-                                        </span>
+                            <i class="bi bi-box"></i>
+                            <span th:text="${order.items.size()}">3</span> артикула
+                        </span>
                                 </div>
                             </td>
 
-                            <!-- Status -->
-                            <td class="status-cell">
-                                    <span th:class="'status-badge status-' + ${#strings.toLowerCase(order.status.name())}"
-                                          th:attr="title=${order.status.name() == 'SUBMITTED' ? 'Очаква потвърждение от администратор' :
-                                                       (order.status.name() == 'CONFIRMED' ? 'Потвърдена и се обработва' :
-                                                       (order.status.name() == 'SHIPPED' ? 'Изпратена за доставка' :
-                                                       (order.status.name() == 'CANCELLED' ? 'Поръчката е отменена' : order.status.name())))}">
-                                        <i th:class="${order.status.name() == 'SUBMITTED' ? 'bi bi-clock' :
-                                                    (order.status.name() == 'CONFIRMED' ? 'bi bi-check-circle' :
-                                                    (order.status.name() == 'SHIPPED' ? 'bi bi-truck' :
-                                                    (order.status.name() == 'CANCELLED' ? 'bi bi-x-circle' : 'bi bi-question-circle')))}"></i>
-                                        <span th:text="${order.status.name() == 'SUBMITTED' ? 'Изчакваща' :
-                                                     (order.status.name() == 'CONFIRMED' ? 'Потвърдена' :
-                                                     (order.status.name() == 'SHIPPED' ? 'Изпратена' :
-                                                     (order.status.name() == 'CANCELLED' ? 'Отменена' : order.status.name())))}">Подадена</span>
-                                    </span>
+                            <!-- ✅ Status Column - ПОПРАВЕНА ЛОГИКА с th:switch -->
+                            <td class="status-cell" th:switch="${order.status.name()}">
+                                <!-- PENDING статус: Нова поръчка -->
+                                <span th:case="'PENDING'" class="status-badge status-pending"
+                                      title="Нова поръчка, очаква обработка">
+                        <i class="bi bi-clock"></i>
+                        <span>Нова</span>
+                    </span>
+
+                                <!-- URGENT статус: Спешна поръчка -->
+                                <span th:case="'URGENT'" class="status-badge status-pending"
+                                      title="Спешна поръчка, изисква незабавна обработка">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <span>Спешна</span>
+                    </span>
+
+                                <!-- CONFIRMED статус: Потвърдена поръчка -->
+                                <span th:case="'CONFIRMED'" class="status-badge status-confirmed"
+                                      title="Потвърдена и готова за изпращане">
+                        <i class="bi bi-check-circle"></i>
+                        <span>Потвърдена</span>
+                    </span>
+
+                                <!-- SHIPPED статус: Изпратена поръчка -->
+                                <span th:case="'SHIPPED'" class="status-badge status-shipped"
+                                      title="Изпратена за доставка">
+                        <i class="bi bi-truck"></i>
+                        <span>Изпратена</span>
+                    </span>
+
+                                <!-- CANCELLED статус: Отменена поръчка -->
+                                <span th:case="'CANCELLED'" class="status-badge status-cancelled"
+                                      title="Поръчката е отменена">
+                        <i class="bi bi-x-circle"></i>
+                        <span>Отменена</span>
+                    </span>
+
+                                <!-- Fallback за всички останали статуси -->
+                                <span th:case="*" class="status-badge status-unknown"
+                                      title="Неизвестен статус">
+                        <i class="bi bi-question-circle"></i>
+                        <span th:text="${order.status.name()}">Неизвестно</span>
+                    </span>
                             </td>
 
-                            <!-- Date -->
+                            <!-- Date Column -->
                             <td class="date-cell">
                                 <div class="date-info">
                                     <span class="date-primary" th:text="${#temporals.format(order.submittedAt, 'dd.MM.yyyy')}">01.01.2025</span>
@@ -137,19 +230,19 @@
                                 </div>
                             </td>
 
-                            <!-- Total Amount -->
+                            <!-- Total Amount Column -->
                             <td class="amount-cell">
                                 <div class="amount-info">
                                     <span class="amount-primary" th:text="${#numbers.formatDecimal(order.totalGross,1,2)} + ' лв'">0.00 лв</span>
                                     <span class="amount-secondary">
-                                            <small class="text-muted">
-                                                нето: <span th:text="${#numbers.formatDecimal(order.totalNet,1,2)}">0.00</span> лв
-                                            </small>
-                                        </span>
+                            <small class="text-muted">
+                                нето: <span th:text="${#numbers.formatDecimal(order.totalNet,1,2)}">0.00</span> лв
+                            </small>
+                        </span>
                                 </div>
                             </td>
 
-                            <!-- Actions -->
+                            <!-- Actions Column -->
                             <td class="actions-cell">
                                 <div class="action-buttons">
                                     <a th:href="@{'/orders/' + ${order.id}}" class="btn btn-sm btn-outline">
@@ -161,72 +254,6 @@
                         </tr>
                         </tbody>
                     </table>
-                </div>
-            </div>
-
-            <!-- Quick Stats -->
-            <div th:unless="${orders.isEmpty()}" class="orders-stats">
-                <div class="stats-header">
-                    <h3>
-                        <i class="bi bi-graph-up"></i>
-                        Статистика
-                    </h3>
-                </div>
-                <div class="stats-grid">
-                    <!-- Общо -->
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class="bi bi-collection"></i>
-                        </div>
-                        <div class="stat-content">
-                            <div class="stat-number" th:text="${orders.size()}">0</div>
-                            <div class="stat-label">Общо поръчки</div>
-                        </div>
-                    </div>
-
-                    <!-- Подадени -->
-                    <div class="stat-card stat-pending">
-                        <div class="stat-icon">
-                            <i class="bi bi-hourglass-split"></i>
-                        </div>
-                        <div class="stat-content">
-                            <div class="stat-number" th:text="${submittedCount}">0</div>
-                            <div class="stat-label">Чакащи потвърждение</div>
-                        </div>
-                    </div>
-
-                    <!-- Потвърдени -->
-                    <div class="stat-card stat-confirmed">
-                        <div class="stat-icon">
-                            <i class="bi bi-check-circle"></i>
-                        </div>
-                        <div class="stat-content">
-                            <div class="stat-number" th:text="${confirmedCount}">0</div>
-                            <div class="stat-label">Потвърдени</div>
-                        </div>
-                    </div>
-
-                    <!-- Изпратени -->
-                    <div class="stat-card stat-shipped">
-                        <div class="stat-icon">
-                            <i class="bi bi-truck"></i>
-                        </div>
-                        <div class="stat-content">
-                            <div class="stat-number" th:text="${shippedCount}">0</div>
-                            <div class="stat-label">Изпратени</div>
-                        </div>
-                    </div>
-
-                    <!-- Отменени -->
-                    <div class="stat-card stat-cancelled">
-                        <div class="stat-icon">
-                            <i class="bi bi-x-circle"></i>
-                        </div>
-                        <div class="stat-content">
-                            <div class="stat-number" th:text="${cancelledCount}">0</div>
-                            <div class="stat-label">Отменени</div>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>

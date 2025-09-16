@@ -1,23 +1,487 @@
 /**
- * Orders Navigation Badge Management
- * Управлява показването на броя pending поръчки в навигацията
+ * ENHANCED ORDERS NAVIGATION & TABLE SORTING MANAGER
+ * =================================================
+ * Обединява badge management с sophisticated table sorting functionality
+ * Използва patterns от orderReviewCatalog.js и catalog.js за consistent experience
  */
 
 class OrdersNavManager {
     constructor() {
+        // Badge management properties
         this.badgeElement = null;
         this.refreshInterval = null;
+
+        // Table sorting properties
+        this.ordersTable = null;
+        this.originalOrdersData = [];
+        this.filteredOrdersData = [];
+        this.currentSortField = 'submittedAt'; // Default sort by date
+        this.currentSortDirection = 'desc'; // Newest first by default
+        this.sortableColumns = {
+            'col-order': { field: 'id', type: 'number' },
+            'col-status': { field: 'status', type: 'text' },
+            'col-date': { field: 'submittedAt', type: 'date' },
+            'col-amount': { field: 'totalGross', type: 'number' }
+        };
+
         this.init();
     }
 
-    init() {
-        this.badgeElement = document.getElementById('ordersCount');
+    // ==========================================
+    // INITIALIZATION - ENHANCED
+    // ==========================================
 
+    init() {
+        console.log('🚀 Initializing Enhanced OrdersNavManager');
+
+        // Initialize badge management
+        this.badgeElement = document.getElementById('ordersCount');
         if (this.badgeElement) {
             this.loadOrdersCount();
             this.setupAutoRefresh();
         }
+
+        // Initialize table sorting functionality
+        this.initializeTableSorting();
+
+        // Add mobile-specific enhancements
+        this.setupMobileOptimizations();
+
+        console.log('✅ OrdersNavManager fully initialized');
     }
+
+    // ==========================================
+    // TABLE SORTING INITIALIZATION
+    // ==========================================
+
+    initializeTableSorting() {
+        this.ordersTable = document.querySelector('.orders-table');
+        if (!this.ordersTable) {
+            console.log('ℹ️ Orders table not found on this page - skipping sorting setup');
+            return;
+        }
+
+        console.log('📊 Setting up table sorting functionality');
+
+        // Extract and store original data
+        this.extractTableData();
+
+        // Make headers clickable
+        this.makeHeadersClickable();
+
+        // Apply default sorting
+        this.applySorting();
+
+        // Add visual indicators
+        this.updateSortIndicators();
+
+        console.log('✅ Table sorting setup complete');
+    }
+
+    // ==========================================
+    // DATA EXTRACTION - SMART PARSING
+    // ==========================================
+
+    extractTableData() {
+        const tableBody = this.ordersTable.querySelector('tbody');
+        if (!tableBody) return;
+
+        const rows = Array.from(tableBody.querySelectorAll('tr.order-row'));
+        this.originalOrdersData = rows.map((row, index) => this.parseRowData(row, index));
+        this.filteredOrdersData = [...this.originalOrdersData];
+
+        console.log(`📋 Extracted data for ${this.originalOrdersData.length} orders`);
+    }
+
+    parseRowData(row, index) {
+        try {
+            // Extract order ID from order number span
+            const orderNumberElement = row.querySelector('.order-number span');
+            const orderId = orderNumberElement ? parseInt(orderNumberElement.textContent) : index;
+
+            // Parse status from status badge (using our new th:switch structure)
+            const statusElement = row.querySelector('.status-badge span:last-child');
+            const statusText = statusElement ? statusElement.textContent.trim() : 'Unknown';
+
+            // Parse date from date cells
+            const datePrimaryElement = row.querySelector('.date-primary');
+            const dateSecondaryElement = row.querySelector('.date-secondary');
+            const dateStr = datePrimaryElement ? datePrimaryElement.textContent.trim() : '';
+            const timeStr = dateSecondaryElement ? dateSecondaryElement.textContent.trim() : '';
+
+            // Convert Bulgarian date format (dd.MM.yyyy) to Date object
+            const submittedAt = this.parseBulgarianDate(dateStr, timeStr);
+
+            // Parse total amount (remove " лв" and parse as float)
+            const amountElement = row.querySelector('.amount-primary');
+            const amountText = amountElement ? amountElement.textContent.replace(' лв', '').replace(',', '.') : '0';
+            const totalGross = parseFloat(amountText) || 0;
+
+            // Get items count
+            const itemsElement = row.querySelector('.order-items-count span');
+            const itemsCount = itemsElement ? parseInt(itemsElement.textContent) : 0;
+
+            return {
+                id: orderId,
+                status: statusText,
+                submittedAt: submittedAt,
+                totalGross: totalGross,
+                itemsCount: itemsCount,
+                domElement: row,
+                originalIndex: index
+            };
+
+        } catch (error) {
+            console.warn('⚠️ Error parsing row data:', error);
+            return {
+                id: index,
+                status: 'Unknown',
+                submittedAt: new Date(),
+                totalGross: 0,
+                itemsCount: 0,
+                domElement: row,
+                originalIndex: index
+            };
+        }
+    }
+
+    // ==========================================
+    // DATE PARSING - BULGARIAN FORMAT
+    // ==========================================
+
+    parseBulgarianDate(dateStr, timeStr = '') {
+        try {
+            // Parse dd.MM.yyyy format
+            const dateParts = dateStr.split('.');
+            if (dateParts.length !== 3) return new Date();
+
+            const day = parseInt(dateParts[0]);
+            const month = parseInt(dateParts[1]) - 1; // JavaScript months are 0-based
+            const year = parseInt(dateParts[2]);
+
+            // Parse time if provided (HH:mm format)
+            let hours = 0, minutes = 0;
+            if (timeStr && timeStr.includes(':')) {
+                const timeParts = timeStr.split(':');
+                hours = parseInt(timeParts[0]) || 0;
+                minutes = parseInt(timeParts[1]) || 0;
+            }
+
+            return new Date(year, month, day, hours, minutes);
+
+        } catch (error) {
+            console.warn('⚠️ Date parsing error:', error);
+            return new Date();
+        }
+    }
+
+    // ==========================================
+    // HEADER CLICKABILITY - TOUCH OPTIMIZED
+    // ==========================================
+
+    makeHeadersClickable() {
+        const headers = this.ordersTable.querySelectorAll('thead th');
+
+        headers.forEach(header => {
+            const columnClass = Array.from(header.classList).find(cls => cls.startsWith('col-'));
+            if (!columnClass || !this.sortableColumns[columnClass]) return;
+
+            // Add sortable styling and behavior
+            header.classList.add('sortable-header');
+            header.style.cursor = 'pointer';
+            header.style.userSelect = 'none';
+            header.style.position = 'relative';
+
+            // Add sort indicator container
+            const sortIndicator = document.createElement('span');
+            sortIndicator.className = 'sort-indicator';
+            sortIndicator.innerHTML = '<i class="bi bi-arrow-down-up"></i>';
+            header.appendChild(sortIndicator);
+
+            // Add click event listener with debouncing
+            let clickTimeout;
+            header.addEventListener('click', (e) => {
+                e.preventDefault();
+
+                clearTimeout(clickTimeout);
+                clickTimeout = setTimeout(() => {
+                    this.handleHeaderClick(columnClass);
+                }, 150); // Debounce for mobile
+            });
+
+            // Add keyboard accessibility
+            header.setAttribute('tabindex', '0');
+            header.setAttribute('role', 'button');
+            header.setAttribute('aria-label', `Сортирай по ${header.textContent.trim()}`);
+
+            header.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    this.handleHeaderClick(columnClass);
+                }
+            });
+
+            // Add touch feedback
+            header.addEventListener('touchstart', () => {
+                header.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+            });
+
+            header.addEventListener('touchend', () => {
+                setTimeout(() => {
+                    header.style.backgroundColor = '';
+                }, 150);
+            });
+        });
+    }
+
+    // ==========================================
+    // SORTING LOGIC - MULTI-TYPE SUPPORT
+    // ==========================================
+
+    handleHeaderClick(columnClass) {
+        const columnConfig = this.sortableColumns[columnClass];
+        const field = columnConfig.field;
+
+        // Toggle sort direction if same field, otherwise set to ascending
+        if (this.currentSortField === field) {
+            this.currentSortDirection = this.currentSortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            this.currentSortField = field;
+            // Default directions based on data type
+            this.currentSortDirection = field === 'submittedAt' ? 'desc' : 'asc';
+        }
+
+        console.log(`🔄 Sorting by ${field} (${this.currentSortDirection})`);
+
+        this.applySorting();
+        this.updateSortIndicators();
+
+        // Show subtle feedback
+        this.showSortFeedback(columnClass);
+    }
+
+    applySorting() {
+        const columnConfig = this.sortableColumns[Object.keys(this.sortableColumns)
+            .find(key => this.sortableColumns[key].field === this.currentSortField)];
+
+        if (!columnConfig) return;
+
+        this.filteredOrdersData.sort((a, b) => {
+            let compareResult = this.compareValues(
+                a[this.currentSortField],
+                b[this.currentSortField],
+                columnConfig.type
+            );
+
+            return this.currentSortDirection === 'desc' ? -compareResult : compareResult;
+        });
+
+        this.renderSortedTable();
+    }
+
+    compareValues(a, b, type) {
+        // Handle null/undefined values
+        if (a == null && b == null) return 0;
+        if (a == null) return -1;
+        if (b == null) return 1;
+
+        switch (type) {
+            case 'number':
+                return (parseFloat(a) || 0) - (parseFloat(b) || 0);
+
+            case 'date':
+                const dateA = a instanceof Date ? a : new Date(a);
+                const dateB = b instanceof Date ? b : new Date(b);
+                return dateA.getTime() - dateB.getTime();
+
+            case 'text':
+                // Special handling for status priorities
+                if (this.currentSortField === 'status') {
+                    return this.compareStatusPriority(a, b);
+                }
+                return a.toString().localeCompare(b.toString(), 'bg');
+
+            default:
+                return a.toString().localeCompare(b.toString(), 'bg');
+        }
+    }
+
+    compareStatusPriority(statusA, statusB) {
+        // Define priority order for statuses (lower number = higher priority)
+        const statusPriority = {
+            'Спешна': 1,    // URGENT
+            'Нова': 2,      // PENDING
+            'Потвърдена': 3, // CONFIRMED
+            'Изпратена': 4,  // SHIPPED
+            'Отменена': 5    // CANCELLED
+        };
+
+        const priorityA = statusPriority[statusA] || 999;
+        const priorityB = statusPriority[statusB] || 999;
+
+        return priorityA - priorityB;
+    }
+
+    // ==========================================
+    // TABLE RENDERING - SMOOTH TRANSITIONS
+    // ==========================================
+
+    renderSortedTable() {
+        const tableBody = this.ordersTable.querySelector('tbody');
+        if (!tableBody) return;
+
+        // Create document fragment for better performance
+        const fragment = document.createDocumentFragment();
+
+        this.filteredOrdersData.forEach((orderData, newIndex) => {
+            const row = orderData.domElement;
+
+            // Add smooth transition class
+            row.style.transition = 'all 0.3s ease';
+
+            // Update row order visually
+            row.style.order = newIndex;
+
+            fragment.appendChild(row);
+        });
+
+        // Clear and repopulate table body
+        tableBody.innerHTML = '';
+        tableBody.appendChild(fragment);
+
+        // Add staggered animation effect
+        this.addRowAnimations();
+    }
+
+    addRowAnimations() {
+        const rows = this.ordersTable.querySelectorAll('tbody .order-row');
+        rows.forEach((row, index) => {
+            row.style.opacity = '0';
+            row.style.transform = 'translateY(10px)';
+
+            setTimeout(() => {
+                row.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+                row.style.opacity = '1';
+                row.style.transform = 'translateY(0)';
+            }, index * 50); // Staggered animation
+        });
+    }
+
+    // ==========================================
+    // VISUAL INDICATORS - CLEAR FEEDBACK
+    // ==========================================
+
+    updateSortIndicators() {
+        // Reset all indicators
+        const allIndicators = this.ordersTable.querySelectorAll('.sort-indicator');
+        allIndicators.forEach(indicator => {
+            indicator.innerHTML = '<i class="bi bi-arrow-down-up"></i>';
+            indicator.classList.remove('sort-active');
+        });
+
+        // Update active indicator
+        const activeHeader = this.ordersTable.querySelector(`th.col-${this.getCurrentSortColumnClass()}`);
+        if (activeHeader) {
+            const indicator = activeHeader.querySelector('.sort-indicator');
+            if (indicator) {
+                const icon = this.currentSortDirection === 'asc' ?
+                    '<i class="bi bi-arrow-up"></i>' :
+                    '<i class="bi bi-arrow-down"></i>';
+                indicator.innerHTML = icon;
+                indicator.classList.add('sort-active');
+            }
+        }
+    }
+
+    getCurrentSortColumnClass() {
+        return Object.keys(this.sortableColumns).find(key =>
+            this.sortableColumns[key].field === this.currentSortField
+        )?.replace('col-', '') || '';
+    }
+
+    showSortFeedback(columnClass) {
+        const header = this.ordersTable.querySelector(`th.${columnClass}`);
+        if (!header) return;
+
+        // Brief highlight effect
+        header.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+        header.style.transform = 'scale(1.02)';
+
+        setTimeout(() => {
+            header.style.backgroundColor = '';
+            header.style.transform = '';
+        }, 200);
+
+        // Optional: Show toast notification for mobile users
+        if (window.toastManager && this.isMobileDevice()) {
+            const fieldName = this.getFieldDisplayName(this.currentSortField);
+            const direction = this.currentSortDirection === 'asc' ? 'възходящо' : 'низходящо';
+            window.toastManager.info(`Сортирано по ${fieldName} (${direction})`);
+        }
+    }
+
+    getFieldDisplayName(field) {
+        const fieldNames = {
+            'id': 'номер на поръчка',
+            'status': 'статус',
+            'submittedAt': 'дата',
+            'totalGross': 'обща сума'
+        };
+        return fieldNames[field] || field;
+    }
+
+    // ==========================================
+    // MOBILE OPTIMIZATIONS
+    // ==========================================
+
+    setupMobileOptimizations() {
+        if (!this.isMobileDevice()) return;
+
+        // Add mobile-specific styles
+        const mobileStyles = `
+            .sortable-header {
+                min-height: 44px !important;
+                padding: 12px 8px !important;
+            }
+            
+            .sort-indicator {
+                font-size: 1.1rem;
+                margin-left: 8px;
+            }
+            
+            .sort-active {
+                color: #f39c12 !important;
+            }
+            
+            @media (max-width: 576px) {
+                .orders-table thead th {
+                    font-size: 0.75rem;
+                    padding: 8px 4px;
+                }
+                
+                .sort-indicator {
+                    font-size: 1rem;
+                    margin-left: 4px;
+                }
+            }
+        `;
+
+        this.addStyles(mobileStyles);
+    }
+
+    isMobileDevice() {
+        return window.innerWidth <= 768 || /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    }
+
+    addStyles(cssText) {
+        const styleSheet = document.createElement('style');
+        styleSheet.textContent = cssText;
+        document.head.appendChild(styleSheet);
+    }
+
+    // ==========================================
+    // EXISTING BADGE MANAGEMENT - PRESERVED
+    // ==========================================
 
     async loadOrdersCount() {
         try {
@@ -34,7 +498,6 @@ class OrdersNavManager {
             }
         } catch (error) {
             console.log('Could not load orders count:', error.message);
-            // Не показваме грешка, просто не показваме badge
         }
     }
 
@@ -46,13 +509,11 @@ class OrdersNavManager {
             this.badgeElement.style.display = 'block';
             this.badgeElement.style.opacity = '0';
 
-            // Fade in animation
             setTimeout(() => {
                 this.badgeElement.style.transition = 'opacity 0.3s ease';
                 this.badgeElement.style.opacity = '1';
             }, 10);
 
-            // Pulse animation for new orders
             this.badgeElement.classList.add('badge-pulse');
             setTimeout(() => {
                 this.badgeElement.classList.remove('badge-pulse');
@@ -63,10 +524,54 @@ class OrdersNavManager {
     }
 
     setupAutoRefresh() {
-        // Обновявай на всеки 2 минути
         this.refreshInterval = setInterval(() => {
             this.loadOrdersCount();
         }, 120000);
+    }
+
+    // ==========================================
+    // PUBLIC API METHODS
+    // ==========================================
+
+    /**
+     * Програматично сортиране на таблицата
+     * @param {string} field - Field name to sort by
+     * @param {string} direction - 'asc' or 'desc'
+     */
+    sortBy(field, direction = 'asc') {
+        if (!this.sortableColumns) return;
+
+        const columnClass = Object.keys(this.sortableColumns).find(key =>
+            this.sortableColumns[key].field === field
+        );
+
+        if (columnClass) {
+            this.currentSortField = field;
+            this.currentSortDirection = direction;
+            this.applySorting();
+            this.updateSortIndicators();
+        }
+    }
+
+    /**
+     * Връща текущото състояние на сортирането
+     */
+    getCurrentSort() {
+        return {
+            field: this.currentSortField,
+            direction: this.currentSortDirection,
+            columnClass: this.getCurrentSortColumnClass()
+        };
+    }
+
+    /**
+     * Рестартира таблицата до оригиналното подреждане
+     */
+    resetSort() {
+        this.currentSortField = 'submittedAt';
+        this.currentSortDirection = 'desc';
+        this.applySorting();
+        this.updateSortIndicators();
     }
 
     destroy() {
@@ -76,8 +581,12 @@ class OrdersNavManager {
     }
 }
 
-// CSS стилове за badge анимацията
-const badgeStyles = `
+// ==========================================
+// ENHANCED STYLES - COMPLETE VISUAL PACKAGE
+// ==========================================
+
+const enhancedStyles = `
+    /* Badge animations - preserved from original */
     @keyframes badge-pulse {
         0% { transform: scale(1); }
         50% { transform: scale(1.2); }
@@ -95,24 +604,102 @@ const badgeStyles = `
     .nav-badge:hover {
         transform: scale(1.1);
     }
+    
+    /* Enhanced sortable headers */
+    .sortable-header {
+        transition: all 0.2s ease;
+        position: relative;
+    }
+    
+    .sortable-header:hover {
+        background-color: rgba(255, 255, 255, 0.1) !important;
+        transform: translateY(-1px);
+    }
+    
+    .sortable-header:active {
+        transform: translateY(0);
+    }
+    
+    /* Sort indicators */
+    .sort-indicator {
+        position: absolute;
+        right: 8px;
+        top: 50%;
+        transform: translateY(-50%);
+        opacity: 0.6;
+        transition: all 0.2s ease;
+        font-size: 0.9rem;
+    }
+    
+    .sort-indicator.sort-active {
+        opacity: 1;
+        color: #ffffff !important;
+        transform: translateY(-50%) scale(1.1);
+    }
+    
+    .sortable-header:hover .sort-indicator {
+        opacity: 0.9;
+    }
+    
+    /* Focus styles for accessibility */
+    .sortable-header:focus {
+        outline: 2px solid #f39c12;
+        outline-offset: 2px;
+        background-color: rgba(255, 255, 255, 0.15) !important;
+    }
+    
+    /* Mobile enhancements */
+    @media (max-width: 768px) {
+        .sort-indicator {
+            right: 4px;
+            font-size: 0.8rem;
+        }
+        
+        .sortable-header {
+            min-height: 48px;
+        }
+    }
+    
+    /* Loading state for sorting */
+    .table-sorting {
+        opacity: 0.7;
+        pointer-events: none;
+    }
+    
+    .table-sorting .order-row {
+        transition: opacity 0.3s ease;
+    }
 `;
 
-// Добави стиловете
+// ==========================================
+// INITIALIZATION & CLEANUP
+// ==========================================
+
+// Apply enhanced styles
 const styleSheet = document.createElement('style');
-styleSheet.textContent = badgeStyles;
+styleSheet.textContent = enhancedStyles;
 document.head.appendChild(styleSheet);
 
-// Инициализирай при зареждане на страницата
+// Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
     window.ordersNavManager = new OrdersNavManager();
+
+    // Add debugging info in development
+    if (window.location.hostname === 'localhost') {
+        console.log('🔧 Development mode: OrdersNavManager debug info available');
+        window.debugOrdersManager = () => {
+            console.log('Current sort:', window.ordersNavManager.getCurrentSort());
+            console.log('Orders data:', window.ordersNavManager.filteredOrdersData);
+        };
+    }
 });
 
-// Cleanup при затваряне на страницата
+// Cleanup on page unload
 window.addEventListener('beforeunload', () => {
     if (window.ordersNavManager) {
         window.ordersNavManager.destroy();
     }
 });
 
-// Export за външна употреба
+// Export for external use
 window.OrdersNavManager = OrdersNavManager;
