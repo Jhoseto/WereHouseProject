@@ -24,6 +24,18 @@ class OrdersNavManager {
             'col-amount': { field: 'totalGross', type: 'number' }
         };
 
+        // Filtering properties - NEW FUNCTIONALITY
+        this.currentFilter = null; // null means show all
+        this.statisticsCards = [];
+        this.statusMapping = {
+            // Backend statuses to display groups mapping
+            'PENDING': 'pending',
+            'URGENT': 'pending',     // Both map to same display group
+            'CONFIRMED': 'confirmed',
+            'SHIPPED': 'shipped',
+            'CANCELLED': 'cancelled'
+        };
+
         this.init();
     }
 
@@ -44,15 +56,215 @@ class OrdersNavManager {
         // Initialize table sorting functionality
         this.initializeTableSorting();
 
+        // Initialize statistics cards filtering functionality
+        this.initializeStatisticsFiltering();
+
         // Add mobile-specific enhancements
         this.setupMobileOptimizations();
 
-        console.log('✅ OrdersNavManager fully initialized');
+        console.log('✅ OrdersNavManager fully initialized with sorting and filtering');
     }
 
     // ==========================================
-    // TABLE SORTING INITIALIZATION
+    // STATISTICS FILTERING INITIALIZATION
     // ==========================================
+
+    initializeStatisticsFiltering() {
+        // Find all statistics cards
+        this.statisticsCards = document.querySelectorAll('.stat-card');
+        if (this.statisticsCards.length === 0) {
+            console.log('ℹ️ Statistics cards not found - skipping filtering setup');
+            return;
+        }
+
+        console.log('📊 Setting up statistics card filtering functionality');
+
+        // Make statistics cards clickable and add functionality
+        this.statisticsCards.forEach((card, index) => {
+            this.setupStatisticsCardInteractivity(card, index);
+        });
+
+        // Add filter reset functionality
+        this.addFilterResetOption();
+
+        console.log('✅ Statistics filtering setup complete');
+    }
+
+    setupStatisticsCardInteractivity(card, index) {
+        // Determine card type from classes or content
+        const cardType = this.determineCardType(card);
+        if (!cardType) return; // Skip cards we can't identify
+
+        // Make card visually interactive
+        card.style.cursor = 'pointer';
+        card.style.transition = 'all 0.2s ease';
+        card.setAttribute('tabindex', '0');
+        card.setAttribute('role', 'button');
+        card.setAttribute('aria-label', `Филтрирай по ${this.getCardDisplayName(cardType)}`);
+
+        // Add visual hover effects
+        const originalTransform = card.style.transform;
+        card.addEventListener('mouseenter', () => {
+            card.style.transform = 'translateY(-2px) scale(1.02)';
+            card.style.boxShadow = '0 8px 25px rgba(0,0,0,0.15)';
+        });
+
+        card.addEventListener('mouseleave', () => {
+            if (this.currentFilter !== cardType) {
+                card.style.transform = originalTransform;
+                card.style.boxShadow = '';
+            }
+        });
+
+        // Add click functionality with debouncing
+        let clickTimeout;
+        const handleCardClick = (e) => {
+            e.preventDefault();
+
+            clearTimeout(clickTimeout);
+            clickTimeout = setTimeout(() => {
+                this.handleStatisticsCardClick(cardType, card);
+            }, 100);
+        };
+
+        card.addEventListener('click', handleCardClick);
+
+        // Add keyboard accessibility
+        card.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleCardClick(e);
+            }
+        });
+
+        // Add touch feedback for mobile
+        card.addEventListener('touchstart', () => {
+            card.style.backgroundColor = 'rgba(243, 156, 18, 0.1)';
+        });
+
+        card.addEventListener('touchend', () => {
+            setTimeout(() => {
+                if (this.currentFilter !== cardType) {
+                    card.style.backgroundColor = '';
+                }
+            }, 150);
+        });
+
+        console.log(`✅ Statistics card setup complete: ${cardType}`);
+    }
+
+    determineCardType(card) {
+        // Check for "total/general" card first (shows all orders)
+        const label = card.querySelector('.stat-label');
+        if (label) {
+            const labelText = label.textContent.toLowerCase();
+            if (labelText.includes('общо') || labelText.includes('всички') || labelText.includes('поръчки') && !labelText.includes('чакащи') && !labelText.includes('потвърдени') && !labelText.includes('изпратени') && !labelText.includes('отменени')) {
+                return 'all'; // Special type for "show all" functionality
+            }
+        }
+
+        // Determine specific filter card types from CSS classes
+        if (card.classList.contains('stat-pending')) return 'pending';
+        if (card.classList.contains('stat-confirmed')) return 'confirmed';
+        if (card.classList.contains('stat-shipped')) return 'shipped';
+        if (card.classList.contains('stat-cancelled')) return 'cancelled';
+
+        // Fallback: try to determine from label text content
+        if (label) {
+            const labelText = label.textContent.toLowerCase();
+            if (labelText.includes('чакащи') || labelText.includes('потвърждение')) return 'pending';
+            if (labelText.includes('потвърдени')) return 'confirmed';
+            if (labelText.includes('изпратени')) return 'shipped';
+            if (labelText.includes('отменени')) return 'cancelled';
+        }
+
+        // If it's the first card and no other type detected, assume it's the "all" card
+        const allCards = document.querySelectorAll('.stat-card');
+        if (allCards.length > 0 && allCards[0] === card) {
+            return 'all';
+        }
+
+        return null; // Unknown card type
+    }
+
+    getCardDisplayName(cardType) {
+        const displayNames = {
+            'all': 'всички поръчки',
+            'pending': 'чакащи потвърждение поръчки',
+            'confirmed': 'потвърдени поръчки',
+            'shipped': 'изпратени поръчки',
+            'cancelled': 'отменени поръчки'
+        };
+        return displayNames[cardType] || 'неизвестен тип поръчки';
+    }
+
+    handleStatisticsCardClick(cardType, cardElement) {
+        console.log(`📋 Statistics card clicked: ${cardType}`);
+
+        // Handle "all" card specially - it always clears filters
+        if (cardType === 'all') {
+            this.clearFilter();
+            this.updateStatisticsCardsVisualState('all');
+            this.showFilterFeedback('all');
+            this.scrollToTable();
+            return;
+        }
+
+        // For specific filter cards, toggle filter if same card clicked, otherwise set new filter
+        if (this.currentFilter === cardType) {
+            this.clearFilter();
+        } else {
+            this.applyFilter(cardType);
+        }
+
+        // Update visual states of all cards
+        this.updateStatisticsCardsVisualState(cardType);
+
+        // Show feedback
+        this.showFilterFeedback(cardType);
+
+        // Scroll to table for better UX
+        this.scrollToTable();
+    }
+
+    addFilterResetOption() {
+        // Add a "Покажи всички" option that's always visible
+        const container = document.querySelector('.orders-container');
+        if (!container) return;
+
+        const resetButton = document.createElement('div');
+        resetButton.className = 'filter-reset-button';
+        resetButton.innerHTML = `
+            <i class="bi bi-funnel"></i>
+            <span class="filter-text">Всички поръчки</span>
+            <span class="filter-count" id="total-orders-count">(${this.originalOrdersData.length})</span>
+        `;
+
+        resetButton.style.cssText = `
+            display: none;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 16px;
+            margin: 16px 0;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border: 2px solid #dee2e6;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 500;
+            color: #495057;
+        `;
+
+        resetButton.addEventListener('click', () => this.clearFilter());
+
+        // Insert before table
+        const tableWrapper = container.querySelector('.orders-table-wrapper');
+        if (tableWrapper) {
+            container.insertBefore(resetButton, tableWrapper);
+        }
+
+        this.filterResetButton = resetButton;
+    }
 
     initializeTableSorting() {
         this.ordersTable = document.querySelector('.orders-table');
@@ -103,6 +315,9 @@ class OrdersNavManager {
             const statusElement = row.querySelector('.status-badge span:last-child');
             const statusText = statusElement ? statusElement.textContent.trim() : 'Unknown';
 
+            // Map status text to display group (PENDING + URGENT both become 'pending')
+            const statusGroup = this.mapStatusToGroup(statusText);
+
             // Parse date from date cells
             const datePrimaryElement = row.querySelector('.date-primary');
             const dateSecondaryElement = row.querySelector('.date-secondary');
@@ -124,6 +339,7 @@ class OrdersNavManager {
             return {
                 id: orderId,
                 status: statusText,
+                statusGroup: statusGroup, // NEW: For filtering
                 submittedAt: submittedAt,
                 totalGross: totalGross,
                 itemsCount: itemsCount,
@@ -136,6 +352,7 @@ class OrdersNavManager {
             return {
                 id: index,
                 status: 'Unknown',
+                statusGroup: 'unknown',
                 submittedAt: new Date(),
                 totalGross: 0,
                 itemsCount: 0,
@@ -146,8 +363,209 @@ class OrdersNavManager {
     }
 
     // ==========================================
-    // DATE PARSING - BULGARIAN FORMAT
+    // STATUS MAPPING - PENDING/URGENT UNIFICATION
     // ==========================================
+
+    mapStatusToGroup(statusText) {
+        // Map display text to filter groups
+        // Both "Нова" (PENDING) and "Спешна" (URGENT) map to 'pending'
+        switch(statusText) {
+            case 'Нова':     // PENDING status
+            case 'Спешна':   // URGENT status
+                return 'pending';
+            case 'Потвърдена':
+                return 'confirmed';
+            case 'Изпратена':
+                return 'shipped';
+            case 'Отменена':
+                return 'cancelled';
+            default:
+                return 'unknown';
+        }
+    }
+
+    // ==========================================
+    // FILTERING LOGIC - WORKS WITH SORTING
+    // ==========================================
+
+    applyFilter(filterType) {
+        console.log(`🔍 Applying filter: ${filterType}`);
+
+        this.currentFilter = filterType;
+
+        // Filter data based on status group
+        this.filteredOrdersData = this.originalOrdersData.filter(order =>
+            order.statusGroup === filterType
+        );
+
+        console.log(`📊 Filtered to ${this.filteredOrdersData.length} orders of type: ${filterType}`);
+
+        // Reapply current sorting to filtered data
+        this.applySorting();
+
+        // Update UI elements
+        this.updateFilterUI();
+    }
+
+    clearFilter() {
+        console.log('🔄 Clearing all filters');
+
+        this.currentFilter = null;
+
+        // Reset to show all data
+        this.filteredOrdersData = [...this.originalOrdersData];
+
+        // Reapply current sorting
+        this.applySorting();
+
+        // Update UI elements
+        this.updateFilterUI();
+
+        // Show feedback
+        if (window.toastManager && this.isMobileDevice()) {
+            window.toastManager.info('Показани са всички поръчки');
+        }
+    }
+
+    updateFilterUI() {
+        // Update filter reset button visibility and content
+        if (this.filterResetButton) {
+            if (this.currentFilter) {
+                this.filterResetButton.style.display = 'flex';
+                this.filterResetButton.querySelector('.filter-text').textContent =
+                    `Филтрирано: ${this.getCardDisplayName(this.currentFilter)}`;
+                this.filterResetButton.querySelector('.filter-count').textContent =
+                    `(${this.filteredOrdersData.length} от ${this.originalOrdersData.length})`;
+            } else {
+                this.filterResetButton.style.display = 'none';
+            }
+        }
+
+        // Update statistics cards visual state
+        this.updateStatisticsCardsVisualState();
+    }
+
+    updateStatisticsCardsVisualState(clickedCardType = null) {
+        this.statisticsCards.forEach(card => {
+            const cardType = this.determineCardType(card);
+            if (!cardType) return;
+
+            // Special handling for "all" card clicks
+            if (clickedCardType === 'all') {
+                if (cardType === 'all') {
+                    // Highlight the "all" card briefly to show it was clicked
+                    card.style.backgroundColor = 'rgba(52, 152, 219, 0.15)';
+                    card.style.borderColor = '#3498db';
+                    card.style.transform = 'translateY(-2px) scale(1.02)';
+                    card.style.boxShadow = '0 8px 25px rgba(52, 152, 219, 0.3)';
+
+                    // Reset after brief highlight since filter is cleared
+                    setTimeout(() => {
+                        card.style.backgroundColor = '';
+                        card.style.borderColor = '';
+                        card.style.transform = '';
+                        card.style.boxShadow = '';
+                        card.classList.remove('filter-active');
+                    }, 800);
+                } else {
+                    // Reset all other cards since filter is cleared
+                    card.style.backgroundColor = '';
+                    card.style.borderColor = '';
+                    card.style.transform = '';
+                    card.style.boxShadow = '';
+                    card.classList.remove('filter-active');
+                }
+                return;
+            }
+
+            // Normal filtering logic for specific cards
+            const isActive = this.currentFilter === cardType;
+
+            if (isActive) {
+                // Active card styling (exclude "all" card from staying active)
+                if (cardType !== 'all') {
+                    card.style.backgroundColor = 'rgba(243, 156, 18, 0.15)';
+                    card.style.borderColor = '#f39c12';
+                    card.style.transform = 'translateY(-2px) scale(1.02)';
+                    card.style.boxShadow = '0 8px 25px rgba(243, 156, 18, 0.3)';
+                    card.classList.add('filter-active');
+                }
+            } else {
+                // Reset to default styling
+                card.style.backgroundColor = '';
+                card.style.borderColor = '';
+                card.style.transform = '';
+                card.style.boxShadow = '';
+                card.classList.remove('filter-active');
+            }
+        });
+    }
+
+    showFilterFeedback(filterType) {
+        // Special handling for "all" card - it shows reset feedback
+        if (filterType === 'all') {
+            if (window.toastManager) {
+                window.toastManager.info('Показани са всички поръчки');
+            }
+
+            // Visual feedback on the "all" card itself
+            const allCard = Array.from(this.statisticsCards)
+                .find(card => this.determineCardType(card) === 'all');
+
+            if (allCard) {
+                this.pulseCard(allCard);
+            }
+
+            console.log('📈 Filter cleared: showing all orders');
+            return;
+        }
+
+        // Normal filtering feedback for specific cards
+        const count = this.filteredOrdersData.length;
+        const displayName = this.getCardDisplayName(filterType);
+
+        // Desktop notification via toast (if available)
+        if (window.toastManager) {
+            if (this.currentFilter === filterType) {
+                window.toastManager.success(`Филтрирано: ${count} ${displayName}`);
+            } else {
+                window.toastManager.info('Показани са всички поръчки');
+            }
+        }
+
+        // Visual feedback on the card itself
+        const activeCard = Array.from(this.statisticsCards)
+            .find(card => this.determineCardType(card) === filterType);
+
+        if (activeCard) {
+            this.pulseCard(activeCard);
+        }
+
+        console.log(`📈 Filter applied: ${filterType}, showing ${count} orders`);
+    }
+
+    pulseCard(card) {
+        // Brief pulse animation to show interaction
+        card.style.transition = 'transform 0.3s ease';
+        card.style.transform = 'scale(1.05)';
+
+        setTimeout(() => {
+            card.style.transform = 'translateY(-2px) scale(1.02)'; // Back to active state
+        }, 200);
+    }
+
+    scrollToTable() {
+        const table = document.querySelector('.orders-table-wrapper');
+        if (table && this.isMobileDevice()) {
+            // Smooth scroll to table on mobile for better UX
+            setTimeout(() => {
+                table.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }, 300);
+        }
+    }
 
     parseBulgarianDate(dateStr, timeStr = '') {
         try {
@@ -266,6 +684,7 @@ class OrdersNavManager {
 
         if (!columnConfig) return;
 
+        // Sort the FILTERED data (not original data) - CRITICAL CHANGE
         this.filteredOrdersData.sort((a, b) => {
             let compareResult = this.compareValues(
                 a[this.currentSortField],
@@ -277,6 +696,7 @@ class OrdersNavManager {
         });
 
         this.renderSortedTable();
+        this.updateTableInfo(); // NEW: Show filtering info
     }
 
     compareValues(a, b, type) {
@@ -351,6 +771,30 @@ class OrdersNavManager {
 
         // Add staggered animation effect
         this.addRowAnimations();
+        this.updateTableInfo(); // NEW: Update table information
+    }
+
+    // ==========================================
+    // TABLE INFO DISPLAY - NEW FUNCTIONALITY
+    // ==========================================
+
+    updateTableInfo() {
+        // Update any table information displays
+        const totalCount = this.originalOrdersData.length;
+        const displayedCount = this.filteredOrdersData.length;
+
+        // Update total orders count in filter reset button
+        const totalCountElement = document.getElementById('total-orders-count');
+        if (totalCountElement) {
+            if (this.currentFilter) {
+                totalCountElement.textContent = `(${displayedCount} от ${totalCount})`;
+            } else {
+                totalCountElement.textContent = `(${totalCount})`;
+            }
+        }
+
+        // Log info for debugging
+        console.log(`📊 Table info: showing ${displayedCount}/${totalCount} orders, filter: ${this.currentFilter || 'none'}, sort: ${this.currentSortField} ${this.currentSortDirection}`);
     }
 
     addRowAnimations() {
@@ -533,6 +977,10 @@ class OrdersNavManager {
     // PUBLIC API METHODS
     // ==========================================
 
+    // ==========================================
+    // ENHANCED PUBLIC API METHODS
+    // ==========================================
+
     /**
      * Програматично сортиране на таблицата
      * @param {string} field - Field name to sort by
@@ -554,18 +1002,57 @@ class OrdersNavManager {
     }
 
     /**
-     * Връща текущото състояние на сортирането
+     * Програматично филтриране на таблицата
+     * @param {string} filterType - Filter type: 'pending', 'confirmed', 'shipped', 'cancelled', or null for all
      */
-    getCurrentSort() {
+    filterBy(filterType) {
+        if (filterType === null) {
+            this.clearFilter();
+        } else {
+            this.applyFilter(filterType);
+        }
+    }
+
+    /**
+     * Комбинирано сортиране и филтриране
+     * @param {string} filterType - Filter type or null
+     * @param {string} sortField - Field to sort by
+     * @param {string} sortDirection - 'asc' or 'desc'
+     */
+    filterAndSort(filterType, sortField, sortDirection = 'asc') {
+        this.filterBy(filterType);
+        this.sortBy(sortField, sortDirection);
+    }
+
+    /**
+     * Връща текущото състояние на сортирането и филтрирането
+     */
+    getCurrentState() {
         return {
-            field: this.currentSortField,
-            direction: this.currentSortDirection,
-            columnClass: this.getCurrentSortColumnClass()
+            filter: this.currentFilter,
+            sort: {
+                field: this.currentSortField,
+                direction: this.currentSortDirection,
+                columnClass: this.getCurrentSortColumnClass()
+            },
+            data: {
+                total: this.originalOrdersData.length,
+                displayed: this.filteredOrdersData.length,
+                filtered: this.currentFilter !== null
+            }
         };
     }
 
     /**
-     * Рестартира таблицата до оригиналното подреждане
+     * Рестартира таблицата до оригиналното състояние
+     */
+    resetAll() {
+        this.clearFilter();
+        this.resetSort();
+    }
+
+    /**
+     * Рестартира таблицата до оригиналното подреждане (запазва филтъра)
      */
     resetSort() {
         this.currentSortField = 'submittedAt';
@@ -574,10 +1061,44 @@ class OrdersNavManager {
         this.updateSortIndicators();
     }
 
+    /**
+     * Получава статистики за текущото състояние
+     */
+    getStatistics() {
+        const stats = {
+            total: this.originalOrdersData.length,
+            displayed: this.filteredOrdersData.length,
+            groups: {
+                pending: 0,
+                confirmed: 0,
+                shipped: 0,
+                cancelled: 0
+            }
+        };
+
+        // Count by status groups
+        this.originalOrdersData.forEach(order => {
+            if (stats.groups.hasOwnProperty(order.statusGroup)) {
+                stats.groups[order.statusGroup]++;
+            }
+        });
+
+        return stats;
+    }
+
     destroy() {
         if (this.refreshInterval) {
             clearInterval(this.refreshInterval);
         }
+
+        // Clean up event listeners
+        this.statisticsCards.forEach(card => {
+            card.style.cursor = '';
+            card.style.transition = '';
+            card.removeAttribute('tabindex');
+            card.removeAttribute('role');
+            card.removeAttribute('aria-label');
+        });
     }
 }
 

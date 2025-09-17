@@ -13,6 +13,9 @@ public class UserEntity {
     @Column(nullable = false, unique = true)
     private String username;
 
+    @Column(nullable = true, unique = false)
+    private String companyName;
+
     @Column(nullable = false)
     private String passwordHash;
 
@@ -44,6 +47,14 @@ public class UserEntity {
 
     public void setUsername(String username) {
         this.username = username;
+    }
+
+    public String getCompanyName() {
+        return companyName;
+    }
+
+    public void setCompanyName(String companyName) {
+        this.companyName = companyName;
     }
 
     public String getPasswordHash() {

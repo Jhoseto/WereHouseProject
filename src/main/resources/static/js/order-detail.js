@@ -141,12 +141,37 @@ class OrderDetailManager {
         // Обновяване на общата цена за реда
         this.updateRowTotal(row, newQuantity);
 
+        // Обновяване на общата цена на поръчката
+        this.updateOrderTotals();
+
         // Проверка за промени
         const hasChanged = newQuantity !== originalQuantity;
         row.classList.toggle('changed', hasChanged);
 
         // Проверка дали има общи промени
         this.checkForChanges();
+    }
+
+    /**
+     * Обновява общите суми
+     */
+    updateOrderTotals() {
+        let totalGross = 0;
+
+        // Събираме всички цени от редовете
+        document.querySelectorAll('.item-row:not(.marked-for-removal) .item-total').forEach(totalElement => {
+            const price = parseFloat(totalElement.textContent.replace(' лв.', '')) || 0;
+            totalGross += price;
+        });
+
+        // Изчисляваме нето и ДДС (20%)
+        const totalNet = totalGross / 1.2;
+        const totalVat = totalGross - totalNet;
+
+        // Обновяваме DOM елементите
+        document.getElementById('totalNet').textContent = totalNet.toFixed(2) + ' лв.';
+        document.getElementById('totalVat').textContent = totalVat.toFixed(2) + ' лв.';
+        document.getElementById('totalGross').textContent = totalGross.toFixed(2) + ' лв.';
     }
 
     /**

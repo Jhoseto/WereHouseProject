@@ -379,6 +379,8 @@ class CatalogManager {
 
         this.productsContainer.innerHTML = tableHTML;
         this.bindTableEvents();
+        this.updateSelectionCount();
+        this.updateBulkActions();
     }
 
     /**
@@ -396,6 +398,9 @@ class CatalogManager {
             actualAvailable > 0 ? 'stock-low' : 'stock-none';
 
         const stockText = actualAvailable > 0 ? `${actualAvailable} бр.` : 'Няма';
+
+        const isSelected = this.selectedRows.has(product.id.toString());
+        const checkedAttr = isSelected ? 'checked="checked"' : '';
 
         return `
             <tr class="product-row" data-product-id="${product.id}" tabindex="0">
@@ -690,13 +695,24 @@ class CatalogManager {
 
     updateSelectionCount() {
         const selectedCheckboxes = this.productsContainer.querySelectorAll('.row-selector:checked');
-        const count = selectedCheckboxes.length;
+        const currentPageSelected = Array.from(selectedCheckboxes).map(cb => cb.value);
+        const visibleProductIds = Array.from(this.productsContainer.querySelectorAll('.row-selector')).map(cb => cb.value);
+
+        visibleProductIds.forEach(id => {
+            if (!currentPageSelected.includes(id)) {
+                this.selectedRows.delete(id);
+            } else {
+                this.selectedRows.add(id);
+            }
+        });
+
+        const totalSelectedCount = this.selectedRows.size;
 
         const countElement = document.getElementById('selected-count');
-        if (countElement) countElement.textContent = count;
+        if (countElement) countElement.textContent = totalSelectedCount;
 
         const bulkBtn = document.getElementById('bulk-add-btn');
-        if (bulkBtn) bulkBtn.disabled = count === 0;
+        if (bulkBtn) bulkBtn.disabled = totalSelectedCount === 0;
     }
 
     updateBulkActions() {
