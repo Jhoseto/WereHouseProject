@@ -194,7 +194,7 @@ public class MainController {
                 model.addAttribute("csrfHeader", "X-CSRF-TOKEN");
             }
 
-            return "admin/main-dashboard";
+            return "employer/main-dashboard";
 
         } catch (Exception e) {
             // Error fallback - запазваме същата структура
@@ -209,7 +209,7 @@ public class MainController {
             model.addAttribute("initialDashboardData", errorData);
             model.addAttribute("errorMessage", "Възникна грешка при зареждане на dashboard данните");
 
-            return "admin/main-dashboard";
+            return "employer/main-dashboard";
         }
     }
 
@@ -285,7 +285,7 @@ public class MainController {
             model.addAttribute("orderItemsCount", order.getItems() != null ? order.getItems().size() : 0);
 
             // Връщаме template name (това работи защото сме @Controller, не @RestController)
-            return "admin/order-review";
+            return "employer/order-review";
 
         } catch (Exception e) {
             return "redirect:/employer/dashboard?error=system-error";

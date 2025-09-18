@@ -73,15 +73,15 @@
 
                         <!-- Опции за ADMIN -->
                         <div sec:authorize="hasRole('ADMIN')">
-                            <a th:href="@{/admin/dashboard}" class="dropdown-item">
+                            <a th:href="@{/templates/employer/dashboard}" class="dropdown-item">
                                 <i class="bi bi-speedometer2"></i>
                                 Админ табло
                             </a>
-                            <a th:href="@{/admin/products}" class="dropdown-item">
+                            <a th:href="@{/templates/employer/products}" class="dropdown-item">
                                 <i class="bi bi-box"></i>
                                 Управление на инвентара
                             </a>
-                            <a th:href="@{/admin/users}" class="dropdown-item">
+                            <a th:href="@{/templates/employer/users}" class="dropdown-item">
                                 <i class="bi bi-people"></i>
                                 Управление потребители
                             </a>

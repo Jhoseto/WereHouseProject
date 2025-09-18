@@ -32,9 +32,9 @@ import java.util.*;
 @RestController
 @RequestMapping("/employer")
 @PreAuthorize("hasRole('ADMIN') or hasRole('EMPLOYER')")
-public class AdminDashboardController {
+public class EmployerDashboardController {
 
-    private static final Logger log = LoggerFactory.getLogger(AdminDashboardController.class);
+    private static final Logger log = LoggerFactory.getLogger(EmployerDashboardController.class);
 
     // Constructor injection за immutable dependencies
     private final DashboardService dashboardService;
@@ -46,9 +46,9 @@ public class AdminDashboardController {
      * Spring автоматично ще inject-не правилните implementations based на type.
      */
     @Autowired
-    public AdminDashboardController(DashboardService dashboardService,
-                                    DashboardBroadcastService broadcastService,
-                                    OrderRepository orderRepository) {
+    public EmployerDashboardController(DashboardService dashboardService,
+                                       DashboardBroadcastService broadcastService,
+                                       OrderRepository orderRepository) {
         this.dashboardService = dashboardService;
         this.broadcastService = broadcastService;
         this.orderRepository = orderRepository;

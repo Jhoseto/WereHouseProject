@@ -46,8 +46,8 @@
                     <div sec:authorize="isAuthenticated()">
                         <!-- Връзки за ADMIN и EMPLOYER -->
                         <div sec:authorize="hasAnyRole('ADMIN', 'EMPLOYER')">
-                            <li><a th:href="@{/admin/dashboard}" class="footer-link">Админ панел</a></li>
-                            <li><a th:href="@{/admin/orders}" class="footer-link">Поръчки</a></li>
+                            <li><a th:href="@{/templates/employer/dashboard}" class="footer-link">Админ панел</a></li>
+                            <li><a th:href="@{/templates/employer/orders}" class="footer-link">Поръчки</a></li>
                         </div>
 
                         <!-- Връзки за CLIENT -->
