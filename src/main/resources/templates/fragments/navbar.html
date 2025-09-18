@@ -79,7 +79,7 @@
                             </a>
                             <a th:href="@{/admin/products}" class="dropdown-item">
                                 <i class="bi bi-box"></i>
-                                Управление продукти
+                                Управление на инвентара
                             </a>
                             <a th:href="@{/admin/users}" class="dropdown-item">
                                 <i class="bi bi-people"></i>
@@ -88,6 +88,18 @@
                             <a th:href="@{/admin/orders}" class="dropdown-item">
                                 <i class="bi bi-box-seam"></i>
                                 Управление поръчки
+                            </a>
+                        </div>
+
+                        <!-- Опции за EMPLOYER -->
+                        <div sec:authorize="hasRole('EMPLOYER')">
+                            <a th:href="@{/employer/dashboard}" class="dropdown-item">
+                                <i class="bi bi-box-seam"></i>
+                                Управление поръчки
+                            </a>
+                            <a th:href="@{/catalog}" class="dropdown-item">
+                                <i class="bi bi-grid-3x3-gap"></i>
+                                Каталог продукти
                             </a>
                         </div>
 
