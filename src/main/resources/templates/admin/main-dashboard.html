@@ -36,6 +36,143 @@
     </div>
 </header>
 
+<!-- FILTER & SORT PANEL - Поставете този HTML в main-dashboard.html ДИРЕКТНО СЛЕД <div class="dashboard-header"> -->
+
+<div class="filter-sort-panel" id="filter-sort-panel">
+    <div class="filter-panel-header">
+        <div class="panel-title">
+            <i class="bi bi-funnel"></i>
+            <span>Филтриране и сортиране</span>
+            <span class="active-tab-indicator" id="active-tab-name">Изчакващи поръчки</span>
+        </div>
+        <div class="panel-controls">
+            <button class="btn-toggle-filters" id="toggle-filters" title="Скрий/Покажи филтри">
+                <i class="bi bi-chevron-up"></i>
+            </button>
+            <button class="btn-reset-filters" id="reset-filters" title="Изчисти всички филтри">
+                <i class="bi bi-arrow-clockwise"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="filter-panel-content" id="filter-panel-content">
+        <!-- ТЪРСЕНЕ И СОРТИРАНЕ -->
+        <div class="filter-row">
+            <div class="filter-group">
+                <label for="search-input">Търсене</label>
+                <div class="search-input-wrapper">
+                    <i class="bi bi-search search-icon"></i>
+                    <input type="text"
+                           id="search-input"
+                           class="filter-input"
+                           placeholder="Търси по фирма, име, телефон..."
+                           autocomplete="off">
+                    <button class="clear-search" id="clear-search" title="Изчисти търсенето">
+                        <i class="bi bi-x"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="filter-group">
+                <label for="sort-select">Сортиране</label>
+                <select id="sort-select" class="filter-select">
+                    <option value="newest">Най-нови първо</option>
+                    <option value="oldest">Най-стари първо</option>
+                    <option value="amount-high">Най-скъпи първо</option>
+                    <option value="amount-low">Най-евтини първо</option>
+                    <option value="items-most">Повече артикули първо</option>
+                    <option value="items-least">По-малко артикули първо</option>
+                    <option value="company-az">Фирма А-Я</option>
+                    <option value="company-za">Фирма Я-А</option>
+                    <option value="client-az">Клиент А-Я</option>
+                    <option value="client-za">Клиент Я-А</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="location-filter">Локация</label>
+                <select id="location-filter" class="filter-select">
+                    <option value="">Всички локации</option>
+                    <!-- Динамично зареждане от данните -->
+                </select>
+            </div>
+        </div>
+
+        <!-- ФИЛТРИ ПО СТОЙНОСТ И КОЛИЧЕСТВО -->
+        <div class="filter-row">
+            <div class="filter-group">
+                <label>Стойност на поръчка</label>
+                <div class="range-filter">
+                    <input type="number"
+                           id="amount-min"
+                           class="range-input"
+                           placeholder="От лв."
+                           min="0"
+                           step="0.01"
+                           aria-label="Минимална стойност на поръчка">
+                    <span class="range-separator">до</span>
+                    <input type="number"
+                           id="amount-max"
+                           class="range-input"
+                           placeholder="До лв."
+                           min="0"
+                           step="0.01"
+                           aria-label="Максимална стойност на поръчка">
+                </div>
+            </div>
+
+            <div class="filter-group">
+                <label>Брой артикули</label>
+                <div class="range-filter">
+                    <input type="number"
+                           id="items-min"
+                           class="range-input"
+                           placeholder="От бр."
+                           min="0"
+                           aria-label="Минимален брой артикули">
+                    <span class="range-separator">до</span>
+                    <input type="number"
+                           id="items-max"
+                           class="range-input"
+                           placeholder="До бр."
+                           min="0"
+                           aria-label="Максимален брой артикули">
+                </div>
+            </div>
+
+            <div class="filter-group">
+                <label for="period-filter">Период</label>
+                <select id="period-filter" class="filter-select">
+                    <option value="">Всички периоди</option>
+                    <option value="today">Днес</option>
+                    <option value="yesterday">Вчера</option>
+                    <option value="last-3-days">Последни 3 дни</option>
+                    <option value="this-week">Тази седмица</option>
+                    <option value="last-week">Миналата седмица</option>
+                    <option value="this-month">Този месец</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- РЕЗУЛТАТИ И СТАТИСТИКА -->
+        <div class="filter-results-row">
+            <div class="results-count">
+                <span id="filtered-count">0</span> от <span id="total-count">0</span> поръчки
+                <span class="active-filters" id="active-filters-text"></span>
+            </div>
+            <div class="results-stats">
+                <span class="stat-item">
+                    Общо: <strong id="total-amount-filtered">0.00 лв</strong>
+                </span>
+                <span class="stat-item">
+                    Артикули: <strong id="total-items-filtered">0</strong>
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 <!-- Enhanced Order Processing Tab Navigation -->
 <nav class="processing-tabs">
     <button class="tab-btn active"
@@ -269,6 +406,7 @@
 <script src="/js/dashboard/dashboardManager.js"></script>
 <script src="/js/dashboard/dashboardUI.js"></script>
 <script src="/js/dashboard/mainDashboard.js"></script>
+<script src="/js/dashboard/filterManagerForOrderManagement.js"></script>
 
 <!-- Enhanced WebSocket Status Management -->
 <script>

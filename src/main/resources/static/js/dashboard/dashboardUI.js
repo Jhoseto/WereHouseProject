@@ -1192,84 +1192,90 @@ class DashboardUI {
         const ordersHtml = orders.map(order => this.generateOrderCardHtml(order)).join('');
         container.innerHTML = ordersHtml;
 
-        // Add click handlers
-        this.attachOrderCardHandlers(container);
     }
 
     generateOrderCardHtml(order) {
+        // Status mapping с компактни български labels
         const statusMap = {
-            'URGENT': {label: 'Спешна поръчка', class: 'urgent'},
-            'PENDING': {label: 'Изчакваща поръчка', class: 'pending'},
-            'CONFIRMED': {label: 'Обработена поръчка', class: 'confirmed'},
-            'CANCELLED': {label: 'Отказана поръчка', class: 'cancelled'}
+            'URGENT': {label: 'Спешна', class: 'urgent'},
+            'PENDING': {label: 'Изчакваща', class: 'pending'},
+            'CONFIRMED': {label: 'Обработена', class: 'confirmed'},
+            'CANCELLED': {label: 'Отказана', class: 'cancelled'}
         };
 
-        const status = statusMap[order.status] || {label: 'Изчаква', class: 'pending'};
+        const status = statusMap[order.status] || {label: 'Изчакваща', class: 'pending'};
+
+        // Форматиране на финансови данни - винаги 2 десетични знака
         const totalGross = order.totalGross ? Number(order.totalGross).toFixed(2) : '0.00';
         const totalNet = order.totalNet ? Number(order.totalNet).toFixed(2) : '0.00';
-        const submittedDate = order.submittedAt ? new Date(order.submittedAt).toLocaleDateString('bg-BG') : '';
-        const submittedTime = order.submittedAt ? new Date(order.submittedAt).toLocaleTimeString('bg-BG', {hour: '2-digit', minute: '2-digit'}) : '';
         const itemsCount = order.itemsCount || 0;
 
+        // Форматиране на дата и час с българска локализация
+        const submittedDate = order.submittedAt ?
+            new Date(order.submittedAt).toLocaleDateString('bg-BG', {
+                day: '2-digit', month: '2-digit', year: 'numeric'
+            }) : '';
+
+        const submittedTime = order.submittedAt ?
+            new Date(order.submittedAt).toLocaleTimeString('bg-BG', {
+                hour: '2-digit', minute: '2-digit'
+            }) : '';
+
+        // Съкращаване на дълги фирмени имена за компактност
+        const clientCompany = order.clientCompany && order.clientCompany.length > 35
+            ? order.clientCompany.substring(0, 35) + '...'
+            : order.clientCompany || 'Неизвестна фирма';
+
+        // Форматиране на клиентски детайли с проверка за null/undefined
+        const clientDetails = [
+            order.clientName,
+            order.clientPhone,
+            order.clientLocation
+        ].filter(detail => detail).join(' • ') || 'Няма данни';
+
+        // Генериране на HTML с нова три-секционна структура
         return `
 <div class="order-card" data-order-id="${order.id}" data-status="${status.class}">
-  <!-- Status indicator -->
-  <div class="status-bar ${status.class}"></div>
-
-  <!-- Main content -->
-  <div class="order-card-content">
-    <!-- Header row -->
-    <div class="order-header">
-      <div class="order-id">#${order.id}</div>
-      <div class="order-status ${status.class}">${status.label}</div>
-      <div class="order-time">${submittedDate} ${submittedTime}</div>
+    <div class="status-bar ${status.class}"></div>
+    
+    <div class="order-card-content">
+        <!-- ЛЯВА СЕКЦИЯ: Идентификация и клиент -->
+        <div class="order-main-info">
+            <div class="order-header">
+                <div class="order-id">#${order.id}</div>
+                <div class="order-status ${status.class}">${status.label}</div>
+            </div>
+            <div class="client-info">
+                <div class="client-company">${clientCompany}</div>
+                <div class="client-details">${clientDetails}</div>
+            </div>
+        </div>
+        
+        <!-- СРЕДНА СЕКЦИЯ: Финансови данни -->
+        <div class="order-financial-info">
+            <div class="order-items">${itemsCount} артикула</div>
+            <div class="order-total">${totalGross} лв</div>
+            <div class="order-net-price">без ДДС: ${totalNet} лв</div>
+        </div>
+        
+        <!-- ДЯСНА СЕКЦИЯ: Време и действие -->
+        <div class="order-meta-actions">
+            <div class="order-datetime">
+                <div class="order-date">${submittedDate}</div>
+                <div class="order-time">${submittedTime}</div>
+            </div>
+            <div class="order-actions">
+                <button class="btn-view" onclick="viewOrderDetails(${order.id})">
+                    👁 Преглед
+                </button>
+            </div>
+        </div>
     </div>
-
-    <!-- Client info -->
-    <div class="client-info">
-      <div class="client-company">${order.clientCompany || 'Неизвестна фирма'}</div>
-      <div class="client-details">
-        ${order.clientName || '-'}${order.clientPhone ? ' • ' + order.clientPhone : ''}${order.clientLocation ? ' • ' + order.clientLocation : ''}
-      </div>
-    </div>
-
-    <!-- Order summary -->
-    <div class="order-summary">
-      <div class="order-items">${itemsCount} артикула</div>
-      <div class="order-total">Общо: ${totalGross} лв</div>
-      <div class="order-net-price">без ДДС: ${totalNet} лв</div>
-    </div>
-
-    <!-- Actions -->
-    <div class="order-actions">
-      <button class="order-btn btn-view" onclick="viewOrderDetails(${order.id})">
-        <i class="bi bi-eye"></i> Преглед
-      </button>
-    </div>
-  </div>
 </div>`;
     }
 
 
 
-    /**
-     * Attach click handlers to order cards
-     */
-    attachOrderCardHandlers(container) {
-        const orderCards = container.querySelectorAll('.order-card');
-
-        orderCards.forEach(card => {
-            card.addEventListener('click', (e) => {
-                // Don't trigger if clicking on buttons
-                if (e.target.matches('.order-btn, .order-btn *')) return;
-
-                const orderId = card.dataset.orderId;
-                if (orderId) {
-                    this.showOrderDetails(orderId);
-                }
-            });
-        });
-    }
 
     /**
      * Show order details (existing functionality)

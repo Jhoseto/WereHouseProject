@@ -224,27 +224,6 @@ class MainDashboard {
         };
 
 
-
-
-
-
-        // ===== SETTINGS AND NOTIFICATIONS =====
-
-        window.toggleNotifications = () => {
-            console.log('Notifications toggle requested');
-            if (window.toastManager) {
-                window.toastManager.info('Настройките за нотификации ще бъдат добавени скоро');
-            }
-        };
-
-        window.showSettings = () => {
-            console.log('Settings requested');
-            if (window.toastManager) {
-                window.toastManager.info('Настройките ще бъдат добавени скоро');
-            }
-        };
-
-        console.log('✓ Global API exposed');
     }
 
     /**

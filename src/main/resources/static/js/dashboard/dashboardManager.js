@@ -197,41 +197,6 @@ class DashboardManager {
     }
 
 
-    /**
-     * Load activity feed data
-     */
-    async loadActivityData() {
-        try {
-            // For now, use static activity data
-            // In future, this could be from a separate endpoint
-            const activities = [
-                {
-                    type: 'order',
-                    icon: 'bi-box-seam',
-                    message: 'Нова поръчка #1234 от Client Ltd.',
-                    time: '15:30'
-                },
-                {
-                    type: 'approval',
-                    icon: 'bi-check-circle',
-                    message: 'Поръчка #1233 одобрена успешно',
-                    time: '15:25'
-                },
-                {
-                    type: 'modification',
-                    icon: 'bi-pencil',
-                    message: 'Поръчка #1232 редактирана от оператор',
-                    time: '15:20'
-                }
-            ];
-
-            this.ui.updateActivityFeed(activities);
-
-        } catch (error) {
-            console.error('Error loading activity data:', error);
-        }
-    }
-
     // ==========================================
     // REAL-TIME EVENT HANDLING
     // ==========================================
@@ -616,7 +581,7 @@ class DashboardManager {
         this.autoRefreshInterval = setInterval(async () => {
             if (!this.isConnected) {
                 console.log('Auto-refreshing all tabs (WebSocket down)');
-                const tabs = ['urgent', 'pending', 'ready', 'completed'];
+                const tabs = ['urgent', 'pending', 'confirmed', 'cancelled'];
                 for (const tab of tabs) {
                     await this.loadTabData(tab);
                 }

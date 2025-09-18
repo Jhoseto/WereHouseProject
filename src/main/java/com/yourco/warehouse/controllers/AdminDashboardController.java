@@ -52,7 +52,6 @@ public class AdminDashboardController {
         this.dashboardService = dashboardService;
         this.broadcastService = broadcastService;
         this.orderRepository = orderRepository;
-        log.info("AdminDashboardController initialized with WebSocket support");
     }
 
     // ==========================================
@@ -74,8 +73,6 @@ public class AdminDashboardController {
             DashboardDTO dashboard = dashboardService.getFullDashboard();
 
             if (dashboard.getSuccess()) {
-                log.info("Dashboard overview loaded successfully with {} urgent orders",
-                        dashboard.getUrgentCount());
                 return ResponseEntity.ok(dashboard);
             } else {
                 log.warn("Dashboard overview failed: {}", dashboard.getMessage());
@@ -148,8 +145,6 @@ public class AdminDashboardController {
             DashboardDTO orders = dashboardService.getOrdersByStatus(orderStatus, limit);
 
             if (orders.getSuccess()) {
-                log.info("Retrieved {} orders with status {}",
-                        orders.getOrders() != null ? orders.getOrders().size() : 0, status);
                 return ResponseEntity.ok(orders);
             } else {
                 log.warn("Order fetch failed for status {}: {}", status, orders.getMessage());
@@ -249,8 +244,6 @@ public class AdminDashboardController {
 
         try {
             Integer newQuantity = (Integer) request.get("quantity");
-            log.info("Updating quantity for product {} in order {} to {}",
-                    productId, orderId, newQuantity);
 
             DashboardDTO response = dashboardService.updateProductQuantity(orderId, productId, newQuantity);
 
@@ -263,7 +256,6 @@ public class AdminDashboardController {
 
                 broadcastService.broadcastOrderModification(orderId, "QUANTITY_UPDATE", changes);
 
-                log.info("Product quantity updated and broadcasted for order {}", orderId);
                 return ResponseEntity.ok(response);
             } else {
                 log.warn("Quantity update failed for product {} in order {}: {}",
@@ -293,8 +285,6 @@ public class AdminDashboardController {
 
         try {
             String reason = (String) request.get("removalReason");
-            log.info("Removing product {} from order {} with reason: {}",
-                    productId, orderId, reason);
 
             DashboardDTO response = dashboardService.removeProductFromOrder(orderId, productId, reason);
 
@@ -307,7 +297,6 @@ public class AdminDashboardController {
 
                 broadcastService.broadcastOrderModification(orderId, "PRODUCT_REMOVAL", changes);
 
-                log.info("Product {} removed from order {} and broadcasted", productId, orderId);
                 return ResponseEntity.ok(response);
             } else {
                 log.warn("Product removal failed for product {} in order {}: {}",
@@ -337,7 +326,6 @@ public class AdminDashboardController {
 
         try {
             String operatorNote = (String) request.get("operatorNote");
-            log.info("Approving order {} with operator note: {}", orderId, operatorNote);
 
             Optional<Order> orderOpt = orderRepository.findById(orderId);
             if (orderOpt.isEmpty()) {
@@ -360,7 +348,6 @@ public class AdminDashboardController {
 
                 // Trigger automatic counter update broadcast
                 this.getCounters();
-                log.info("Order {} approved and status change broadcasted", orderId);
                 return ResponseEntity.ok(response);
             } else {
                 log.warn("Order approval failed for order {}: {}", orderId, response.getMessage());
@@ -388,7 +375,6 @@ public class AdminDashboardController {
 
         try {
             String rejectionReason = (String) request.get("rejectionReason");
-            log.info("Rejecting order {} with reason: {}", orderId, rejectionReason);
 
             Optional<Order> orderOpt = orderRepository.findById(orderId);
             if (orderOpt.isEmpty()) {
@@ -409,7 +395,6 @@ public class AdminDashboardController {
                         orderId, "CANCELLED", originalStatus, orderData);
 
                 this.getCounters();
-                log.info("Order {} rejected and status change broadcasted", orderId);
 
                 return ResponseEntity.ok(response);
             } else {
@@ -443,7 +428,6 @@ public class AdminDashboardController {
             DashboardDTO changes = dashboardService.getOrderChangesSummary(orderId);
 
             if (changes.getSuccess()) {
-                log.info("Change summary loaded for order {}", orderId);
                 return ResponseEntity.ok(changes);
             } else {
                 log.warn("Failed to load changes for order {}: {}", orderId, changes.getMessage());
@@ -466,7 +450,6 @@ public class AdminDashboardController {
     @PostMapping("/dashboard/order/{orderId}/reset")
     public ResponseEntity<DashboardDTO> resetOrderChanges(@PathVariable Long orderId) {
         try {
-            log.info("Resetting all changes for order {}", orderId);
 
             DashboardDTO response = dashboardService.resetOrderToOriginalState(orderId);
 
@@ -477,7 +460,6 @@ public class AdminDashboardController {
 
                 broadcastService.broadcastOrderModification(orderId, "ORDER_RESET", changes);
 
-                log.info("Order {} reset to original state and broadcasted", orderId);
                 return ResponseEntity.ok(response);
             } else {
                 log.warn("Order reset failed for order {}: {}", orderId, response.getMessage());
