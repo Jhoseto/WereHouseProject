@@ -32,7 +32,6 @@ class ProductionFilterManager {
         this.lastFilterTime = 0;
         this.filterCount = 0;
 
-        console.log('ProductionFilterManager created - optimized for instant results');
     }
 
     // ==========================================
@@ -93,7 +92,6 @@ class ProductionFilterManager {
         // Initial data extraction
         this.extractDataFromDOM();
 
-        console.log('✓ ProductionFilterManager initialized with instant filtering');
     }
 
     setupElements() {
@@ -112,7 +110,6 @@ class ProductionFilterManager {
         };
 
         const foundElements = Object.keys(this.elements).filter(key => this.elements[key]);
-        console.log('Production elements found:', foundElements);
     }
 
     // ==========================================
@@ -188,7 +185,6 @@ class ProductionFilterManager {
             });
         }
 
-        console.log('✓ Instant event listeners configured');
     }
 
     // ==========================================
@@ -201,7 +197,6 @@ class ProductionFilterManager {
             this.extractDataFromDOM();
         }, 500); // Намалено от 1000ms на 500ms
 
-        console.log('✓ Optimized data watcher started (500ms interval)');
     }
 
     // ==========================================
@@ -245,7 +240,6 @@ class ProductionFilterManager {
             this.updateLocationOptions();
             this.applyAllFiltersInstantly();
 
-            console.log(`✓ Data updated: ${allExtractedOrders.length} orders from tabs: ${tabsWithData.join(', ')}`);
         }
     }
 
@@ -397,7 +391,6 @@ class ProductionFilterManager {
         this.lastFilterTime = endTime - startTime;
         this.filterCount++;
 
-        console.log(`Instant filter #${this.filterCount}: ${results.length}/${this.allOrders.length} orders (${this.lastFilterTime.toFixed(2)}ms)`);
     }
 
     // ==========================================
@@ -560,8 +553,6 @@ class ProductionFilterManager {
                 }
             }
         });
-
-        console.log(`Fast visual update: ${visibleOrderIds.size} cards visible`);
     }
 
     // ==========================================
@@ -635,7 +626,6 @@ class ProductionFilterManager {
     // ==========================================
 
     resetAllFilters() {
-        console.log('Production reset: clearing all filters...');
 
         // Изчистване на филтрите
         this.filters = {
@@ -669,8 +659,6 @@ class ProductionFilterManager {
                 this.elements.resetBtn.style.background = '';
             }, 1000);
         }
-
-        console.log(`✓ Production reset complete: ${this.filteredOrders.length}/${this.allOrders.length} orders visible`);
     }
 
     // ==========================================
@@ -702,7 +690,6 @@ window.productionFilterManager = new ProductionFilterManager();
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
         window.productionFilterManager.initialize();
-        console.log('✓ ProductionFilterManager ready for production use');
 
         // Global access for debugging
         window.getFilterStats = () => window.productionFilterManager.getPerformanceStats();
