@@ -1,12 +1,13 @@
 /**
- * SIMPLE FILTER MANAGER - MULTI-CRITERIA FILTERING
- * ================================================
- * Прост и ефективен филтър мениджър който поддържа:
- * - Едновременно филтриране по множество критерии
- * - Real-time търсене и сортиране
- * - Автоматично извличане на данни от DOM
+ * PRODUCTION FILTER MANAGER - INSTANT REAL-TIME FILTERING
+ * ========================================================
+ * Production-ready филтър мениджър с мгновени резултати:
+ * - Едновременно филтриране по всички критерии
+ * - Мгновено търсене, сортиране и period филтриране
+ * - Оптимизирана DOM манипулация за максимална производителност
+ * - Automatic data extraction с минимална нагрузка
  */
-class SimpleFilterManager {
+class ProductionFilterManager {
     constructor() {
         // Данни
         this.allOrders = [];
@@ -27,18 +28,74 @@ class SimpleFilterManager {
         // DOM елементи
         this.elements = {};
 
-        console.log('SimpleFilterManager created');
+        // Performance tracking
+        this.lastFilterTime = 0;
+        this.filterCount = 0;
+
+        console.log('ProductionFilterManager created - optimized for instant results');
     }
 
-    // Основна инициализация
+    // ==========================================
+    // INTELLIGENT SEARCH FUNCTION
+    // ==========================================
+
+    smartSearch(order, searchQuery) {
+        // Създаваме пълен search text от всички релевантни полета
+        const searchableText = [
+            order.clientName || '',
+            order.clientCompany || '',
+            order.clientPhone || '',
+            order.clientLocation || '',
+            order.id || ''
+        ].join(' ').toLowerCase().trim();
+
+        // Нормализираме search query-то
+        const normalizedQuery = searchQuery.toLowerCase().trim();
+
+        // Ако няма текст за търсене, връщаме false
+        if (!normalizedQuery || !searchableText) {
+            return false;
+        }
+
+        // 1. EXACT MATCH - ако цялата фраза се намира някъде
+        if (searchableText.includes(normalizedQuery)) {
+            return true;
+        }
+
+        // 2. WORD-BASED SEARCH - разделяме query-то на думи
+        const searchWords = normalizedQuery.split(/\s+/).filter(word => word.length > 0);
+
+        // Ако има само една дума, проверяваме дали се намира като част от дума
+        if (searchWords.length === 1) {
+            const singleWord = searchWords[0];
+            // Проверяваме дали думата започва някоя дума в текста
+            const textWords = searchableText.split(/\s+/);
+            return textWords.some(textWord => textWord.includes(singleWord));
+        }
+
+        // 3. MULTI-WORD SEARCH - всички думи трябва да се намират в текста
+        // но не задължително една до друга
+        return searchWords.every(searchWord => {
+            // Всяка дума от query-то трябва да се намира някъде в текста
+            return searchableText.includes(searchWord);
+        });
+    }
+
+    // ==========================================
+    // ИНИЦИАЛИЗАЦИЯ И НАСТРОЙКА
+    // ==========================================
+
     initialize() {
         this.setupElements();
-        this.setupEventListeners();
-        this.startDataWatcher();
-        console.log('✓ SimpleFilterManager initialized');
+        this.setupInstantEventListeners();
+        this.startOptimizedDataWatcher();
+
+        // Initial data extraction
+        this.extractDataFromDOM();
+
+        console.log('✓ ProductionFilterManager initialized with instant filtering');
     }
 
-    // Намиране на DOM елементи
     setupElements() {
         this.elements = {
             searchInput: document.getElementById('search-input'),
@@ -46,8 +103,6 @@ class SimpleFilterManager {
             sortSelect: document.getElementById('sort-select'),
             amountMin: document.getElementById('amount-min'),
             amountMax: document.getElementById('amount-max'),
-            itemsMin: document.getElementById('items-min'),
-            itemsMax: document.getElementById('items-max'),
             periodSelect: document.getElementById('period-filter'),
             filteredCount: document.getElementById('filtered-count'),
             totalCount: document.getElementById('total-count'),
@@ -57,40 +112,43 @@ class SimpleFilterManager {
         };
 
         const foundElements = Object.keys(this.elements).filter(key => this.elements[key]);
-        console.log('Filter elements found:', foundElements);
+        console.log('Production elements found:', foundElements);
     }
 
-    // Event listeners за всички филтри
-    setupEventListeners() {
-        // Search input - реагира веднага при писане
+    // ==========================================
+    // МГНОВЕНИ EVENT LISTENERS
+    // ==========================================
+
+    setupInstantEventListeners() {
+        // Search input - дебавниран но мгновен
         if (this.elements.searchInput) {
             let searchTimeout;
             this.elements.searchInput.addEventListener('input', (e) => {
                 clearTimeout(searchTimeout);
                 searchTimeout = setTimeout(() => {
                     this.filters.search = e.target.value.trim().toLowerCase();
-                    this.applyAllFilters();
-                }, 100);
+                    this.applyAllFiltersInstantly();
+                }, 100); // Оптимизирано за по-бърза реакция
             });
         }
 
-        // Location dropdown
+        // Location dropdown - мгновено
         if (this.elements.locationSelect) {
             this.elements.locationSelect.addEventListener('change', (e) => {
                 this.filters.location = e.target.value;
-                this.applyAllFilters();
+                this.applyAllFiltersInstantly();
             });
         }
 
-        // Sort dropdown
+        // Sort dropdown - мгновено
         if (this.elements.sortSelect) {
             this.elements.sortSelect.addEventListener('change', (e) => {
                 this.filters.sort = e.target.value;
-                this.applyAllFilters();
+                this.applyAllFiltersInstantly();
             });
         }
 
-        // Amount range inputs
+        // Amount range inputs - оптимизирано дебавниране
         if (this.elements.amountMin) {
             let timeout;
             this.elements.amountMin.addEventListener('input', (e) => {
@@ -98,8 +156,8 @@ class SimpleFilterManager {
                 timeout = setTimeout(() => {
                     const value = parseFloat(e.target.value);
                     this.filters.amountMin = isNaN(value) ? null : value;
-                    this.applyAllFilters();
-                }, 300);
+                    this.applyAllFiltersInstantly();
+                }, 200);
             });
         }
 
@@ -110,16 +168,16 @@ class SimpleFilterManager {
                 timeout = setTimeout(() => {
                     const value = parseFloat(e.target.value);
                     this.filters.amountMax = isNaN(value) ? null : value;
-                    this.applyAllFilters();
-                }, 300);
+                    this.applyAllFiltersInstantly();
+                }, 200);
             });
         }
 
-        // Period dropdown
+        // Period dropdown - КРИТИЧНО МГНОВЕНО
         if (this.elements.periodSelect) {
             this.elements.periodSelect.addEventListener('change', (e) => {
                 this.filters.period = e.target.value;
-                this.applyAllFilters();
+                this.applyAllFiltersInstantly();
             });
         }
 
@@ -130,29 +188,36 @@ class SimpleFilterManager {
             });
         }
 
-        console.log('✓ Filter event listeners ready');
+        console.log('✓ Instant event listeners configured');
     }
 
-    // Автоматично следене за нови данни в DOM
-    startDataWatcher() {
+    // ==========================================
+    // ОПТИМИЗИРАН DATA WATCHER
+    // ==========================================
+
+    startOptimizedDataWatcher() {
+        // Намален interval за по-бърза реакция
         setInterval(() => {
             this.extractDataFromDOM();
-        }, 1000);
-        console.log('✓ Data watcher started');
+        }, 500); // Намалено от 1000ms на 500ms
+
+        console.log('✓ Optimized data watcher started (500ms interval)');
     }
 
-    // Извличане на данни от активния таб
+    // ==========================================
+    // ИЗВЛИЧАНЕ И ОБРАБОТКА НА ДАННИ
+    // ==========================================
+
     extractDataFromDOM() {
         const activeTabBtn = document.querySelector('.tab-btn.active');
         const currentActiveTab = activeTabBtn?.dataset.tab || 'pending';
 
-        // Обновяваме активния таб за UI целите
         if (currentActiveTab !== this.currentTab) {
             this.currentTab = currentActiveTab;
             this.updateTabIndicator();
         }
 
-        // КЛЮЧОВА ПРОМЯНА: Събираме данни от всички табове
+        // Събираме данни от всички табове
         let allExtractedOrders = [];
         let tabsWithData = [];
 
@@ -167,7 +232,6 @@ class SimpleFilterManager {
                 orderCards.forEach(card => {
                     const orderData = this.extractOrderDataFromCard(card);
                     if (orderData) {
-                        // Добавяме информация за кой таб принадлежи поръчката
                         orderData.sourceTab = tabName;
                         allExtractedOrders.push(orderData);
                     }
@@ -175,19 +239,16 @@ class SimpleFilterManager {
             }
         });
 
-        console.log(`Found data in tabs: ${tabsWithData.join(', ')}`);
-
-        // Обновяваме данните ако има промяна
+        // Проверяваме дали има промяна в данните
         if (allExtractedOrders.length !== this.allOrders.length) {
             this.allOrders = allExtractedOrders;
             this.updateLocationOptions();
-            this.applyAllFilters();
-            console.log(`✓ Extracted ${allExtractedOrders.length} orders from all tabs`);
+            this.applyAllFiltersInstantly();
+
+            console.log(`✓ Data updated: ${allExtractedOrders.length} orders from tabs: ${tabsWithData.join(', ')}`);
         }
     }
 
-
-    // Извличане на данни от order card
     extractOrderDataFromCard(card) {
         try {
             const orderIdEl = card.querySelector('.order-id');
@@ -215,35 +276,34 @@ class SimpleFilterManager {
             const clientPhone = detailsParts[1] || '';
             const clientLocation = detailsParts[2] || '';
 
-            // Брой артикули - извличаме числото от "7 артикула"
+            // Брой артикули
             const itemsText = itemsEl ? itemsEl.textContent.trim() : '';
             const itemsMatch = itemsText.match(/(\d+)/);
             const itemsCount = itemsMatch ? parseInt(itemsMatch[1]) : 0;
 
-            // Обща сума - извличаме числото от "256.80 лв"
+            // Обща сума
             const totalText = totalEl ? totalEl.textContent.trim() : '';
             const totalMatch = totalText.match(/(\d+(?:\.\d{2})?)/);
             const totalGross = totalMatch ? parseFloat(totalMatch[1]) : 0;
 
-            // Нето цена - извличаме числото от "без ДДС: 214.00 лв"
+            // Нето цена
             const netText = netPriceEl ? netPriceEl.textContent.trim() : '';
             const netMatch = netText.match(/(\d+(?:\.\d{2})?)\s*лв/);
             const totalNet = netMatch ? parseFloat(netMatch[1]) : 0;
 
-            // ПОПРАВЕНО: Date parsing за формат "16.09.2025 г."
+            // Date parsing за формат "16.09.2025 г."
             const orderDate = dateEl ? dateEl.textContent.trim() : '';
             const orderTime = timeEl ? timeEl.textContent.trim() : '';
 
             let submittedDateTime = null;
             if (orderDate && orderTime) {
-                // Премахваме " г." от края на датата
                 const cleanDate = orderDate.replace(/\s*г\.?$/, '');
                 const dateMatch = cleanDate.match(/(\d{1,2})\.(\d{1,2})\.(\d{4})/);
                 const timeMatch = orderTime.match(/(\d{1,2}):(\d{1,2})/);
 
                 if (dateMatch && timeMatch) {
                     const day = parseInt(dateMatch[1]);
-                    const month = parseInt(dateMatch[2]) - 1; // 0-based months in JavaScript
+                    const month = parseInt(dateMatch[2]) - 1;
                     const year = parseInt(dateMatch[3]);
                     const hour = parseInt(timeMatch[1]);
                     const minute = parseInt(timeMatch[2]);
@@ -268,83 +328,32 @@ class SimpleFilterManager {
             };
 
         } catch (error) {
-            console.warn('Error extracting order data:', error, card);
+            console.warn('Error extracting order data:', error);
             return null;
         }
     }
 
-    // Обновяване на tab indicator
-    updateTabIndicator() {
-        const tabNames = {
-            'urgent': 'Спешни поръчки',
-            'pending': 'Изчакващи поръчки',
-            'confirmed': 'Обработени поръчки',
-            'cancelled': 'Отказани поръчки'
-        };
+    // ==========================================
+    // МГНОВЕНО ФИЛТРИРАНЕ - ГЛАВНА ФУНКЦИЯ
+    // ==========================================
 
-        if (this.elements.tabName) {
-            this.elements.tabName.textContent = tabNames[this.currentTab] || 'Поръчки';
-        }
+    applyAllFiltersInstantly() {
+        const startTime = performance.now();
 
-        console.log(`Tab changed to: ${this.currentTab}`);
-    }
-
-    // Обновяване на location options
-    updateLocationOptions() {
-        this.uniqueLocations.clear();
-
-        // Събиране на уникални локации
-        this.allOrders.forEach(order => {
-            if (order.clientLocation && order.clientLocation.trim()) {
-                this.uniqueLocations.add(order.clientLocation.trim());
-            }
-        });
-
-        // Обновяване на dropdown
-        if (this.elements.locationSelect) {
-            const currentValue = this.elements.locationSelect.value;
-            const locations = Array.from(this.uniqueLocations).sort();
-
-            this.elements.locationSelect.innerHTML = '<option value="">Всички локации</option>';
-
-            locations.forEach(location => {
-                const option = document.createElement('option');
-                option.value = location;
-                option.textContent = location;
-                if (location === currentValue) {
-                    option.selected = true;
-                }
-                this.elements.locationSelect.appendChild(option);
-            });
-
-            console.log(`Updated ${locations.length} location options`);
-        }
-    }
-
-    // ГЛАВНА ФУНКЦИЯ: Прилагане на всички филтри едновременно
-    applyAllFilters() {
         if (!this.allOrders.length) {
             this.filteredOrders = [];
             this.updateDisplay();
-            this.updateVisualOrder();
+            this.updateVisualOrderFast();
             return;
         }
 
         // Започваме с всички поръчки
         let results = [...this.allOrders];
 
-        // 1. Search филтър
+        // 1. Intelligent Search филтър - partial word matching
         if (this.filters.search) {
             results = results.filter(order => {
-                const searchText = [
-                    order.clientName || '',
-                    order.clientCompany || '',
-                    order.clientPhone || '',
-                    order.clientLocation || '',
-                    order.id || ''
-                ].join(' ').toLowerCase();
-
-                return searchText.includes(this.filters.search);
+                return this.smartSearch(order, this.filters.search);
             });
         }
 
@@ -368,33 +377,38 @@ class SimpleFilterManager {
             });
         }
 
-        // 4. Сортиране на филтрираните резултати
-        results = this.applySorting(results);
-
-        // 5. Period филтър
+        // 4. Period филтър ПРЕДИ сортиране
         if (this.filters.period && this.filters.period !== '') {
             results = this.applyPeriodFilter(results, this.filters.period);
         }
 
+        // 5. Сортиране накрая
+        results = this.applySorting(results);
+
         // Записваме резултатите
         this.filteredOrders = results;
 
-        // Обновяваме UI
+        // Обновяваме UI мгновено
         this.updateDisplay();
-        this.updateVisualOrder();
+        this.updateVisualOrderFast();
 
-        console.log(`Applied filters: ${results.length}/${this.allOrders.length} orders shown`);
+        // Performance tracking
+        const endTime = performance.now();
+        this.lastFilterTime = endTime - startTime;
+        this.filterCount++;
+
+        console.log(`Instant filter #${this.filterCount}: ${results.length}/${this.allOrders.length} orders (${this.lastFilterTime.toFixed(2)}ms)`);
     }
 
-
-    // Добавете тази функция в SimpleFilterManager класа:
+    // ==========================================
+    // СПЕЦИАЛИЗИРАНИ ФИЛТРИ
+    // ==========================================
 
     applyPeriodFilter(orders, period) {
         if (!period || period === '') return orders;
 
         const now = new Date();
 
-        // Създаваме помощни функции за дати
         const getStartOfDay = (date) => {
             const start = new Date(date);
             start.setHours(0, 0, 0, 0);
@@ -430,26 +444,21 @@ class SimpleFilterManager {
                 break;
 
             case 'this-week':
-                // Намираме понedelника на тази седмица
-                const dayOfWeek = now.getDay(); // 0 = неделя, 1 = понеделник
+                const dayOfWeek = now.getDay();
                 const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
                 const thisMonday = new Date(now);
                 thisMonday.setDate(now.getDate() - daysFromMonday);
-
                 startDate = getStartOfDay(thisMonday);
                 endDate = getEndOfDay(now);
                 break;
 
             case 'last-week':
-                // Намираме понеделника на миналата седмица
                 const lastWeekStart = new Date(now);
                 const currentDayOfWeek = now.getDay();
                 const daysToLastMonday = currentDayOfWeek === 0 ? 13 : currentDayOfWeek + 6;
                 lastWeekStart.setDate(now.getDate() - daysToLastMonday);
-
                 const lastWeekEnd = new Date(lastWeekStart);
                 lastWeekEnd.setDate(lastWeekStart.getDate() + 6);
-
                 startDate = getStartOfDay(lastWeekStart);
                 endDate = getEndOfDay(lastWeekEnd);
                 break;
@@ -460,14 +469,11 @@ class SimpleFilterManager {
                 break;
 
             default:
-                return orders; // Неразпознат период - връщаме всички поръчки
+                return orders;
         }
 
-        // Филтрираме поръчките според изчисления период
         return orders.filter(order => {
-            if (!order.submittedDateTime) {
-                return false; // Ако няма валидна дата, изключваме поръчката
-            }
+            if (!order.submittedDateTime) return false;
 
             const orderTime = order.submittedDateTime.getTime();
             const startTime = startDate.getTime();
@@ -477,9 +483,6 @@ class SimpleFilterManager {
         });
     }
 
-
-    // Сортиране
-    // Заменете applySorting функцията с тази:
     applySorting(orders) {
         const sorted = [...orders];
 
@@ -529,7 +532,42 @@ class SimpleFilterManager {
         }
     }
 
-    // Обновяване на статистики
+    // ==========================================
+    // ULTRA-FAST DOM MANIPULATION
+    // ==========================================
+
+    updateVisualOrderFast() {
+        // Създаваме Set за бърз lookup на видими order IDs
+        const visibleOrderIds = new Set(this.filteredOrders.map(order => order.id));
+
+        // Намираме всички order cards в DOM-а
+        const allOrderCards = document.querySelectorAll('.order-card');
+
+        // Скриваме/показваме карти с minimum DOM manipulation
+        allOrderCards.forEach(card => {
+            const orderIdEl = card.querySelector('.order-id');
+            if (orderIdEl) {
+                const cardOrderId = orderIdEl.textContent.replace(/[^0-9]/g, '');
+
+                if (visibleOrderIds.has(cardOrderId)) {
+                    if (card.style.display === 'none') {
+                        card.style.display = 'block';
+                    }
+                } else {
+                    if (card.style.display !== 'none') {
+                        card.style.display = 'none';
+                    }
+                }
+            }
+        });
+
+        console.log(`Fast visual update: ${visibleOrderIds.size} cards visible`);
+    }
+
+    // ==========================================
+    // UI UPDATES И СТАТИСТИКИ
+    // ==========================================
+
     updateDisplay() {
         const filteredCount = this.filteredOrders.length;
         const totalCount = this.allOrders.length;
@@ -543,52 +581,61 @@ class SimpleFilterManager {
         }
 
         // Обща сума на филтрираните поръчки
-        const totalAmount = this.filteredOrders.reduce((sum, order) => sum + order.totalGross, 0);
+        const totalAmount = this.filteredOrders.reduce((sum, order) => sum + (order.totalGross || 0), 0);
 
         if (this.elements.totalAmountFiltered) {
             this.elements.totalAmountFiltered.textContent = `${totalAmount.toFixed(2)} лв`;
         }
     }
 
-    // Обновяване на визуализацията с правилното подреждане
-    updateVisualOrder() {
-        // Скриваме всички карти във всички табове
-        ['urgent', 'pending', 'confirmed', 'cancelled'].forEach(tabName => {
-            const container = document.querySelector(`#${tabName}-orders-list`);
-            if (container) {
-                const allCards = container.querySelectorAll('.order-card');
-                allCards.forEach(card => card.remove());
-            }
-        });
+    updateTabIndicator() {
+        const tabNames = {
+            'urgent': 'Спешни поръчки',
+            'pending': 'Изчакващи поръчки',
+            'confirmed': 'Обработени поръчки',
+            'cancelled': 'Отказани поръчки'
+        };
 
-        // Групираме филтрираните резултати по табове
-        const resultsByTab = {};
-        this.filteredOrders.forEach(order => {
-            const sourceTab = order.sourceTab || 'pending';
-            if (!resultsByTab[sourceTab]) {
-                resultsByTab[sourceTab] = [];
-            }
-            resultsByTab[sourceTab].push(order);
-        });
-
-        // Възстановяваме картите в съответните табове
-        Object.entries(resultsByTab).forEach(([tabName, orders]) => {
-            const container = document.querySelector(`#${tabName}-orders-list`);
-            if (!container) return;
-
-            orders.forEach(order => {
-                if (order.domElement) {
-                    container.appendChild(order.domElement);
-                }
-            });
-        });
-
-        console.log(`Cross-tab visibility: showing ${this.filteredOrders.length} of ${this.allOrders.length} orders`);
+        if (this.elements.tabName) {
+            this.elements.tabName.textContent = tabNames[this.currentTab] || 'Поръчки';
+        }
     }
 
-    // Изчистване на всички филтри
+    updateLocationOptions() {
+        this.uniqueLocations.clear();
+
+        // Събиране на уникални локации
+        this.allOrders.forEach(order => {
+            if (order.clientLocation && order.clientLocation.trim()) {
+                this.uniqueLocations.add(order.clientLocation.trim());
+            }
+        });
+
+        // Обновяване на dropdown
+        if (this.elements.locationSelect) {
+            const currentValue = this.elements.locationSelect.value;
+            const locations = Array.from(this.uniqueLocations).sort();
+
+            this.elements.locationSelect.innerHTML = '<option value="">Всички локации</option>';
+
+            locations.forEach(location => {
+                const option = document.createElement('option');
+                option.value = location;
+                option.textContent = location;
+                if (location === currentValue) {
+                    option.selected = true;
+                }
+                this.elements.locationSelect.appendChild(option);
+            });
+        }
+    }
+
+    // ==========================================
+    // RESET FUNCTION
+    // ==========================================
+
     resetAllFilters() {
-        console.log('Resetting all filters...');
+        console.log('Production reset: clearing all filters...');
 
         // Изчистване на филтрите
         this.filters = {
@@ -597,8 +644,6 @@ class SimpleFilterManager {
             sort: 'newest',
             amountMin: null,
             amountMax: null,
-            itemsMin: null,
-            itemsMax: null,
             period: ''
         };
 
@@ -608,15 +653,10 @@ class SimpleFilterManager {
         if (this.elements.sortSelect) this.elements.sortSelect.value = 'newest';
         if (this.elements.amountMin) this.elements.amountMin.value = '';
         if (this.elements.amountMax) this.elements.amountMax.value = '';
-        if (this.elements.itemsMin) this.elements.itemsMin.value = '';
-        if (this.elements.itemsMax) this.elements.itemsMax.value = '';
         if (this.elements.periodSelect) this.elements.periodSelect.value = '';
 
-        // КРИТИЧНО: Принудително извличане на най-нови данни
-        this.extractDataFromDOM();
-
-        // След това прилагаме изчистените филтри
-        this.applyAllFilters();
+        // Мгновено прилагане на reset
+        this.applyAllFiltersInstantly();
 
         // Визуален feedback
         if (this.elements.resetBtn) {
@@ -630,17 +670,42 @@ class SimpleFilterManager {
             }, 1000);
         }
 
-        console.log(`✓ Reset complete: showing ${this.filteredOrders.length}/${this.allOrders.length} orders`);
+        console.log(`✓ Production reset complete: ${this.filteredOrders.length}/${this.allOrders.length} orders visible`);
+    }
+
+    // ==========================================
+    // DEBUGGING И MONITORING
+    // ==========================================
+
+    getPerformanceStats() {
+        return {
+            filterCount: this.filterCount,
+            lastFilterTime: this.lastFilterTime,
+            avgFilterTime: this.filterCount > 0 ? (this.lastFilterTime / this.filterCount).toFixed(2) : 0,
+            totalOrders: this.allOrders.length,
+            filteredOrders: this.filteredOrders.length,
+            activeFilters: Object.entries(this.filters)
+                .filter(([key, value]) => value !== '' && value !== null)
+                .map(([key, value]) => `${key}:${value}`)
+        };
     }
 }
 
-// Създаване на глобална инстанция
-window.simpleFilterManager = new SimpleFilterManager();
+// ==========================================
+// PRODUCTION INITIALIZATION
+// ==========================================
 
-// Стартиране след зареждане на страницата
+// Създаване на глобална production инстанция
+window.productionFilterManager = new ProductionFilterManager();
+
+// Production-ready initialization
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
-        window.simpleFilterManager.initialize();
-        console.log('✓ SimpleFilterManager started');
-    }, 2000);
+        window.productionFilterManager.initialize();
+        console.log('✓ ProductionFilterManager ready for production use');
+
+        // Global access for debugging
+        window.getFilterStats = () => window.productionFilterManager.getPerformanceStats();
+
+    }, 1500); // Намалено време за по-бърза инициализация
 });

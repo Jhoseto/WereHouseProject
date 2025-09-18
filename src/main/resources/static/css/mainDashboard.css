@@ -1008,12 +1008,14 @@ body {
     display: flex;
     flex-direction: column;
     gap: var(--space-xs);
+    margin: auto;
 }
 
 .filter-group label {
     font-size: var(--font-size-sm);
     font-weight: 500;
     color: var(--color-text-primary);
+    margin: auto;
 }
 
 /* Input styles */

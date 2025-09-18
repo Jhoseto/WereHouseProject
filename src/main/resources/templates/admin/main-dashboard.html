@@ -69,7 +69,22 @@
                            autocomplete="off">
                 </div>
             </div>
+        </div>
 
+        <!-- ФИЛТРИ ПЕРИОД -->
+        <div class="filter-row">
+            <div class="filter-group">
+                <label for="period-filter">Период</label>
+                <select id="period-filter" class="filter-select">
+                    <option value="">Всички периоди</option>
+                    <option value="today">Днес</option>
+                    <option value="yesterday">Вчера</option>
+                    <option value="last-3-days">Последни 3 дни</option>
+                    <option value="this-week">Тази седмица</option>
+                    <option value="last-week">Миналата седмица</option>
+                    <option value="this-month">Този месец</option>
+                </select>
+            </div>
             <div class="filter-group">
                 <label for="sort-select">Сортиране</label>
                 <select id="sort-select" class="filter-select">
@@ -91,62 +106,6 @@
                 <select id="location-filter" class="filter-select">
                     <option value="">Всички локации</option>
                     <!-- Динамично зареждане от данните -->
-                </select>
-            </div>
-        </div>
-
-        <!-- ФИЛТРИ ПО СТОЙНОСТ И КОЛИЧЕСТВО -->
-        <div class="filter-row">
-            <div class="filter-group">
-                <label>Стойност на поръчка</label>
-                <div class="range-filter">
-                    <input type="number"
-                           id="amount-min"
-                           class="range-input"
-                           placeholder="От лв."
-                           min="0"
-                           step="0.01"
-                           aria-label="Минимална стойност на поръчка">
-                    <span class="range-separator">до</span>
-                    <input type="number"
-                           id="amount-max"
-                           class="range-input"
-                           placeholder="До лв."
-                           min="0"
-                           step="0.01"
-                           aria-label="Максимална стойност на поръчка">
-                </div>
-            </div>
-
-            <div class="filter-group">
-                <label>Брой артикули</label>
-                <div class="range-filter">
-                    <input type="number"
-                           id="items-min"
-                           class="range-input"
-                           placeholder="От бр."
-                           min="0"
-                           aria-label="Минимален брой артикули">
-                    <span class="range-separator">до</span>
-                    <input type="number"
-                           id="items-max"
-                           class="range-input"
-                           placeholder="До бр."
-                           min="0"
-                           aria-label="Максимален брой артикули">
-                </div>
-            </div>
-
-            <div class="filter-group">
-                <label for="period-filter">Период</label>
-                <select id="period-filter" class="filter-select">
-                    <option value="">Всички периоди</option>
-                    <option value="today">Днес</option>
-                    <option value="yesterday">Вчера</option>
-                    <option value="last-3-days">Последни 3 дни</option>
-                    <option value="this-week">Тази седмица</option>
-                    <option value="last-week">Миналата седмица</option>
-                    <option value="this-month">Този месец</option>
                 </select>
             </div>
         </div>
