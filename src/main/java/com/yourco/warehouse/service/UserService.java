@@ -30,4 +30,7 @@ public interface UserService {
     //CREATE NEW USER
     void createNewUser(UserEntity userEntity);
 
+    long getTotalEmployersCount();
+
+    long getTotalClientsCount();
 }

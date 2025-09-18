@@ -7,11 +7,13 @@ import com.yourco.warehouse.entity.Order;
 import com.yourco.warehouse.entity.UserEntity;
 import com.yourco.warehouse.entity.enums.OrderStatus;
 import com.yourco.warehouse.service.DashboardService;
+import com.yourco.warehouse.service.ProductService;
 import com.yourco.warehouse.service.UserService;
 import com.yourco.warehouse.service.OrderService;
 import com.yourco.warehouse.utils.RequestUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.stereotype.Controller;
@@ -32,13 +34,17 @@ public class MainController {
     private final UserService userService;
     private final OrderService orderService;
     private final DashboardService dashboardService;
+    private final ProductService productService;
 
     @Autowired
     public MainController(UserService userService,
-                          OrderService orderService, DashboardService dashboardService) {
+                          OrderService orderService,
+                          DashboardService dashboardService,
+                          ProductService productService) {
         this.userService = userService;
         this.orderService = orderService;
         this.dashboardService = dashboardService;
+        this.productService = productService;
     }
 
     @GetMapping("/")
@@ -292,6 +298,45 @@ public class MainController {
         }
     }
 
+    /**
+     * Администраторски панел - главна страница с табове за различните секции
+     * Достъпен само за потребители с роля ADMIN
+     */
+    @GetMapping("/admin/dashboard")
+    @PreAuthorize("hasRole('ADMIN')")
+    public String adminDashboard(Model model, Authentication authentication) {
+        try {
+            DashboardDTO dashboardData = dashboardService.getFullDashboard();
+            // Статистики за quick stats cards
+            long totalEmployers = userService.getTotalEmployersCount();
+            long totalClients = userService.getTotalClientsCount();
+            long totalProducts = productService.getActiveProductsCount();
+
+
+            // Добавяне на статистики към модела
+            model.addAttribute("totalEmployers", totalEmployers);
+            model.addAttribute("totalClients", totalClients);
+            model.addAttribute("totalProducts", totalProducts);
+            model.addAttribute("pendingCount", dashboardData.getPendingCount() != null ? dashboardData.getPendingCount() : 0);
+
+            // Информация за текущия потребител
+            UserEntity currentUser = userService.getCurrentUser();
+            model.addAttribute("currentUser", currentUser);
+
+            // Заглавие на страницата
+            model.addAttribute("pageTitle", "Администраторски панел");
+            model.addAttribute("pageDescription", "Централизирано управление на системата");
+
+            return "admin/adminDashboard";
+
+        } catch (Exception e) {
+
+            model.addAttribute("errorMessage", "Възникна грешка при зареждане на администраторския панел");
+            model.addAttribute("errorTitle", "Системна грешка");
+
+            return "error/general";
+        }
+    }
 
     @GetMapping("/about")
     public String about(Model model) {

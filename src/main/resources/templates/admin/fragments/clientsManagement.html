@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="bg">
+
+<!-- Clients Management Fragment -->
+<div th:fragment="clientsManagement" class="clients-management-container">
+
+    <!-- Clients Tab Navigation -->
+    <div class="clients-tabs-nav">
+        <button class="clients-tab-btn active" data-clients-tab="create" type="button">
+            <i class="bi bi-person-plus-fill"></i>
+            <span>Създаване на клиент</span>
+        </button>
+
+        <button class="clients-tab-btn" data-clients-tab="manage" type="button">
+            <i class="bi bi-people-fill"></i>
+            <span>Управление на клиенти</span>
+        </button>
+    </div>
+
+    <!-- ==========================================
+         CREATE CLIENT TAB
+         ========================================== -->
+    <div class="clients-tab-content active" id="create-client-tab">
+        <div class="create-client-section">
+            <div class="section-header">
+                <h3>
+                    <i class="bi bi-person-plus-fill"></i>
+                    Създаване на нов клиентски профил
+                </h3>
+                <p>Въведете данните за новия клиент. Всички полета с * са задължителни.</p>
+            </div>
+
+            <form id="createClientForm" class="create-client-form">
+                <div class="form-grid">
+                    <!-- Username -->
+                    <div class="form-group">
+                        <label for="clientUsername" class="form-label">
+                            <i class="bi bi-person"></i>
+                            Потребителско име *
+                        </label>
+                        <input type="text"
+                               id="clientUsername"
+                               name="username"
+                               class="form-control"
+                               placeholder="Уникално потребителско име"
+                               required
+                               autocomplete="off">
+                        <div class="form-help">Ще се използва за влизане в системата</div>
+                    </div>
+
+                    <!-- Company Name -->
+                    <div class="form-group">
+                        <label for="clientCompany" class="form-label">
+                            <i class="bi bi-building"></i>
+                            Име на компанията
+                        </label>
+                        <input type="text"
+                               id="clientCompany"
+                               name="companyName"
+                               class="form-control"
+                               placeholder="Име на фирмата или организацията"
+                               autocomplete="organization">
+                    </div>
+
+                    <!-- Email -->
+                    <div class="form-group">
+                        <label for="clientEmail" class="form-label">
+                            <i class="bi bi-envelope"></i>
+                            Email адрес *
+                        </label>
+                        <input type="email"
+                               id="clientEmail"
+                               name="email"
+                               class="form-control"
+                               placeholder="client@example.com"
+                               required
+                               autocomplete="email">
+                        <div class="form-help">Ще се използва за уведомления и възстановяване на парола</div>
+                    </div>
+
+                    <!-- Phone -->
+                    <div class="form-group">
+                        <label for="clientPhone" class="form-label">
+                            <i class="bi bi-telephone"></i>
+                            Телефонен номер
+                        </label>
+                        <input type="tel"
+                               id="clientPhone"
+                               name="phone"
+                               class="form-control"
+                               placeholder="+359 XX XXX XXXX"
+                               autocomplete="tel">
+                    </div>
+
+                    <!-- Location -->
+                    <div class="form-group">
+                        <label for="clientLocation" class="form-label">
+                            <i class="bi bi-geo-alt"></i>
+                            Местоположение
+                        </label>
+                        <input type="text"
+                               id="clientLocation"
+                               name="location"
+                               class="form-control"
+                               placeholder="Град, област"
+                               autocomplete="address-level2">
+                    </div>
+
+                    <!-- User Code -->
+                    <div class="form-group">
+                        <label for="clientUserCode" class="form-label">
+                            <i class="bi bi-hash"></i>
+                            Клиентски код
+                        </label>
+                        <input type="number"
+                               id="clientUserCode"
+                               name="userCode"
+                               class="form-control"
+                               placeholder="Уникален номер на клиента"
+                               min="1">
+                        <div class="form-help">Оставете празно за автоматично генериране</div>
+                    </div>
+
+                    <!-- Password -->
+                    <div class="form-group">
+                        <label for="clientPassword" class="form-label">
+                            <i class="bi bi-key"></i>
+                            Парола *
+                        </label>
+                        <div class="password-input-group">
+                            <input type="password"
+                                   id="clientPassword"
+                                   name="password"
+                                   class="form-control"
+                                   placeholder="Минимум 6 символа"
+                                   required
+                                   autocomplete="new-password"
+                                   minlength="6">
+                            <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('clientPassword')">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                        <div class="form-help">Препоръчва се използването на силна парола</div>
+                    </div>
+
+                    <!-- Confirm Password -->
+                    <div class="form-group">
+                        <label for="clientPasswordConfirm" class="form-label">
+                            <i class="bi bi-key-fill"></i>
+                            Потвърждение на паролата *
+                        </label>
+                        <div class="password-input-group">
+                            <input type="password"
+                                   id="clientPasswordConfirm"
+                                   name="passwordConfirm"
+                                   class="form-control"
+                                   placeholder="Повторете паролата"
+                                   required
+                                   autocomplete="new-password"
+                                   minlength="6">
+                            <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('clientPasswordConfirm')">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="form-actions">
+                    <button type="button" class="btn btn-outline" onclick="resetCreateClientForm()">
+                        <i class="bi bi-arrow-clockwise"></i>
+                        Изчисти формата
+                    </button>
+
+                    <button type="submit" class="btn btn-success" id="createClientBtn">
+                        <i class="bi bi-person-plus"></i>
+                        Създай клиент
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         MANAGE CLIENTS TAB
+         ========================================== -->
+    <div class="clients-tab-content" id="manage-clients-tab">
+        <div class="manage-clients-section">
+            <div class="section-header">
+                <h3>
+                    <i class="bi bi-people-fill"></i>
+                    Управление на клиенти
+                </h3>
+                <p>Преглед, търсене и управление на всички клиентски профили в системата</p>
+            </div>
+
+            <!-- Advanced Search & Filter Panel -->
+            <div class="clients-filter-panel">
+                <div class="filter-row">
+                    <!-- Quick Search -->
+                    <div class="filter-group">
+                        <label for="clientsQuickSearch" class="filter-label">
+                            <i class="bi bi-search"></i>
+                            Бързо търсене
+                        </label>
+                        <div class="search-input-group">
+                            <input type="text"
+                                   id="clientsQuickSearch"
+                                   class="form-control search-input"
+                                   placeholder="Търсене по име, email, компания..."
+                                   autocomplete="off">
+                            <button type="button" class="search-clear-btn" onclick="clearQuickSearch()">
+                                <i class="bi bi-x"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Status Filter -->
+                    <div class="filter-group">
+                        <label for="clientsStatusFilter" class="filter-label">
+                            <i class="bi bi-toggles"></i>
+                            Статус
+                        </label>
+                        <select id="clientsStatusFilter" class="form-control">
+                            <option value="">Всички</option>
+                            <option value="active">Активни</option>
+                            <option value="inactive">Неактивни</option>
+                        </select>
+                    </div>
+
+                    <!-- Location Filter -->
+                    <div class="filter-group">
+                        <label for="clientsLocationFilter" class="filter-label">
+                            <i class="bi bi-geo-alt"></i>
+                            Локация
+                        </label>
+                        <select id="clientsLocationFilter" class="form-control">
+                            <option value="">Всички локации</option>
+                            <!-- Ще се попълни динамично с JavaScript -->
+                        </select>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="filter-group filter-actions">
+                        <button type="button" class="btn btn-outline btn-sm" onclick="clearAllFilters()">
+                            <i class="bi bi-funnel"></i>
+                            Изчисти филтрите
+                        </button>
+
+                        <button type="button" class="btn btn-primary btn-sm" onclick="refreshClientsData()">
+                            <i class="bi bi-arrow-clockwise"></i>
+                            Обнови
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Advanced Filters (Expandable) -->
+                <div class="advanced-filters" id="advancedFilters" style="display: none;">
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label for="clientsUsernameFilter" class="filter-label">Потребителско име</label>
+                            <input type="text" id="clientsUsernameFilter" class="form-control" placeholder="Търсене по потребителско име">
+                        </div>
+
+                        <div class="filter-group">
+                            <label for="clientsEmailFilter" class="filter-label">Email</label>
+                            <input type="email" id="clientsEmailFilter" class="form-control" placeholder="Търсене по email">
+                        </div>
+
+                        <div class="filter-group">
+                            <label for="clientsPhoneFilter" class="filter-label">Телефон</label>
+                            <input type="tel" id="clientsPhoneFilter" class="form-control" placeholder="Търсене по телефон">
+                        </div>
+
+                        <div class="filter-group">
+                            <label for="clientsUserCodeFilter" class="filter-label">Клиентски код</label>
+                            <input type="number" id="clientsUserCodeFilter" class="form-control" placeholder="Търсене по код">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="filter-toggle">
+                    <button type="button" class="btn btn-link btn-sm" onclick="toggleAdvancedFilters()">
+                        <i class="bi bi-chevron-down" id="advancedToggleIcon"></i>
+                        <span id="advancedToggleText">Покажи разширени филтри</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Results Summary -->
+            <div class="clients-results-summary">
+                <div class="results-info">
+                    <span class="results-count">
+                        Показани: <strong id="displayedClientsCount">0</strong> от <strong id="totalClientsCount">0</strong> клиента
+                    </span>
+                    <span class="results-filter" id="activeFilterInfo" style="display: none;">
+                        <i class="bi bi-funnel-fill"></i>
+                        Активни филтри
+                    </span>
+                </div>
+
+                <div class="results-actions">
+                    <div class="sort-controls">
+                        <label for="clientsSortBy" class="sort-label">Подреди по:</label>
+                        <select id="clientsSortBy" class="form-control form-control-sm">
+                            <option value="username">Потребителско име</option>
+                            <option value="companyName">Компания</option>
+                            <option value="email">Email</option>
+                            <option value="location">Локация</option>
+                            <option value="userCode">Клиентски код</option>
+                            <option value="active">Статус</option>
+                        </select>
+
+                        <button type="button" class="btn btn-outline btn-sm" id="sortDirectionBtn" onclick="toggleSortDirection()">
+                            <i class="bi bi-sort-alpha-down" id="sortDirectionIcon"></i>
+                        </button>
+                    </div>
+
+                    <button type="button" class="btn btn-outline btn-sm" onclick="exportClientsData()">
+                        <i class="bi bi-download"></i>
+                        Експорт
+                    </button>
+                </div>
+            </div>
+
+            <!-- Clients Table -->
+            <div class="clients-table-container">
+                <div class="clients-table-loading" id="clientsTableLoading" style="display: none;">
+                    <div class="loading-spinner">
+                        <div class="spinner"></div>
+                        <p>Зареждане на клиенти...</p>
+                    </div>
+                </div>
+
+                <table class="clients-table" id="clientsTable">
+                    <thead>
+                    <tr>
+                        <th class="sortable" data-sort="id">
+                            <span>ID</span>
+                            <i class="bi bi-arrow-down-up sort-icon"></i>
+                        </th>
+                        <th class="sortable" data-sort="username">
+                            <span>Потребителско име</span>
+                            <i class="bi bi-arrow-down-up sort-icon"></i>
+                        </th>
+                        <th class="sortable" data-sort="companyName">
+                            <span>Компания</span>
+                            <i class="bi bi-arrow-down-up sort-icon"></i>
+                        </th>
+                        <th class="sortable" data-sort="email">
+                            <span>Email</span>
+                            <i class="bi bi-arrow-down-up sort-icon"></i>
+                        </th>
+                        <th class="sortable" data-sort="phone">
+                            <span>Телефон</span>
+                            <i class="bi bi-arrow-down-up sort-icon"></i>
+                        </th>
+                        <th class="sortable" data-sort="location">
+                            <span>Локация</span>
+                            <i class="bi bi-arrow-down-up sort-icon"></i>
+                        </th>
+                        <th class="sortable" data-sort="userCode">
+                            <span>Код</span>
+                            <i class="bi bi-arrow-down-up sort-icon"></i>
+                        </th>
+                        <th class="sortable" data-sort="active">
+                            <span>Статус</span>
+                            <i class="bi bi-arrow-down-up sort-icon"></i>
+                        </th>
+                        <th class="actions-column">Действия</th>
+                    </tr>
+                    </thead>
+                    <tbody id="clientsTableBody">
+                    <!-- Ще се попълни динамично с JavaScript -->
+                    </tbody>
+                </table>
+
+                <!-- Empty State -->
+                <div class="clients-empty-state" id="clientsEmptyState" style="display: none;">
+                    <div class="empty-content">
+                        <div class="empty-icon">
+                            <i class="bi bi-people"></i>
+                        </div>
+                        <h4>Няма намерени клиенти</h4>
+                        <p>Не са открити клиенти, които да отговарят на критериите за търсене.</p>
+                        <button type="button" class="btn btn-primary" onclick="clearAllFilters()">
+                            <i class="bi bi-funnel"></i>
+                            Изчисти филтрите
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            <div class="clients-pagination" id="clientsPagination" style="display: none;">
+                <div class="pagination-info">
+                    <span>Показани <span id="paginationStart">1</span>-<span id="paginationEnd">20</span> от <span id="paginationTotal">100</span></span>
+                </div>
+                <div class="pagination-controls">
+                    <button type="button" class="btn btn-outline btn-sm" id="prevPageBtn" onclick="goToPreviousPage()">
+                        <i class="bi bi-chevron-left"></i>
+                        Предишна
+                    </button>
+
+                    <div class="page-numbers" id="pageNumbers">
+                        <!-- Ще се попълни динамично -->
+                    </div>
+
+                    <button type="button" class="btn btn-outline btn-sm" id="nextPageBtn" onclick="goToNextPage()">
+                        Следваща
+                        <i class="bi bi-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ==========================================
+     CLIENT ACTION MODALS
+     ========================================== -->
+
+<!-- Send Message Modal -->
+<div class="modal" id="sendMessageModal" style="display: none;">
+    <div class="modal-overlay" onclick="closeSendMessageModal()"></div>
+    <div class="modal-container">
+        <div class="modal-header">
+            <h3>
+                <i class="bi bi-chat-dots"></i>
+                Изпращане на съобщение
+            </h3>
+            <button type="button" class="modal-close" onclick="closeSendMessageModal()">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+
+        <div class="modal-body">
+            <div class="message-recipient">
+                <div class="recipient-info">
+                    <strong>До:</strong> <span id="messageRecipientName">Клиент</span>
+                    <small>(<span id="messageRecipientEmail">client@example.com</span>)</small>
+                </div>
+            </div>
+
+            <form id="sendMessageForm">
+                <input type="hidden" id="messageClientId" name="clientId">
+
+                <div class="form-group">
+                    <label for="messageSubject" class="form-label">Тема</label>
+                    <input type="text"
+                           id="messageSubject"
+                           name="subject"
+                           class="form-control"
+                           placeholder="Тема на съобщението"
+                           required>
+                </div>
+
+                <div class="form-group">
+                    <label for="messageContent" class="form-label">Съобщение</label>
+                    <textarea id="messageContent"
+                              name="content"
+                              class="form-control"
+                              rows="6"
+                              placeholder="Въведете вашето съобщение..."
+                              required></textarea>
+                </div>
+            </form>
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" class="btn btn-outline" onclick="closeSendMessageModal()">
+                Отказ
+            </button>
+            <button type="button" class="btn btn-primary" onclick="sendClientMessage()">
+                <i class="bi bi-send"></i>
+                Изпрати съобщение
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Send Email Modal -->
+<div class="modal" id="sendEmailModal" style="display: none;">
+    <div class="modal-overlay" onclick="closeSendEmailModal()"></div>
+    <div class="modal-container">
+        <div class="modal-header">
+            <h3>
+                <i class="bi bi-envelope"></i>
+                Изпращане на email
+            </h3>
+            <button type="button" class="modal-close" onclick="closeSendEmailModal()">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+
+        <div class="modal-body">
+            <div class="email-recipient">
+                <div class="recipient-info">
+                    <strong>До:</strong> <span id="emailRecipientName">Клиент</span>
+                    <small>(<span id="emailRecipientEmail">client@example.com</span>)</small>
+                </div>
+            </div>
+
+            <form id="sendEmailForm">
+                <input type="hidden" id="emailClientId" name="clientId">
+
+                <div class="form-group">
+                    <label for="emailSubject" class="form-label">Тема</label>
+                    <input type="text"
+                           id="emailSubject"
+                           name="subject"
+                           class="form-control"
+                           placeholder="Тема на email-а"
+                           required>
+                </div>
+
+                <div class="form-group">
+                    <label for="emailContent" class="form-label">Съдържание</label>
+                    <textarea id="emailContent"
+                              name="content"
+                              class="form-control"
+                              rows="8"
+                              placeholder="Въведете съдържанието на email-а..."
+                              required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <div class="form-check">
+                        <input type="checkbox" id="emailCopyToAdmin" name="copyToAdmin" class="form-check-input">
+                        <label for="emailCopyToAdmin" class="form-check-label">
+                            Изпрати копие до администратор
+                        </label>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" class="btn btn-outline" onclick="closeSendEmailModal()">
+                Отказ
+            </button>
+            <button type="button" class="btn btn-success" onclick="sendClientEmail()">
+                <i class="bi bi-envelope-arrow-up"></i>
+                Изпрати email
+            </button>
+        </div>
+    </div>
+</div>
+
+</html>

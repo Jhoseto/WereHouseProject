@@ -2,6 +2,7 @@ package com.yourco.warehouse.service.impl;
 
 import com.yourco.warehouse.dto.UserProfileDTO;
 import com.yourco.warehouse.entity.UserEntity;
+import com.yourco.warehouse.entity.enums.Role;
 import com.yourco.warehouse.repository.UserRepository;
 import com.yourco.warehouse.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -101,4 +102,17 @@ public class UserServiceImpl implements UserService {
     public void createNewUser(UserEntity userEntity) {
         // TODO: Implement this method
     }
+
+    @Override
+    @Transactional
+    public long getTotalEmployersCount() {
+        return userRepository.findAllByRole(Role.EMPLOYER).size();
+    }
+
+    @Override
+    @Transactional
+    public long getTotalClientsCount() {
+        return userRepository.findAllByRole(Role.CLIENT).size();
+    }
+
 }

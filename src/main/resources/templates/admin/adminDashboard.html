@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="bg">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Администраторски панел | Warehouse Portal</title>
+
+    <!-- Include Top HTML Imports Fragment (CSS, CSRF, основни стилове) -->
+    <th:block th:replace="~{fragments/topHtmlImports :: topImports}"></th:block>
+
+    <!-- Admin Dashboard Specific Styles -->
+    <link rel="stylesheet" href="/css/admin/adminDashboard.css">
+    <link rel="stylesheet" href="/css/admin/clientsManagement.css">
+
+    <meta name="description" content="Администраторски панел за управление на система, потребители, инвентар и отчети">
+</head>
+<body class="admin-dashboard-page">
+
+<!-- Flash Messages Data (скрит за JavaScript) -->
+<div th:replace="~{fragments/toastSystem :: flashData}"></div>
+
+<!-- Include Navigation Fragment -->
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+
+<!-- Toast Container -->
+<div th:replace="~{fragments/toastSystem :: toastContainer}"></div>
+
+<!-- Main Admin Dashboard Section -->
+<section class="admin-dashboard-section">
+    <div class="container">
+
+        <!-- Dashboard Header -->
+        <div class="dashboard-header">
+            <div class="header-content">
+                <div class="page-title">
+                    <i class="bi bi-gear-fill"></i>
+                    <h1>Администраторски панел</h1>
+                </div>
+                <p class="page-description">
+                    Централизирано управление на системата, потребители, инвентар и генериране на отчети
+                </p>
+            </div>
+
+            <!-- Quick Stats Cards -->
+            <div class="quick-stats">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="bi bi-person-vcard" style="color: white"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-number" th:text="${totalClients ?: '0'}">0</div>
+                        <div class="stat-label">Общо клиенти</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="bi bi-people-fill"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-number" th:text="${totalEmployers ?: '0'}">0</div>
+                        <div class="stat-label">Общо служители</div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="bi bi-box-fill"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-number" th:text="${totalProducts ?: '0'}">0</div>
+                        <div class="stat-label">Активни продукти</div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="bi bi-receipt-cutoff"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-number" th:text="${pendingCount ?: '0'}">0</div>
+                        <div class="stat-label">Чакащи поръчки</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Tabs Navigation -->
+        <div class="admin-tabs-container">
+            <nav class="admin-tabs-nav">
+                <button class="tab-button active" data-tab="clients" type="button">
+                    <i class="bi bi-people"></i>
+                    <span>Управление на клиенти</span>
+                </button>
+
+                <button class="tab-button" data-tab="employees" type="button">
+                    <i class="bi bi-person-badge"></i>
+                    <span>Управление на служители</span>
+                </button>
+
+                <button class="tab-button" data-tab="inventory" type="button">
+                    <i class="bi bi-boxes"></i>
+                    <span>Управление на инвентар</span>
+                </button>
+
+                <button class="tab-button" data-tab="system" type="button">
+                    <i class="bi bi-gear"></i>
+                    <span>Управление на системата</span>
+                </button>
+
+                <button class="tab-button" data-tab="reports" type="button">
+                    <i class="bi bi-graph-up"></i>
+                    <span>История и отчети</span>
+                </button>
+            </nav>
+        </div>
+
+        <!-- Admin Tab Contents -->
+        <div class="admin-tabs-content">
+
+            <!-- Clients Management Tab -->
+            <div class="tab-content active" id="clients-tab">
+                <div class="tab-header">
+                    <h2>
+                        <i class="bi bi-people"></i>
+                        Управление на клиенти
+                    </h2>
+                    <p>Преглед, създаване и редактиране на клиентски акаунти</p>
+                </div>
+
+                <div class="content-placeholder">
+                    <div th:replace="~{admin/fragments/clientsManagement :: clientsManagement}"></div>
+                </div>
+            </div>
+
+            <!-- Employees Management Tab -->
+            <div class="tab-content" id="employees-tab">
+                <div class="tab-header">
+                    <h2>
+                        <i class="bi bi-person-badge"></i>
+                        Управление на служители
+                    </h2>
+                    <p>Управление на служители и техните права в системата</p>
+                </div>
+
+                <div class="content-placeholder">
+<!--                    <div th:replace="~{admin/fragments/employeesManagement :: employeesManagement}"></div>-->
+                </div>
+            </div>
+
+            <!-- Inventory Management Tab -->
+            <div class="tab-content" id="inventory-tab">
+                <div class="tab-header">
+                    <h2>
+                        <i class="bi bi-boxes"></i>
+                        Управление на инвентар
+                    </h2>
+                    <p>Управление на продукти, категории, цени и наличности</p>
+                </div>
+
+                <div class="content-placeholder">
+<!--                    <div th:replace="~{admin/fragments/inventoryManagement :: inventoryManagement}"></div>-->
+                </div>
+            </div>
+
+            <!-- System Management Tab -->
+            <div class="tab-content" id="system-tab">
+                <div class="tab-header">
+                    <h2>
+                        <i class="bi bi-gear"></i>
+                        Управление на системата
+                    </h2>
+                    <p>Системни настройки, конфигурация и поддръжка</p>
+                </div>
+
+                <div class="content-placeholder">
+<!--                    <div th:replace="~{admin/fragments/systemManagement :: systemManagement}"></div>-->
+                </div>
+            </div>
+
+            <!-- Reports Tab -->
+            <div class="tab-content" id="reports-tab">
+                <div class="tab-header">
+                    <h2>
+                        <i class="bi bi-graph-up"></i>
+                        История и отчети
+                    </h2>
+                    <p>Статистики, анализи и генериране на отчети</p>
+                </div>
+
+                <div class="content-placeholder">
+<!--                    <div th:replace="~{admin/fragments/reportsManagement :: reportsManagement}"></div>-->
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<!-- Include Toast System Fragment -->
+<div th:replace="~{fragments/toastSystem :: toastContainer}"></div>
+
+<!-- Include Footer Fragment -->
+<div th:replace="~{fragments/footer :: footer}"></div>
+
+<!-- Include Bottom Imports Fragment -->
+<th:block th:replace="~{fragments/bottomHtmlImports :: bottomImports}"></th:block>
+
+<!-- Admin Dashboard JavaScript -->
+<script src="/js/adminDashboard/adminDashboard.js"></script>
+<script src="/js/adminDashboard/clientsManagement.js"></script>
+
+</body>
+</html>

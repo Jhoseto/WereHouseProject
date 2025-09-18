@@ -50,6 +50,7 @@ public class SecurityConfig {
                         .requestMatchers("/", "/login", "/error", "/error/general").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
                         .requestMatchers("/employer/**").hasAnyRole("ADMIN", "EMPLOYER")
+                        .requestMatchers("/admin/**").hasAnyRole("ADMIN")
                         .requestMatchers("/catalog", "/api/**").authenticated()
                         .anyRequest().authenticated()
                 )
