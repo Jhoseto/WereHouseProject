@@ -4,6 +4,8 @@ import com.yourco.warehouse.dto.OrderDTO;
 import com.yourco.warehouse.dto.OrderItemDTO;
 import com.yourco.warehouse.entity.Order;
 import com.yourco.warehouse.entity.OrderItem;
+import com.yourco.warehouse.entity.UserEntity;
+import com.yourco.warehouse.repository.UserRepository;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -12,22 +14,21 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 
 @Component
 public class OrderMapper {
 
-    /**
-     * Конвертира Order entity в OrderDTO за API отговори
-     *
-     * @param order Order entity от базата данни
-     * @return OrderDTO готов за JSON сериализация
-     */
+    private final UserRepository userRepository;
+
+    public OrderMapper(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
+
     public OrderDTO toDTO(Order order) {
-        if (order == null) {
-            return null;
-        }
+        if (order == null) return null;
 
         OrderDTO dto = new OrderDTO();
 
@@ -43,34 +44,23 @@ public class OrderMapper {
         dto.setTotalVat(order.getTotalVat());
         dto.setTotalGross(order.getTotalGross());
 
-        // Client данни - safely handle potential null или lazy loading
-        if (order.getClient() != null) {
-            try {
-                dto.setClientId(order.getClient().getId());
-                dto.setClientName(order.getClient().getUsername());
-            } catch (Exception e) {
-                // Fallback ако има lazy loading проблеми
-                dto.setClientId(null);
-                dto.setClientName("Данните за клиента не са достъпни");
-            }
-        } else {
-            dto.setClientId(null);
-            dto.setClientName("Неизвестен клиент");
+        // Client данни
+        UserEntity client = order.getClient();
+        if (client != null) {
+            dto.setClientId(client.getId());
+            dto.setClientName(client.getUsername());
+            dto.setClientCompany(client.getCompanyName());
+            dto.setClientPhone(client.getPhone());
+            dto.setClientLocation(client.getLocation());
         }
 
         // Items данни
         if (order.getItems() != null) {
-            try {
-                List<OrderItemDTO> itemDTOs = order.getItems().stream()
-                        .map(this::toItemDTO)
-                        .collect(Collectors.toList());
-                dto.setItems(itemDTOs);
-                dto.setItemsCount(itemDTOs.size());
-            } catch (Exception e) {
-                // Fallback ако има lazy loading проблеми с items
-                dto.setItems(Collections.emptyList());
-                dto.setItemsCount(0);
-            }
+            List<OrderItemDTO> itemDTOs = order.getItems().stream()
+                    .map(this::toItemDTO)
+                    .collect(Collectors.toList());
+            dto.setItems(itemDTOs);
+            dto.setItemsCount(itemDTOs.size());
         } else {
             dto.setItems(Collections.emptyList());
             dto.setItemsCount(0);
@@ -117,7 +107,7 @@ public class OrderMapper {
                 dto.setProductSku(orderItem.getProduct().getSku());
                 dto.setProductName(orderItem.getProduct().getName());
 
-                // ✅ НОВО: Добавяме category mapping
+                // Добавяме category mapping
                 dto.setCategory(orderItem.getProduct().getCategory());
 
                 // Stock информация

@@ -4,12 +4,12 @@
       lang="bg">
 
 <head>
-    <title>MainDashboard | Warehouse Portal</title>
+    <title>Обработка на поръчки | Warehouse Portal</title>
 
     <!-- Standard project imports -->
     <div th:replace="~{fragments/topHtmlImports :: topImports}"></div>
 
-    <!-- Dashboard specific CSS -->
+    <!-- Dashboard CSS -->
     <link rel="stylesheet" href="/css/mainDashboard.css">
 </head>
 
@@ -21,70 +21,84 @@
 <div th:replace="~{fragments/navbar :: navbar}"></div>
 <div th:replace="~{fragments/toastSystem :: toastContainer}"></div>
 
-<!-- Header with integrated quick stats -->
-<header class="header">
-    <div class="header-top">
-        <h1 class="header-title">Операторски панел</h1>
-        <div class="header-actions">
-            <button class="header-btn" onclick="refreshDashboard()" title="Обнови">
-                <i class="bi bi-arrow-clockwise"></i>
-            </button>
-            <button class="header-btn" onclick="toggleNotifications()" title="Нотификации">
-                <i class="bi bi-bell"></i>
-            </button>
-            <button class="header-btn active" onclick="showSettings()" title="Настройки">
-                <i class="bi bi-gear"></i>
-            </button>
-        </div>
-    </div>
-
-    <!-- Compact status overview -->
-    <div class="status-bar">
-        <div class="status-item urgent" onclick="switchTab('urgent')">
-            <div class="status-number" id="urgent-count">0</div>
-            <div class="status-text">Спешни поръчки</div>
-        </div>
-        <div class="status-item warning" onclick="switchTab('pending')">
-            <div class="status-number" id="pending-count">0</div>
-            <div class="status-text">Чакащи обработка</div>
-        </div>
-        <div class="status-item info" onclick="switchTab('confirmed')">
-            <div class="status-number" id="completed-count">0</div>
-            <div class="status-text">Обработени поръчки</div>
-        </div>
-        <div class="status-item danger" onclick="switchTab('cancelled')">
-            <div class="status-number" id="cancelled-count">0</div>
-            <div class="status-text">Отказани поръчки</div>
+<!-- Compact Header with WebSocket Status -->
+<header class="processing-header">
+    <div class="header-container">
+        <!-- Title and Live Status -->
+        <div class="header-title-section">
+            <h1 class="processing-title">Обработка на поръчки</h1>
+            <div class="live-status-indicator"
+                 title="Показва състоянието на real-time връзката за автоматично обновяване на данните">
+                <div class="live-dot" id="websocket-indicator"></div>
+                <span class="live-text" id="websocket-status">Свързване...</span>
+            </div>
         </div>
     </div>
 </header>
 
-<!-- Tab Navigation -->
-<nav class="tab-nav">
-    <button class="tab-btn" onclick="switchTab('activity')" data-tab="activity">
-        <i class="tab-icon bi bi-activity"></i>
-        <span>Активност</span>
+<!-- Enhanced Order Processing Tab Navigation -->
+<nav class="processing-tabs">
+    <button class="tab-btn active"
+            data-tab="urgent"
+            onclick="switchTab('urgent')"
+            title="Спешни поръчки - над 12 часа без обработка. Изискват незабавно внимание.">
+        <i class="tab-icon bi bi-exclamation-triangle-fill"></i>
+        <span class="tab-label">Спешни</span>
+        <span class="tab-count" id="urgent-tab-count" th:text="${urgentCount ?: 0}">0</span>
     </button>
-    <button class="tab-btn" onclick="switchTab('manage')" data-tab="manage">
-        <i class="tab-icon bi bi-grid"></i>
-        <span>Управление</span>
+    <button class="tab-btn"
+            data-tab="pending"
+            onclick="switchTab('pending')"
+            title="Чакащи обработка - нови поръчки получени в последните 12 часа.">
+        <i class="tab-icon bi bi-hourglass-split"></i>
+        <span class="tab-label">Чакащи</span>
+        <span class="tab-count" id="pending-tab-count" th:text="${pendingCount ?: 0}">0</span>
+    </button>
+    <button class="tab-btn"
+            data-tab="confirmed"
+            onclick="switchTab('confirmed')"
+            title="Обработени поръчки - одобрени и готови за експедиция.">
+        <i class="tab-icon bi bi-check-circle-fill"></i>
+        <span class="tab-label">Обработени</span>
+        <span class="tab-count" id="confirmed-tab-count" th:text="${confirmedCount ?: 0}">0</span>
+    </button>
+    <button class="tab-btn"
+            data-tab="cancelled"
+            onclick="switchTab('cancelled')"
+            title="Отказани поръчки - отменени заявки за справка и анализ.">
+        <i class="tab-icon bi bi-x-circle-fill"></i>
+        <span class="tab-label">Отказани</span>
+        <span class="tab-count" id="cancelled-tab-count" th:text="${cancelledCount ?: 0}">0</span>
     </button>
 </nav>
 
-<!-- Main Content -->
-<main class="content">
+<!-- Order Processing Content -->
+<main class="processing-content">
 
     <!-- Urgent Orders Tab -->
     <div class="tab-content active" id="urgent-tab">
-        <div class="panel">
-            <div class="panel-header">
-                <div class="panel-title">За незабавна обработка</div>
-                <div class="panel-badge" id="urgent-badge" th:text="${urgentCount ?: 0}">0</div>
+        <div class="processing-panel urgent-panel">
+            <div class="panel-header urgent-header">
+                <div class="panel-title-section">
+                    <i class="bi bi-exclamation-triangle-fill panel-icon"></i>
+                    <div class="panel-title-text">
+                        <h2 class="panel-title">Спешни поръчки</h2>
+                        <p class="panel-subtitle">Поръчки над 12 часа - изискват незабавна обработка</p>
+                    </div>
+                </div>
+                <div class="panel-actions">
+                    <button class="action-btn refresh-btn" onclick="refreshDashboard()">
+                        <i class="bi bi-arrow-clockwise"></i>
+                        <span>Обнови</span>
+                    </button>
+                    <div class="panel-badge urgent-panel-badge" id="urgent-badge" th:text="${urgentCount ?: 0}">0</div>
+                </div>
             </div>
             <div class="panel-content">
-                <!-- Празен контейнер - JavaScript ще добави реалните поръчки тук -->
-                <div id="urgent-orders-container">
-                    <!-- Реалните поръчки ще се заредят тук от JavaScript модулите -->
+                <div id="urgent-orders-container" class="orders-container">
+                    <div class="orders-list" id="urgent-orders-list">
+                        <!-- JavaScript ще генерира order карти тук -->
+                    </div>
                 </div>
             </div>
         </div>
@@ -92,176 +106,198 @@
 
     <!-- Pending Orders Tab -->
     <div class="tab-content" id="pending-tab">
-        <div class="panel">
-            <div class="panel-header">
-                <div class="panel-title">В процес на обработка</div>
-                <div class="panel-badge" id="pending-badge" th:text="${confirmedCount ?: 0}">0</div>
+        <div class="processing-panel pending-panel">
+            <div class="panel-header pending-header">
+                <div class="panel-title-section">
+                    <i class="bi bi-hourglass-split panel-icon"></i>
+                    <div class="panel-title-text">
+                        <h2 class="panel-title">Чакащи обработка</h2>
+                        <p class="panel-subtitle">Нови поръчки получени в последните 12 часа</p>
+                    </div>
+                </div>
+                <div class="panel-actions">
+                    <button class="action-btn refresh-btn" onclick="refreshDashboard()">
+                        <i class="bi bi-arrow-clockwise"></i>
+                        <span>Обнови</span>
+                    </button>
+                    <div class="panel-badge pending-panel-badge" id="pending-badge" th:text="${pendingCount ?: 0}">0</div>
+                </div>
             </div>
             <div class="panel-content">
-                <!-- Pending orders content -->
+                <div id="pending-orders-container" class="orders-container">
+                    <div class="loading-state">
+                        <div class="orders-list" id="pending-orders-list">
+                            <!-- JavaScript ще генерира order карти тук -->
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- Confirmed Orders Tab -->
     <div class="tab-content" id="confirmed-tab">
-        <div class="panel">
-            <div class="panel-header">
-                <div class="panel-title">Обработени поръчки</div>
-                <div class="panel-badge" id="confirmed-badge">0</div>
+        <div class="processing-panel confirmed-panel">
+            <div class="panel-header confirmed-header">
+                <div class="panel-title-section">
+                    <i class="bi bi-check-circle-fill panel-icon"></i>
+                    <div class="panel-title-text">
+                        <h2 class="panel-title">Обработени поръчки</h2>
+                        <p class="panel-subtitle">Одобрени поръчки готови за изпращане</p>
+                    </div>
+                </div>
+                <div class="panel-actions">
+                    <button class="action-btn refresh-btn" onclick="refreshDashboard()">
+                        <i class="bi bi-arrow-clockwise"></i>
+                        <span>Обнови</span>
+                    </button>
+                    <div class="panel-badge confirmed-panel-badge" id="confirmed-badge" th:text="${confirmedCount ?: 0}">0</div>
+                </div>
             </div>
             <div class="panel-content">
-                <div id="confirmed-orders-container">
-                    <!-- JavaScript ще зареди поръчките тук -->
+                <div id="confirmed-orders-container" class="orders-container">
+                    <div class="loading-state">
+                        <div class="orders-list" id="confirmed-orders-list">
+                            <!-- JavaScript ще генерира order карти тук -->
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Cancelled Orders Tab -->
     <div class="tab-content" id="cancelled-tab">
-        <div class="panel">
-            <div class="panel-header">
-                <div class="panel-title">Отказани поръчки</div>
-                <div class="panel-badge" id="cancelled-badge">0</div>
-            </div>
-            <div class="panel-content">
-                <div id="cancelled-orders-container">
-                    <!-- JavaScript ще зареди поръчките тук -->
+        <div class="processing-panel cancelled-panel">
+            <div class="panel-header cancelled-header">
+                <div class="panel-title-section">
+                    <i class="bi bi-x-circle-fill panel-icon"></i>
+                    <div class="panel-title-text">
+                        <h2 class="panel-title">Отказани поръчки</h2>
+                        <p class="panel-subtitle">Отменени и архивирани поръчки</p>
+                    </div>
+                </div>
+                <div class="panel-actions">
+                    <button class="action-btn refresh-btn" onclick="refreshDashboard()">
+                        <i class="bi bi-arrow-clockwise"></i>
+                        <span>Обнови</span>
+                    </button>
+                    <div class="panel-badge cancelled-panel-badge" id="cancelled-badge" th:text="${cancelledCount ?: 0}">0</div>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <!-- Activity Feed Tab -->
-    <div class="tab-content" id="activity-tab">
-        <div class="panel">
-            <div class="panel-header">
-                <div class="panel-title">Последна активност</div>
-            </div>
             <div class="panel-content">
-                <!-- Activity content -->
+                <div id="cancelled-orders-container" class="orders-container">
+                    <div class="loading-state">
+                        <div class="orders-list" id="cancelled-orders-list">
+                            <!-- JavaScript ще генерира order карти тук -->
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div>
-
-        <!-- Daily Stats -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-value" th:text="${dailyStats.processed ?: 0}">0</div>
-                <div class="stat-label">Обработени</div>
-                <div class="stat-change change-positive">+15%</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value" th:text="${dailyStats.revenue ?: '0.0'}">0.0</div>
-                <div class="stat-label">Продажби (лв)</div>
-                <div class="stat-change change-positive">+8%</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value" th:text="${dailyStats.avgTime ?: '0.0ч'}">0.0ч</div>
-                <div class="stat-label">Среден срок</div>
-                <div class="stat-change change-negative">-12%</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value" th:text="${dailyStats.activeClients ?: 0}">0</div>
-                <div class="stat-label">Активни клиенти</div>
-                <div class="stat-change change-positive">+3</div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Management Tab -->
-    <div class="tab-content" id="manage-tab">
-        <div class="nav-grid">
-            <a href="/admin/orders" class="nav-item">
-                <i class="nav-icon bi bi-list-ul"></i>
-                <span class="nav-label">Всички поръчки</span>
-            </a>
-
-            <a href="/admin/catalog" class="nav-item">
-                <i class="nav-icon bi bi-box-seam"></i>
-                <span class="nav-label">Каталог</span>
-            </a>
-
-            <a href="/admin/clients" class="nav-item">
-                <i class="nav-icon bi bi-people"></i>
-                <span class="nav-label">Клиенти</span>
-            </a>
-
-            <a href="/admin/reports" class="nav-item">
-                <i class="nav-icon bi bi-graph-up"></i>
-                <span class="nav-label">Отчети</span>
-            </a>
-
-            <a href="/admin/inventory" class="nav-item">
-                <i class="nav-icon bi bi-boxes"></i>
-                <span class="nav-label">Инвентар</span>
-            </a>
-
-            <a href="/admin/settings" class="nav-item">
-                <i class="nav-icon bi bi-gear"></i>
-                <span class="nav-label">Настройки</span>
-            </a>
         </div>
     </div>
 
 </main>
 
-<!-- Rejection Modal -->
-<div class="modal-overlay" id="rejection-modal">
-    <div class="modal">
-        <div class="modal-header">Причина за отказ</div>
+<!-- Footer -->
+<div th:replace="~{fragments/footer :: footer}"></div>
 
-        <div class="reason-options">
-            <div class="reason-option" onclick="selectReason(this, 'Няма в наличност')">
-                <strong>Няма в наличност</strong><br>
-                <small>Продуктът не е наличен в склада</small>
-            </div>
-            <div class="reason-option" onclick="selectReason(this, 'Невъзможна доставка в срок')">
-                <strong>Невъзможна доставка в срок</strong><br>
-                <small>Не можем да доставим в исканото време</small>
-            </div>
-            <div class="reason-option" onclick="selectReason(this, 'Изтекъл срок на годност')">
-                <strong>Изтекъл срок на годност</strong><br>
-                <small>Продуктът е с изтекъл срок</small>
-            </div>
-            <div class="reason-option" onclick="selectReason(this, 'Повреден продукт')">
-                <strong>Повреден продукт</strong><br>
-                <small>Продуктът е с дефект или повреда</small>
-            </div>
-            <div class="reason-option" onclick="selectReason(this, 'Заменен с алтернатива')">
-                <strong>Заменен с алтернатива</strong><br>
-                <small>Предлагаме алтернативен продукт</small>
-            </div>
-        </div>
-
-        <textarea class="custom-reason" id="custom-reason" placeholder="Или напишете персонализирана причина..."></textarea>
-
-        <div class="modal-actions">
-            <button class="modal-btn btn-cancel" onclick="closeRejectionModal()">Отказ</button>
-            <button class="modal-btn btn-confirm" onclick="confirmRejection()">Потвърди отказа</button>
-        </div>
-    </div>
+<!-- Hidden elements for JavaScript compatibility -->
+<div style="display: none;">
+    <!-- These elements are needed for existing JavaScript to work -->
+    <div class="status-item urgent" id="status-urgent"></div>
+    <div class="status-item warning" id="status-pending"></div>
+    <div class="status-item info" id="status-confirmed"></div>
+    <div class="status-item danger" id="status-cancelled"></div>
 </div>
 
-<!-- Include Footer Fragment -->
-<div th:replace="~{fragments/footer :: footer}"></div>
+<!-- JavaScript Configuration with Real Data -->
 <script th:inline="javascript">
+    // Enhanced dashboard configuration for production
     window.dashboardConfig = {
-        userId: /*[[${userId}]]*/'',
+        // Server-side data injection
+        initialDashboardData: /*[[${initialDashboardData}]]*/ {},
+        userId: /*[[${userId}]]*/ null,
         csrfToken: /*[[${csrfToken}]]*/ '',
-        csrfHeader: /*[[${csrfHeader}]]*/ '',
-        initialDashboardData: /*[[${initialDashboardData}]]*/ {}
+        csrfHeader: /*[[${csrfHeader}]]*/ 'X-CSRF-TOKEN',
+        currentUser: /*[[${currentUser}]]*/ {},
+
+        // Real-time counters for WebSocket updates
+        counters: {
+            urgent: /*[[${urgentCount}]]*/ 0,
+            pending: /*[[${pendingCount}]]*/ 0,
+            confirmed: /*[[${confirmedCount}]]*/ 0,
+            cancelled: /*[[${cancelledCount}]]*/ 0
+        },
+
+        // Daily statistics for rich UI
+        dailyStats: {
+            processed: /*[[${dailyStats.processed}]]*/ 0,
+            revenue: /*[[${dailyStats.revenue}]]*/ 0,
+            avgTime: /*[[${dailyStats.avgTime}]]*/ '0.0ч',
+            activeClients: /*[[${dailyStats.activeClients}]]*/ 0
+        },
+
+        // System metadata
+        lastUpdate: /*[[${lastUpdate}]]*/ null,
+        serverTime: /*[[${#temporals.format(#temporals.createNow(), 'yyyy-MM-dd HH:mm:ss')}]]*/ '',
+
+        // WebSocket configuration
+        wsConfig: {
+            enableAutoReconnect: true,
+            maxReconnectAttempts: 5,
+            reconnectDelay: 3000,
+            heartbeatInterval: 30000
+        },
+
+        // UI preferences
+        ui: {
+            autoRefresh: true,
+            refreshInterval: 60000,
+            animateCounters: true,
+            showNotifications: true
+        }
     };
+
 </script>
 
+<!-- Core JavaScript - Bottom Imports -->
+<div th:replace="~{fragments/bottomHtmlImports :: bottomImports}"></div>
 
-<!-- Dashboard JavaScript -->
+<!-- Dashboard JavaScript Modules -->
 <script src="/js/dashboard/dashboardApi.js"></script>
 <script src="/js/dashboard/dashboardManager.js"></script>
 <script src="/js/dashboard/dashboardUI.js"></script>
 <script src="/js/dashboard/mainDashboard.js"></script>
 
-<!-- Standard project bottom imports -->
-<div th:replace="~{fragments/bottomHtmlImports :: bottomImports}"></div>
+<!-- Enhanced WebSocket Status Management -->
+<script>
+    // WebSocket status indicator management
+    function updateWebSocketStatus(connected, message) {
+        const indicator = document.getElementById('websocket-indicator');
+        const statusText = document.getElementById('websocket-status');
+
+        if (connected) {
+            indicator.className = 'live-dot connected';
+            statusText.textContent = 'На живо';
+            statusText.className = 'live-text connected';
+        } else {
+            indicator.className = 'live-dot disconnected';
+            statusText.textContent = message || 'Прекъсната връзка';
+            statusText.className = 'live-text disconnected';
+        }
+    }
+
+    // Initialize WebSocket status on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        updateWebSocketStatus(false, 'Свързване...');
+
+        // Listen for WebSocket connection events
+        if (window.mainDashboard && window.mainDashboard.api) {
+            window.mainDashboard.api.onConnectionChange = updateWebSocketStatus;
+        }
+    });
+</script>
 
 </body>
 </html>

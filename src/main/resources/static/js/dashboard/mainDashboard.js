@@ -102,6 +102,7 @@ class MainDashboard {
         }
     }
 
+
     /**
      * Load configuration from window.dashboardConfig
      */
@@ -214,79 +215,18 @@ class MainDashboard {
         // ===== ORDER INTERACTION FUNCTIONS =====
 
 
-        window.updateProductQuantity = (orderId, productId, quantity) => {
-            if (this.isReady()) {
-                return this.manager.updateProductQuantity(orderId, productId, quantity);
+        // Global function for order details viewing
+        window.viewOrderDetails = function(orderId) {
+            if (window.mainDashboard?.manager) {
+                const detailUrl = `/employer/dashboard/order/${orderId}/detailOrder`;
+                window.open(detailUrl, '_blank');
             }
         };
 
-        window.saveOrderChanges = (orderId) => {
-            if (this.isReady()) {
-                return this.api.saveOrderChanges(orderId);
-            }
-        };
 
-        // ===== NEW ORDER APPROVAL LOGIC =====
 
-        window.approveOrder = (orderId, operatorNote = '') => {
-            if (this.isReady()) {
-                return this.manager.approveOrder(orderId, operatorNote);
-            }
-        };
 
-        window.rejectOrder = (orderId, rejectionReason) => {
-            if (this.isReady()) {
-                return this.manager.rejectOrder(orderId, rejectionReason);
-            }
-        };
 
-        // ===== PRODUCT MANAGEMENT FUNCTIONS =====
-
-        window.removeProductFromOrder = (orderId, productId, reason) => {
-            if (this.isReady()) {
-                return this.manager.removeProductFromOrder(orderId, productId, reason);
-            }
-        };
-
-        window.markOrderAsModified = (orderId) => {
-            if (this.isReady()) {
-                this.manager.markOrderAsModified(orderId);
-            }
-        };
-
-        window.toggleItemAvailability = (orderId, itemId, checkbox) => {
-            if (this.isReady() && this.ui) {
-                this.ui.toggleItemAvailability(orderId, itemId, checkbox);
-            }
-        };
-
-        // ===== MODAL CONTROL FUNCTIONS =====
-
-        window.showRejectionModal = (orderId, productId = null) => {
-            if (this.isReady() && this.ui) {
-                this.ui.showRejectionModal(orderId, productId);
-            }
-        };
-
-        window.closeRejectionModal = () => {
-            if (this.isReady() && this.ui) {
-                this.ui.closeRejectionModal();
-            }
-        };
-
-        window.confirmRejection = () => {
-            if (this.isReady() && this.ui) {
-                this.ui.confirmRejection();
-            }
-        };
-
-        window.selectReason = (element, reason) => {
-            // This function is already defined in dashboardUI.js
-            // We just ensure it's available
-            if (window.DashboardUI && typeof window.selectReason === 'function') {
-                window.selectReason(element, reason);
-            }
-        };
 
         // ===== SETTINGS AND NOTIFICATIONS =====
 

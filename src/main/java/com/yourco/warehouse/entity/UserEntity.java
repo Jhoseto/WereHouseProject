@@ -28,6 +28,7 @@ public class UserEntity {
 
     private String email;
     private String phone;
+    private String location;
 
     @Column(nullable = true)
     private Long userCode;
@@ -95,6 +96,14 @@ public class UserEntity {
 
     public void setPhone(String phone) {
         this.phone = phone;
+    }
+
+    public String getLocation() {
+        return location;
+    }
+
+    public void setLocation(String location) {
+        this.location = location;
     }
 
     public Long getUserCode() {

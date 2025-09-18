@@ -1169,6 +1169,117 @@ class DashboardUI {
         }
     }
 
+
+    /**
+     * Render orders list in specified container
+     */
+    renderOrdersList(orders, containerSelector) {
+        const container = document.querySelector(containerSelector);
+        if (!container) {
+            console.error('Orders container not found:', containerSelector);
+            return;
+        }
+
+        // Clear existing content
+        container.innerHTML = '';
+
+        if (!orders || orders.length === 0) {
+            container.innerHTML = '<div class="no-orders">Няма поръчки за показване</div>';
+            return;
+        }
+
+        // Generate order cards HTML
+        const ordersHtml = orders.map(order => this.generateOrderCardHtml(order)).join('');
+        container.innerHTML = ordersHtml;
+
+        // Add click handlers
+        this.attachOrderCardHandlers(container);
+    }
+
+    generateOrderCardHtml(order) {
+        const statusMap = {
+            'URGENT': {label: 'Спешна поръчка', class: 'urgent'},
+            'PENDING': {label: 'Изчакваща поръчка', class: 'pending'},
+            'CONFIRMED': {label: 'Обработена поръчка', class: 'confirmed'},
+            'CANCELLED': {label: 'Отказана поръчка', class: 'cancelled'}
+        };
+
+        const status = statusMap[order.status] || {label: 'Изчаква', class: 'pending'};
+        const totalGross = order.totalGross ? Number(order.totalGross).toFixed(2) : '0.00';
+        const totalNet = order.totalNet ? Number(order.totalNet).toFixed(2) : '0.00';
+        const submittedDate = order.submittedAt ? new Date(order.submittedAt).toLocaleDateString('bg-BG') : '';
+        const submittedTime = order.submittedAt ? new Date(order.submittedAt).toLocaleTimeString('bg-BG', {hour: '2-digit', minute: '2-digit'}) : '';
+        const itemsCount = order.itemsCount || 0;
+
+        return `
+<div class="order-card" data-order-id="${order.id}" data-status="${status.class}">
+  <!-- Status indicator -->
+  <div class="status-bar ${status.class}"></div>
+
+  <!-- Main content -->
+  <div class="order-card-content">
+    <!-- Header row -->
+    <div class="order-header">
+      <div class="order-id">#${order.id}</div>
+      <div class="order-status ${status.class}">${status.label}</div>
+      <div class="order-time">${submittedDate} ${submittedTime}</div>
+    </div>
+
+    <!-- Client info -->
+    <div class="client-info">
+      <div class="client-company">${order.clientCompany || 'Неизвестна фирма'}</div>
+      <div class="client-details">
+        ${order.clientName || '-'}${order.clientPhone ? ' • ' + order.clientPhone : ''}${order.clientLocation ? ' • ' + order.clientLocation : ''}
+      </div>
+    </div>
+
+    <!-- Order summary -->
+    <div class="order-summary">
+      <div class="order-items">${itemsCount} артикула</div>
+      <div class="order-total">Общо: ${totalGross} лв</div>
+      <div class="order-net-price">без ДДС: ${totalNet} лв</div>
+    </div>
+
+    <!-- Actions -->
+    <div class="order-actions">
+      <button class="order-btn btn-view" onclick="viewOrderDetails(${order.id})">
+        <i class="bi bi-eye"></i> Преглед
+      </button>
+    </div>
+  </div>
+</div>`;
+    }
+
+
+
+    /**
+     * Attach click handlers to order cards
+     */
+    attachOrderCardHandlers(container) {
+        const orderCards = container.querySelectorAll('.order-card');
+
+        orderCards.forEach(card => {
+            card.addEventListener('click', (e) => {
+                // Don't trigger if clicking on buttons
+                if (e.target.matches('.order-btn, .order-btn *')) return;
+
+                const orderId = card.dataset.orderId;
+                if (orderId) {
+                    this.showOrderDetails(orderId);
+                }
+            });
+        });
+    }
+
+    /**
+     * Show order details (existing functionality)
+     */
+    showOrderDetails(orderId) {
+        if (window.mainDashboard && window.mainDashboard.manager) {
+            window.mainDashboard.manager.showOrderDetails(orderId);
+        }
+    }
+
     // ==========================================
     // LOADING AND ERROR STATES
     // ==========================================
@@ -1178,9 +1289,24 @@ class DashboardUI {
         console.log(`Loading indicator: ${show ? 'shown' : 'hidden'}`);
     }
 
+    /**
+     * Update WebSocket connection status indicator
+     */
     updateConnectionStatus(connected) {
-        // Update connection indicator if needed
-        console.log(`Connection status: ${connected ? 'connected' : 'disconnected'}`);
+        const indicator = document.getElementById('websocket-indicator');
+        const statusText = document.getElementById('websocket-status');
+
+        if (!indicator || !statusText) return;
+
+        if (connected) {
+            indicator.className = 'live-dot connected';
+            statusText.className = 'live-text connected';
+            statusText.textContent = 'На живо';
+        } else {
+            indicator.className = 'live-dot disconnected';
+            statusText.className = 'live-text disconnected';
+            statusText.textContent = 'Прекъсната връзка';
+        }
     }
 }
 

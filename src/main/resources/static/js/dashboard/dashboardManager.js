@@ -165,43 +165,34 @@ class DashboardManager {
         }
     }
 
+
+
     /**
-     * Load data for specific tab
+     * Load data for specific tab with enhanced order rendering
      */
     async loadTabData(tabName) {
-        const statusMap = {
-            'urgent': 'URGENT',
-            'pending': 'PENDING',
-            'confirmed': 'CONFIRMED',
-            'cancelled': 'CANCELLED',
-            'activity': null
-        };
-
         try {
-            console.log(`Loading tab ${tabName}...`);
+            const response = await this.api.getOrdersByStatus(tabName.toUpperCase());
 
-            if (tabName === 'activity') {
-                // Load activity feed
-                await this.loadActivityData();
-                // Prevent undefined for UI
-                this.loadedOrders.set('activity', []);
-                this.ui.updateOrdersList('activity', []);
+            if (response.success && response.orders) {
+                const containerSelector = `#${tabName}-orders-list`;
+                this.ui.renderOrdersList(response.orders, containerSelector);
+
+                console.log(`✓ Loaded ${response.orders.length} orders for ${tabName} tab`);
             } else {
-                const status = statusMap[tabName];
-                if (status) {
-                    const response = await this.api.getOrdersByStatus(status, 10);
-                    if (response.success) {
-                        const orders = response.orders || [];
-                        this.loadedOrders.set(tabName, orders);
-                        this.ui.updateOrdersList(tabName, orders);
-                        console.log(`✓ Loaded ${orders.length} orders for ${tabName} tab`);
-                    }
+                console.warn(`No orders found for ${tabName} tab`);
+                const container = document.querySelector(`#${tabName}-orders-list`);
+                if (container) {
+                    container.innerHTML = '<div class="no-orders">Няма поръчки за показване</div>';
                 }
             }
 
         } catch (error) {
-            console.error(`Error loading data for tab ${tabName}:`, error);
-            throw error;
+            console.error(`Error loading ${tabName} tab data:`, error);
+            const container = document.querySelector(`#${tabName}-orders-list`);
+            if (container) {
+                container.innerHTML = '<div class="no-orders error">Грешка при зареждане на данните</div>';
+            }
         }
     }
 

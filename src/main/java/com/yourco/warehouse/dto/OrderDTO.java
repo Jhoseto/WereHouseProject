@@ -24,6 +24,16 @@ public class OrderDTO {
     @JsonProperty("clientName")
     private String clientName;
 
+    @JsonProperty("clientCompany")
+    private String clientCompany;
+
+    @JsonProperty("clientPhone")
+    private String clientPhone;
+
+    @JsonProperty("clientLocation")
+    private String clientLocation;
+
+
     @JsonProperty("status")
     private String status;
 
@@ -68,6 +78,30 @@ public class OrderDTO {
 
     public String getClientName() { return clientName; }
     public void setClientName(String clientName) { this.clientName = clientName; }
+
+    public String getClientCompany() {
+        return clientCompany;
+    }
+
+    public void setClientCompany(String clientCompany) {
+        this.clientCompany = clientCompany;
+    }
+
+    public String getClientPhone() {
+        return clientPhone;
+    }
+
+    public void setClientPhone(String clientPhone) {
+        this.clientPhone = clientPhone;
+    }
+
+    public String getClientLocation() {
+        return clientLocation;
+    }
+
+    public void setClientLocation(String clientLocation) {
+        this.clientLocation = clientLocation;
+    }
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
