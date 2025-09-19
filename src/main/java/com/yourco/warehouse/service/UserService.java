@@ -2,6 +2,7 @@ package com.yourco.warehouse.service;
 
 import com.yourco.warehouse.dto.UserProfileDTO;
 import com.yourco.warehouse.entity.UserEntity;
+import com.yourco.warehouse.entity.enums.UserStatus;
 import org.springframework.security.core.Authentication;
 
 import java.util.List;
@@ -33,4 +34,10 @@ public interface UserService {
     long getTotalEmployersCount();
 
     long getTotalClientsCount();
+
+    List<UserEntity> getAllClientUsers();
+
+    Optional<UserEntity> findUserById(Long id);
+
+    String updateUserStatus(UserEntity client, UserStatus userOldStatus);
 }

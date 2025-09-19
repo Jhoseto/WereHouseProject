@@ -3,6 +3,7 @@ package com.yourco.warehouse.service.impl;
 import com.yourco.warehouse.dto.UserProfileDTO;
 import com.yourco.warehouse.entity.UserEntity;
 import com.yourco.warehouse.entity.enums.Role;
+import com.yourco.warehouse.entity.enums.UserStatus;
 import com.yourco.warehouse.repository.UserRepository;
 import com.yourco.warehouse.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -113,6 +114,28 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public long getTotalClientsCount() {
         return userRepository.findAllByRole(Role.CLIENT).size();
+    }
+
+    @Override
+    public List<UserEntity> getAllClientUsers() {
+        return userRepository.getAllByRole(Role.CLIENT);
+    }
+
+    @Override
+    public Optional<UserEntity> findUserById(Long id) {
+        return userRepository.findById(id);
+    }
+
+    @Override
+    public String updateUserStatus(UserEntity client, UserStatus userOldStatus) {
+        if (client.getUserStatus().equals(UserStatus.ACTIVE)){
+            client.setUserStatus(UserStatus.INACTIVE);
+            userRepository.save(client);
+            return "деактивиран";
+        }
+        client.setUserStatus(UserStatus.ACTIVE);
+        userRepository.save(client);
+        return "активиран";
     }
 
 }

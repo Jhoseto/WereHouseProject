@@ -1,8 +1,10 @@
 package com.yourco.warehouse.controllers;
 
+import ch.qos.logback.core.encoder.EchoEncoder;
 import com.yourco.warehouse.dto.AdminResponseDTO;
 import com.yourco.warehouse.entity.UserEntity;
 import com.yourco.warehouse.entity.enums.Role;
+import com.yourco.warehouse.entity.enums.UserStatus;
 import com.yourco.warehouse.service.UserService;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
@@ -12,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -31,6 +34,7 @@ public class AdminClientsController {
     private static final Logger log = LoggerFactory.getLogger(AdminClientsController.class);
 
     private final UserService userService;
+    private PasswordEncoder passwordEncoder;
 
     @Autowired
     public AdminClientsController(UserService userService) {
@@ -77,14 +81,11 @@ public class AdminClientsController {
             newClient.setEmail(request.getEmail());
             newClient.setPhone(request.getPhone());
             newClient.setLocation(request.getLocation());
-            newClient.setUserCode(request.getUserCode());
             newClient.setRole(Role.CLIENT);
-            newClient.setActive(true);
+            newClient.setUserStatus(UserStatus.ACTIVE);
 
-            // TODO: Hash password before saving
-            // newClient.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+            newClient.setPasswordHash(passwordEncoder.encode(request.getPassword()));
 
-            // Запазване чрез service
             userService.createNewUser(newClient);
 
             log.info("New client created successfully: {} by admin: {}",
@@ -118,7 +119,7 @@ public class AdminClientsController {
             log.debug("Admin {} requests all clients list", authentication.getName());
 
             // Получаваме всички клиенти наведнъж - frontend ще прави filtering/sorting
-            List<UserEntity> allClients = userService.getAllClientUsers(); // Трябва да се добави в service
+            List<UserEntity> allClients = userService.getAllClientUsers();
 
             // Мапваме към прост JSON формат
             List<Map<String, Object>> clientsData = allClients.stream()
@@ -184,10 +185,8 @@ public class AdminClientsController {
             Authentication authentication) {
 
         try {
-            log.info("Admin {} attempts to toggle status for client ID: {} to: {}",
-                    authentication.getName(), id, request.getActive());
 
-            Optional<UserEntity> clientOpt = userService.findUserById(id); // Трябва да се добави в service
+            Optional<UserEntity> clientOpt = userService.findUserById(id);
             if (clientOpt.isEmpty()) {
                 return ResponseEntity.notFound().build();
             }
@@ -200,22 +199,15 @@ public class AdminClientsController {
                         AdminResponseDTO.error("Потребителят не е клиент")
                 );
             }
+            UserStatus userOldStatus = client.getUserStatus();
 
-            boolean oldStatus = client.isActive();
-            client.setActive(request.getActive());
-
-            // TODO: Update через service
-            // userService.updateUser(client);
-
-            String action = request.getActive() ? "активиран" : "деактивиран";
-            log.info("Client {} (ID: {}) has been {} by admin {}",
-                    client.getUsername(), id, action, authentication.getName());
+            String action = userService.updateUserStatus(client, userOldStatus);
 
             Map<String, Object> responseData = new HashMap<>();
             responseData.put("clientId", id);
             responseData.put("username", client.getUsername());
-            responseData.put("oldStatus", oldStatus);
-            responseData.put("newStatus", request.getActive());
+            responseData.put("oldStatus", userOldStatus);
+            responseData.put("newStatus", request.getUserStatus());
 
             return ResponseEntity.ok(AdminResponseDTO.success(
                     "Клиент '" + client.getUsername() + "' е " + action + " успешно",
@@ -368,10 +360,6 @@ public class AdminClientsController {
             return "Паролата трябва да е поне 6 символа";
         }
 
-        // Валидация на userCode ако е предоставен
-        if (request.getUserCode() != null && request.getUserCode() <= 0) {
-            return "Клиентският код трябва да е положително число";
-        }
 
         return null; // Всичко е OK
     }
@@ -387,8 +375,7 @@ public class AdminClientsController {
         data.put("email", client.getEmail());
         data.put("phone", client.getPhone());
         data.put("location", client.getLocation());
-        data.put("userCode", client.getUserCode());
-        data.put("active", client.isActive());
+        data.put("active", client.getUserStatus());
         data.put("role", client.getRole().toString());
         return data;
     }

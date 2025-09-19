@@ -1,6 +1,7 @@
 package com.yourco.warehouse.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.yourco.warehouse.entity.enums.UserStatus;
 
 import java.time.LocalDateTime;
 
@@ -30,9 +31,8 @@ public class AdminResponseDTO {
     private String email;
     private String phone;
     private String location;
-    private Long userCode;
     private String password;
-    private Boolean active;
+    private UserStatus userStatus;
     private String role;
     private LocalDateTime createdAt;
     private LocalDateTime lastLogin;
@@ -187,13 +187,6 @@ public class AdminResponseDTO {
         this.location = location;
     }
 
-    public Long getUserCode() {
-        return userCode;
-    }
-
-    public void setUserCode(Long userCode) {
-        this.userCode = userCode;
-    }
 
     public String getPassword() {
         return password;
@@ -203,12 +196,12 @@ public class AdminResponseDTO {
         this.password = password;
     }
 
-    public Boolean getActive() {
-        return active;
+    public UserStatus getUserStatus() {
+        return userStatus;
     }
 
-    public void setActive(Boolean active) {
-        this.active = active;
+    public void setUserStatus(UserStatus userStatus) {
+        this.userStatus = userStatus;
     }
 
     public String getRole() {

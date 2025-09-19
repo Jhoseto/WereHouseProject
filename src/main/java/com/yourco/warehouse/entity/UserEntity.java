@@ -2,6 +2,7 @@
 package com.yourco.warehouse.entity;
 
 import com.yourco.warehouse.entity.enums.Role;
+import com.yourco.warehouse.entity.enums.UserStatus;
 import jakarta.persistence.*;
 
 @Entity
@@ -23,15 +24,14 @@ public class UserEntity {
     @Column(nullable = false)
     private Role role;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private boolean active = true;
+    private UserStatus userStatus;
 
     private String email;
     private String phone;
     private String location;
 
-    @Column(nullable = true)
-    private Long userCode;
 
 
     public Long getId() {
@@ -74,12 +74,12 @@ public class UserEntity {
         this.role = role;
     }
 
-    public boolean isActive() {
-        return active;
+    public UserStatus getUserStatus() {
+        return userStatus;
     }
 
-    public void setActive(boolean active) {
-        this.active = active;
+    public void setUserStatus(UserStatus userStatus) {
+        this.userStatus = userStatus;
     }
 
     public String getEmail() {
@@ -104,13 +104,5 @@ public class UserEntity {
 
     public void setLocation(String location) {
         this.location = location;
-    }
-
-    public Long getUserCode() {
-        return userCode;
-    }
-
-    public void setUserCode(Long userCode) {
-        this.userCode = userCode;
     }
 }

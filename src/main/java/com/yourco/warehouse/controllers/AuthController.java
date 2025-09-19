@@ -2,6 +2,7 @@ package com.yourco.warehouse.controllers;
 
 import com.yourco.warehouse.entity.UserEntity;
 import com.yourco.warehouse.entity.enums.Role;
+import com.yourco.warehouse.entity.enums.UserStatus;
 import com.yourco.warehouse.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -70,7 +71,7 @@ public class AuthController {
         UserEntity user = userOptional.get();
 
         // 3. ПРОВЕРКА ДАЛИ Е АКТИВЕН
-        if (!user.isActive()) {
+        if (user.getUserStatus().equals(UserStatus.INACTIVE)) {
             redirectAttributes.addFlashAttribute("errorMessage",
                     "Акаунтът ви е временно деактивиран. За повече информация се свържете с администратор на системата. " +
                             "Ако смятате че това е грешка, изпратете email на support@sunnycomers.bg с вашето потребителско име.");
@@ -121,8 +122,12 @@ public class AuthController {
                 redirectAttributes.addFlashAttribute("successTitle", welcomeTitle);
                 System.out.println("SUCCESS: Потребител " + username + " е автентикиран успешно!");
 
-                if (user.getRole().equals(Role.ADMIN) || user.getRole().equals(Role.EMPLOYER)) {
+                if (user.getRole().equals(Role.EMPLOYER)) {
                     return "redirect:/employer/dashboard";
+
+                } else if (user.getRole().equals(Role.ADMIN)){
+                    return "redirect:/admin/dashboard";
+
                 } else {
                     return "redirect:/catalog";
                 }

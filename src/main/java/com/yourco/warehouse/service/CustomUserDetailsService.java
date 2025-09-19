@@ -1,6 +1,7 @@
 package com.yourco.warehouse.service;
 
 import com.yourco.warehouse.entity.UserEntity;
+import com.yourco.warehouse.entity.enums.UserStatus;
 import com.yourco.warehouse.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
@@ -30,13 +31,13 @@ public class CustomUserDetailsService implements UserDetailsService {
         UserEntity u = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("Потребителят не е намерен: " + username));
 
-        if (!u.isActive()) {
+        if (u.getUserStatus().equals(UserStatus.INACTIVE)) {
             throw new UsernameNotFoundException("Потребителският акаунт е деактивиран: " + username);
         }
 
         Collection<? extends GrantedAuthority> auth = List.of(new SimpleGrantedAuthority("ROLE_" + u.getRole().name()));
         return new org.springframework.security.core.userdetails.User(
-                u.getUsername(), u.getPasswordHash(), u.isActive(), true, true, true, auth
+                u.getUsername(), u.getPasswordHash(), true, true, true, true, auth
         );
     }
 }
