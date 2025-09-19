@@ -166,7 +166,7 @@
 }
 
 .section-header p {
-    color: var(--color-text-secondary);
+    color: white;
     font-size: 1rem;
     margin: 0;
     line-height: 1.5;
