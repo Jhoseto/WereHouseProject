@@ -175,13 +175,12 @@ class DashboardManager {
             const response = await this.api.getOrdersByStatus(tabName.toUpperCase());
 
             if (response.success && response.orders) {
-                const containerSelector = `#${tabName}-orders-list`;
-                this.ui.renderOrdersList(response.orders, containerSelector);
-
+                // Форсирано рендериране
+                this.ui.renderOrdersList(response.orders, `#${tabName}-orders-list`);
                 console.log(`✓ Loaded ${response.orders.length} orders for ${tabName} tab`);
             } else {
-                console.warn(`No orders found for ${tabName} tab`);
-                const container = document.querySelector(`#${tabName}-orders-list`);
+                // При липса на данни
+                const container = document.getElementById(`${tabName}-orders-list`);
                 if (container) {
                     container.innerHTML = '<div class="no-orders">Няма поръчки за показване</div>';
                 }
@@ -189,11 +188,25 @@ class DashboardManager {
 
         } catch (error) {
             console.error(`Error loading ${tabName} tab data:`, error);
-            const container = document.querySelector(`#${tabName}-orders-list`);
+            const container = document.getElementById(`${tabName}-orders-list`);
             if (container) {
                 container.innerHTML = '<div class="no-orders error">Грешка при зареждане на данните</div>';
             }
         }
+    }
+
+    refreshAllTabs() {
+        // Мигновенно обновяване на всички табове
+        const tabs = ['urgent', 'pending', 'confirmed', 'cancelled'];
+
+        tabs.forEach(tab => {
+            this.loadTabData(tab);
+        });
+
+        // Обнови брояците
+        this.refreshCounters();
+
+        console.log('✓ Force refreshed all tabs via WebSocket');
     }
 
 

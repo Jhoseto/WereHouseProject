@@ -43,6 +43,7 @@
     --shadow-xl: 0 12px 24px rgba(0, 0, 0, 0.18);
 
     --transition-fast: 0.15s ease;
+    --transition-fast: 0.15s ease;
     --transition-normal: 0.25s ease;
     --transition-slow: 0.35s ease;
 

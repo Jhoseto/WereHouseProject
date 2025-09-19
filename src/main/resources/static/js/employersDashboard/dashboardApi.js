@@ -216,33 +216,23 @@ class DashboardApi {
         });
 
         // Subscribe to order status changes
+        // В dashboardApi.js - заменете частта със Subscribe to order updates (около ред 220-240)
         this.orderSubscription = this.stompClient.subscribe('/topic/dashboard/orders', (message) => {
             try {
                 const data = JSON.parse(message.body);
                 console.log('Received order update:', data.eventType, data.orderId);
 
-                switch (data.eventType) {
-                    case 'STATUS_CHANGED':
-                        if (this.onOrderUpdate) {
-                            this.onOrderUpdate(data);
-                        }
-                        break;
-
-                    case 'NEW_ORDER':
-                        if (this.onNewOrder) {
-                            this.onNewOrder(data);
-                        }
-                        break;
-
-                    case 'ORDER_MODIFIED':
-                        if (this.onOrderUpdate) {
-                            this.onOrderUpdate(data);
-                        }
-                        break;
-
-                    default:
-                        console.warn('Unknown order event type:', data.eventType);
+                // МИГНОВЕННО обновяване
+                if (window.mainDashboard?.manager) {
+                    // Форсирай рефреш на всички табове веднага
+                    window.mainDashboard.manager.refreshAllTabs();
                 }
+
+                // Broadcast събитието
+                if (this.onOrderUpdate) {
+                    this.onOrderUpdate(data);
+                }
+
             } catch (error) {
                 console.error('Error processing order update:', error);
             }

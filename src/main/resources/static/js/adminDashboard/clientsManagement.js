@@ -823,11 +823,11 @@ class ClientsManager {
         }
 
         const newStatus = currentStatus === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
-        const action = newStatus === 'ACTIVE' ? 'включване' : 'изключване';
+        const action = newStatus === 'ACTIVE' ? 'Активиране' : 'Деактивиране';
 
         try {
             window.universalLoader?.show(
-                `${newStatus === 'ACTIVE' ? 'Включване' : 'Изключване'} на клиент...`,
+                `${newStatus === 'ACTIVE' ? 'Активиране' : 'Деактивиране'} на клиент...`,
                 'Обновяване на статуса'
             );
 

@@ -34,11 +34,13 @@ public class AdminClientsController {
     private static final Logger log = LoggerFactory.getLogger(AdminClientsController.class);
 
     private final UserService userService;
-    private PasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
 
     @Autowired
-    public AdminClientsController(UserService userService) {
+    public AdminClientsController(UserService userService,
+                                  PasswordEncoder passwordEncoder) {
         this.userService = userService;
+        this.passwordEncoder = passwordEncoder;
     }
 
     /**
@@ -74,7 +76,6 @@ public class AdminClientsController {
                 );
             }
 
-            // Създаване на нов UserEntity
             UserEntity newClient = new UserEntity();
             newClient.setUsername(request.getUsername());
             newClient.setCompanyName(request.getCompanyName());
@@ -148,24 +149,25 @@ public class AdminClientsController {
             Authentication authentication) {
 
         try {
-            log.debug("Admin {} checks username availability: {}", authentication.getName(), username);
-
+            // Валидация на дължината на потребителското име
             if (username == null || username.trim().length() < 3) {
-                return ResponseEntity.badRequest().body(
-                        AdminResponseDTO.error("Потребителското име трябва да е поне 3 символа")
-                );
+                return ResponseEntity.badRequest()
+                        .body(AdminResponseDTO.error("Потребителското име трябва да е поне 3 символа"));
             }
 
-            boolean isAvailable = userService.findUserByUsername(username.trim()).isEmpty();
+            String trimmedUsername = username.trim();
 
-            Map<String, Object> responseData = new HashMap<>();
-            responseData.put("username", username.trim());
-            responseData.put("available", isAvailable);
+            // Проверка дали вече съществува
+            boolean isAvailable = userService.findUserByUsername(trimmedUsername).isEmpty();
 
-            return ResponseEntity.ok(AdminResponseDTO.success(
-                    isAvailable ? "Username is available" : "Username is already taken",
-                    responseData
-            ));
+            // Създаваме DTO с директно полето available
+            AdminResponseDTO response = new AdminResponseDTO();
+            response.setSuccess(true);
+            response.setMessage(isAvailable ? "Username is available" : "Username is already taken");
+            response.setUsername(trimmedUsername);
+            response.setAvailable(isAvailable);
+
+            return ResponseEntity.ok(response);
 
         } catch (Exception e) {
             log.error("Error checking username availability by admin {}: {}", authentication.getName(), e.getMessage(), e);
@@ -173,6 +175,7 @@ public class AdminClientsController {
                     .body(AdminResponseDTO.error("Възникна грешка при проверка на потребителското име"));
         }
     }
+
 
     /**
      * Активиране/деактивиране на клиент
@@ -375,7 +378,7 @@ public class AdminClientsController {
         data.put("email", client.getEmail());
         data.put("phone", client.getPhone());
         data.put("location", client.getLocation());
-        data.put("active", client.getUserStatus());
+        data.put("userStatus", client.getUserStatus());
         data.put("role", client.getRole().toString());
         return data;
     }

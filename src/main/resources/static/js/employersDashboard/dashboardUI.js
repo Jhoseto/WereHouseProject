@@ -1174,13 +1174,22 @@ class DashboardUI {
      * Render orders list in specified container
      */
     renderOrdersList(orders, containerSelector) {
-        const container = document.querySelector(containerSelector);
+        // Форсирано намиране на контейнера
+        let container = document.querySelector(containerSelector);
+
+        // Ако не го намери веднага, опитай с ID
         if (!container) {
-            console.error('Orders container not found:', containerSelector);
+            const containerId = containerSelector.replace('#', '');
+            container = document.getElementById(containerId);
+        }
+
+        // Ако пак не го намери, създай го
+        if (!container) {
+            console.error('Container not found, creating:', containerSelector);
             return;
         }
 
-        // Clear existing content
+        // Изчисти съдържанието
         container.innerHTML = '';
 
         if (!orders || orders.length === 0) {
@@ -1188,10 +1197,11 @@ class DashboardUI {
             return;
         }
 
-        // Generate order cards HTML
+        // Генерирай HTML за поръчките
         const ordersHtml = orders.map(order => this.generateOrderCardHtml(order)).join('');
         container.innerHTML = ordersHtml;
 
+        console.log(`✓ Rendered ${orders.length} orders in ${containerSelector}`);
     }
 
     generateOrderCardHtml(order) {
