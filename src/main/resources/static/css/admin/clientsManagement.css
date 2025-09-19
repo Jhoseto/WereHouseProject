@@ -567,6 +567,11 @@
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
+.status-pending {
+    background: rgba(255, 193, 7, 0.1);
+    color: #856404;
+    border: 1px solid rgba(255, 193, 7, 0.2);
+}
 
 .status-active {
     background: rgba(39, 174, 96, 0.1);
@@ -578,6 +583,53 @@
     background: rgba(231, 76, 60, 0.1);
     color: var(--color-danger);
     border: 1px solid rgba(231, 76, 60, 0.2);
+}
+
+.client-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    min-width: 80px;
+}
+
+.toggle-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.pending-actions {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.pending-actions .btn {
+    padding: 3px 8px;
+    font-size: 0.75rem;
+    border-radius: 4px;
+}
+
+.toggle-label {
+    font-size: 0.7rem;
+    color: var(--color-text-muted);
+    text-align: center;
+    font-weight: 500;
+}
+
+/* Toggle в ACTIVE състояние показва зелен цвят */
+.client-status-toggle input:checked + .toggle-slider {
+    background-color: var(--color-success);
+    border-color: var(--color-success);
+}
+
+/* Toggle в INACTIVE/PENDING състояние показва сив цвят */
+.client-status-toggle input:not(:checked) + .toggle-slider {
+    background-color: #ccc;
+    border-color: #bbb;
 }
 
 .actions-cell {

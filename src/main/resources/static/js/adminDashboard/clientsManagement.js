@@ -1,6 +1,6 @@
 /**
- * CLIENTS MANAGEMENT JAVASCRIPT
- * Управление на клиенти - създаване, търсене, филтриране, сортиране
+ * CLIENTS MANAGEMENT JAVASCRIPT - ПЪЛНО ПОПРАВЕНА ВЕРСИЯ
+ * Управление на клиенти с правилна логика за филтриране и търсене
  */
 
 class ClientsManager {
@@ -17,9 +17,6 @@ class ClientsManager {
         this.init();
     }
 
-    /**
-     * Инициализация на класа
-     */
     init() {
         this.initTabNavigation();
         this.initCreateClientForm();
@@ -36,7 +33,6 @@ class ClientsManager {
 
     initTabNavigation() {
         const tabButtons = document.querySelectorAll('.clients-tab-btn');
-        const tabContents = document.querySelectorAll('.clients-tab-content');
 
         tabButtons.forEach(button => {
             button.addEventListener('click', (e) => {
@@ -49,17 +45,26 @@ class ClientsManager {
     switchTab(tabId) {
         // Обновяваме tab buttons
         document.querySelectorAll('.clients-tab-btn').forEach(btn => btn.classList.remove('active'));
-        document.querySelector(`[data-clients-tab="${tabId}"]`).classList.add('active');
+        const activeBtn = document.querySelector(`[data-clients-tab="${tabId}"]`);
+        if (activeBtn) {
+            activeBtn.classList.add('active');
+        }
 
         // Обновяваме tab contents
         document.querySelectorAll('.clients-tab-content').forEach(content => content.classList.remove('active'));
-        document.getElementById(`${tabId}-client-tab`).classList.add('active');
 
-        this.currentTab = tabId;
+        const targetTabId = tabId === 'create' ? 'create-client-tab' : 'manage-clients-tab';
+        const targetTab = document.getElementById(targetTabId);
 
-        // Ако превключваме към manage tab, зареждаме данните
-        if (tabId === 'manage' && this.clients.length === 0) {
-            this.loadClientsData();
+        if (targetTab) {
+            targetTab.classList.add('active');
+            this.currentTab = tabId;
+
+            if (tabId === 'manage' && this.clients.length === 0) {
+                this.loadClientsData();
+            }
+        } else {
+            console.error(`Tab element not found: ${targetTabId}`);
         }
     }
 
@@ -103,19 +108,16 @@ class ClientsManager {
         const form = document.getElementById('createClientForm');
         const formData = new FormData(form);
 
-        // Валидация
         if (!this.validateCreateClientForm(formData)) {
             return;
         }
 
-        // Показваме loading на бутона
         const submitBtn = document.getElementById('createClientBtn');
         const originalText = submitBtn.innerHTML;
-        submitBtn.classList.add('btn-loading');
         submitBtn.disabled = true;
 
         try {
-            window.universalLoader?.show('Създаване на клиент...', 'Запазване на данните', 'create-client');
+            window.universalLoader?.show('Създаване на клиент...', 'Запазване на данните');
 
             const clientData = {
                 username: formData.get('username'),
@@ -145,15 +147,11 @@ class ClientsManager {
                     'Успешно създаване'
                 );
 
-                // Изчистваме формата
                 form.reset();
 
-                // Презареждаме данните ако сме в manage tab
                 if (this.currentTab === 'manage') {
                     await this.loadClientsData();
                 }
-
-                // Превключваме към manage tab
                 this.switchTab('manage');
 
             } else {
@@ -171,7 +169,6 @@ class ClientsManager {
             );
         } finally {
             window.universalLoader?.hide();
-            submitBtn.classList.remove('btn-loading');
             submitBtn.disabled = false;
             submitBtn.innerHTML = originalText;
         }
@@ -184,22 +181,22 @@ class ClientsManager {
         const passwordConfirm = formData.get('passwordConfirm');
 
         if (!username || username.trim().length < 3) {
-            window.toastManager?.error('Потребителското име трябва да е поне 3 символа', 'Валидационна грешка');
+            window.toastManager?.error('Потребителското име трябва да е поне 3 символа');
             return false;
         }
 
         if (!email || !this.isValidEmail(email)) {
-            window.toastManager?.error('Моля въведете валиден email адрес', 'Валидационна грешка');
+            window.toastManager?.error('Моля въведете валиден email адрес');
             return false;
         }
 
         if (!password || password.length < 6) {
-            window.toastManager?.error('Паролата трябва да е поне 6 символа', 'Валидационна грешка');
+            window.toastManager?.error('Паролата трябва да е поне 6 символа');
             return false;
         }
 
         if (password !== passwordConfirm) {
-            window.toastManager?.error('Паролите не съвпадат', 'Валидационна грешка');
+            window.toastManager?.error('Паролите не съвпадат');
             return false;
         }
 
@@ -250,7 +247,13 @@ class ClientsManager {
         try {
             this.showTableLoading(true);
 
-            const response = await fetch('/admin/clients/list');
+            const response = await fetch('/admin/clients/list', {
+                headers: {
+                    'Accept': 'application/json',
+                    [window.csrfHeader]: window.csrfToken
+                }
+            });
+
             const result = await response.json();
 
             if (response.ok && result.success) {
@@ -271,35 +274,32 @@ class ClientsManager {
                 'Грешка при зареждане'
             );
             this.clients = [];
+            this.filteredClients = [];
         } finally {
             this.showTableLoading(false);
         }
     }
 
     // ==========================================
-    // FILTERS AND SEARCH
+    // IMPROVED FILTERS AND SEARCH - МИГНОВЕНО ТЪРСЕНЕ
     // ==========================================
 
     initFiltersAndSearch() {
-        // Quick search
+        // Quick search - мигновено интелигентно търсене
         const quickSearch = document.getElementById('clientsQuickSearch');
         if (quickSearch) {
-            let timeout;
             quickSearch.addEventListener('input', (e) => {
-                clearTimeout(timeout);
-                timeout = setTimeout(() => {
-                    this.filters.quickSearch = e.target.value.trim();
-                    this.applyFilters();
-                }, 300);
+                this.filters.quickSearch = e.target.value.trim();
+                this.applyFiltersInstantly(); // Мигновено без timeout
             });
         }
 
-        // Status filter
+        // Status filter - поправена логика
         const statusFilter = document.getElementById('clientsStatusFilter');
         if (statusFilter) {
             statusFilter.addEventListener('change', (e) => {
                 this.filters.status = e.target.value;
-                this.applyFilters();
+                this.applyFiltersInstantly();
             });
         }
 
@@ -308,45 +308,77 @@ class ClientsManager {
         if (locationFilter) {
             locationFilter.addEventListener('change', (e) => {
                 this.filters.location = e.target.value;
-                this.applyFilters();
+                this.applyFiltersInstantly();
             });
         }
 
-        // Advanced filters
-        const advancedFilters = ['clientsUsernameFilter', 'clientsEmailFilter', 'clientsPhoneFilter', 'clientsUserCodeFilter'];
-        advancedFilters.forEach(filterId => {
-            const filter = document.getElementById(filterId);
+        // Advanced filters - поправени имена на полетата
+        const advancedFilters = [
+            { id: 'clientsUsernameFilter', key: 'username' },
+            { id: 'clientsEmailFilter', key: 'email' },
+            { id: 'clientsPhoneFilter', key: 'phone' },
+            { id: 'clientsLocationFilter', key: 'location' } // Променено от userCode на location
+        ];
+
+        advancedFilters.forEach(filterConfig => {
+            const filter = document.getElementById(filterConfig.id);
             if (filter) {
-                let timeout;
                 filter.addEventListener('input', (e) => {
-                    clearTimeout(timeout);
-                    timeout = setTimeout(() => {
-                        const filterKey = filterId.replace('clients', '').replace('Filter', '').toLowerCase();
-                        this.filters[filterKey] = e.target.value.trim();
-                        this.applyFilters();
-                    }, 300);
+                    this.filters[filterConfig.key] = e.target.value.trim();
+                    this.applyFiltersInstantly(); // Мигновено
                 });
             }
         });
     }
 
+    /**
+     * Мигновено прилагане на филтри без timeout
+     */
+    applyFiltersInstantly() {
+        this.applyFilters();
+    }
+
+    /**
+     * ЧИСТА ENUM ЛОГИКА ЗА ФИЛТРИРАНЕ И ТЪРСЕНЕ
+     */
     applyFilters() {
         let filtered = [...this.clients];
 
-        // Quick search - търси в username, email, companyName
+        // Интелигентно бързо търсене - търси във всички текстови полета
         if (this.filters.quickSearch) {
-            const search = this.filters.quickSearch.toLowerCase();
-            filtered = filtered.filter(client =>
-                (client.username && client.username.toLowerCase().includes(search)) ||
-                (client.email && client.email.toLowerCase().includes(search)) ||
-                (client.companyName && client.companyName.toLowerCase().includes(search))
-            );
+            const searchTerms = this.normalizeSearchText(this.filters.quickSearch);
+            filtered = filtered.filter(client => {
+                // Създаваме "търсимия текст" от всички полета на клиента
+                const searchableText = [
+                    client.username,
+                    client.companyName,
+                    client.email,
+                    client.phone,
+                    client.location,
+                    client.userCode?.toString()
+                ].filter(field => field) // Премахваме null/undefined
+                    .join(' ') // Съединяваме всичко в един текст
+                    .toLowerCase();
+
+                // Проверяваме дали ВСИЧКИ думи от търсенето са включени
+                return searchTerms.every(term => searchableText.includes(term));
+            });
         }
 
-        // Status filter
+        // Status filter - само ENUM логика
         if (this.filters.status) {
-            const isActive = this.filters.status === 'active';
-            filtered = filtered.filter(client => client.active === isActive);
+            filtered = filtered.filter(client => {
+                const clientStatus = this.getClientEffectiveStatus(client);
+
+                if (this.filters.status === 'active') {
+                    return clientStatus === 'ACTIVE';
+                } else if (this.filters.status === 'inactive') {
+                    return clientStatus === 'INACTIVE' || clientStatus === 'PENDING';
+                } else if (this.filters.status === 'pending') {
+                    return clientStatus === 'PENDING';
+                }
+                return true;
+            });
         }
 
         // Location filter
@@ -356,14 +388,14 @@ class ClientsManager {
             );
         }
 
-        // Advanced filters
+        // Advanced filters - точно търсене в специфични полета
         Object.keys(this.filters).forEach(key => {
             if (key !== 'quickSearch' && key !== 'status' && key !== 'location' && this.filters[key]) {
-                const value = this.filters[key].toLowerCase();
+                const searchValue = this.filters[key].toLowerCase();
                 filtered = filtered.filter(client => {
                     const clientValue = client[key];
                     if (clientValue === null || clientValue === undefined) return false;
-                    return clientValue.toString().toLowerCase().includes(value);
+                    return clientValue.toString().toLowerCase().includes(searchValue);
                 });
             }
         });
@@ -376,6 +408,32 @@ class ClientsManager {
         this.updateFilterIndicator();
     }
 
+    /**
+     * Нормализира текста за търсене - разделя на думи и ги подготвя
+     */
+    normalizeSearchText(searchText) {
+        return searchText
+            .toLowerCase()
+            .trim()
+            .split(/\s+/) // Разделяме по space, tab, newline
+            .filter(term => term.length > 0); // Премахваме празни думи
+    }
+
+    /**
+     * ЧИСТА ENUM ЛОГИКА - без булеви полета
+     * Работи изключително с userStatus полето от backend-а
+     */
+    getClientEffectiveStatus(client) {
+        // Работим само с userStatus ENUM полето
+        if (client.userStatus) {
+            return client.userStatus;
+        }
+
+        // Ако няма userStatus, връщаме INACTIVE като безопасен default
+        // Това означава че клиентът не е правилно конфигуриран в системата
+        return 'INACTIVE';
+    }
+
     initLocationFilter() {
         const locationFilter = document.getElementById('clientsLocationFilter');
         if (!locationFilter) return;
@@ -385,7 +443,6 @@ class ClientsManager {
             .filter(location => location && location.trim())
         )].sort();
 
-        // Изчистваме текущите опции (освен първата)
         locationFilter.innerHTML = '<option value="">Всички локации</option>';
 
         locations.forEach(location => {
@@ -397,21 +454,20 @@ class ClientsManager {
     }
 
     // ==========================================
-    // SORTING
+    // SORTING - ПОПРАВЕНА ЛОГИКА
     // ==========================================
 
     initSorting() {
-        // Sort dropdown
         const sortBy = document.getElementById('clientsSortBy');
         if (sortBy) {
             sortBy.addEventListener('change', (e) => {
                 this.sortBy = e.target.value;
+                this.updateSortUI();
                 this.sortClients();
                 this.renderClientsTable();
             });
         }
 
-        // Sort direction button
         const sortDirectionBtn = document.getElementById('sortDirectionBtn');
         if (sortDirectionBtn) {
             sortDirectionBtn.addEventListener('click', () => {
@@ -424,10 +480,11 @@ class ClientsManager {
         sortableHeaders.forEach(header => {
             header.addEventListener('click', (e) => {
                 const sortField = header.getAttribute('data-sort');
+                this.sortBy = sortField === 'active' ? 'userStatus' : sortField;
+
                 if (this.sortBy === sortField) {
                     this.toggleSortDirection();
                 } else {
-                    this.sortBy = sortField;
                     this.sortDirection = 'asc';
                 }
                 this.updateSortUI();
@@ -441,6 +498,12 @@ class ClientsManager {
         this.filteredClients.sort((a, b) => {
             let aValue = a[this.sortBy];
             let bValue = b[this.sortBy];
+
+            // Специална логика за userStatus sorting
+            if (this.sortBy === 'userStatus' || this.sortBy === 'active') {
+                aValue = this.getClientEffectiveStatus(a);
+                bValue = this.getClientEffectiveStatus(b);
+            }
 
             // Handle null/undefined values
             if (aValue === null || aValue === undefined) aValue = '';
@@ -473,7 +536,8 @@ class ClientsManager {
         }
 
         if (sortBy) {
-            sortBy.value = this.sortBy;
+            const htmlSortValue = this.sortBy === 'userStatus' ? 'active' : this.sortBy;
+            sortBy.value = htmlSortValue;
         }
     }
 
@@ -516,9 +580,8 @@ class ClientsManager {
         const row = document.createElement('tr');
         row.setAttribute('data-client-id', client.id);
 
-        const statusBadge = client.active
-            ? '<span class="status-badge status-active"><i class="bi bi-check-circle-fill"></i> Активен</span>'
-            : '<span class="status-badge status-inactive"><i class="bi bi-x-circle-fill"></i> Неактивен</span>';
+        const statusBadge = this.createStatusBadge(client);
+        const actionButtons = this.createActionButtons(client);
 
         row.innerHTML = `
             <td class="id-cell">${client.id}</td>
@@ -540,12 +603,7 @@ class ClientsManager {
             <td class="status-cell">${statusBadge}</td>
             <td class="actions-cell">
                 <div class="action-buttons">
-                    <button type="button" 
-                            class="btn btn-sm ${client.active ? 'btn-warning' : 'btn-success'}" 
-                            onclick="clientsManager.toggleClientStatus(${client.id}, ${!client.active})"
-                            title="${client.active ? 'Деактивирай клиент' : 'Активирай клиент'}">
-                        <i class="bi bi-${client.active ? 'pause' : 'play'}-circle"></i>
-                    </button>
+                    ${actionButtons}
                     
                     <button type="button" 
                             class="btn btn-sm btn-info" 
@@ -568,20 +626,209 @@ class ClientsManager {
     }
 
     // ==========================================
-    // CLIENT ACTIONS
+    // HELPER METHODS - ПОПРАВЕНИ
     // ==========================================
 
-    async toggleClientStatus(clientId, newStatus) {
+    isClientActive(client) {
+        return this.getClientEffectiveStatus(client) === 'ACTIVE';
+    }
+
+    isClientPending(client) {
+        return this.getClientEffectiveStatus(client) === 'PENDING';
+    }
+
+    isClientInactive(client) {
+        return this.getClientEffectiveStatus(client) === 'INACTIVE';
+    }
+
+    getClientStatusForSorting(client) {
+        return this.getClientEffectiveStatus(client);
+    }
+
+    createStatusBadge(client) {
+        const status = this.getClientEffectiveStatus(client);
+
+        switch(status) {
+            case 'PENDING':
+                return '<span class="status-badge status-pending"><i class="bi bi-clock-fill"></i> Чака одобрение</span>';
+            case 'ACTIVE':
+                return '<span class="status-badge status-active"><i class="bi bi-check-circle-fill"></i> Активен</span>';
+            case 'INACTIVE':
+                return '<span class="status-badge status-inactive"><i class="bi bi-x-circle-fill"></i> Неактивен</span>';
+            default:
+                return '<span class="status-badge status-unknown"><i class="bi bi-question-circle-fill"></i> Неизвестен</span>';
+        }
+    }
+
+    /**
+     * ПОПРАВЕНИ ACTION BUTTONS БЕЗ ONCHANGE КОНФЛИКТИ
+     */
+    createActionButtons(client) {
+        const status = this.getClientEffectiveStatus(client);
+
+        if (status === 'PENDING') {
+            // PENDING клиенти - toggle е OFF и disabled, плюс approve/reject бутони
+            return `
+            <div class="client-controls">
+                <div class="toggle-container">
+                    <label class="client-status-toggle" title="Чака одобрение">
+                        <input type="checkbox" disabled>
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <small class="toggle-label">Изключен</small>
+                </div>
+                <div class="pending-actions">
+                    <button type="button" 
+                            class="btn btn-sm btn-success" 
+                            onclick="clientsManager.approveClient(${client.id})"
+                            title="Одобри и активирай клиент">
+                        <i class="bi bi-check"></i> Одобри
+                    </button>
+                    <button type="button" 
+                            class="btn btn-sm btn-danger" 
+                            onclick="clientsManager.rejectClient(${client.id})"
+                            title="Отхвърли клиент">
+                        <i class="bi bi-x"></i> Отхвърли
+                    </button>
+                </div>
+            </div>`;
+        } else {
+            // ACTIVE/INACTIVE клиенти - работещ toggle превключвател БЕЗ onchange
+            const isActive = status === 'ACTIVE';
+            return `
+            <div class="client-controls">
+                <div class="toggle-container">
+                    <label class="client-status-toggle" 
+                           title="${isActive ? 'Включен - кликни за изключване' : 'Изключен - кликни за включване'}"
+                           onclick="clientsManager.handleToggleClick(${client.id}, event)">
+                        <input type="checkbox" ${isActive ? 'checked' : ''} readonly>
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <small class="toggle-label">${isActive ? 'Включен' : 'Изключен'}</small>
+                </div>
+            </div>`;
+        }
+    }
+
+    /**
+     * НОВА ЛОГИКА ЗА TOGGLE БЕЗ ONCHANGE КОНФЛИКТИ
+     */
+    handleToggleClick(clientId, event) {
+        event.preventDefault(); // Спираме default поведението
+        event.stopPropagation(); // Спираме propagation
+
+        this.toggleClientStatus(clientId);
+    }
+
+    // ==========================================
+    // CLIENT ACTIONS - ПОПРАВЕНИ
+    // ==========================================
+
+    async approveClient(clientId) {
         const client = this.clients.find(c => c.id === clientId);
         if (!client) return;
 
-        const action = newStatus ? 'активиране' : 'деактивиране';
+        try {
+            window.universalLoader?.show('Одобряване на клиент...', 'Автоматично активиране');
+
+            const response = await fetch(`/admin/clients/${clientId}/approve`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    [window.csrfHeader]: window.csrfToken
+                }
+            });
+
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                // Само ENUM логика - премахваме client.active
+                client.userStatus = 'ACTIVE';
+
+                // Мигновено пререндериране
+                this.applyFiltersInstantly();
+
+                window.toastManager?.success(
+                    `Клиент "${client.username}" е одобрен и активиран`,
+                    'Включен в системата'
+                );
+            } else {
+                throw new Error(result.message || 'Грешка при одобрение на клиента');
+            }
+
+        } catch (error) {
+            console.error('Грешка при одобрение на клиент:', error);
+            window.toastManager?.error(
+                'Възникна грешка при одобрение на клиента',
+                'Грешка при активиране'
+            );
+        } finally {
+            window.universalLoader?.hide();
+        }
+    }
+
+    async rejectClient(clientId) {
+        const client = this.clients.find(c => c.id === clientId);
+        if (!client) return;
+
+        try {
+            window.universalLoader?.show('Отхвърляне на клиент...', 'Обновяване на статуса');
+
+            const response = await fetch(`/admin/clients/${clientId}/reject`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    [window.csrfHeader]: window.csrfToken
+                }
+            });
+
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                // Само ENUM логика - премахваме client.active
+                client.userStatus = 'INACTIVE';
+
+                // Мигновено пререндериране
+                this.applyFiltersInstantly();
+
+                window.toastManager?.success(
+                    `Клиент "${client.username}" е отхвърлен`,
+                    'Успешно отхвърляне'
+                );
+            } else {
+                throw new Error(result.message || 'Грешка при отхвърляне на клиента');
+            }
+
+        } catch (error) {
+            console.error('Грешка при отхвърляне на клиент:', error);
+            window.toastManager?.error(
+                'Възникна грешка при отхвърляне на клиента',
+                'Грешка при обновяване'
+            );
+        } finally {
+            window.universalLoader?.hide();
+        }
+    }
+
+    async toggleClientStatus(clientId) {
+        const client = this.clients.find(c => c.id === clientId);
+        if (!client) return;
+
+        const currentStatus = this.getClientEffectiveStatus(client);
+
+        // Проверяваме че не е PENDING
+        if (currentStatus === 'PENDING') {
+            window.toastManager?.warning('Този клиент чака одобрение и не може да бъде променян директно');
+            return;
+        }
+
+        const newStatus = currentStatus === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+        const action = newStatus === 'ACTIVE' ? 'включване' : 'изключване';
 
         try {
             window.universalLoader?.show(
-                `${newStatus ? 'Активиране' : 'Деактивиране'} на клиент...`,
-                'Обновяване на статуса',
-                'toggle-client-status'
+                `${newStatus === 'ACTIVE' ? 'Включване' : 'Изключване'} на клиент...`,
+                'Обновяване на статуса'
             );
 
             const response = await fetch(`/admin/clients/${clientId}/toggle-status`, {
@@ -590,21 +837,23 @@ class ClientsManager {
                     'Content-Type': 'application/json',
                     [window.csrfHeader]: window.csrfToken
                 },
-                body: JSON.stringify({ active: newStatus })
+                body: JSON.stringify({
+                    userStatus: newStatus
+                })
             });
 
             const result = await response.json();
 
             if (response.ok && result.success) {
-                // Обновяваме локалните данни
-                client.active = newStatus;
+                // САМО ENUM логика - премахваме client.active
+                client.userStatus = newStatus;
 
-                // Пререндериране на таблицата
-                this.applyFilters();
+                // МИГНОВЕНО пререндериране без забавяне
+                this.applyFiltersInstantly();
 
                 window.toastManager?.success(
-                    `Клиент "${client.username}" е ${newStatus ? 'активиран' : 'деактивиран'} успешно`,
-                    `Успешно ${action}`
+                    `Клиент "${client.username}" е ${newStatus === 'ACTIVE' ? 'включен' : 'изключен'}`,
+                    `Статус обновен`
                 );
             } else {
                 throw new Error(result.message || `Грешка при ${action} на клиента`);
@@ -614,12 +863,16 @@ class ClientsManager {
             console.error(`Грешка при ${action} на клиент:`, error);
             window.toastManager?.error(
                 `Възникна грешка при ${action} на клиента`,
-                'Грешка при обновяване'
+                'Грешка при промяна'
             );
         } finally {
             window.universalLoader?.hide();
         }
     }
+
+    // ==========================================
+    // MESSAGE/EMAIL FUNCTIONALITY
+    // ==========================================
 
     openSendMessageModal(clientId) {
         const client = this.clients.find(c => c.id === clientId);
@@ -629,7 +882,6 @@ class ClientsManager {
         document.getElementById('messageRecipientName').textContent = client.username;
         document.getElementById('messageRecipientEmail').textContent = client.email || 'Няма email';
 
-        // Изчистваме формата
         document.getElementById('sendMessageForm').reset();
         document.getElementById('messageClientId').value = clientId;
 
@@ -645,16 +897,16 @@ class ClientsManager {
         const formData = new FormData(form);
 
         const clientId = formData.get('clientId');
-        const subject = formData.get('subject');
-        const content = formData.get('content');
+        const subject = document.getElementById('messageSubject').value;
+        const content = document.getElementById('messageContent').value;
 
         if (!subject || !content) {
-            window.toastManager?.error('Моля попълнете всички полета', 'Валидационна грешка');
+            window.toastManager?.error('Моля попълнете всички полета');
             return;
         }
 
         try {
-            window.universalLoader?.show('Изпращане на съобщение...', 'Моля изчакайте', 'send-message');
+            window.universalLoader?.show('Изпращане на съобщение...', 'Моля изчакайте');
 
             const response = await fetch('/admin/clients/send-message', {
                 method: 'POST',
@@ -673,20 +925,14 @@ class ClientsManager {
 
             if (response.ok && result.success) {
                 this.closeSendMessageModal();
-                window.toastManager?.success(
-                    'Съобщението е изпратено успешно',
-                    'Успешно изпращане'
-                );
+                window.toastManager?.success('Съобщението е изпратено успешно');
             } else {
                 throw new Error(result.message || 'Грешка при изпращане на съобщението');
             }
 
         } catch (error) {
             console.error('Грешка при изпращане на съобщение:', error);
-            window.toastManager?.error(
-                'Възникна грешка при изпращане на съобщението',
-                'Грешка при изпращане'
-            );
+            window.toastManager?.error('Възникна грешка при изпращане на съобщението');
         } finally {
             window.universalLoader?.hide();
         }
@@ -694,13 +940,8 @@ class ClientsManager {
 
     openSendEmailModal(clientId) {
         const client = this.clients.find(c => c.id === clientId);
-        if (!client) return;
-
-        if (!client.email) {
-            window.toastManager?.warning(
-                'Този клиент няма настроен email адрес',
-                'Няма email адрес'
-            );
+        if (!client || !client.email) {
+            window.toastManager?.warning('Този клиент няма настроен email адрес');
             return;
         }
 
@@ -708,7 +949,6 @@ class ClientsManager {
         document.getElementById('emailRecipientName').textContent = client.username;
         document.getElementById('emailRecipientEmail').textContent = client.email;
 
-        // Изчистваме формата
         document.getElementById('sendEmailForm').reset();
         document.getElementById('emailClientId').value = clientId;
 
@@ -729,12 +969,12 @@ class ClientsManager {
         const copyToAdmin = formData.get('copyToAdmin') === 'on';
 
         if (!subject || !content) {
-            window.toastManager?.error('Моля попълнете всички полета', 'Валидационна грешка');
+            window.toastManager?.error('Моля попълнете всички полета');
             return;
         }
 
         try {
-            window.universalLoader?.show('Изпращане на email...', 'Моля изчакайте', 'send-email');
+            window.universalLoader?.show('Изпращане на email...', 'Моля изчакайте');
 
             const response = await fetch('/admin/clients/send-email', {
                 method: 'POST',
@@ -754,20 +994,14 @@ class ClientsManager {
 
             if (response.ok && result.success) {
                 this.closeSendEmailModal();
-                window.toastManager?.success(
-                    'Email-ът е изпратен успешно',
-                    'Успешно изпращане'
-                );
+                window.toastManager?.success('Email-ът е изпратен успешно');
             } else {
                 throw new Error(result.message || 'Грешка при изпращане на email-а');
             }
 
         } catch (error) {
             console.error('Грешка при изпращане на email:', error);
-            window.toastManager?.error(
-                'Възникна грешка при изпращане на email-а',
-                'Грешка при изпращане'
-            );
+            window.toastManager?.error('Възникна грешка при изпращане на email-а');
         } finally {
             window.universalLoader?.hide();
         }
@@ -789,8 +1023,8 @@ class ClientsManager {
         const displayedCount = document.getElementById('displayedClientsCount');
         const totalCount = document.getElementById('totalClientsCount');
 
-        if (displayedCount) displayedCount.textContent = this.filteredClients.size;
-        if (totalCount) totalCount.textContent = this.clients.size;
+        if (displayedCount) displayedCount.textContent = this.filteredClients.length;
+        if (totalCount) totalCount.textContent = this.clients.length;
     }
 
     updateFilterIndicator() {
@@ -803,12 +1037,24 @@ class ClientsManager {
     }
 
     updatePagination() {
-        // Базова pagination логика - може да се разшири при нужда
         const totalPages = Math.ceil(this.filteredClients.length / this.itemsPerPage);
         const pagination = document.getElementById('clientsPagination');
 
         if (pagination) {
             pagination.style.display = totalPages > 1 ? 'flex' : 'none';
+        }
+
+        const paginationStart = document.getElementById('paginationStart');
+        const paginationEnd = document.getElementById('paginationEnd');
+        const paginationTotal = document.getElementById('paginationTotal');
+
+        if (paginationStart && paginationEnd && paginationTotal) {
+            const startIndex = (this.currentPage - 1) * this.itemsPerPage + 1;
+            const endIndex = Math.min(this.currentPage * this.itemsPerPage, this.filteredClients.length);
+
+            paginationStart.textContent = startIndex;
+            paginationEnd.textContent = endIndex;
+            paginationTotal.textContent = this.filteredClients.length;
         }
     }
 
@@ -825,14 +1071,13 @@ class ClientsManager {
 }
 
 // ==========================================
-// GLOBAL FUNCTIONS (за onclick handlers)
+// GLOBAL FUNCTIONS
 // ==========================================
 
 function resetCreateClientForm() {
     const form = document.getElementById('createClientForm');
     if (form) {
         form.reset();
-        // Изчистваме validation states
         form.querySelectorAll('.is-valid, .is-invalid').forEach(el => {
             el.classList.remove('is-valid', 'is-invalid');
         });
@@ -841,7 +1086,10 @@ function resetCreateClientForm() {
 
 function togglePasswordVisibility(inputId) {
     const input = document.getElementById(inputId);
+    if (!input) return;
+
     const button = input.parentElement.querySelector('.password-toggle-btn i');
+    if (!button) return;
 
     if (input.type === 'password') {
         input.type = 'text';
@@ -857,7 +1105,7 @@ function clearQuickSearch() {
     if (input && window.clientsManager) {
         input.value = '';
         window.clientsManager.filters.quickSearch = '';
-        window.clientsManager.applyFilters();
+        window.clientsManager.applyFiltersInstantly();
     }
 }
 
@@ -865,17 +1113,24 @@ function clearAllFilters() {
     if (!window.clientsManager) return;
 
     // Изчистваме всички filter inputs
-    document.getElementById('clientsQuickSearch').value = '';
-    document.getElementById('clientsStatusFilter').value = '';
-    document.getElementById('clientsLocationFilter').value = '';
-    document.getElementById('clientsUsernameFilter').value = '';
-    document.getElementById('clientsEmailFilter').value = '';
-    document.getElementById('clientsPhoneFilter').value = '';
-    document.getElementById('clientsUserCodeFilter').value = '';
+    const filterIds = [
+        'clientsQuickSearch',
+        'clientsStatusFilter',
+        'clientsLocationFilter',
+        'clientsUsernameFilter',
+        'clientsEmailFilter',
+        'clientsPhoneFilter'
+    ];
 
-    // Изчистваме filters object
+    filterIds.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.value = '';
+        }
+    });
+
     window.clientsManager.filters = {};
-    window.clientsManager.applyFilters();
+    window.clientsManager.applyFiltersInstantly();
 }
 
 function refreshClientsData() {
@@ -889,36 +1144,44 @@ function toggleAdvancedFilters() {
     const toggleIcon = document.getElementById('advancedToggleIcon');
     const toggleText = document.getElementById('advancedToggleText');
 
-    if (advancedFilters.style.display === 'none') {
-        advancedFilters.style.display = 'block';
-        toggleIcon.className = 'bi bi-chevron-up';
-        toggleText.textContent = 'Скрий разширени филтри';
-    } else {
-        advancedFilters.style.display = 'none';
-        toggleIcon.className = 'bi bi-chevron-down';
-        toggleText.textContent = 'Покажи разширени филтри';
+    if (advancedFilters && toggleIcon && toggleText) {
+        if (advancedFilters.style.display === 'none') {
+            advancedFilters.style.display = 'block';
+            toggleIcon.className = 'bi bi-chevron-up';
+            toggleText.textContent = 'Скрий разширени филтри';
+        } else {
+            advancedFilters.style.display = 'none';
+            toggleIcon.className = 'bi bi-chevron-down';
+            toggleText.textContent = 'Покажи разширени филтри';
+        }
     }
 }
 
 function exportClientsData() {
     if (!window.clientsManager) return;
 
-    // Простa CSV export функционалност
     const clients = window.clientsManager.filteredClients;
     const headers = ['ID', 'Потребителско име', 'Компания', 'Email', 'Телефон', 'Локация', 'Код', 'Статус'];
 
     const csvContent = [
         headers.join(','),
-        ...clients.map(client => [
-            client.id,
-            `"${client.username}"`,
-            `"${client.companyName || ''}"`,
-            `"${client.email || ''}"`,
-            `"${client.phone || ''}"`,
-            `"${client.location || ''}"`,
-            client.userCode || '',
-            client.active ? 'Активен' : 'Неактивен'
-        ].join(','))
+        ...clients.map(client => {
+            // Само ENUM логика за определяне на статуса
+            const status = window.clientsManager.getClientEffectiveStatus(client);
+            const statusText = status === 'PENDING' ? 'Чака одобрение' :
+                status === 'ACTIVE' ? 'Активен' : 'Неактивен';
+
+            return [
+                client.id,
+                `"${client.username}"`,
+                `"${client.companyName || ''}"`,
+                `"${client.email || ''}"`,
+                `"${client.phone || ''}"`,
+                `"${client.location || ''}"`,
+                client.userCode || '',
+                statusText
+            ].join(',');
+        })
     ].join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -928,12 +1191,52 @@ function exportClientsData() {
     link.click();
 }
 
+function goToPreviousPage() {
+    if (window.clientsManager && window.clientsManager.currentPage > 1) {
+        window.clientsManager.currentPage--;
+        window.clientsManager.renderClientsTable();
+    }
+}
+
+function goToNextPage() {
+    if (window.clientsManager) {
+        const totalPages = Math.ceil(window.clientsManager.filteredClients.length / window.clientsManager.itemsPerPage);
+        if (window.clientsManager.currentPage < totalPages) {
+            window.clientsManager.currentPage++;
+            window.clientsManager.renderClientsTable();
+        }
+    }
+}
+
+function closeSendMessageModal() {
+    if (window.clientsManager) {
+        window.clientsManager.closeSendMessageModal();
+    }
+}
+
+function sendClientMessage() {
+    if (window.clientsManager) {
+        window.clientsManager.sendClientMessage();
+    }
+}
+
+function closeSendEmailModal() {
+    if (window.clientsManager) {
+        window.clientsManager.closeSendEmailModal();
+    }
+}
+
+function sendClientEmail() {
+    if (window.clientsManager) {
+        window.clientsManager.sendClientEmail();
+    }
+}
+
 // ==========================================
 // INITIALIZATION
 // ==========================================
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Инициализираме ClientsManager само ако сме в clients tab
     if (document.querySelector('.clients-management-container')) {
         window.clientsManager = new ClientsManager();
         console.log('✓ ClientsManager инициализиран');
