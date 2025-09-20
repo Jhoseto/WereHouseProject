@@ -376,7 +376,6 @@ class DashboardApi {
         }
     }
 
-
     /**
      * Update product quantity in order (with change tracking)
      */
@@ -398,95 +397,6 @@ class DashboardApi {
 
         } catch (error) {
             console.error(`Error updating quantity for product ${productId} in order ${orderId}:`, error);
-            throw error;
-        }
-    }
-
-    /**
-     * Save order item changes - НУЖЕН МЕТОД ЗА UI
-     */
-    async saveOrderItemChanges(orderId, changes) {
-        try {
-            const requestData = { changes: changes };
-            const response = await this.makeRequest('POST', `/order/${orderId}/update-items`, requestData);
-            const data = await response.json();
-
-            this.clearOrderCache(orderId);
-            return data;
-        } catch (error) {
-            console.error(`Error saving changes for order ${orderId}:`, error);
-            throw error;
-        }
-    }
-
-    /**
-     * Approve single product - НУЖЕН МЕТОД ЗА UI
-     */
-    async approveProduct(orderId, productId) {
-        try {
-            const requestData = {
-                orderId: orderId,
-                productId: productId,
-                action: 'approve'
-            };
-
-            const response = await this.makeRequest('POST', `/order/${orderId}/product/${productId}/approve`, requestData);
-            const data = await response.json();
-
-            this.clearOrderCache(orderId);
-            return data;
-
-        } catch (error) {
-            console.error(`Error approving product ${productId} in order ${orderId}:`, error);
-            throw error;
-        }
-    }
-
-    /**
-     * Reject single product - НУЖЕН МЕТОД ЗА UI
-     */
-    async rejectProduct(orderId, productId, reason) {
-        try {
-            const requestData = {
-                orderId: orderId,
-                productId: productId,
-                rejectionReason: reason,
-                action: 'reject'
-            };
-
-            const response = await this.makeRequest('POST', `/order/${orderId}/product/${productId}/reject`, requestData);
-            const data = await response.json();
-
-            this.clearOrderCache(orderId);
-            return data;
-
-        } catch (error) {
-            console.error(`Error rejecting product ${productId} in order ${orderId}:`, error);
-            throw error;
-        }
-    }
-
-    /**
-     * Cancel entire order - НУЖЕН МЕТОД ЗА UI
-     */
-    async cancelOrder(orderId, reason) {
-        try {
-            const requestData = {
-                orderId: orderId,
-                rejectionReason: reason,
-                action: 'cancel'
-            };
-
-            const response = await this.makeRequest('POST', `/order/${orderId}/cancel`, requestData);
-            const data = await response.json();
-
-            this.clearOrderCache(orderId);
-            this.clearCache(); // Clear all cache since counters will change
-
-            return data;
-
-        } catch (error) {
-            console.error(`Error canceling order ${orderId}:`, error);
             throw error;
         }
     }
@@ -515,49 +425,13 @@ class DashboardApi {
     }
 
     /**
-     * Add operator note to order
-     */
-    async addOperatorNote(orderId, note) {
-        try {
-            const requestData = {
-                orderId: orderId,
-                operatorNote: note
-            };
-
-            const response = await this.makeRequest('POST', `/order/${orderId}/note`, requestData);
-            const data = await response.json();
-
-            this.clearOrderCache(orderId);
-            return data;
-
-        } catch (error) {
-            console.error(`Error adding note to order ${orderId}:`, error);
-            throw error;
-        }
-    }
-
-    /**
-     * Save order changes without approving (draft state)
-     */
-    async saveOrderChanges(orderId) {
-        try {
-            const response = await this.makeRequest('PUT', `/order/${orderId}/save`);
-            const data = await response.json();
-
-            this.clearOrderCache(orderId);
-            return data;
-
-        } catch (error) {
-            console.error(`Error saving changes for order ${orderId}:`, error);
-            throw error;
-        }
-    }
-
-    /**
-     * Approve entire order (with automatic correction message if modified)
+     * Approve entire order (ЕДИНСТВЕНА ПРАВИЛНА ВЕРСИЯ)
+     * Ако поръчката е модифицирана, автоматично изпраща correction message
      */
     async approveOrder(orderId, operatorNote = '') {
         try {
+            console.log(`Approving order ${orderId} with note: "${operatorNote}"`);
+
             const requestData = {
                 operatorNote: operatorNote
             };
@@ -565,9 +439,11 @@ class DashboardApi {
             const response = await this.makeRequest('POST', `/order/${orderId}/approve`, requestData);
             const data = await response.json();
 
+            // ВАЖНО: Изчистваме целия cache за правилно обновяване на UI
             this.clearOrderCache(orderId);
-            this.clearCache(); // Clear all cache since counters will change
+            this.clearCache(); // Изчиства и counters за правилно обновяване
 
+            console.log(`Order ${orderId} approved successfully:`, data);
             return data;
 
         } catch (error) {
@@ -577,10 +453,12 @@ class DashboardApi {
     }
 
     /**
-     * Reject entire order with reason
+     * Reject entire order with reason (ЕДИНСТВЕНА ПРАВИЛНА ВЕРСИЯ)
      */
     async rejectOrder(orderId, rejectionReason) {
         try {
+            console.log(`Rejecting order ${orderId} with reason: "${rejectionReason}"`);
+
             const requestData = {
                 rejectionReason: rejectionReason
             };
@@ -588,9 +466,11 @@ class DashboardApi {
             const response = await this.makeRequest('POST', `/order/${orderId}/reject`, requestData);
             const data = await response.json();
 
+            // ВАЖНО: Изчистваме целия cache за правилно обновяване на UI
             this.clearOrderCache(orderId);
-            this.clearCache(); // Clear all cache since counters will change
+            this.clearCache(); // Изчиства и counters за правилно обновяване
 
+            console.log(`Order ${orderId} rejected successfully:`, data);
             return data;
 
         } catch (error) {
@@ -600,63 +480,52 @@ class DashboardApi {
     }
 
     /**
-     * Get order changes (diff between original and current state)
+     * Validate inventory before applying changes
      */
-    async getOrderChanges(orderId) {
+    async validateInventoryForChanges(orderId, changes) {
         try {
-            const response = await this.makeRequest('GET', `/order/${orderId}/changes`);
-            return await response.json();
+            console.log(`Validating inventory for order ${orderId} with ${changes.length} changes`);
 
+            const response = await this.makeRequest('POST', `/order/${orderId}/validate-inventory`, { changes });
+            const data = await response.json();
+
+            console.log(`Inventory validation result:`, data);
+            return data;
         } catch (error) {
-            console.error(`Error fetching changes for order ${orderId}:`, error);
+            console.error('Inventory validation failed:', error);
             throw error;
         }
     }
 
     /**
-     * Reset order changes (revert to original state)
+     * Approve order with batch changes
+     * Използва се когато има промени в количествата или премахнати продукти
      */
-    async resetOrderChanges(orderId) {
+    async approveOrderWithBatchChanges(orderId, changes, operatorNote) {
         try {
-            const response = await this.makeRequest('POST', `/order/${orderId}/reset`);
+            console.log(`Approving order ${orderId} with ${changes.length} changes`);
+
+            const requestData = {
+                changes: changes,
+                operatorNote: operatorNote,
+                changesSummary: `${changes.length} промени направени`
+            };
+
+            const response = await this.makeRequest('POST', `/order/${orderId}/approve-with-changes`, requestData);
             const data = await response.json();
 
+            // ВАЖНО: Изчистваме целия cache за правилно обновяване на UI
             this.clearOrderCache(orderId);
-            return data;
+            this.clearCache(); // Изчиства и counters за правилно обновяване
 
+            console.log(`Order ${orderId} approved with changes successfully:`, data);
+            return data;
         } catch (error) {
-            console.error(`Error resetting changes for order ${orderId}:`, error);
+            console.error(`Error approving order ${orderId} with changes:`, error);
             throw error;
         }
     }
 
-    async approveOrder(orderId, operatorNote = '') {
-        try {
-            const requestData = { operatorNote };
-            const response = await this.makeRequest('POST', `/order/${orderId}/approve`, requestData);
-            const data = await response.json();
-
-            this.clearOrderCache(orderId);
-            return data;
-        } catch (error) {
-            console.error(`Error approving order ${orderId}:`, error);
-            throw error;
-        }
-    }
-
-    async rejectOrder(orderId, rejectionReason) {
-        try {
-            const requestData = { rejectionReason };
-            const response = await this.makeRequest('POST', `/order/${orderId}/reject`, requestData);
-            const data = await response.json();
-
-            this.clearOrderCache(orderId);
-            return data;
-        } catch (error) {
-            console.error(`Error rejecting order ${orderId}:`, error);
-            throw error;
-        }
-    }
 
     // ==========================================
     // HTTP CLIENT UTILITIES
@@ -698,50 +567,8 @@ class DashboardApi {
         }
     }
 
-    async validateInventoryForChanges(orderId, changes) {
-        try {
-            const response = await this.makeRequest('POST', `/order/${orderId}/validate-inventory`, { changes });
-            return await response.json();
-        } catch (error) {
-            console.error('Inventory validation failed:', error);
-            throw error;
-        }
-    }
-
-    async approveOrderWithChanges(orderId, data) {
-        try {
-            const response = await this.makeRequest('POST', `/order/${orderId}/approve-with-changes`, data);
-            const result = await response.json();
-            this.clearOrderCache(orderId);
-            return result;
-        } catch (error) {
-            console.error('Order approval failed:', error);
-            throw error;
-        }
-    }
 
 
-    /**
-    * Approve order with batch changes
-    */
-    async approveOrderWithBatchChanges(orderId, changes, operatorNote) {
-        try {
-            const requestData = {
-                changes: changes,
-                operatorNote: operatorNote,
-                changesSummary: `${changes.length} промени направени`
-            };
-
-            const response = await this.makeRequest('POST', `/order/${orderId}/approve-with-changes`, requestData);
-            const data = await response.json();
-
-            this.clearOrderCache(orderId);
-            return data;
-        } catch (error) {
-            console.error(`Error approving order ${orderId} with changes:`, error);
-            throw error;
-        }
-    }
 
     // ==========================================
     // CACHE MANAGEMENT
