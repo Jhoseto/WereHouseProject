@@ -706,64 +706,6 @@ class OrderReviewCatalog {
         return changes;
     }
 
-    async handleOrderApproval() {
-        try {
-            this.showApprovalInProgress();
-
-            // Вземи всички промени
-            const modifications = this.orderReviewCatalog.getModifiedItems();
-            const changes = Array.from(modifications.entries()).map(([productId, change]) => ({
-                productId: productId,
-                originalQuantity: change.originalQuantity,
-                newQuantity: change.newQuantity,
-                changeType: change.changeType
-            }));
-
-            // Изпрати към backend
-            if (changes.length > 0) {
-                const result = await this.dashboardApi.approveOrderWithBatchChanges(
-                    this.currentOrderId,
-                    changes,
-                    this.generateCorrectionNote()
-                );
-            } else {
-                const result = await this.dashboardManager.approveOrder(this.currentOrderId, '');
-            }
-        } catch (error) {
-            this.handleApprovalError(error);
-        }
-    }
-
-    handleCorrectionPreview() {
-        const preview = document.getElementById('correction-preview');
-        const summary = document.getElementById('correction-summary');
-
-        if (preview && summary) {
-            const originalItems = this.orderReviewCatalog.getOriginalItems();
-            const modifiedItems = this.orderReviewCatalog.getModifiedItems();
-
-            let html = '<div class="changes-comparison"><h4>Сравнение:</h4><table>';
-
-            modifiedItems.forEach((change, productId) => {
-                const original = originalItems.get(productId);
-                const product = this.orderData.items.find(item => item.productId === productId);
-
-                html += `
-                <tr>
-                    <td>${product?.productName}</td>
-                    <td>Оригинал: ${original.quantity}</td>
-                    <td>Ново: ${change.newQuantity}</td>
-                    <td class="change-type">${change.changeType === 'removed' ? 'Премахнат' : 'Променен'}</td>
-                </tr>
-            `;
-            });
-
-            html += '</table></div>';
-            summary.innerHTML = html;
-            preview.classList.remove('hidden');
-        }
-    }
-
     destroy() {
         // Clean up event listeners if needed
         this.onQuantityChange = null;

@@ -67,19 +67,17 @@ class DashboardUI {
      */
     cacheElements() {
         this.elements = {
-            // Counter elements
-            urgentCount: document.getElementById('urgent-count'),
-            pendingCount: document.getElementById('pending-count'),
-            readyCount: document.getElementById('ready-count'),
-            completedCount: document.getElementById('completed-count'),
-            cancelledCount: document.getElementById('cancelled-count'), // ADDED
+            // Counter elements - ОПРАВЕНИ ID-ТА
+            urgentCount: document.getElementById('urgent-tab-count'),
+            pendingCount: document.getElementById('pending-tab-count'),
+            confirmedCount: document.getElementById('confirmed-tab-count'),
+            cancelledCount: document.getElementById('cancelled-tab-count'),
 
-            // Badge elements
+            // Badge elements - ОПРАВЕНИ ID-ТА
             urgentBadge: document.getElementById('urgent-badge'),
             pendingBadge: document.getElementById('pending-badge'),
-            readyBadge: document.getElementById('ready-badge'),
-            confirmedBadge: document.getElementById('confirmed-badge'), // ADDED
-            cancelledBadge: document.getElementById('cancelled-badge'), // ADDED
+            confirmedBadge: document.getElementById('confirmed-badge'),
+            cancelledBadge: document.getElementById('cancelled-badge'),
 
             // Tab navigation
             tabButtons: document.querySelectorAll('.tab-btn'),
@@ -151,19 +149,21 @@ class DashboardUI {
 
     updateCounters(data) {
         try {
-            this.animateCounter(this.elements.urgentCount, data.urgentCount);
-            this.animateCounter(this.elements.pendingCount, data.pendingCount);
-            this.animateCounter(this.elements.readyCount, data.readyCount);
-            this.animateCounter(this.elements.completedCount, data.completedCount);
-            this.animateCounter(this.elements.cancelledCount, data.cancelledCount); // ADDED
+            console.log('UI updating counters with:', data);
 
-            this.updateBadge(this.elements.urgentBadge, data.urgentCount);
-            this.updateBadge(this.elements.pendingBadge, data.pendingCount);
-            this.updateBadge(this.elements.readyBadge, data.readyCount);
-            this.updateBadge(this.elements.confirmedBadge, data.completedCount); // ADDED
-            this.updateBadge(this.elements.cancelledBadge, data.cancelledCount); // ADDED
+            // ТОЧНИ DOM ID-та от HTML
+            const urgentEl = document.getElementById('urgent-tab-count');
+            const pendingEl = document.getElementById('pending-tab-count');
+            const confirmedEl = document.getElementById('confirmed-tab-count');
+            const cancelledEl = document.getElementById('cancelled-tab-count');
 
-            console.log('✓ Counters updated');
+            // ТОЧНИ field names от server data
+            if (urgentEl) urgentEl.textContent = data.urgentCount || 0;
+            if (pendingEl) pendingEl.textContent = data.pendingCount || 0;
+            if (confirmedEl) confirmedEl.textContent = data.completedCount || 0;
+            if (cancelledEl) cancelledEl.textContent = data.cancelledCount || 0;
+
+            console.log('✓ Counters updated successfully');
 
         } catch (error) {
             console.error('Error updating counters:', error);

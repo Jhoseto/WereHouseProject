@@ -216,13 +216,12 @@ class DashboardApi {
         });
 
         // Subscribe to order status changes
-        // В dashboardApi.js - заменете частта със Subscribe to order updates (около ред 220-240)
         this.orderSubscription = this.stompClient.subscribe('/topic/dashboard/orders', (message) => {
             try {
                 const data = JSON.parse(message.body);
                 console.log('Received order update:', data.eventType, data.orderId);
 
-                // МИГНОВЕННО обновяване
+                //  обновяване
                 if (window.mainDashboard?.manager) {
                     // Форсирай рефреш на всички табове веднага
                     window.mainDashboard.manager.refreshAllTabs();
@@ -236,27 +235,6 @@ class DashboardApi {
             } catch (error) {
                 console.error('Error processing order update:', error);
             }
-        });
-
-        // Subscribe to urgent alerts
-        this.alertSubscription = this.stompClient.subscribe('/topic/dashboard/alerts', (message) => {
-            try {
-                const data = JSON.parse(message.body);
-                console.warn('Received urgent alert:', data.alertType, data.alertMessage);
-
-                if (window.toastManager) {
-                    window.toastManager.error(data.alertMessage, data.alertType);
-                }
-            } catch (error) {
-                console.error('Error processing alert:', error);
-            }
-        });
-
-        console.log('✓ Subscribed to all dashboard channels');
-        console.log('Active subscriptions:', {
-            counters: this.counterSubscription?.id,
-            orders: this.orderSubscription?.id,
-            alerts: this.alertSubscription?.id
         });
     }
 
@@ -609,8 +587,6 @@ class DashboardApi {
         this.onOrderUpdate = callbacks.onOrderUpdate;
         this.onNewOrder = callbacks.onNewOrder;
         this.onConnectionStatus = callbacks.onConnectionStatus;
-
-        console.log('✓ Event callbacks configured');
     }
 
     /**

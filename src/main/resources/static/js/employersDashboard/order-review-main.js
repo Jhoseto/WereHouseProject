@@ -16,6 +16,7 @@ class OrderReviewOrchestrator {
         this.realTimeEnabled = false;
         this.changeTracker = new Map();
         this.eventListeners = new Map();
+        this.isProcessing = false; // Prevent double submissions
     }
 
     async initialize() {
@@ -52,7 +53,6 @@ class OrderReviewOrchestrator {
             throw new Error(`Missing required DOM elements: ${missingElements.join(', ')}`);
         }
     }
-
 
     async initializeDashboardInfrastructure() {
         if (window.mainDashboard && window.mainDashboard.api && window.mainDashboard.manager) {
@@ -155,12 +155,7 @@ class OrderReviewOrchestrator {
         this.showOrderInterface();
         this.isInitialized = true;
         this.updateWorkflowIndicators();
-
-        if (window.toastManager) {
-            window.toastManager.success(
-                `Поръчка ${this.currentOrderId} заредена с ${this.orderData.items?.length || 0} артикула.`
-            );
-        }
+        this.validateStockAvailability(); // Initial validation
 
         setTimeout(() => {
             const overlay = document.querySelector('.approval-controls-overlay');
@@ -170,36 +165,55 @@ class OrderReviewOrchestrator {
 
     // Event Handlers
     async handleOrderApproval() {
-        try {
-            this.showApprovalInProgress();
+        // Prevent double submission
+        if (this.isProcessing) {
+            return;
+        }
 
-            // Провери дали има промени
-            const hasLocalChanges = this.orderReviewCatalog.hasUnsavedChanges();
+        try {
+            this.isProcessing = true;
+
+            // Validate stock first
+            if (!this.validateStockAvailability()) {
+                if (window.toastManager) {
+                    window.toastManager.error('Не може да се одобри поръчка с артикули без наличност');
+                }
+                return;
+            }
+
+            const approveBtn = document.getElementById('approve-order');
+            const rejectBtn = document.getElementById('reject-order');
+
+            // Disable buttons immediately
+            if (approveBtn) {
+                approveBtn.disabled = true;
+                approveBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Обработка...';
+                approveBtn.style.background = '#6c757d';
+            }
+            if (rejectBtn) {
+                rejectBtn.disabled = true;
+            }
+
+            // Check for changes
+            const hasLocalChanges = this.orderReviewCatalog?.hasUnsavedChanges() || false;
             const hasTrackedChanges = this.changeTracker.size > 0;
 
+            let result;
+
             if (!hasLocalChanges && !hasTrackedChanges) {
-                // Директно одобри без корекции
-                const result = await this.dashboardManager.approveOrder(this.currentOrderId, '');
-
-                if (result.success) {
-                    this.handleApprovalSuccess(result);
-                } else {
-                    this.handleApprovalFailure(result);
-                }
-
+                // Direct approval without corrections
+                result = await this.dashboardManager.approveOrder(this.currentOrderId, '');
             } else {
-                // Одобри с корекции
-                const correctionNote = this.generateCorrectionNote();
-                const modifications = this.orderReviewCatalog.getModifiedItems();
-
-                // Валидира промените
+                // Approval with corrections
                 const validationResult = await this.performFinalValidation();
                 if (!validationResult.success) {
                     this.handleValidationFailure(validationResult);
+                    this.restoreButtonsOnError(approveBtn, rejectBtn);
                     return;
                 }
 
-                // Подготви данните за промените
+                const correctionNote = this.generateCorrectionNote();
+                const modifications = this.orderReviewCatalog.getModifiedItems();
                 const changes = Array.from(modifications.entries()).map(([productId, change]) => ({
                     productId: productId,
                     originalQuantity: change.originalQuantity,
@@ -207,24 +221,27 @@ class OrderReviewOrchestrator {
                     changeType: change.changeType
                 }));
 
-                // Изпрати заявката
-                const result = await this.dashboardApi.approveOrderWithBatchChanges(
+                result = await this.dashboardApi.approveOrderWithBatchChanges(
                     this.currentOrderId,
                     changes,
                     correctionNote
                 );
+            }
 
-                if (result.success) {
-                    this.handleApprovalSuccess(result);
-                } else {
-                    this.handleApprovalFailure(result);
-                }
+            if (result && result.success) {
+                this.handleApprovalSuccess(result, approveBtn);
+            } else {
+                this.handleApprovalFailure(result);
+                this.restoreButtonsOnError(approveBtn, rejectBtn);
             }
 
         } catch (error) {
             this.handleApprovalError(error);
+            const approveBtn = document.getElementById('approve-order');
+            const rejectBtn = document.getElementById('reject-order');
+            this.restoreButtonsOnError(approveBtn, rejectBtn);
         } finally {
-            this.hideApprovalInProgress();
+            this.isProcessing = false;
         }
     }
 
@@ -238,7 +255,7 @@ class OrderReviewOrchestrator {
 
         if (preview && summary) {
             if (this.changeTracker.size === 0) {
-                summary.innerHTML = '<p class="no-changes"> Няма направени корекции. Поръчката ще бъде одобрена както е поръчана.</p>';
+                summary.innerHTML = '<p class="no-changes">Няма направени корекции. Поръчката ще бъде одобрена както е поръчана.</p>';
             } else {
                 const correctionNote = this.generateCorrectionNote();
                 const changesList = this.orderReviewCatalog.getChangesSummary();
@@ -267,20 +284,17 @@ class OrderReviewOrchestrator {
         let reason = '';
 
         if (selected) {
-            // Ако има избрана опция, използвай нея
             reason = selected.dataset.reason;
         } else if (noteField && noteField.value.trim()) {
-            // Ако няма избрана опция, но има custom текст
             reason = noteField.value.trim();
         } else {
-            // Ако няма нито избрана опция, нито custom текст
             if (window.toastManager) {
                 window.toastManager.error('Моля изберете причина за отказ');
             }
             return;
         }
 
-        // Добави custom бележка ако има такава И е различна от избраната причина
+        // Add custom note if different from selected reason
         const customNote = noteField ? noteField.value.trim() : '';
         if (customNote && customNote !== reason) {
             reason += ': ' + customNote;
@@ -291,11 +305,6 @@ class OrderReviewOrchestrator {
 
     handleRejectionCancellation() {
         this.hideRejectionModal();
-    }
-
-    handleModalClose() {
-        this.hideRejectionModal();
-        this.hideCorrectionPreview();
     }
 
     handleWorkflowStepClick(stepIndex) {
@@ -326,7 +335,6 @@ class OrderReviewOrchestrator {
     // Business Logic Methods
     async performFinalValidation() {
         try {
-            // Вместо да правим HTTP заявка, валидираме локално
             const invalidItems = [];
 
             this.changeTracker.forEach((change, productId) => {
@@ -359,6 +367,48 @@ class OrderReviewOrchestrator {
                 canProceed: false
             };
         }
+    }
+
+    validateStockAvailability() {
+        const allItems = document.querySelectorAll('.product-item, .order-item, .review-row');
+        let hasStockIssues = false;
+
+        allItems.forEach(item => {
+            const quantityInput = item.querySelector('.quantity-input, .qty-input, .correction-input');
+            if (!quantityInput) return;
+
+            const requested = parseInt(quantityInput.value) || 0;
+            const available = parseInt(quantityInput.max) || 0;
+
+            if (requested > 0 && (requested > available || available === 0)) {
+                hasStockIssues = true;
+                item.style.border = '2px solid #dc3545';
+                item.style.background = 'rgba(220, 53, 69, 0.1)';
+            } else {
+                item.style.border = '';
+                item.style.background = '';
+            }
+        });
+
+        // ОПРАВЕН button state
+        const approveBtn = document.getElementById('approve-order');
+        if (approveBtn && !this.isProcessing) {
+            if (hasStockIssues) {
+                approveBtn.disabled = true;  // БЛОКИРАН напълно
+                approveBtn.innerHTML = '<i class="bi bi-exclamation-triangle"></i> Редактирайте количествата';
+                approveBtn.style.background = '#dc3545';  // Червен вместо жълт
+                approveBtn.style.color = 'white';
+                approveBtn.style.cursor = 'not-allowed';
+            } else {
+                approveBtn.disabled = false;
+                approveBtn.innerHTML = '<i class="bi bi-check-circle"></i> Одобри';
+                approveBtn.style.background = '#28a745';
+                approveBtn.style.color = 'white';
+                approveBtn.style.cursor = 'pointer';
+            }
+        }
+
+        return !hasStockIssues;
     }
 
     generateCorrectionNote() {
@@ -396,15 +446,13 @@ class OrderReviewOrchestrator {
 
             const result = await this.dashboardApi.rejectOrder(this.currentOrderId, reason);
 
-            console.log('Rejection result:', result);
-
             if (result && result.success) {
                 if (window.toastManager) {
                     window.toastManager.success('Поръчката е отказана успешно.');
                 }
                 setTimeout(() => {
                     window.location.href = '/employer/dashboard';
-                }, 2000);
+                }, 1000);
             } else {
                 if (window.toastManager) {
                     window.toastManager.error(result?.message || 'Грешка при отказване на поръчката.');
@@ -417,6 +465,18 @@ class OrderReviewOrchestrator {
             }
         } finally {
             this.hideRejectionModal();
+        }
+    }
+
+    // Helper Methods
+    restoreButtonsOnError(approveBtn, rejectBtn) {
+        if (approveBtn) {
+            approveBtn.disabled = false;
+            approveBtn.innerHTML = '<i class="bi bi-check-circle"></i> Одобри';
+            approveBtn.style.background = '#28a745';
+        }
+        if (rejectBtn) {
+            rejectBtn.disabled = false;
         }
     }
 
@@ -483,24 +543,20 @@ class OrderReviewOrchestrator {
         if (element) element.textContent = value;
     }
 
-
     showRejectionModal() {
         const modal = document.getElementById('rejection-modal');
         modal.classList.remove('hidden');
         modal.classList.add('show');
 
-        // Почисти и setup-ни reason options
+        // Setup reason options
         document.querySelectorAll('#rejection-modal .reason-option').forEach(option => {
             option.classList.remove('selected');
             option.onclick = function() {
-                // Премахни selection от всички
                 document.querySelectorAll('#rejection-modal .reason-option').forEach(opt =>
                     opt.classList.remove('selected')
                 );
-                // Маркирай кликнатата
                 this.classList.add('selected');
 
-                // КОПИРАЙ ТЕКСТА В TEXTAREA ПОЛЕТО
                 const noteField = document.getElementById('rejection-note');
                 const reasonText = this.dataset.reason;
                 if (noteField && reasonText) {
@@ -509,36 +565,19 @@ class OrderReviewOrchestrator {
             };
         });
 
-        // Почисти textarea
+        // Clear textarea
         const noteField = document.getElementById('rejection-note');
         if (noteField) noteField.value = '';
     }
 
     hideRejectionModal() {
-        document.getElementById('rejection-modal').classList.remove('show');
+        const modal = document.getElementById('rejection-modal');
+        if (modal) modal.classList.remove('show');
     }
-
-
 
     hideCorrectionPreview() {
         const preview = document.getElementById('correction-preview');
         if (preview) preview.classList.add('hidden');
-    }
-
-    showApprovalInProgress() {
-        const approveBtn = document.getElementById('approve-order');
-        if (approveBtn) {
-            approveBtn.disabled = true;
-            approveBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Обработка...';
-        }
-    }
-
-    hideApprovalInProgress() {
-        const approveBtn = document.getElementById('approve-order');
-        if (approveBtn) {
-            approveBtn.disabled = false;
-            approveBtn.innerHTML = '<i class="bi bi-check-circle"></i> Одобри';
-        }
     }
 
     showDataFreshnessWarning() {
@@ -555,24 +594,31 @@ class OrderReviewOrchestrator {
         }
     }
 
-    handleApprovalSuccess(result) {
-        if (window.toastManager) {
-            window.toastManager.success('Поръчката е одобрена успешно!');
+    handleApprovalSuccess(result, approveBtn) {
+        // PERMANENT button disable - visual feedback
+        if (approveBtn) {
+            approveBtn.innerHTML = '<i class="bi bi-check"></i> Одобрена';
+            approveBtn.style.background = '#28a745';
+            approveBtn.style.color = 'white';
+            // DON'T enable again: approveBtn.disabled = false;
         }
+
+        // NO toast here - server already shows notification
         setTimeout(() => {
             window.location.href = '/employer/dashboard';
-        }, 2000);
+        }, 1000);
     }
 
     handleApprovalFailure(result) {
         if (window.toastManager) {
-            window.toastManager.error(result.message || 'Грешка при одобряване на поръчката.');
+            window.toastManager.error(result?.message || 'Грешка при одобряване на поръчката.');
         }
     }
 
     handleApprovalError(error) {
+        console.error('Approval error:', error);
         if (window.toastManager) {
-            window.toastManager.error('Възникна грешка при одобряване на поръчката.');
+            window.toastManager.error('Възникна неочаквана грешка при одобряване.');
         }
     }
 
@@ -586,6 +632,9 @@ class OrderReviewOrchestrator {
                     changeType: newQty === 0 ? 'removed' : 'modified',
                     productName: product?.productName || 'Неизвестен продукт'
                 });
+
+                // Re-validate stock after quantity change
+                setTimeout(() => this.validateStockAvailability(), 100);
             };
 
             this.orderReviewCatalog.onItemRemove = (productId) => {
@@ -594,9 +643,11 @@ class OrderReviewOrchestrator {
                     changeType: 'removed',
                     productName: product?.productName || 'Неизвестен продукт'
                 });
+
+                // Re-validate stock after item removal
+                setTimeout(() => this.validateStockAvailability(), 100);
             };
 
-            // ДОБАВИ callback за approve individual items
             this.orderReviewCatalog.onItemApprove = (productId) => {
                 this.trackChange(productId, {
                     changeType: 'approved',
@@ -628,7 +679,7 @@ class OrderReviewOrchestrator {
             approvalStatus.className = hasChanges ? 'has-changes' : 'no-changes';
         }
 
-        // Покажи approval controls overlay
+        // Show approval controls overlay
         const overlay = document.querySelector('.approval-controls-overlay');
         if (overlay) {
             overlay.style.display = 'block';
@@ -723,12 +774,10 @@ window.addEventListener('beforeunload', function() {
 
 // Auto-initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
-    // Изчакай главната dashboard система да се инициализира първо
     if (window.orderReviewConfig) {
         if (window.mainDashboard?.isInitialized) {
             initializeOrderReviewSystem();
         } else {
-            // Изчакай 500ms и опитай отново
             setTimeout(() => {
                 if (window.mainDashboard?.isInitialized) {
                     initializeOrderReviewSystem();

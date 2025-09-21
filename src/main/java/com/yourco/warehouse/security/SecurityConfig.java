@@ -21,6 +21,8 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
 import org.springframework.security.web.authentication.rememberme.TokenBasedRememberMeServices;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.session.FindByIndexNameSessionRepository;
+import org.springframework.session.security.SpringSessionBackedSessionRegistry;
 
 import java.util.Collection;
 
@@ -74,7 +76,7 @@ public class SecurityConfig {
                         .sessionFixation().migrateSession()
                         .sessionCreationPolicy(SessionCreationPolicy.ALWAYS)
                         .invalidSessionUrl("/")
-                        .maximumSessions(5)  // 5 таба за операторите
+                        .maximumSessions(5)
                         .maxSessionsPreventsLogin(false)
                         .expiredUrl("/")
                 )
@@ -98,6 +100,7 @@ public class SecurityConfig {
                 });
         return http.build();
     }
+
 
     @Bean
     public PasswordEncoder passwordEncoder() {

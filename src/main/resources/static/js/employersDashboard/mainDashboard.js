@@ -222,8 +222,6 @@ class MainDashboard {
                 window.open(detailUrl, '_blank');
             }
         };
-
-
     }
 
     /**
