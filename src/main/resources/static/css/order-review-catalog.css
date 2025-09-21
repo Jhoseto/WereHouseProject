@@ -607,59 +607,211 @@ h4 { font-size: var(--text-lg); }
     min-height: 400px;
 }
 
-/* This container will be populated by OrderReviewCatalog.js
-   with either grid cards or table layout depending on view mode */
-
 /* ==========================================
-   CORRECTION PREVIEW PANEL
+   ORDER NOTE MODAL STYLES
    ========================================== */
 
-.correction-preview-panel {
-    background: var(--status-pending-light);
-    border: 2px solid #43515f;
-    border-radius: var(--radius-md);
-    margin: var(--space-6) 0;
-    overflow: hidden;
-    box-shadow: var(--shadow-base);
+#order-note-modal {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
 }
 
-.preview-header {
+#order-note-modal.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+#order-note-modal .modal-container {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    max-width: 500px;
+    width: calc(100% - 32px);
+    max-height: calc(100vh - 32px);
+    overflow-y: auto;
+    position: relative;
+    transform: translateY(0);
+}
+
+#order-note-modal .modal-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: var(--space-4);
-    background:#43515f;
-    color: #e5a633;
+    padding: 20px 24px;
+    border-bottom: 1px solid #e9ecef;
+    background: #f8f9fa;
 }
 
-.preview-header i {
-    margin-right: var(--space-2);
+#order-note-modal .modal-header h3 {
+    margin: 0;
+    color: #2c3e50;
+    font-size: 1.2rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
-.preview-close {
+#order-note-modal .modal-close {
     background: none;
     border: none;
-    color: white;
+    color: #6c757d;
     cursor: pointer;
-    padding: var(--space-1);
-    border-radius: var(--radius-sm);
-    transition: background var(--transition-fast);
+    padding: 8px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
 }
 
-.preview-close:hover {
-    background: rgba(255, 255, 255, 0.2);
+#order-note-modal .modal-close:hover {
+    background: #e9ecef;
+    color: #495057;
 }
 
-.preview-content {
-    padding: var(--space-4);
+#order-note-modal .modal-body {
+    padding: 24px;
 }
 
-#correction-summary {
-    font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
-    font-size: var(--text-sm);
+.corrections-summary {
+    background: rgba(52, 152, 219, 0.05);
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 24px;
+    border-left: 4px solid #3498db;
+}
+
+.corrections-summary .no-changes {
+    color: #6c757d;
+    text-align: center;
+    margin: 0;
+    font-style: italic;
+    padding: 16px;
+}
+
+.corrections-summary .generated-note {
+    background: white;
+    padding: 16px;
+    border-radius: 6px;
+    border: 1px solid #e9ecef;
+    font-size: 0.9rem;
     line-height: 1.6;
-    white-space: pre-wrap;
-    color: var(--neutral-700);
+    color: #2c3e50;
+    white-space: pre-line;
+}
+
+#order-note-modal .form-group {
+    margin: 0;
+}
+
+#order-note-modal .form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #2c3e50;
+    font-size: 0.9rem;
+}
+
+#order-note-modal .form-control {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+    resize: vertical;
+    transition: border-color 0.2s ease;
+    box-sizing: border-box;
+    min-height: 80px;
+}
+
+#order-note-modal .form-control:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+#order-note-modal .form-control::placeholder {
+    color: #adb5bd;
+    font-style: italic;
+}
+
+#order-note-modal .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 20px 24px;
+    border-top: 1px solid #e9ecef;
+    background: #f8f9fa;
+}
+
+#order-note-modal .btn {
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    font-size: 0.9rem;
+}
+
+#order-note-modal .btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+#order-note-modal .btn-secondary:hover {
+    background: #5a6268;
+    transform: translateY(-1px);
+}
+
+#order-note-modal .btn-primary {
+    background: #3498db;
+    color: white;
+}
+
+#order-note-modal .btn-primary:hover {
+    background: #2980b9;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+}
+
+/* Mobile responsive */
+@media (max-width: 600px) {
+    #order-note-modal .modal-container {
+        max-width: calc(100vw - 20px);
+        margin: 10px;
+    }
+
+    #order-note-modal .modal-header,
+    #order-note-modal .modal-body,
+    #order-note-modal .modal-actions {
+        padding: 16px;
+    }
+
+    #order-note-modal .modal-actions {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    #order-note-modal .btn {
+        width: 100%;
+    }
 }
 
 /* ==========================================

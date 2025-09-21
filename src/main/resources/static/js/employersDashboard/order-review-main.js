@@ -117,25 +117,44 @@ class OrderReviewOrchestrator {
         // Approval controls
         this.addEventHandler('approve-order', 'click', () => this.handleOrderApproval());
         this.addEventHandler('reject-order', 'click', () => this.handleOrderRejection());
-        this.addEventHandler('preview-corrections', 'click', () => this.handleCorrectionPreview());
+        this.addEventHandler('confirm-order-note', 'click', () => this.handleOrderNoteConfirmation());
+        this.addEventHandler('add-order-note', 'click', () => this.showOrderNoteModal());
+
+
 
         // Modal controls
         this.addEventHandler('confirm-rejection', 'click', () => this.handleRejectionConfirmation());
         this.addEventHandler('cancel-rejection', 'click', () => this.handleRejectionCancellation());
 
-        // Modal close handlers
-        document.querySelectorAll('.modal-close, .preview-close').forEach(btn => {
-            this.addEventHandler(btn, 'click', () => {
-                this.hideRejectionModal();
-                this.hideCorrectionPreview();
+        document.querySelectorAll('.modal-close, .preview-close, .modal-cancel').forEach(btn => {
+            this.addEventHandler(btn, 'click', (e) => {
+                const modal = btn.closest('.modal-overlay');
+                if (modal) {
+                    if (modal.id === 'rejection-modal') {
+                        this.hideRejectionModal();
+                    } else if (modal.id === 'order-note-modal') {
+                        this.hideOrderNoteModal();
+                    }
+                }
             });
         });
 
-        const modal = document.getElementById('rejection-modal');
-        if (modal) {
-            this.addEventHandler(modal, 'click', (e) => {
-                if (e.target === modal) {
+        // Modal overlay click handlers
+        const rejectionModal = document.getElementById('rejection-modal');
+        if (rejectionModal) {
+            this.addEventHandler(rejectionModal, 'click', (e) => {
+                if (e.target === rejectionModal) {
                     this.hideRejectionModal();
+                }
+            });
+        }
+
+        // ДОБАВИ ЗА НОВИЯ MODAL
+        const orderNoteModal = document.getElementById('order-note-modal');
+        if (orderNoteModal) {
+            this.addEventHandler(orderNoteModal, 'click', (e) => {
+                if (e.target === orderNoteModal) {
+                    this.hideOrderNoteModal();
                 }
             });
         }
@@ -169,113 +188,22 @@ class OrderReviewOrchestrator {
             return;
         }
 
-        try {
-            this.isProcessing = true;
-
-            // Validate stock first
-            if (!this.validateStockAvailability()) {
-                if (window.toastManager) {
-                    window.toastManager.error('Не може да се одобри поръчка с артикули без наличност');
-                }
-                return;
+        // Validate stock first
+        if (!this.validateStockAvailability()) {
+            if (window.toastManager) {
+                window.toastManager.error('Не може да се одобри поръчка с артикули без наличност');
             }
-
-            const approveBtn = document.getElementById('approve-order');
-            const rejectBtn = document.getElementById('reject-order');
-
-            // Disable buttons immediately
-            if (approveBtn) {
-                approveBtn.disabled = true;
-                approveBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Обработка...';
-                approveBtn.style.background = '#6c757d';
-            }
-            if (rejectBtn) {
-                rejectBtn.disabled = true;
-            }
-
-            // Check for changes
-            const hasLocalChanges = this.orderReviewCatalog?.hasUnsavedChanges() || false;
-            const hasTrackedChanges = this.changeTracker.size > 0;
-
-            let result;
-
-            if (!hasLocalChanges && !hasTrackedChanges) {
-                // Direct approval without corrections
-                result = await this.dashboardApi.approveOrder(this.currentOrderId, '');
-            } else {
-                // Approval with corrections
-                const validationResult = await this.performFinalValidation();
-                if (!validationResult.success) {
-                    this.handleValidationFailure(validationResult);
-                    this.restoreButtonsOnError(approveBtn, rejectBtn);
-                    return;
-                }
-
-                const correctionNote = this.generateCorrectionNote();
-                const modifications = this.orderReviewCatalog.getModifiedItems();
-                const changes = Array.from(modifications.entries()).map(([productId, change]) => ({
-                    productId: productId,
-                    originalQuantity: change.originalQuantity,
-                    newQuantity: change.newQuantity,
-                    changeType: change.changeType
-                }));
-
-                result = await this.dashboardApi.approveOrderWithBatchChanges(
-                    this.currentOrderId,
-                    changes,
-                    correctionNote
-                );
-            }
-
-            if (result && result.success) {
-                this.handleApprovalSuccess(result, approveBtn);
-            } else {
-                this.handleApprovalFailure(result);
-                this.restoreButtonsOnError(approveBtn, rejectBtn);
-            }
-
-        } catch (error) {
-            this.handleApprovalError(error);
-            const approveBtn = document.getElementById('approve-order');
-            const rejectBtn = document.getElementById('reject-order');
-            this.restoreButtonsOnError(approveBtn, rejectBtn);
-        } finally {
-            this.isProcessing = false;
+            return;
         }
+
+        // Винаги показвай modal за бележка
+        this.showOrderNoteModal();
     }
 
     handleOrderRejection() {
         this.showRejectionModal();
     }
 
-    handleCorrectionPreview() {
-        const preview = document.getElementById('correction-preview');
-        const summary = document.getElementById('correction-summary');
-
-        if (preview && summary) {
-            if (this.changeTracker.size === 0) {
-                summary.innerHTML = '<p class="no-changes">Няма направени корекции. Поръчката ще бъде одобрена както е поръчана.</p>';
-            } else {
-                const correctionNote = this.generateCorrectionNote();
-                const changesList = this.orderReviewCatalog.getChangesSummary();
-
-                summary.innerHTML = `
-                <div class="changes-overview">
-                    <h4>Обобщение на промените:</h4>
-                    <ul class="changes-list">
-                        ${changesList.map(change => `<li>${change}</li>`).join('')}
-                    </ul>
-                </div>
-                <div class="client-message">
-                    <h4>Съобщение до клиента:</h4>
-                    <div class="message-preview">${correctionNote.replace(/\n/g, '<br>')}</div>
-                </div>
-            `;
-            }
-
-            preview.classList.remove('hidden');
-        }
-    }
 
     handleRejectionConfirmation() {
         const selected = document.querySelector('.reason-option.selected');
@@ -313,6 +241,16 @@ class OrderReviewOrchestrator {
     }
 
     handleKeyboardShortcuts(event) {
+        if (event.key === 'Escape') {
+            // Затвори modal ако е отворен
+            if (!document.getElementById('order-note-modal').classList.contains('hidden')) {
+                this.hideOrderNoteModal();
+            } else if (!document.getElementById('rejection-modal').classList.contains('hidden')) {
+                this.hideRejectionModal();
+            }
+            return;
+        }
+
         if (event.ctrlKey || event.metaKey) {
             switch(event.key) {
                 case 'Enter':
@@ -322,10 +260,6 @@ class OrderReviewOrchestrator {
                 case 'r':
                     event.preventDefault();
                     this.handleOrderRejection();
-                    break;
-                case 'p':
-                    event.preventDefault();
-                    this.handleCorrectionPreview();
                     break;
             }
         }
@@ -410,6 +344,78 @@ class OrderReviewOrchestrator {
         return !hasStockIssues;
     }
 
+
+    async performOrderApproval(operatorNote) {
+        try {
+            this.isProcessing = true;
+
+            const approveBtn = document.getElementById('approve-order');
+            const rejectBtn = document.getElementById('reject-order');
+
+            // Disable buttons immediately
+            if (approveBtn) {
+                approveBtn.disabled = true;
+                approveBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Обработка...';
+                approveBtn.style.background = '#6c757d';
+            }
+            if (rejectBtn) {
+                rejectBtn.disabled = true;
+            }
+
+            // Check for changes
+            const hasLocalChanges = this.orderReviewCatalog?.hasUnsavedChanges() || false;
+            const hasTrackedChanges = this.changeTracker.size > 0;
+
+            let result;
+
+            if (!hasLocalChanges && !hasTrackedChanges) {
+                // Direct approval without corrections
+                result = await this.dashboardApi.approveOrder(this.currentOrderId, operatorNote);
+            } else {
+                // Approval with corrections
+                const validationResult = await this.performFinalValidation();
+                if (!validationResult.success) {
+                    this.handleValidationFailure(validationResult);
+                    this.restoreButtonsOnError(approveBtn, rejectBtn);
+                    return;
+                }
+
+                const correctionNote = this.generateCorrectionNote();
+                const modifications = this.orderReviewCatalog.getModifiedItems();
+                const changes = Array.from(modifications.entries()).map(([productId, change]) => ({
+                    productId: productId,
+                    originalQuantity: change.originalQuantity,
+                    newQuantity: change.newQuantity,
+                    changeType: change.changeType
+                }));
+
+                // Комбинирай correction note с operator note
+                const finalNote = operatorNote ? correctionNote + '\n\nДопълнителна информация: ' + operatorNote : correctionNote;
+
+                result = await this.dashboardApi.approveOrderWithBatchChanges(
+                    this.currentOrderId,
+                    changes,
+                    finalNote
+                );
+            }
+
+            if (result && result.success) {
+                this.handleApprovalSuccess(result, approveBtn);
+            } else {
+                this.handleApprovalFailure(result);
+                this.restoreButtonsOnError(approveBtn, rejectBtn);
+            }
+
+        } catch (error) {
+            this.handleApprovalError(error);
+            const approveBtn = document.getElementById('approve-order');
+            const rejectBtn = document.getElementById('reject-order');
+            this.restoreButtonsOnError(approveBtn, rejectBtn);
+        } finally {
+            this.isProcessing = false;
+        }
+    }
+
     generateCorrectionNote() {
         if (this.changeTracker.size === 0) return '';
 
@@ -437,6 +443,39 @@ class OrderReviewOrchestrator {
         note += '\nИзвиняваме се за неудобството!';
 
         return note;
+    }
+
+    // ПРЕИМЕНУВАЙ handleCorrectionPreview в showOrderNoteModal
+    showOrderNoteModal() {
+        const modal = document.getElementById('order-note-modal');
+        const summary = document.getElementById('order-corrections-summary');
+
+        if (this.changeTracker.size === 0) {
+            summary.innerHTML = '<p class="no-changes">Няма направени корекции в поръчката.</p>';
+        } else {
+            const correctionNote = this.generateCorrectionNote();
+            summary.innerHTML = `<div class="generated-note">${correctionNote.replace(/\n/g, '<br>')}</div>`;
+        }
+
+        document.getElementById('operator-note').value = '';
+        modal.classList.remove('hidden');
+        modal.classList.add('show');
+    }
+
+    // ПРЕИМЕНУВАЙ hideCorrectionPreview в hideOrderNoteModal
+    hideOrderNoteModal() {
+        const modal = document.getElementById('order-note-modal');
+        if (modal) {
+            modal.classList.remove('show');
+            modal.classList.add('hidden');
+        }
+    }
+
+// ДОБАВИ нов метод за потвърждение
+    handleOrderNoteConfirmation() {
+        const operatorNote = document.getElementById('operator-note').value.trim();
+        this.hideOrderNoteModal();
+        this.performOrderApproval(operatorNote);
     }
 
     async performOrderRejection(reason) {
@@ -571,12 +610,10 @@ class OrderReviewOrchestrator {
 
     hideRejectionModal() {
         const modal = document.getElementById('rejection-modal');
-        if (modal) modal.classList.remove('show');
-    }
-
-    hideCorrectionPreview() {
-        const preview = document.getElementById('correction-preview');
-        if (preview) preview.classList.add('hidden');
+        if (modal) {
+            modal.classList.remove('show');
+            modal.classList.add('hidden');
+        }
     }
 
 
