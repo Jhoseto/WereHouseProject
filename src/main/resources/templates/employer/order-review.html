@@ -42,34 +42,65 @@
                     </div>
                 </div>
 
-                <!-- Client context information -->
-                <div class="client-context" th:if="${clientInfo}">
-                    <div class="client-name">
-                        <i class="bi bi-building"></i>
-                        <span th:text="${clientInfo.name}">Клиент ООД</span>
+                <!-- Client Information Card -->
+                <div class="client-info-card">
+                    <div class="client-primary">
+                        <div class="client-identity">
+                            <div class="client-avatar">
+                                <i class="bi bi-building"></i>
+                            </div>
+                            <div class="client-details">
+                                <h2 class="client-name" th:text="${clientInfo?.companyName ?: 'Неизвестен клиент'}">
+                                    ООД "Примерна Фирма"
+                                </h2>
+                                <span class="client-username" th:text="'@' + ${clientInfo?.username ?: 'unknown'}">
+                    @client_username
+                </span>
+                            </div>
+                        </div>
+                        <div class="client-status">
+            <span class="status-badge"
+                  th:classappend="${clientInfo?.userStatus == 'ACTIVE' ? 'status-active' : 'status-inactive'}"
+                  th:text="${clientInfo?.userStatus == 'ACTIVE' ? 'Активен' : 'Неактивен'}">
+                Активен
+            </span>
+                        </div>
                     </div>
-                    <div class="client-meta">
-                        <span class="last-order">Последна поръчка: <span th:text="${clientInfo.lastOrderDate}">15.12.2024</span></span>
-                        <span class="order-frequency">Честота: <span th:text="${clientInfo.orderFrequency}">Седмична</span></span>
+
+                    <div class="client-metadata">
+                        <div class="metadata-group">
+                            <div class="metadata-item" th:if="${clientInfo?.email}">
+                                <i class="bi bi-envelope"></i>
+                                <span th:text="${clientInfo.email}">office@example.com</span>
+                            </div>
+                            <div class="metadata-item" th:if="${clientInfo?.phone}">
+                                <i class="bi bi-telephone"></i>
+                                <span th:text="${clientInfo.phone}">+359 888 123 456</span>
+                            </div>
+                            <div class="metadata-item" th:if="${clientInfo?.location}">
+                                <i class="bi bi-geo-alt"></i>
+                                <span th:text="${clientInfo.location}">София, България</span>
+                            </div>
+                        </div>
+
+                        <div class="metadata-group">
+                            <div class="metadata-item" th:if="${clientInfo?.lastOrderDate}">
+                                <i class="bi bi-calendar-check"></i>
+                                <span>Последна: <span th:text="${clientInfo.lastOrderDate}">15.12.2024</span></span>
+                            </div>
+                            <div class="metadata-item" th:if="${clientInfo?.orderFrequency}">
+                                <i class="bi bi-arrow-repeat"></i>
+                                <span th:text="${clientInfo.orderFrequency}">Седмична</span>
+                            </div>
+                            <div class="metadata-item" th:if="${clientInfo?.totalOrders}">
+                                <i class="bi bi-box-seam"></i>
+                                <span th:text="${clientInfo.totalOrders + ' поръчки'}">47 поръчки</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Order status and workflow indicators -->
-            <div class="workflow-indicators">
-                <div class="workflow-step active" id="workflow-analysis">
-                    <i class="bi bi-search"></i>
-                    <span>Анализ</span>
-                </div>
-                <div class="workflow-step" id="workflow-corrections">
-                    <i class="bi bi-pencil-square"></i>
-                    <span>Корекции</span>
-                </div>
-                <div class="workflow-step" id="workflow-approval">
-                    <i class="bi bi-check-circle"></i>
-                    <span>Одобрение</span>
-                </div>
-            </div>
         </div>
 
         <!-- Order Statistics Panel -->

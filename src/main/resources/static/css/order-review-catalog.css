@@ -134,75 +134,129 @@ h4 { font-size: var(--text-lg); }
     padding: 0 var(--space-6);
 }
 
+
 /* ==========================================
-   REVIEW HEADER - CONTEXTUAL INFORMATION
+   CLIENT INFO CARD - ELEGANT DESIGN
    ========================================== */
 
-.review-header {
-    background: white;
+.client-info-card {
+    background: var(--color-white);
+    border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
-    padding: var(--space-8);
+    padding: var(--space-6);
     margin-bottom: var(--space-6);
-    box-shadow: var(--shadow-base);
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: var(--space-8);
+    box-shadow: var(--shadow-sm);
 }
 
-.header-main {
-    flex: 1;
-}
-
-.review-title h1 {
+.client-primary {
     display: flex;
     align-items: center;
-    gap: var(--space-3);
-    color: var(--review-primary);
-    margin-bottom: var(--space-2);
+    justify-content: space-between;
+    margin-bottom: var(--space-4);
 }
 
-.review-title h1 i {
-    color: var(--review-secondary);
-    font-size: var(--text-2xl);
+.client-identity {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
 }
 
-.review-subtitle {
-    color: var(--neutral-500);
-    font-size: var(--text-base);
+.client-avatar {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, var(--color-secondary), var(--color-secondary-dark));
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-white);
+    font-size: 1.25rem;
+}
+
+.client-details h2.client-name {
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin: 0 0 var(--space-1) 0;
+    line-height: 1.2;
+}
+
+.client-username {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
     font-weight: 500;
 }
 
-/* Client context styling */
-.client-context {
-    margin-top: var(--space-6);
-    padding: var(--space-4);
-    background: var(--neutral-50);
-    border-radius: var(--radius-base);
-    border-left: 4px solid var(--review-secondary);
+.status-badge {
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
-.client-name {
+.status-active {
+    background: var(--color-success-light);
+    color: var(--color-success-dark);
+    border: 1px solid var(--color-success);
+}
+
+.status-inactive {
+    background: var(--color-muted);
+    color: var(--color-text-light);
+    border: 1px solid var(--color-gray);
+}
+
+.client-metadata {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--color-border-light);
+}
+
+.metadata-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.metadata-item {
     display: flex;
     align-items: center;
     gap: var(--space-2);
-    font-weight: 600;
-    color: var(--neutral-900);
-    margin-bottom: var(--space-1);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
 }
 
-.client-meta {
-    display: flex;
-    gap: var(--space-4);
-    font-size: var(--text-sm);
-    color: var(--neutral-500);
+.metadata-item i {
+    color: var(--color-secondary);
+    font-size: 0.9rem;
+    width: 16px;
+    text-align: center;
 }
 
-.client-email {
-    font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
-    background: var(--neutral-100);
-    padding: var(--space-1) var(--space-2);
-    border-radius: var(--radius-sm);
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+    .client-info-card {
+        padding: var(--space-4);
+    }
+
+    .client-primary {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-3);
+    }
+
+    .client-metadata {
+        grid-template-columns: 1fr;
+        gap: var(--space-3);
+    }
+
+    .client-details h2.client-name {
+        font-size: var(--font-size-base);
+    }
 }
 
 /* ==========================================

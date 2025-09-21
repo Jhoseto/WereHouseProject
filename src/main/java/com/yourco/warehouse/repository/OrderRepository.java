@@ -336,19 +336,6 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     // UTILITY METHODS WITH DEFAULT IMPLEMENTATIONS
     // ==========================================
 
-    /**
-     * Бърз wrapper за urgent orders с default threshold
-     */
-    default List<Object[]> findUrgentOrderProjections(int limit) {
-        return findUrgentOrderProjections(LocalDateTime.now().minusHours(2), limit);
-    }
-
-    /**
-     * Алиас за обратна съвместимост
-     */
-    default List<Order> findByStatusOrderByCreatedAtDesc(OrderStatus status) {
-        return findByStatusOrderBySubmittedAtDesc(status);
-    }
 
     /**
      * Recent orders с оптимизация
@@ -379,4 +366,20 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             @Param("cutoffTime") LocalDateTime cutoffTime
     );
 
+    /**
+     * Оптимизирана заявка за поръчки по client ID
+     * Работи за всички роли в UserEntity (клиенти, работници, админи)
+     */
+    @Query(value = """
+    SELECT DISTINCT o FROM Order o 
+    LEFT JOIN FETCH o.client 
+    WHERE o.client.id = :clientId 
+    ORDER BY o.submittedAt DESC
+    """)
+    @QueryHints({
+            @QueryHint(name = "org.hibernate.readOnly", value = "true"),
+            @QueryHint(name = "org.hibernate.fetchSize", value = "50")
+    })
+    @Transactional(readOnly = true)
+    List<Order> findByClientIdOrderBySubmittedAtDesc(@Param("clientId") Long clientId);
 }

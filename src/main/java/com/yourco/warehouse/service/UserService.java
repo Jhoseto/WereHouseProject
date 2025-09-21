@@ -1,6 +1,5 @@
 package com.yourco.warehouse.service;
 
-import com.yourco.warehouse.dto.UserProfileDTO;
 import com.yourco.warehouse.entity.UserEntity;
 import com.yourco.warehouse.entity.enums.UserStatus;
 import org.springframework.security.core.Authentication;
@@ -16,17 +15,9 @@ public interface UserService {
 
     Optional<UserEntity> findUserByUsername(String username);
 
-    boolean checkPassword(UserEntity user, String rawPassword);
-
-    List<UserProfileDTO> getAllUsers();
 
     UserEntity getCurrentUser();
 
-
-    void deleteUser(Long userId);
-
-
-    UserProfileDTO getUserByUsername(String userName);
 
     //CREATE NEW USER
     void createNewUser(UserEntity userEntity);

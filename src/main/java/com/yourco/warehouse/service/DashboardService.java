@@ -1,5 +1,6 @@
 package com.yourco.warehouse.service;
 
+import com.yourco.warehouse.dto.ClientDTO;
 import com.yourco.warehouse.dto.DashboardDTO;
 import com.yourco.warehouse.entity.enums.OrderStatus;
 
@@ -222,4 +223,6 @@ public interface DashboardService {
     DashboardDTO validateInventoryForOrderChanges(Long orderId, List<Map<String, Object>> changes);
 
     DashboardDTO approveOrderWithBatchChanges(Long orderId, List<Map<String, Object>> changes, String operatorNote, String changesSummary);
+
+    ClientDTO getClientInfo(Long clientId);
 }

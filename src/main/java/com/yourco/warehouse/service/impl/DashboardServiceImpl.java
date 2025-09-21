@@ -1,14 +1,18 @@
 package com.yourco.warehouse.service.impl;
 
+import com.yourco.warehouse.dto.ClientDTO;
 import com.yourco.warehouse.dto.DashboardDTO;
 import com.yourco.warehouse.dto.OrderDTO;
 import com.yourco.warehouse.entity.Order;
 import com.yourco.warehouse.entity.OrderItem;
 import com.yourco.warehouse.entity.ProductEntity;
+import com.yourco.warehouse.entity.UserEntity;
 import com.yourco.warehouse.entity.enums.OrderStatus;
+import com.yourco.warehouse.entity.enums.UserStatus;
 import com.yourco.warehouse.mapper.OrderMapper;
 import com.yourco.warehouse.repository.OrderRepository;
 import com.yourco.warehouse.service.DashboardService;
+import com.yourco.warehouse.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,12 +38,15 @@ public class DashboardServiceImpl implements DashboardService {
 
     private final OrderRepository orderRepository;
     private final OrderMapper orderMapper;
+    private final UserService userService;
 
     @Autowired
     public DashboardServiceImpl(OrderRepository orderRepository,
-                                OrderMapper orderMapper) {
+                                OrderMapper orderMapper,
+                                UserService userService) {
         this.orderRepository = orderRepository;
         this.orderMapper = orderMapper;
+        this.userService = userService;
     }
 
     // ==========================================
@@ -696,6 +703,72 @@ public class DashboardServiceImpl implements DashboardService {
 
         } catch (Exception e) {
             return new DashboardDTO("Грешка при одобряване: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public ClientDTO getClientInfo(Long clientId) {
+        if (clientId == null) {
+            return new ClientDTO(0L, "unknown", "Неизвестен клиент", "", "", "", UserStatus.ACTIVE);
+        }
+
+        try {
+            // Извличаме user информацията
+            Optional<UserEntity> userOpt = userService.findUserById(clientId);
+            if (userOpt.isEmpty()) {
+                return new ClientDTO(0L, "unknown", "Неизвестен клиент", "", "", "", UserStatus.ACTIVE);
+            }
+
+            UserEntity user = userOpt.get();
+            ClientDTO clientDTO = new ClientDTO(
+                    user.getId(),
+                    user.getUsername(),
+                    user.getCompanyName(),
+                    user.getEmail(),
+                    user.getPhone(),
+                    user.getLocation(),
+                    user.getUserStatus()
+            );
+
+            // Извличаме статистики за поръчки
+            List<Order> clientOrders = orderRepository.findByClientIdOrderBySubmittedAtDesc(clientId);
+            clientDTO.setTotalOrders(clientOrders.size());
+
+            if (!clientOrders.isEmpty()) {
+                // Последна поръчка
+                Order lastOrder = clientOrders.get(0);
+                if (lastOrder.getSubmittedAt() != null) {
+                    clientDTO.setLastOrderDate(lastOrder.getSubmittedAt().format(
+                            java.time.format.DateTimeFormatter.ofPattern("dd.MM.yyyy")
+                    ));
+                }
+
+                // Средна стойност
+                double avgValue = clientOrders.stream()
+                        .mapToDouble(order -> order.getTotalGross().doubleValue())
+                        .average()
+                        .orElse(0.0);
+                clientDTO.setAverageOrderValue(String.format("%.2f лв", avgValue));
+
+                // Честота (опростено)
+                if (clientOrders.size() >= 2) {
+                    long daysBetween = java.time.temporal.ChronoUnit.DAYS.between(
+                            clientOrders.get(clientOrders.size() - 1).getSubmittedAt(),
+                            clientOrders.get(0).getSubmittedAt()
+                    );
+                    double avgDays = (double) daysBetween / (clientOrders.size() - 1);
+
+                    if (avgDays <= 7) clientDTO.setOrderFrequency("Седмична");
+                    else if (avgDays <= 30) clientDTO.setOrderFrequency("Месечна");
+                    else clientDTO.setOrderFrequency("Рядко");
+                }
+            }
+
+            return clientDTO;
+
+        } catch (Exception e) {
+            log.error("Грешка при извличане на клиентска информация за ID: " + clientId, e);
+            return new ClientDTO(0L, "error", "Грешка при зареждане", "", "", "", UserStatus.ACTIVE);
         }
     }
 }

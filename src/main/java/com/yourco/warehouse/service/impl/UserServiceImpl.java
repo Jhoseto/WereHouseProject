@@ -1,6 +1,5 @@
 package com.yourco.warehouse.service.impl;
 
-import com.yourco.warehouse.dto.UserProfileDTO;
 import com.yourco.warehouse.entity.UserEntity;
 import com.yourco.warehouse.entity.enums.Role;
 import com.yourco.warehouse.entity.enums.UserStatus;
@@ -59,17 +58,7 @@ public class UserServiceImpl implements UserService {
         return userRepository.findByUsername(username);
     }
 
-    @Override
-    public boolean checkPassword(UserEntity user, String rawPassword) {
 
-        return passwordEncoder.matches(rawPassword, user.getPasswordHash());
-    }
-
-    @Override
-    public List<UserProfileDTO> getAllUsers() {
-        // TODO: Implement this method
-        return List.of();
-    }
 
     @Transactional
     public UserEntity getCurrentUser() {
@@ -88,16 +77,6 @@ public class UserServiceImpl implements UserService {
         return null;
     }
 
-    @Override
-    public void deleteUser(Long userId) {
-        // TODO: Implement this method
-    }
-
-    @Override
-    public UserProfileDTO getUserByUsername(String userName) {
-        // TODO: Implement this method
-        return null;
-    }
 
     @Override
     public void createNewUser(UserEntity userEntity) {

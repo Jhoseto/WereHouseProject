@@ -1,5 +1,6 @@
 package com.yourco.warehouse.controllers;
 
+import com.yourco.warehouse.dto.ClientDTO;
 import com.yourco.warehouse.dto.DashboardDTO;
 import com.yourco.warehouse.dto.OrderDTO;
 import com.yourco.warehouse.dto.OrderItemDTO;
@@ -239,32 +240,16 @@ public class MainController {
                 return "redirect:/employer/dashboard?error=data-unavailable";
             }
 
-            // ✅ ОСНОВНИ ДАННИ за template
+            // Основни данни
             model.addAttribute("order", order);
             model.addAttribute("orderId", orderId);
-
-            // ✅ JAVASCRIPT CONFIG - Това е критично!
-            // JavaScript-ът в template-а очаква orderData, не order
             model.addAttribute("orderData", order);
 
-            // ✅ КЛИЕНТСКА ИНФОРМАЦИЯ
-            Map<String, Object> clientInfo = new HashMap<>();
-            if (order.getClientName() != null && !order.getClientName().trim().isEmpty()) {
-                clientInfo.put("id", order.getClientId() != null ? order.getClientId() : 0L);
-                clientInfo.put("name", order.getClientName());
-                clientInfo.put("lastOrderDate", ""); // TODO: Implement if needed
-                clientInfo.put("orderFrequency", ""); // TODO: Implement if needed
-            }
+            // Пълна клиентска информация с една линия код
+            ClientDTO clientInfo = dashboardService.getClientInfo(order.getClientId());
             model.addAttribute("clientInfo", clientInfo);
 
-            // ✅ КЛИЕНТСКА ИСТОРИЯ за JavaScript
-            Map<String, Object> clientHistory = new HashMap<>();
-            clientHistory.put("totalOrders", 0); // TODO: Implement if needed
-            clientHistory.put("averageOrderValue", 0); // TODO: Implement if needed
-            clientHistory.put("preferredCategories", new ArrayList<>());
-            model.addAttribute("clientHistory", clientHistory);
-
-            // ✅ КАТЕГОРИИ за dropdown filter
+            // Категории
             Set<String> categories = new HashSet<>();
             if (order.getItems() != null) {
                 categories = order.getItems().stream()
@@ -275,28 +260,22 @@ public class MainController {
             }
             model.addAttribute("categories", categories);
 
-            // ✅ CSRF TOKENS за JavaScript заявки
+            // CSRF
             CsrfToken csrfToken = (CsrfToken) request.getAttribute(CsrfToken.class.getName());
-            if (csrfToken != null) {
-                model.addAttribute("csrfToken", csrfToken.getToken());
-                model.addAttribute("csrfHeader", csrfToken.getHeaderName());
-            } else {
-                model.addAttribute("csrfToken", "");
-                model.addAttribute("csrfHeader", "X-CSRF-TOKEN");
-            }
+            model.addAttribute("csrfToken", csrfToken != null ? csrfToken.getToken() : "");
+            model.addAttribute("csrfHeader", csrfToken != null ? csrfToken.getHeaderName() : "X-CSRF-TOKEN");
 
-            // ✅ METADATA за по-добър UX
+            // Metadata
             model.addAttribute("pageTitle", "Order Review - Order #" + orderId);
             model.addAttribute("orderItemsCount", order.getItems() != null ? order.getItems().size() : 0);
 
-            // ✅ DASHBOARD CONFIG за JavaScript (КРИТИЧНО!)
+            // Dashboard config за JavaScript
             Map<String, Object> dashboardConfig = new HashMap<>();
             dashboardConfig.put("orderId", orderId);
             dashboardConfig.put("csrfToken", csrfToken != null ? csrfToken.getToken() : "");
             dashboardConfig.put("csrfHeader", csrfToken != null ? csrfToken.getHeaderName() : "X-CSRF-TOKEN");
             dashboardConfig.put("orderData", order);
             dashboardConfig.put("clientInfo", clientInfo);
-            dashboardConfig.put("clientHistory", clientHistory);
             dashboardConfig.put("dashboardMode", "review");
 
             model.addAttribute("dashboardConfig", dashboardConfig);
