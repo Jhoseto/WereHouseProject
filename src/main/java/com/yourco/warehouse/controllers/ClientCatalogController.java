@@ -16,12 +16,12 @@ import java.util.*;
 
 @RestController
 @RequestMapping
-public class CatalogController {
+public class ClientCatalogController {
 
     private final CatalogService catalogService;
 
     @Autowired
-    public CatalogController(CatalogService catalogService) {
+    public ClientCatalogController(CatalogService catalogService) {
         this.catalogService = catalogService;
     }
 

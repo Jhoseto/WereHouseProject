@@ -427,8 +427,8 @@ public class DashboardServiceImpl implements DashboardService {
 
             Order order = orderOpt.get();
 
-            // ✅ РЕАЛНА ЛОГИКА: Проверява статуса
-            if (order.getStatus() != OrderStatus.PENDING && order.getStatus() != OrderStatus.URGENT) {
+            //  Проверява статуса
+            if (order.getStatus().equals( OrderStatus.CONFIRMED)) {
                 return new DashboardDTO("Поръчката не може да бъде отказана в текущия статус: " + order.getStatus());
             }
 

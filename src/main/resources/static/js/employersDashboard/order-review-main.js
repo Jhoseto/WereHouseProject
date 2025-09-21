@@ -262,11 +262,31 @@ class OrderReviewOrchestrator {
     }
 
     handleRejectionConfirmation() {
-        const selectedReason = document.querySelector('.reason-option.selected')?.dataset.reason || '';
-        const additionalNote = document.getElementById('rejection-note')?.value || '';
-        const fullReason = selectedReason + (additionalNote ? ': ' + additionalNote : '');
+        const selected = document.querySelector('.reason-option.selected');
+        const noteField = document.getElementById('rejection-note');
+        let reason = '';
 
-        this.performOrderRejection(fullReason);
+        if (selected) {
+            // Ако има избрана опция, използвай нея
+            reason = selected.dataset.reason;
+        } else if (noteField && noteField.value.trim()) {
+            // Ако няма избрана опция, но има custom текст
+            reason = noteField.value.trim();
+        } else {
+            // Ако няма нито избрана опция, нито custom текст
+            if (window.toastManager) {
+                window.toastManager.error('Моля изберете причина за отказ');
+            }
+            return;
+        }
+
+        // Добави custom бележка ако има такава И е различна от избраната причина
+        const customNote = noteField ? noteField.value.trim() : '';
+        if (customNote && customNote !== reason) {
+            reason += ': ' + customNote;
+        }
+
+        this.performOrderRejection(reason);
     }
 
     handleRejectionCancellation() {
@@ -372,9 +392,13 @@ class OrderReviewOrchestrator {
 
     async performOrderRejection(reason) {
         try {
-            const result = await this.dashboardManager.rejectOrder(this.currentOrderId, reason);
+            console.log('Rejecting order:', this.currentOrderId, 'Reason:', reason);
 
-            if (result.success) {
+            const result = await this.dashboardApi.rejectOrder(this.currentOrderId, reason);
+
+            console.log('Rejection result:', result);
+
+            if (result && result.success) {
                 if (window.toastManager) {
                     window.toastManager.success('Поръчката е отказана успешно.');
                 }
@@ -383,10 +407,11 @@ class OrderReviewOrchestrator {
                 }, 2000);
             } else {
                 if (window.toastManager) {
-                    window.toastManager.error(result.message || 'Грешка при отказване на поръчката.');
+                    window.toastManager.error(result?.message || 'Грешка при отказване на поръчката.');
                 }
             }
         } catch (error) {
+            console.error('Error rejecting order:', error);
             if (window.toastManager) {
                 window.toastManager.error('Грешка при отказване на поръчката.');
             }
@@ -458,41 +483,42 @@ class OrderReviewOrchestrator {
         if (element) element.textContent = value;
     }
 
+
     showRejectionModal() {
         const modal = document.getElementById('rejection-modal');
-        if (modal) {
-            modal.classList.add('show');
+        modal.classList.remove('hidden');
+        modal.classList.add('show');
 
-            // Setup reason selection
-            modal.querySelectorAll('.reason-option').forEach(option => {
-                option.addEventListener('click', () => {
-                    modal.querySelectorAll('.reason-option').forEach(opt => opt.classList.remove('selected'));
-                    option.classList.add('selected');
-                });
-            });
-        }
+        // Почисти и setup-ни reason options
+        document.querySelectorAll('#rejection-modal .reason-option').forEach(option => {
+            option.classList.remove('selected');
+            option.onclick = function() {
+                // Премахни selection от всички
+                document.querySelectorAll('#rejection-modal .reason-option').forEach(opt =>
+                    opt.classList.remove('selected')
+                );
+                // Маркирай кликнатата
+                this.classList.add('selected');
+
+                // КОПИРАЙ ТЕКСТА В TEXTAREA ПОЛЕТО
+                const noteField = document.getElementById('rejection-note');
+                const reasonText = this.dataset.reason;
+                if (noteField && reasonText) {
+                    noteField.value = reasonText;
+                }
+            };
+        });
+
+        // Почисти textarea
+        const noteField = document.getElementById('rejection-note');
+        if (noteField) noteField.value = '';
     }
 
     hideRejectionModal() {
-        const modal = document.getElementById('rejection-modal');
-        if (modal) {
-            modal.classList.remove('show');
-            modal.querySelectorAll('.reason-option').forEach(opt => opt.classList.remove('selected'));
-            const noteField = document.getElementById('rejection-note');
-            if (noteField) noteField.value = '';
-        }
+        document.getElementById('rejection-modal').classList.remove('show');
     }
 
-    showCorrectionPreview() {
-        const preview = document.getElementById('correction-preview');
-        if (preview) {
-            const summary = document.getElementById('correction-summary');
-            if (summary) {
-                summary.innerHTML = this.generateCorrectionNote().replace(/\n/g, '<br>') || 'Няма направени корекции.';
-            }
-            preview.classList.remove('hidden');
-        }
-    }
+
 
     hideCorrectionPreview() {
         const preview = document.getElementById('correction-preview');

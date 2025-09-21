@@ -221,7 +221,6 @@ public class MainController {
 
     /**
      * HTML TEMPLATE за order review страницата
-     * Този метод служи само HTML страници, не JSON данни
      */
     @GetMapping("/employer/dashboard/order/{orderId}/detailOrder")
     public String getOrderReviewPage(@PathVariable Long orderId,
@@ -290,7 +289,18 @@ public class MainController {
             model.addAttribute("pageTitle", "Order Review - Order #" + orderId);
             model.addAttribute("orderItemsCount", order.getItems() != null ? order.getItems().size() : 0);
 
-            // Връщаме template name (това работи защото сме @Controller, не @RestController)
+            // ✅ DASHBOARD CONFIG за JavaScript (КРИТИЧНО!)
+            Map<String, Object> dashboardConfig = new HashMap<>();
+            dashboardConfig.put("orderId", orderId);
+            dashboardConfig.put("csrfToken", csrfToken != null ? csrfToken.getToken() : "");
+            dashboardConfig.put("csrfHeader", csrfToken != null ? csrfToken.getHeaderName() : "X-CSRF-TOKEN");
+            dashboardConfig.put("orderData", order);
+            dashboardConfig.put("clientInfo", clientInfo);
+            dashboardConfig.put("clientHistory", clientHistory);
+            dashboardConfig.put("dashboardMode", "review");
+
+            model.addAttribute("dashboardConfig", dashboardConfig);
+
             return "employer/order-review";
 
         } catch (Exception e) {

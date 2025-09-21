@@ -324,20 +324,23 @@
 
 <!-- Order data for JavaScript initialization -->
 <script th:inline="javascript">
-    // Prevent automatic catalog initialization
-    window.preventCatalogAutoInit = true;
+    // ОСНОВЕН CONFIG обект
+    window.dashboardConfig = /*[[${dashboardConfig}]]*/ {};
 
-    // Order review configuration
-    window.orderReviewConfig = {
-        orderId: /*[[${orderId}]]*/ null,
-        clientId: /*[[${clientInfo?.id}]]*/ null,
-        csrfToken: /*[[${csrfToken}]]*/ '',
-        csrfHeader: /*[[${csrfHeader}]]*/ '',
-        dashboardMode: 'review',
-        orderData: /*[[${orderData}]]*/ {},
-        clientHistory: /*[[${clientHistory}]]*/ {},
-        waitForMainDashboard: true
-    };
+    // Backup config ако има проблем с Thymeleaf
+    if (!window.dashboardConfig || !window.dashboardConfig.orderId) {
+        window.dashboardConfig = {
+            orderId: /*[[${orderId}]]*/ null,
+            csrfToken: /*[[${csrfToken}]]*/ '',
+            csrfHeader: /*[[${csrfHeader}]]*/ 'X-CSRF-TOKEN',
+            orderData: /*[[${orderData}]]*/ {},
+            clientInfo: /*[[${clientInfo}]]*/ {},
+            clientHistory: /*[[${clientHistory}]]*/ {},
+            dashboardMode: 'review'
+        };
+    }
+    // orderReviewConfig за compatibility
+    window.orderReviewConfig = window.dashboardConfig;
 </script>
 
 <!-- Core project scripts -->
@@ -351,5 +354,21 @@
 <script src="/js/employersDashboard/orderReviewCatalog.js"></script>
 <script src="/js/employersDashboard/order-review-main.js"></script>
 
+<!-- Order Review Initialization -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Проверяваме дали всички dependencies са заредени
+        if (typeof OrderReviewOrchestrator !== 'undefined' && window.dashboardConfig) {
+            console.log('Initializing OrderReviewOrchestrator...');
+            window.orderReviewMain = new OrderReviewOrchestrator();
+            window.orderReviewMain.initialize();
+        } else {
+            console.error('OrderReviewOrchestrator или dashboardConfig не са налични:', {
+                OrderReviewOrchestrator: typeof OrderReviewOrchestrator !== 'undefined',
+                dashboardConfig: !!window.dashboardConfig
+            });
+        }
+    });
+</script>
 </body>
 </html>

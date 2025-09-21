@@ -27,18 +27,18 @@ import java.util.concurrent.TimeUnit;
  */
 @RestController
 @RequestMapping("/api/cart")
-public class CartController {
+public class ClientCartController {
 
-    private static final Logger log = LoggerFactory.getLogger(CartController.class);
+    private static final Logger log = LoggerFactory.getLogger(ClientCartController.class);
 
     private final CartServiceImpl cartService;
     private final UserService userService;
     private final OrderService orderService;
 
     @Autowired
-    public CartController(CartServiceImpl cartService,
-                          UserService userService,
-                          OrderService orderService) {
+    public ClientCartController(CartServiceImpl cartService,
+                                UserService userService,
+                                OrderService orderService) {
         this.cartService = cartService;
         this.userService = userService;
         this.orderService = orderService;

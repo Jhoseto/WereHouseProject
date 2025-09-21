@@ -74,7 +74,7 @@ public class SecurityConfig {
                         .sessionFixation().migrateSession()
                         .sessionCreationPolicy(SessionCreationPolicy.ALWAYS)
                         .invalidSessionUrl("/")
-                        .maximumSessions(1)
+                        .maximumSessions(5)  // 5 таба за операторите
                         .maxSessionsPreventsLogin(false)
                         .expiredUrl("/")
                 )

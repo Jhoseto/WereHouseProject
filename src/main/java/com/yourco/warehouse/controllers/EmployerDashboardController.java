@@ -347,7 +347,15 @@ public class EmployerDashboardController {
                         orderId, "CONFIRMED", originalStatus, orderData);
 
                 // Trigger automatic counter update broadcast
-                this.getCounters();
+                DashboardDTO freshCounters = dashboardService.getCounters();
+                if (freshCounters.getSuccess()) {
+                    broadcastService.broadcastCounterUpdate(
+                            freshCounters.getUrgentCount(),
+                            freshCounters.getPendingCount(),
+                            freshCounters.getCompletedCount(),
+                            freshCounters.getCancelledCount()
+                    );
+                }
                 return ResponseEntity.ok(response);
             } else {
                 log.warn("Order approval failed for order {}: {}", orderId, response.getMessage());
@@ -394,7 +402,15 @@ public class EmployerDashboardController {
                 broadcastService.broadcastOrderStatusChange(
                         orderId, "CANCELLED", originalStatus, orderData);
 
-                this.getCounters();
+                DashboardDTO freshCounters = dashboardService.getCounters();
+                if (freshCounters.getSuccess()) {
+                    broadcastService.broadcastCounterUpdate(
+                            freshCounters.getUrgentCount(),
+                            freshCounters.getPendingCount(),
+                            freshCounters.getCompletedCount(),
+                            freshCounters.getCancelledCount()
+                    );
+                }
 
                 return ResponseEntity.ok(response);
             } else {
@@ -509,7 +525,15 @@ public class EmployerDashboardController {
 
             if (response.getSuccess()) {
                 broadcastService.broadcastOrderStatusChange(orderId, "CONFIRMED", "PENDING", new HashMap<>());
-                this.getCounters();
+                DashboardDTO freshCounters = dashboardService.getCounters();
+                if (freshCounters.getSuccess()) {
+                    broadcastService.broadcastCounterUpdate(
+                            freshCounters.getUrgentCount(),
+                            freshCounters.getPendingCount(),
+                            freshCounters.getCompletedCount(),
+                            freshCounters.getCancelledCount()
+                    );
+                }
             }
 
             return ResponseEntity.ok(response);

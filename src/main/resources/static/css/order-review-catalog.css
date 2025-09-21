@@ -781,16 +781,16 @@ h4 { font-size: var(--text-lg); }
 }
 
 /* ==========================================
-   MODAL STYLING - REJECTION DIALOG
+   REJECTION MODAL - COMPLETE STYLING
    ========================================== */
 
-.modal-overlay {
-    position: fixed;
+#rejection-modal {
+    position: fixed !important;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0,0,0,0.5);
+    background: rgba(0, 0, 0, 0.5);
     z-index: 2000;
     display: flex;
     align-items: center;
@@ -800,20 +800,28 @@ h4 { font-size: var(--text-lg); }
     transition: all 0.3s ease;
 }
 
-.modal-overlay.show {
+#rejection-modal.show {
     opacity: 1;
     visibility: visible;
 }
 
-.modal {
+#rejection-modal .modal {
     background: white;
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-lg);
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
     max-width: 500px;
-    width: calc(100% - var(--space-8));
-    max-height: calc(100vh - var(--space-8));
-    overflow: hidden;
-    animation: modalAppear 0.2s ease-out;
+    width: calc(100% - 32px);
+    max-height: calc(100vh - 32px);
+    overflow-y: auto;
+    position: relative;
+    transform: translateY(0);
+}
+
+#rejection-modal.show .modal {
+    opacity: 1 !important;
+    visibility: visible !important;
+    display: block !important;
+    height: 720px;
 }
 
 @keyframes modalAppear {
@@ -827,115 +835,193 @@ h4 { font-size: var(--text-lg); }
     }
 }
 
-.modal-header {
+#rejection-modal .modal-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: var(--space-6);
-    border-bottom: 1px solid var(--neutral-200);
-    background: var(--neutral-50);
+    padding: 20px 24px;
+    border-bottom: 1px solid #e9ecef;
+    background: #f8f9fa;
 }
 
-.modal-header h4 {
-    color: var(--neutral-900);
+#rejection-modal .modal-header h4 {
+    margin: 0;
+    color: #2c3e50;
+    font-size: 1.2rem;
+    font-weight: 600;
 }
 
-.modal-close {
+#rejection-modal .modal-close {
     background: none;
     border: none;
-    color: var(--neutral-500);
+    color: #6c757d;
     cursor: pointer;
-    padding: var(--space-1);
-    border-radius: var(--radius-sm);
-    transition: all var(--transition-fast);
+    padding: 8px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
 }
 
-.modal-close:hover {
-    background: var(--neutral-200);
-    color: var(--neutral-700);
+#rejection-modal .modal-close:hover {
+    background: #e9ecef;
+    color: #495057;
 }
 
-.modal-body {
-    padding: var(--space-6);
+#rejection-modal .modal-body {
+    padding: 24px;
 }
 
-.reason-options {
+#rejection-modal .reason-options {
     display: flex;
     flex-direction: column;
-    gap: var(--space-3);
-    margin-bottom: var(--space-6);
+    gap: 12px;
+    margin-bottom: 24px;
 }
 
-.reason-option {
-    padding: var(--space-4);
-    border: 2px solid var(--neutral-200);
-    border-radius: var(--radius-base);
+#rejection-modal .reason-option {
+    padding: 16px;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: all 0.2s ease;
+    pointer-events: auto;
+    user-select: none;
+    background: white;
 }
 
-.reason-option:hover {
-    border-color: var(--review-secondary);
+#rejection-modal .reason-option:hover {
+    border-color: #3498db;
     background: rgba(52, 152, 219, 0.05);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.reason-option.selected {
-    border-color: var(--review-secondary);
+#rejection-modal .reason-option.selected {
+    border-color: #3498db;
     background: rgba(52, 152, 219, 0.1);
+    box-shadow: 0 0 0 1px rgba(52, 152, 219, 0.2);
 }
 
-.reason-option strong {
+#rejection-modal .reason-option strong {
     display: block;
-    color: var(--neutral-900);
-    margin-bottom: var(--space-1);
+    color: #2c3e50;
+    margin-bottom: 4px;
+    font-weight: 600;
+    font-size: 0.95rem;
 }
 
-.reason-option small {
-    color: var(--neutral-500);
-    font-size: var(--text-sm);
+#rejection-modal .reason-option small {
+    color: #6c757d;
+    font-size: 0.85rem;
+    line-height: 1.3;
 }
 
-.custom-reason {
-    margin-top: var(--space-4);
+#rejection-modal .custom-reason {
+    margin-top: 16px;
 }
 
-.custom-reason label {
+#rejection-modal .custom-reason label {
     display: block;
-    margin-bottom: var(--space-2);
+    margin-bottom: 8px;
     font-weight: 500;
-    color: var(--neutral-700);
+    color: #2c3e50;
+    font-size: 0.9rem;
 }
 
-.form-textarea {
+#rejection-modal .form-textarea {
     width: 100%;
-    padding: var(--space-3);
-    border: 1px solid var(--neutral-300);
-    border-radius: var(--radius-base);
-    font-size: var(--text-sm);
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
     font-family: inherit;
     resize: vertical;
-    transition: border-color var(--transition-fast);
+    transition: border-color 0.2s ease;
+    box-sizing: border-box;
+    min-height: 80px;
 }
 
-.form-textarea:focus {
+#rejection-modal .form-textarea:focus {
     outline: none;
-    border-color: var(--review-secondary);
+    border-color: #3498db;
     box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
 }
 
-.modal-footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: var(--space-3);
-    padding: var(--space-6);
-    border-top: 1px solid var(--neutral-200);
-    background: var(--neutral-50);
+#rejection-modal .form-textarea::placeholder {
+    color: #adb5bd;
+    font-style: italic;
 }
 
-/* ==========================================
-   ORDER REVIEW CATALOG - INTEGRATED STYLES
-   Професионален интерфейс за преглед на поръчки
-   ========================================== */
+#rejection-modal .modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 20px 24px;
+    border-top: 1px solid #e9ecef;
+    background: #f8f9fa;
+}
+
+#rejection-modal .modal-footer .btn-secondary {
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: #6c757d;
+    color: white;
+    border: none;
+    font-size: 0.9rem;
+}
+
+#rejection-modal .modal-footer .btn-secondary:hover {
+    background: #5a6268;
+    transform: translateY(-1px);
+}
+
+#rejection-modal .modal-footer .btn-danger {
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: #dc3545;
+    color: white;
+    border: none;
+    font-size: 0.9rem;
+}
+
+#rejection-modal .modal-footer .btn-danger:hover {
+    background: #c82333;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+}
+
+/* Mobile responsive */
+@media (max-width: 600px) {
+    #rejection-modal .modal {
+        max-width: calc(100vw - 20px);
+        margin: 10px;
+    }
+
+    #rejection-modal .modal-header,
+    #rejection-modal .modal-body,
+    #rejection-modal .modal-footer {
+        padding: 16px;
+    }
+
+    #rejection-modal .modal-footer {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    #rejection-modal .modal-footer button {
+        width: 100%;
+    }
+}
 
 /* ==========================================
    REVIEW TABLE - ОСНОВНА ТАБЛИЦА

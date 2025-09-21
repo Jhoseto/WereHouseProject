@@ -20,15 +20,15 @@ import java.util.Map;
 import java.util.Optional;
 
 @Controller
-public class OrderController {
+public class ClientOrdersController {
 
-    private static final Logger log = LoggerFactory.getLogger(OrderController.class);
+    private static final Logger log = LoggerFactory.getLogger(ClientOrdersController.class);
 
     private final OrderService orderService;
     private final UserService userService;
 
     @Autowired
-    public OrderController(OrderService orderService, UserService userService) {
+    public ClientOrdersController(OrderService orderService, UserService userService) {
         this.orderService = orderService;
         this.userService = userService;
     }
