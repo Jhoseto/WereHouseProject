@@ -99,7 +99,6 @@ class OrderReviewOrchestrator {
         } catch (error) {
             if (this.orderData && this.orderData.id) {
                 this.orderData.dataSource = 'cached';
-                this.showDataFreshnessWarning();
             } else {
                 throw new Error('No order data available from any source');
             }
@@ -202,7 +201,7 @@ class OrderReviewOrchestrator {
 
             if (!hasLocalChanges && !hasTrackedChanges) {
                 // Direct approval without corrections
-                result = await this.dashboardManager.approveOrder(this.currentOrderId, '');
+                result = await this.dashboardApi.approveOrder(this.currentOrderId, '');
             } else {
                 // Approval with corrections
                 const validationResult = await this.performFinalValidation();
@@ -580,11 +579,6 @@ class OrderReviewOrchestrator {
         if (preview) preview.classList.add('hidden');
     }
 
-    showDataFreshnessWarning() {
-        if (window.toastManager) {
-            window.toastManager.warning('Използват се кеширани данни. Моля, обновете страницата за най-актуални данни.');
-        }
-    }
 
     handleValidationFailure(validationResult) {
         if (window.toastManager) {
@@ -600,10 +594,13 @@ class OrderReviewOrchestrator {
             approveBtn.innerHTML = '<i class="bi bi-check"></i> Одобрена';
             approveBtn.style.background = '#28a745';
             approveBtn.style.color = 'white';
-            // DON'T enable again: approveBtn.disabled = false;
         }
 
-        // NO toast here - server already shows notification
+        // ПОКАЗВА ПРАВИЛНОТО СЪОБЩЕНИЕ ОТ СЪРВЪРА:
+        if (window.toastManager && result?.message) {
+            window.toastManager.success(result.message);
+        }
+
         setTimeout(() => {
             window.location.href = '/employer/dashboard';
         }, 1000);

@@ -359,37 +359,7 @@ class MainDashboard {
         return this.isInitialized && this.manager && this.api && this.ui;
     }
 
-    /**
-     * Get dashboard status for debugging
-     */
-    getStatus() {
-        return {
-            isInitialized: this.isInitialized,
-            hasAPI: !!this.api,
-            hasManager: !!this.manager,
-            hasUI: !!this.ui,
-            isConnected: this.api?.wsConnected || false,
-            errorCount: this.errorCount,
-            lastError: this.lastError?.message,
-            currentTab: this.manager?.currentTab
-        };
-    }
 
-    /**
-     * Manually trigger data refresh (for debugging)
-     */
-    async forceRefresh() {
-        if (this.isReady()) {
-            try {
-                await this.manager.refreshDashboard();
-                console.log('✓ Manual refresh completed');
-            } catch (error) {
-                console.error('Manual refresh failed:', error);
-            }
-        } else {
-            console.warn('Dashboard not ready for refresh');
-        }
-    }
 
     /**
      * Cleanup resources when page is unloaded
@@ -452,31 +422,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
 });
-
-
-window.updateItemQuantity = function(orderId, productId, newQuantity) {
-    if (window.mainDashboard && window.mainDashboard.manager) {
-        window.mainDashboard.manager.updateProductQuantity(orderId, productId, newQuantity);
-    }
-};
-
-window.approveOrderWithNote = function(orderId) {
-    const noteTextarea = document.getElementById(`operator-note-${orderId}`);
-    const operatorNote = noteTextarea ? noteTextarea.value.trim() : '';
-
-    if (window.mainDashboard && window.mainDashboard.manager) {
-        window.mainDashboard.manager.approveOrder(orderId, operatorNote);
-    }
-};
-
-window.showRejectDialog = function(orderId) {
-    const reason = prompt('Причина за отказване на поръчката:');
-    if (reason && reason.trim()) {
-        if (window.mainDashboard && window.mainDashboard.manager) {
-            window.mainDashboard.manager.rejectOrder(orderId, reason.trim());
-        }
-    }
-};
 
 /**
  * Cleanup on page unload

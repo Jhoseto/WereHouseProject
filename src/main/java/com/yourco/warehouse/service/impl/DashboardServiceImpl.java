@@ -398,9 +398,9 @@ public class DashboardServiceImpl implements DashboardService {
 
             // Генерирай съобщението базирано на дали има корекции
             if (order.getHasModifications() != null && order.getHasModifications()) {
-                response.setMessage("Поръчката е одобрена с корекции. Клиентът ще получи уведомление.");
+                response.setMessage("Поръчката е одобрена с корекции. Клиентът ще получи уведомление и детайли за корекцията");
             } else {
-                response.setMessage("Поръчката е одобрена без корекции.");
+                response.setMessage("Поръчката е одобрена !");
             }
 
             return response;

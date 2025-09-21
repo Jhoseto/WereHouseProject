@@ -403,8 +403,7 @@ class DashboardApi {
     }
 
     /**
-     * Approve entire order (ЕДИНСТВЕНА ПРАВИЛНА ВЕРСИЯ)
-     * Ако поръчката е модифицирана, автоматично изпраща correction message
+     * Approve entire order
      */
     async approveOrder(orderId, operatorNote = '') {
         try {
@@ -421,11 +420,9 @@ class DashboardApi {
             this.clearOrderCache(orderId);
             this.clearCache(); // Изчиства и counters за правилно обновяване
 
-            console.log(`Order ${orderId} approved successfully:`, data);
             return data;
 
         } catch (error) {
-            console.error(`Error approving order ${orderId}:`, error);
             throw error;
         }
     }
