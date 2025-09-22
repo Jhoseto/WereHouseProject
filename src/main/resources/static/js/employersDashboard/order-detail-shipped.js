@@ -528,7 +528,7 @@ class OrderDetailShipped {
     createItemElement(item) {
         const isLoaded = this.loadedItems.has(item.id);
 
-        // Безопасно извличане на данни с fallback стойности и правилна типизация
+        // Безопасно извличане на данни с fallback стойности
         const itemName = item.productName || 'Неизвестен артикул';
         const itemCategory = item.productCategory || 'Без категория';
         const itemQuantity = Number(item.quantity) || 0;
@@ -557,34 +557,74 @@ class OrderDetailShipped {
                     </div>
                 </div>
             </div>
-            <button class="loading-toggle ${isLoaded ? 'loaded' : ''}" 
-                    data-item-id="${item.id}"
-                    aria-label="${isLoaded ? 'Отмяна на зареждането' : 'Отбелязване като заредено'}"
-                    title="${isLoaded ? 'Натиснете за отмяна на зареждането' : 'Натиснете за отбелязване като заредено'}">
-                <i class="bi ${isLoaded ? 'bi-check-circle-fill' : 'bi-circle'}"></i>
-            </button>
         </div>
+        <button class="loading-toggle ${isLoaded ? 'loaded' : ''}" 
+                data-item-id="${item.id}"
+                data-processing="false"
+                aria-label="${isLoaded ? 'Отмяна на зареждането' : 'Отбелязване като заредено'}"
+                title="${isLoaded ? 'Натиснете за отмяна на зареждането' : 'Натиснете за отбелязване като заредено'}">
+            <i class="bi ${isLoaded ? 'bi-check-circle-fill' : 'bi-circle'}"></i>
+        </button>
     `;
 
-        // Add event listener за toggle button
+        // КРИТИЧНО ПОДОБРЕНИЕ: Robust toggle handling
         const toggleBtn = itemDiv.querySelector('.loading-toggle');
-        this.addEventListener(toggleBtn, 'click', (e) => {
+
+        // Премахва стари event listeners ако има такива
+        this.removeEventListener(toggleBtn, 'click');
+
+        // НОВА ЛОГИКА: Използваме data-processing вместо disabled
+        this.addEventListener(toggleBtn, 'click', async (e) => {
             e.preventDefault();
-            e.stopPropagation(); // Спира event propagation
+            e.stopPropagation();
 
-            // Предотвратява multiple clicks в кратко време
-            if (toggleBtn.disabled) return;
+            // Проверка дали вече се процесва - използваме data атрибут
+            if (toggleBtn.dataset.processing === 'true') {
+                console.log(`❌ Button ${item.id} already processing, ignoring click`);
+                return;
+            }
 
-            toggleBtn.disabled = true;
-            this.toggleItemLoadingStatus(item.id);
+            console.log(`🔄 Starting toggle for item ${item.id}`);
 
-            // Re-enable button след кратко delay
-            setTimeout(() => {
-                toggleBtn.disabled = false;
-            }, 200);
+            // Маркираме като "в процес" но НЕ disable-ваме бутона
+            toggleBtn.dataset.processing = 'true';
+            toggleBtn.classList.add('processing');
+
+            try {
+                // Извикваме async операцията със стабилен error handling
+                await this.toggleItemLoadingStatus(item.id);
+
+                console.log(`✅ Toggle completed successfully for item ${item.id}`);
+
+                // Haptic feedback на mobile
+                if (navigator.vibrate) {
+                    navigator.vibrate(50);
+                }
+
+            } catch (error) {
+                console.error(`❌ Error toggling item ${item.id}:`, error);
+
+                // Показваме грешка на потребителя
+                if (window.toastManager) {
+                    window.toastManager.error('Грешка при промяна на статуса');
+                }
+
+                // КРИТИЧНО: Връщаме старото състояние при грешка
+                const currentState = this.loadedItems.has(item.id);
+                const previousState = !currentState;
+                this.syncItemLoadingStatus(item.id, previousState, true);
+
+            } finally {
+                // ВИНАГИ премахваме processing state след операцията
+                setTimeout(() => {
+                    toggleBtn.dataset.processing = 'false';
+                    toggleBtn.classList.remove('processing');
+                    console.log(`🔓 Released processing lock for item ${item.id}`);
+                }, 100); // Кратко delay за да се види visual feedback
+            }
         });
 
-        // Add touch feedback за mobile
+        // Touch feedback за mobile devices
         this.addTouchFeedback(toggleBtn);
 
         return itemDiv;
@@ -599,24 +639,38 @@ class OrderDetailShipped {
 
         console.log(`🔄 Toggle item ${itemId}: ${currentState} → ${newState}`);
 
-        // Update local state
-        this.syncItemLoadingStatus(itemId, newState, true);
+        try {
+            // ПЪРВО обновяваме visual state за instant feedback
+            this.syncItemLoadingStatus(itemId, newState, true);
 
-        // Send real-time update чрез API
-        if (this.shippingApi) {
-            const progressData = this.shippingApi.calculateProgressStatistics(
-                this.loadedItems,
-                this.orderItems.length
-            );
+            // СЛЕД ТОВА изпращаме API заявката
+            if (this.shippingApi) {
+                const progressData = this.shippingApi.calculateProgressStatistics(
+                    this.loadedItems,
+                    this.orderItems.length
+                );
 
-            await this.shippingApi.updateItemLoadingStatus(itemId, newState, progressData);
-        }
+                // Това е критичната точка където може да има грешка
+                await this.shippingApi.updateItemLoadingStatus(itemId, newState, progressData);
+            }
 
-        // Provide haptic feedback на mobile
-        if (navigator.vibrate) {
-            navigator.vibrate(50);
+            // Показваме success toast
+            const action = newState ? 'зареден' : 'премахнат от заредените';
+            if (window.toastManager) {
+                window.toastManager.success(`Артикул ${action}`);
+            }
+
+        } catch (error) {
+            console.error('API error in toggleItemLoadingStatus:', error);
+
+            // КРИТИЧНО: При API грешка връщаме визуалното състояние обратно
+            this.syncItemLoadingStatus(itemId, currentState, true);
+
+            // Re-throw error-а за да го хване calling функцията
+            throw error;
         }
     }
+
 
     /**
      * Sync item loading status (за both local и remote updates)
@@ -649,26 +703,53 @@ class OrderDetailShipped {
      * Update visual state на конкретен item
      */
     updateItemVisualState(itemId, isLoaded) {
-        const itemElement = document.querySelector(`[data-item-id="${itemId}"]`);
-        if (!itemElement) return;
+        // Намира всички elements за този item
+        const itemElements = document.querySelectorAll(`[data-item-id="${itemId}"]`);
 
-        const itemCard = itemElement.closest('.order-item-card');
-        const toggleBtn = itemElement;
-        const icon = toggleBtn.querySelector('i');
-
-        if (isLoaded) {
-            itemCard.classList.add('loaded');
-            toggleBtn.classList.add('loaded');
-            toggleBtn.setAttribute('aria-label', 'Отмяна на зареждането');
-            toggleBtn.setAttribute('title', 'Натиснете за отмяна на зареждането');
-            icon.className = 'bi bi-check-circle-fill';
-        } else {
-            itemCard.classList.remove('loaded');
-            toggleBtn.classList.remove('loaded');
-            toggleBtn.setAttribute('aria-label', 'Отбелязване като заредено');
-            toggleBtn.setAttribute('title', 'Натиснете за отбелязване като заредено');
-            icon.className = 'bi bi-circle';
+        if (itemElements.length === 0) {
+            console.warn(`⚠️ No elements found for item ${itemId}`);
+            return;
         }
+
+        itemElements.forEach(element => {
+            // Намира container-а и button-а
+            const itemContainer = element.closest('.order-item-card');
+            const toggleBtn = element.classList.contains('loading-toggle') ?
+                element : element.querySelector('.loading-toggle');
+            const icon = toggleBtn?.querySelector('i');
+
+            if (itemContainer) {
+                // Обновява container класа за background color
+                if (isLoaded) {
+                    itemContainer.classList.add('loaded');
+                } else {
+                    itemContainer.classList.remove('loaded');
+                }
+            }
+
+            if (toggleBtn) {
+                // Обновява button класа и атрибутите
+                if (isLoaded) {
+                    toggleBtn.classList.add('loaded');
+                } else {
+                    toggleBtn.classList.remove('loaded');
+                }
+
+                // Обновява accessibility атрибутите
+                const label = isLoaded ? 'Отмяна на зареждането' : 'Отбелязване като заредено';
+                const title = isLoaded ? 'Натиснете за отмяна на зареждането' : 'Натиснете за отбелязване като заредено';
+
+                toggleBtn.setAttribute('aria-label', label);
+                toggleBtn.setAttribute('title', title);
+            }
+
+            if (icon) {
+                // Обновява иконата
+                icon.className = isLoaded ? 'bi bi-check-circle-fill' : 'bi bi-circle';
+            }
+        });
+
+        console.log(`🎨 Visual state updated for item ${itemId}: ${isLoaded ? 'loaded' : 'unloaded'}`);
     }
 
     /**
@@ -1269,6 +1350,19 @@ class OrderDetailShipped {
      * CLEANUP - ОСВОБОЖДАВАНЕ НА РЕСУРСИ
      * =================================
      */
+
+    removeEventListener(element, eventType) {
+        if (!element || !this.eventListeners) return;
+
+        if (this.eventListeners.has(element)) {
+            const listeners = this.eventListeners.get(element);
+            if (listeners && listeners[eventType]) {
+                element.removeEventListener(eventType, listeners[eventType]);
+                delete listeners[eventType];
+                console.log(`🧹 Removed ${eventType} listener from element`);
+            }
+        }
+    }
 
     /**
      * Cleanup method when component is destroyed
