@@ -37,10 +37,27 @@ public class Order {
     @Column(name = "shipping_note")
     private String shippingNotes;
 
+    @Column(name = "confirmed_by_employee_id")
+    private Long confirmedByEmployeeId;
+
+    @Column(name = "shipping_by_employee_id")
+    private Long shippingByEmployeeId;
+
+    @Column(name = "truck_number")
+    private String truckNumber;
+
+    @Column(name = "shipping_started_at")
+    private LocalDateTime shippingStartedAt;
+
+    @Column(name = "shipping_duration_seconds")
+    private Integer shippingDurationSeconds;
+
     @Column(nullable=false)
     private BigDecimal totalNet = BigDecimal.ZERO;
+
     @Column(nullable=false)
     private BigDecimal totalVat = BigDecimal.ZERO;
+
     @Column(nullable=false)
     private BigDecimal totalGross = BigDecimal.ZERO;
 
@@ -55,6 +72,7 @@ public class Order {
         item.setOrder(this);
         items.add(item);
     }
+
 
     public Long getId() { return id; }
     public UserEntity getClient() { return client; }
@@ -84,6 +102,46 @@ public class Order {
 
     public void setModificationNote(String modificationNote) {
         this.modificationNote = modificationNote;
+    }
+
+    public Long getConfirmedByEmployeeId() {
+        return confirmedByEmployeeId;
+    }
+
+    public void setConfirmedByEmployeeId(Long confirmedByEmployeeId) {
+        this.confirmedByEmployeeId = confirmedByEmployeeId;
+    }
+
+    public Long getShippingByEmployeeId() {
+        return shippingByEmployeeId;
+    }
+
+    public void setShippingByEmployeeId(Long shippingByEmployeeId) {
+        this.shippingByEmployeeId = shippingByEmployeeId;
+    }
+
+    public String getTruckNumber() {
+        return truckNumber;
+    }
+
+    public void setTruckNumber(String truckNumber) {
+        this.truckNumber = truckNumber;
+    }
+
+    public LocalDateTime getShippingStartedAt() {
+        return shippingStartedAt;
+    }
+
+    public void setShippingStartedAt(LocalDateTime shippingStartedAt) {
+        this.shippingStartedAt = shippingStartedAt;
+    }
+
+    public Integer getShippingDurationSeconds() {
+        return shippingDurationSeconds;
+    }
+
+    public void setShippingDurationSeconds(Integer shippingDurationSeconds) {
+        this.shippingDurationSeconds = shippingDurationSeconds;
     }
 
     public LocalDateTime getConfirmedAt() { return confirmedAt; }

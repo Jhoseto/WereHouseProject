@@ -4,6 +4,7 @@ import com.yourco.warehouse.dto.ClientDTO;
 import com.yourco.warehouse.dto.OrderDTO;
 import com.yourco.warehouse.service.DashboardService;
 import com.yourco.warehouse.service.OrderService;
+import com.yourco.warehouse.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,14 +31,15 @@ public class OrderShippingController {
 
     private static final Logger log = LoggerFactory.getLogger(OrderShippingController.class);
 
-
     private final DashboardService dashboardService;
     private final OrderService orderService;
+    private final UserService userService;
 
     @Autowired
-    public OrderShippingController(DashboardService dashboardService, OrderService orderService) {
+    public OrderShippingController(DashboardService dashboardService, OrderService orderService, UserService userService) {
         this.dashboardService = dashboardService;
         this.orderService = orderService;
+        this.userService = userService;
     }
 
     /**
@@ -64,6 +66,10 @@ public class OrderShippingController {
                 clientInfo = dashboardService.getClientInfo(clientId);
             }
 
+            // Получи текущия потребител ID и username
+            Long currentUserId = userService.getCurrentUser().getId();
+            String currentUsername = userService.getCurrentUser().getUsername();
+
             // Подготви данни за Thymeleaf
             model.addAttribute("order", orderDetails.get());
             model.addAttribute("orderId", orderId);
@@ -74,12 +80,12 @@ public class OrderShippingController {
             model.addAttribute("csrfToken", csrfToken.getToken());
             model.addAttribute("csrfHeader", csrfToken.getHeaderName());
 
-            // Config обект за JavaScript инициализация
-            model.addAttribute("shippedConfig", java.util.Map.of(
-                    "orderId", orderId,
-                    "csrfToken", csrfToken.getToken(),
-                    "csrfHeader", csrfToken.getHeaderName()
-            ));
+            // Добавяме authentication данни за JavaScript
+            model.addAttribute("currentUserId", currentUserId);
+            model.addAttribute("currentUsername", currentUsername);
+
+            log.debug("Successfully loaded shipping page for order: {} with {} items",
+                    orderId, orderDetails.get().getItems() != null ? orderDetails.get().getItems().size() : 0);
 
             return "employer/order-detail-shipped";
 

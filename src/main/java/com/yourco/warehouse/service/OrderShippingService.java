@@ -1,24 +1,76 @@
 package com.yourco.warehouse.service;
 
-import com.yourco.warehouse.dto.DashboardDTO;
+import java.util.List;
+import java.util.Map;
 
+/**
+ * ORDER SHIPPING SERVICE - INTERFACE
+ * ==================================
+ * Минимален contract за shipping операции + monitoring
+ */
 public interface OrderShippingService {
 
     /**
-     * Зарежда пълна информация за поръчка готова за shipping
-     * Включва order details, client info и items с shipping-specific логика
+     * Стартира shipping процес
+     * @param orderId ID на поръчката
+     * @param truckNumber номер на камиона
+     * @param employeeId ID на служителя
+     * @param employeeUsername username на служителя
+     * @return Map с sessionId и totalItems
      */
-    DashboardDTO loadShippingOrderData(Long orderId);
+    Map<String, Object> startShipping(Long orderId, String truckNumber, Long employeeId, String employeeUsername);
 
     /**
-     * Потвърждава изпращането на поръчка - мени статус към SHIPPED
-     * Записва shipping timestamp, truck number и бележки
+     * Toggle статус на артикул (зареден/незареден)
+     * @param sessionId ID на сесията
+     * @param itemId ID на артикула (не се използва, само за frontend compatibility)
+     * @return Map с isLoaded състояние
      */
-    DashboardDTO confirmOrderShipping(Long orderId, String truckNumber, String shippingNote);
+    Map<String, Object> toggleItem(Long sessionId, Long itemId);
 
     /**
-     * Валидира дали поръчката е готова за shipping
-     * Проверява статус, данни и други предпоставки
+     * Завършва shipping процеса
+     * @param sessionId ID на сесията
+     * @return Map с резултат
      */
-    DashboardDTO validateOrderForShipping(Long orderId);
+    Map<String, Object> completeShipping(Long sessionId);
+
+    /**
+     * Получава текущ статус на shipping
+     * @param orderId ID на поръчката
+     * @return Map със статус данни
+     */
+    Map<String, Object> getShippingStatus(Long orderId);
+
+    /**
+     * Обновява heartbeat за активна сесия
+     * @param sessionId ID на сесията
+     */
+    void updateHeartbeat(Long sessionId);
+
+    /**
+     * Background job - откриване на изгубени сигнали
+     * @param thresholdMinutes минути без heartbeat преди да се счита за изгубен
+     * @return броя на маркираните сесии
+     */
+    int detectLostSignalSessions(int thresholdMinutes);
+
+    /**
+     * Background cleanup - изтриване на стари изгубени сесии
+     * @param maxAgeHours часове след които да се изтриват
+     * @return броя на изтритите сесии
+     */
+    int cleanupOldLostSessions(int maxAgeHours);
+
+    /**
+     * Monitoring - активни shipping сесии
+     * @return List с прогреса на всички активни сесии
+     */
+    List<Map<String, Object>> getActiveSessionsProgress();
+
+    /**
+     * Статистика - брой активни сесии
+     * @return броя на активните сесии
+     */
+    long getActiveSessionsCount();
 }
