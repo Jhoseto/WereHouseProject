@@ -3,6 +3,7 @@ package com.yourco.warehouse.dto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 /**
  * ORDER ITEM DTO FOR API RESPONSES
@@ -43,6 +44,9 @@ public class OrderItemDTO {
     @JsonProperty("category")
     private String category;
 
+    private Boolean isLoaded;
+    private LocalDateTime loadedAt;
+    private String loadingNotes;
 
 
 
@@ -89,5 +93,29 @@ public class OrderItemDTO {
 
     public void setCategory(String category) {
         this.category = category;
+    }
+
+    public Boolean getLoaded() {
+        return isLoaded;
+    }
+
+    public void setLoaded(Boolean loaded) {
+        isLoaded = loaded;
+    }
+
+    public LocalDateTime getLoadedAt() {
+        return loadedAt;
+    }
+
+    public void setLoadedAt(LocalDateTime loadedAt) {
+        this.loadedAt = loadedAt;
+    }
+
+    public String getLoadingNotes() {
+        return loadingNotes;
+    }
+
+    public void setLoadingNotes(String loadingNotes) {
+        this.loadingNotes = loadingNotes;
     }
 }

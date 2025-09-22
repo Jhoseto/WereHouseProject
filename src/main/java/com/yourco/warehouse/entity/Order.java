@@ -26,12 +26,17 @@ public class Order {
 
     private LocalDateTime submittedAt;
     private LocalDateTime confirmedAt;
+    private LocalDateTime processedAt;
+    private LocalDateTime shippedAt;
 
     @Column(name = "has_modifications")
     private Boolean hasModifications = false;
 
     @Column(name = "modification_note")
     private String modificationNote;
+
+    @Column(name = "shipping_note")
+    private String shippingNotes;
 
     @Column(nullable=false)
     private BigDecimal totalNet = BigDecimal.ZERO;
@@ -42,6 +47,10 @@ public class Order {
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> items = new ArrayList<>();
+
+
+
+
 
     public void addItem(OrderItem item){
         item.setOrder(this);
@@ -88,4 +97,28 @@ public class Order {
     public void setTotalGross(BigDecimal totalGross) { this.totalGross = totalGross; }
     public List<OrderItem> getItems() { return items; }
     public void setItems(List<OrderItem> items) { this.items = items; }
+
+    public LocalDateTime getProcessedAt() {
+        return processedAt;
+    }
+
+    public void setProcessedAt(LocalDateTime processedAt) {
+        this.processedAt = processedAt;
+    }
+
+    public LocalDateTime getShippedAt() {
+        return shippedAt;
+    }
+
+    public void setShippedAt(LocalDateTime shippedAt) {
+        this.shippedAt = shippedAt;
+    }
+
+    public String getShippingNotes() {
+        return shippingNotes;
+    }
+
+    public void setShippingNotes(String shippingNotes) {
+        this.shippingNotes = shippingNotes;
+    }
 }

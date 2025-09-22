@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-
 @Component
 public class OrderMapper {
 
@@ -38,6 +37,11 @@ public class OrderMapper {
         dto.setNotes(order.getNotes());
         dto.setSubmittedAt(order.getSubmittedAt());
         dto.setConfirmedAt(order.getConfirmedAt());
+
+        // ДОБАВЕНИ shipping полета
+        dto.setProcessedAt(order.getProcessedAt());
+        dto.setShippedAt(order.getShippedAt());
+        dto.setShippingNotes(order.getShippingNotes());
 
         // Финансови данни
         dto.setTotalNet(order.getTotalNet());
@@ -61,9 +65,6 @@ public class OrderMapper {
                     .collect(Collectors.toList());
             dto.setItems(itemDTOs);
             dto.setItemsCount(itemDTOs.size());
-        } else {
-            dto.setItems(Collections.emptyList());
-            dto.setItemsCount(0);
         }
 
         // Calculated полета
@@ -72,12 +73,6 @@ public class OrderMapper {
         return dto;
     }
 
-    /**
-     * Конвертира OrderItem entity в OrderItemDTO
-     *
-     * @param orderItem OrderItem entity
-     * @return OrderItemDTO готов за JSON сериализация
-     */
     public OrderItemDTO toItemDTO(OrderItem orderItem) {
         if (orderItem == null) {
             return null;
@@ -90,6 +85,7 @@ public class OrderMapper {
         dto.setUnit(orderItem.getProduct().getUnit());
         dto.setPrice(orderItem.getUnitPrice());
         dto.setAvailableQuantity(orderItem.getProduct().getQuantityAvailable());
+
 
         // Изчисляваме total price за този item
         if (orderItem.getQty() != null && orderItem.getUnitPrice() != null) {
@@ -125,7 +121,7 @@ public class OrderMapper {
                 dto.setProductId(null);
                 dto.setProductSku("N/A");
                 dto.setProductName("Продуктът не е достъпен");
-                dto.setCategory("Неизвестна"); // ✅ НОВО: fallback за category
+                dto.setCategory("Неизвестна");
                 dto.setAvailableStock(0);
                 dto.setHasStockIssue(true);
             }
@@ -133,7 +129,7 @@ public class OrderMapper {
             dto.setProductId(null);
             dto.setProductSku("N/A");
             dto.setProductName("Неизвестен продукт");
-            dto.setCategory("Неизвестна"); // ✅ НОВО: fallback за category
+            dto.setCategory("Неизвестна");
             dto.setAvailableStock(0);
             dto.setHasStockIssue(true);
         }
@@ -141,12 +137,6 @@ public class OrderMapper {
         return dto;
     }
 
-    /**
-     * Конвертира списък от Order entities в списък от OrderDTOs
-     *
-     * @param orders списък с Order entities
-     * @return списък с OrderDTOs
-     */
     public List<OrderDTO> toDTOList(List<Order> orders) {
         if (orders == null || orders.isEmpty()) {
             return Collections.emptyList();
@@ -157,13 +147,6 @@ public class OrderMapper {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Създава минимален OrderDTO при грешки
-     * Използва се като fallback когато пълното конвертиране не е възможно
-     *
-     * @param order Order entity (може да е частично зареден)
-     * @return минимален OrderDTO с основни данни
-     */
     public OrderDTO toMinimalDTO(Order order) {
         if (order == null) {
             return null;
@@ -187,17 +170,6 @@ public class OrderMapper {
         return dto;
     }
 
-    // ==========================================
-    // UTILITY METHODS
-    // ==========================================
-
-    /**
-     * Форматира време в user-friendly формат
-     * Примери: "5мин", "2ч", "3д"
-     *
-     * @param submittedAt времето на подаване на поръчката
-     * @return форматиран string за показване в UI
-     */
     private String formatTimeAgo(LocalDateTime submittedAt) {
         if (submittedAt == null) {
             return "Неизвестно";
@@ -228,13 +200,6 @@ public class OrderMapper {
         }
     }
 
-    /**
-     * Валидира дали Order entity има всички необходими данни за пълно конвертиране
-     * Използва се за диагностика на lazy loading проблеми
-     *
-     * @param order Order entity за проверка
-     * @return true ако всички данни са достъпни
-     */
     public boolean isFullyLoaded(Order order) {
         if (order == null) {
             return false;
@@ -265,13 +230,6 @@ public class OrderMapper {
         }
     }
 
-    /**
-     * Логва статистика за mapping операция
-     * Полезно за debugging и performance monitoring
-     *
-     * @param orders списък с orders които са били mapped
-     * @param operation описание на операцията
-     */
     public void logMappingStats(List<Order> orders, String operation) {
         if (orders == null) {
             return;

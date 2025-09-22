@@ -1,75 +1,42 @@
 package com.yourco.warehouse.dto;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
-/**
- * ORDER DTO FOR API RESPONSES
- * ===========================
- * Типизиран DTO за Order данни в API отговори.
- * Следва същия pattern като CartItemDTO с Jackson annotations.
- */
 public class OrderDTO {
 
-    @JsonProperty("id")
     private Long id;
-
-    @JsonProperty("clientId")
     private Long clientId;
-
-    @JsonProperty("clientName")
     private String clientName;
-
-    @JsonProperty("clientCompany")
     private String clientCompany;
-
-    @JsonProperty("clientPhone")
     private String clientPhone;
-
-    @JsonProperty("clientLocation")
     private String clientLocation;
-
-
-    @JsonProperty("status")
     private String status;
-
-    @JsonProperty("notes")
     private String notes;
-
-    @JsonProperty("submittedAt")
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime submittedAt;
-
-    @JsonProperty("confirmedAt")
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime confirmedAt;
+    private LocalDateTime processedAt;
+    private LocalDateTime shippedAt;
+    private String shippingNotes;
 
-    @JsonProperty("totalNet")
     private BigDecimal totalNet;
-
-    @JsonProperty("totalVat")
     private BigDecimal totalVat;
-
-    @JsonProperty("totalGross")
     private BigDecimal totalGross;
 
-    @JsonProperty("itemsCount")
     private int itemsCount;
-
-    @JsonProperty("items")
     private List<OrderItemDTO> items;
 
-    @JsonProperty("timeAgo")
-    private String timeAgo; // "2ч", "1д" и т.н.
+    private String timeAgo;
 
-    // Constructors
+    private Integer totalItems;
+    private Integer loadedItems;
+    private Integer remainingItems;
+    private Double completionPercentage;
+    private Boolean isFullyLoaded;
+
     public OrderDTO() {}
 
-    // Getters and Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -115,6 +82,15 @@ public class OrderDTO {
     public LocalDateTime getConfirmedAt() { return confirmedAt; }
     public void setConfirmedAt(LocalDateTime confirmedAt) { this.confirmedAt = confirmedAt; }
 
+    public LocalDateTime getProcessedAt() { return processedAt; }
+    public void setProcessedAt(LocalDateTime processedAt) { this.processedAt = processedAt; }
+
+    public LocalDateTime getShippedAt() { return shippedAt; }
+    public void setShippedAt(LocalDateTime shippedAt) { this.shippedAt = shippedAt; }
+
+    public String getShippingNotes() { return shippingNotes; }
+    public void setShippingNotes(String shippingNotes) { this.shippingNotes = shippingNotes; }
+
     public BigDecimal getTotalNet() { return totalNet; }
     public void setTotalNet(BigDecimal totalNet) { this.totalNet = totalNet; }
 
@@ -132,4 +108,19 @@ public class OrderDTO {
 
     public String getTimeAgo() { return timeAgo; }
     public void setTimeAgo(String timeAgo) { this.timeAgo = timeAgo; }
+
+    public Integer getTotalItems() { return totalItems; }
+    public void setTotalItems(Integer totalItems) { this.totalItems = totalItems; }
+
+    public Integer getLoadedItems() { return loadedItems; }
+    public void setLoadedItems(Integer loadedItems) { this.loadedItems = loadedItems; }
+
+    public Integer getRemainingItems() { return remainingItems; }
+    public void setRemainingItems(Integer remainingItems) { this.remainingItems = remainingItems; }
+
+    public Double getCompletionPercentage() { return completionPercentage; }
+    public void setCompletionPercentage(Double completionPercentage) { this.completionPercentage = completionPercentage; }
+
+    public Boolean getIsFullyLoaded() { return isFullyLoaded; }
+    public void setIsFullyLoaded(Boolean isFullyLoaded) { this.isFullyLoaded = isFullyLoaded; }
 }
