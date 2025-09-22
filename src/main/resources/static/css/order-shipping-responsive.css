@@ -1,0 +1,832 @@
+/**
+ * ORDER SHIPPING RESPONSIVE CSS - MOBILE-FIRST WAREHOUSE INTERFACE
+ * ================================================================
+ * Мобилни оптимизации за Warehouse Loading Officers и управители.
+ * Трансформира desktop интерфейса в thumb-friendly mobile experience
+ * като запазва всички критични бизнес функционалности.
+ *
+ * Дизайн Философия:
+ * - Mobile-first подход осигурява core functionality на всички устройства
+ * - Touch targets отговарят на accessibility стандартите (44px минимум)
+ * - Information hierarchy оптимизирана за vertical scrolling patterns
+ * - Context-sensitive layouts се адаптират към различни mobile use cases
+ * - Performance оптимизирана за warehouse WiFi условия
+ *
+ * Target Users:
+ * - Warehouse Loading Officers с мобилни устройства в склада
+ * - Warehouse Managers правещи mobile monitoring
+ * - Emergency desktop access от mobile devices
+ */
+
+/* ==========================================
+   MOBILE-FIRST BASE OPTIMIZATIONS
+   ========================================== */
+
+/* Enhanced touch interaction и prevention на zoom проблеми */
+html {
+    -webkit-text-size-adjust: 100%; /* Prevent iOS text size adjustment */
+    -ms-text-size-adjust: 100%;     /* Prevent Windows Phone text size adjustment */
+    touch-action: manipulation;      /* Remove 300ms tap delay */
+}
+
+/* Mobile-optimized body settings */
+body {
+    /* Prevent horizontal scroll на mobile */
+    overflow-x: hidden;
+
+    /* Optimize mobile scrolling performance */
+    -webkit-overflow-scrolling: touch;
+
+    /* Prevent text selection по време на touch interactions */
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    user-select: none;
+
+    /* Improve mobile rendering performance */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Allow text selection в input elements и text areas */
+input, textarea, [contenteditable] {
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    user-select: text;
+}
+
+/* ==========================================
+   MOBILE BREAKPOINTS AND CONTAINER ADJUSTMENTS
+   ========================================== */
+
+/* Mobile Portrait: 320px - 767px */
+@media (max-width: 767px) {
+
+    /* Reduce container padding за максимално screen utilization */
+    .container {
+        padding: 0 var(--space-3); /* 12px sides вместо 16px */
+        max-width: 100%;
+    }
+
+    /* Reduce vertical spacing between major sections */
+    .order-shipping-section {
+        padding: var(--space-4) 0; /* 16px top/bottom вместо 32px */
+    }
+
+    /* ==========================================
+       MOBILE SHIPPING HEADER OPTIMIZATION
+       ========================================== */
+
+    /* Stack header elements vertically за mobile */
+    .shipping-header {
+        padding: var(--space-5); /* Reduced от 32px на 20px */
+        margin-bottom: var(--space-5);
+    }
+
+    .header-main {
+        gap: var(--space-4); /* Reduced spacing */
+    }
+
+    .shipping-title h1 {
+        font-size: var(--font-size-xl); /* Reduced от 3xl на xl */
+        line-height: 1.2;
+        flex-wrap: wrap;
+        justify-content: center;
+        text-align: center;
+    }
+
+    .shipping-subtitle {
+        text-align: center;
+        font-size: var(--font-size-xs);
+    }
+
+    /* Mobile Client Info Card Layout */
+    .client-info-card {
+        padding: var(--space-4);
+    }
+
+    .client-primary {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: var(--space-3);
+    }
+
+    .client-identity {
+        flex-direction: column;
+        text-align: center;
+        gap: var(--space-3);
+    }
+
+    .client-avatar {
+        width: 48px;
+        height: 48px;
+    }
+
+    .client-metadata {
+        grid-template-columns: 1fr; /* Single column на mobile */
+        gap: var(--space-3);
+    }
+
+    .metadata-group {
+        gap: var(--space-2);
+    }
+
+    .metadata-item {
+        justify-content: center;
+    }
+
+    /* Mobile Truck Number Input */
+    .truck-number-input {
+        width: 100%;
+        max-width: none;
+    }
+
+    /* ==========================================
+       MOBILE PROGRESS PANEL OPTIMIZATION
+       ========================================== */
+
+    .loading-progress-panel {
+        padding: var(--space-4);
+        margin-bottom: var(--space-5);
+    }
+
+    .progress-header {
+        flex-direction: column;
+        gap: var(--space-3);
+        text-align: center;
+    }
+
+    .progress-header h3 {
+        font-size: var(--font-size-base);
+    }
+
+    /* Mobile Progress Stats Layout */
+    .progress-stats {
+        flex-direction: row;
+        justify-content: space-around;
+        gap: var(--space-2);
+    }
+
+    .stat-number {
+        font-size: var(--font-size-xl); /* Reduced от 2xl */
+    }
+
+    .stat-label {
+        font-size: 10px; /* Extra small за mobile */
+    }
+
+    .stat-divider {
+        font-size: var(--font-size-base);
+    }
+
+    /* Mobile Progress Bar */
+    .progress-bar {
+        height: 24px; /* Reduced height за mobile */
+    }
+
+    .progress-text {
+        font-size: var(--font-size-xs);
+    }
+
+    .progress-details {
+        flex-direction: column;
+        gap: var(--space-2);
+        text-align: center;
+    }
+
+    /* ==========================================
+       MOBILE ORDER STATISTICS OPTIMIZATION
+       ========================================== */
+
+    .order-statistics {
+        grid-template-columns: repeat(2, 1fr); /* 2x2 grid на mobile */
+        gap: var(--space-3);
+        margin-bottom: var(--space-5);
+    }
+
+    .stat-card {
+        padding: var(--space-3);
+        flex-direction: column;
+        text-align: center;
+        gap: var(--space-2);
+    }
+
+    .stat-icon {
+        width: 36px;
+        height: 36px;
+        font-size: var(--font-size-base);
+    }
+
+    .stat-value {
+        font-size: var(--font-size-lg); /* Reduced размер */
+    }
+
+    .stat-label {
+        font-size: 10px;
+    }
+
+    /* ==========================================
+       MOBILE CONTROLS OPTIMIZATION
+       ========================================== */
+
+    .mobile-controls {
+        margin-bottom: var(--space-4);
+    }
+
+    .controls-header {
+        padding: var(--space-3) var(--space-4);
+    }
+
+    .controls-header h3 {
+        font-size: var(--font-size-sm);
+    }
+
+    .controls-content.expanded {
+        padding: var(--space-4);
+        max-height: 400px; /* Increased за mobile */
+    }
+
+    /* Mobile Search Input */
+    .search-input-wrapper input {
+        padding: var(--space-4) var(--space-8) var(--space-4) var(--space-8);
+        font-size: var(--font-size-base);
+    }
+
+    /* Mobile Quick Filters - Stack vertically ако е необходимо */
+    .quick-filters {
+        gap: var(--space-2);
+    }
+
+    .filter-btn {
+        padding: var(--space-3) var(--space-4);
+        font-size: var(--font-size-xs);
+        min-height: 44px; /* Touch-friendly минимум */
+        flex: 1;
+        justify-content: center;
+    }
+
+    /* Mobile Sort Select */
+    .sort-select {
+        padding: var(--space-4);
+        font-size: var(--font-size-base);
+    }
+
+    /* ==========================================
+       MOBILE ITEMS CONTAINER OPTIMIZATION
+       ========================================== */
+
+    .order-items-container {
+        gap: var(--space-3);
+        margin-bottom: var(--space-20); /* Space за fixed controls */
+    }
+
+    /* Mobile Item Card Layout */
+    .order-item-card {
+        border-radius: var(--border-radius);
+    }
+
+    .item-content {
+        padding: var(--space-4);
+        flex-direction: column;
+        gap: var(--space-4);
+        align-items: stretch;
+    }
+
+    .item-details {
+        text-align: center;
+    }
+
+    .item-name {
+        font-size: var(--font-size-base);
+        line-height: 1.4;
+        margin-bottom: var(--space-3);
+    }
+
+    .item-meta {
+        justify-content: center;
+        gap: var(--space-3);
+        flex-wrap: wrap;
+    }
+
+    .item-meta-item {
+        font-size: var(--font-size-xs);
+        gap: var(--space-1);
+    }
+
+    /* Mobile Loading Toggle - по-голям за touch */
+    .loading-toggle {
+        width: 64px;
+        height: 64px;
+        font-size: var(--font-size-2xl);
+        align-self: center;
+        margin-top: var(--space-3);
+    }
+
+    /* ==========================================
+       MOBILE SHIPPING CONTROLS OPTIMIZATION
+       ========================================== */
+
+    .shipping-controls-overlay {
+        padding: var(--space-3) 0 0;
+    }
+
+    .shipping-controls {
+        padding: 0 var(--space-3);
+    }
+
+    .controls-content {
+        padding: var(--space-4);
+        flex-direction: column;
+        gap: var(--space-4);
+        align-items: stretch;
+    }
+
+    .shipping-summary {
+        gap: var(--space-3);
+        text-align: center;
+    }
+
+    .summary-progress {
+        flex-direction: column;
+        gap: var(--space-2);
+    }
+
+    .mini-progress-bar {
+        height: 12px; /* По-висок за mobile */
+    }
+
+    /* Mobile Shipping Actions */
+    .shipping-actions {
+        flex-direction: column;
+        gap: var(--space-3);
+        width: 100%;
+    }
+
+    .btn-secondary, .btn-success, .btn-primary, .btn-danger {
+        padding: var(--space-4) var(--space-5);
+        font-size: var(--font-size-base);
+        min-height: 44px; /* Touch-friendly минимум */
+        justify-content: center;
+        width: 100%;
+    }
+
+    /* ==========================================
+       MOBILE MODAL OPTIMIZATION
+       ========================================== */
+
+    .modal-overlay {
+        padding: var(--space-3);
+        align-items: flex-end; /* Bottom sheet style на mobile */
+    }
+
+    .modal-container {
+        max-width: none;
+        width: 100%;
+        max-height: 80vh;
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+        animation: modalSlideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    @keyframes modalSlideUp {
+        from {
+            opacity: 0;
+            transform: translateY(100%);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .modal-header {
+        padding: var(--space-4);
+    }
+
+    .modal-header h3 {
+        font-size: var(--font-size-base);
+    }
+
+    .modal-body {
+        padding: var(--space-4);
+        max-height: 50vh;
+        overflow-y: auto;
+    }
+
+    .modal-footer {
+        padding: var(--space-4);
+        flex-direction: column-reverse;
+        gap: var(--space-3);
+    }
+
+    .modal-footer .btn-secondary,
+    .modal-footer .btn-primary,
+    .modal-footer .btn-success,
+    .modal-footer .btn-danger {
+        width: 100%;
+        margin: 0;
+    }
+
+    /* Mobile Form Elements */
+    .form-textarea {
+        padding: var(--space-4);
+        font-size: var(--font-size-base);
+        min-height: 100px;
+    }
+
+    /* Mobile Confirmation Elements */
+    .confirmation-icon {
+        width: 48px;
+        height: 48px;
+        font-size: var(--font-size-xl);
+        margin-bottom: var(--space-3);
+    }
+
+    .shipping-details {
+        padding: var(--space-3);
+    }
+
+    .detail-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-1);
+        padding: var(--space-3) 0;
+    }
+
+    .detail-label {
+        font-size: var(--font-size-xs);
+    }
+
+    .detail-value {
+        font-size: var(--font-size-sm);
+    }
+
+}
+
+/* ==========================================
+   MOBILE LANDSCAPE ADJUSTMENTS: 568px - 767px
+   ========================================== */
+
+@media (max-width: 767px) and (orientation: landscape) {
+
+    /* Optimize за landscape mobile usage */
+    .shipping-header {
+        padding: var(--space-3);
+    }
+
+    .shipping-title h1 {
+        font-size: var(--font-size-lg);
+    }
+
+    .client-info-card {
+        padding: var(--space-3);
+    }
+
+    .client-primary {
+        flex-direction: row;
+        text-align: left;
+    }
+
+    .client-identity {
+        flex-direction: row;
+        text-align: left;
+    }
+
+    .client-metadata {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .loading-progress-panel {
+        padding: var(--space-3);
+    }
+
+    .progress-stats {
+        flex-direction: row;
+    }
+
+    .order-statistics {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
+    .stat-card {
+        flex-direction: row;
+        text-align: left;
+    }
+
+    .controls-content {
+        flex-direction: row;
+        align-items: center;
+    }
+
+    .shipping-actions {
+        flex-direction: row;
+    }
+
+    .modal-overlay {
+        align-items: center;
+    }
+
+    .modal-container {
+        border-radius: var(--border-radius-xl);
+        animation: modalSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+}
+
+/* ==========================================
+   TABLET PORTRAIT: 768px - 1023px
+   ========================================== */
+
+@media (min-width: 768px) and (max-width: 1023px) {
+
+    .container {
+        padding: 0 var(--space-4);
+        max-width: 100%;
+    }
+
+    .order-shipping-section {
+        padding: var(--space-6) 0;
+    }
+
+    /* Tablet Header Layout */
+    .shipping-header {
+        padding: var(--space-6);
+    }
+
+    .shipping-title h1 {
+        font-size: var(--font-size-2xl);
+    }
+
+    /* Tablet Client Info */
+    .client-metadata {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    /* Tablet Progress Panel */
+    .loading-progress-panel {
+        padding: var(--space-5);
+    }
+
+    /* Tablet Statistics - 4 columns */
+    .order-statistics {
+        grid-template-columns: repeat(4, 1fr);
+        gap: var(--space-4);
+    }
+
+    /* Tablet Controls */
+    .controls-content.expanded {
+        padding: var(--space-5);
+    }
+
+    /* Tablet Items Layout */
+    .item-content {
+        flex-direction: row;
+        align-items: center;
+    }
+
+    .item-details {
+        text-align: left;
+    }
+
+    .loading-toggle {
+        width: 56px;
+        height: 56px;
+        font-size: var(--font-size-xl);
+        margin-top: 0;
+    }
+
+    /* Tablet Shipping Controls */
+    .controls-content {
+        flex-direction: row;
+        align-items: center;
+        gap: var(--space-6);
+    }
+
+    .shipping-actions {
+        flex-direction: row;
+        width: auto;
+    }
+
+    .btn-secondary, .btn-success, .btn-primary, .btn-danger {
+        width: auto;
+    }
+
+}
+
+/* ==========================================
+   TABLET LANDSCAPE: 1024px - 1199px
+   ========================================== */
+
+@media (min-width: 1024px) and (max-width: 1199px) {
+
+    .container {
+        max-width: 1024px;
+        padding: 0 var(--space-5);
+    }
+
+    /* Tablet landscape оптимизации */
+    .client-metadata {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .order-statistics {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
+    .controls-content {
+        padding: var(--space-5);
+    }
+
+}
+
+/* ==========================================
+   LARGE SCREENS: 1200px+
+   ========================================== */
+
+@media (min-width: 1200px) {
+
+    /* Ensure proper spacing на large screens */
+    .container {
+        max-width: 1200px;
+    }
+
+    .order-statistics {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
+}
+
+/* ==========================================
+   HIGH-DPI DISPLAYS (RETINA)
+   ========================================== */
+
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+
+    /* Sharper borders и shadows за retina displays */
+    .order-item-card,
+    .client-info-card,
+    .loading-progress-panel,
+    .stat-card,
+    .modal-container {
+        border: 0.5px solid var(--color-gray-200);
+    }
+
+    .progress-bar {
+        box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+    }
+
+}
+
+/* ==========================================
+   TOUCH-SPECIFIC OPTIMIZATIONS
+   ========================================== */
+
+@media (pointer: coarse) {
+
+    /* Enhanced touch targets за touch devices */
+    .loading-toggle {
+        min-width: 48px;
+        min-height: 48px;
+    }
+
+    .filter-btn {
+        min-height: 48px;
+        padding: var(--space-3) var(--space-4);
+    }
+
+    .btn-refresh {
+        min-width: 44px;
+        min-height: 44px;
+    }
+
+    .modal-close {
+        min-width: 44px;
+        min-height: 44px;
+    }
+
+    /* Larger tap areas за small elements */
+    .clear-btn {
+        min-width: 32px;
+        min-height: 32px;
+    }
+
+    .toggle-btn {
+        min-width: 44px;
+        min-height: 44px;
+    }
+
+}
+
+/* ==========================================
+   REDUCED MOTION PREFERENCES
+   ========================================== */
+
+@media (prefers-reduced-motion: reduce) {
+
+    /* Disable animations за accessibility */
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+
+    .progress-fill::before {
+        animation: none;
+    }
+
+}
+
+/* ==========================================
+   DARK MODE SUPPORT (OPTIONAL)
+   ========================================== */
+
+@media (prefers-color-scheme: dark) {
+
+    /* Basic dark mode support ако е нужно */
+    :root {
+        --color-white: #1f2937;
+        --color-gray-50: #374151;
+        --color-gray-100: #4b5563;
+        --color-gray-200: #6b7280;
+        --color-gray-900: #f9fafb;
+    }
+
+}
+
+/* ==========================================
+   ACCESSIBILITY ENHANCEMENTS
+   ========================================== */
+
+/* Focus indicators за keyboard navigation */
+.loading-toggle:focus,
+.filter-btn:focus,
+.btn-secondary:focus,
+.btn-success:focus,
+.btn-primary:focus,
+.btn-danger:focus {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+/* Screen reader support */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+
+    .order-item-card,
+    .client-info-card,
+    .loading-progress-panel,
+    .stat-card {
+        border-width: 2px;
+    }
+
+    .loading-toggle {
+        border-width: 3px;
+    }
+
+    .btn-secondary, .btn-success, .btn-primary, .btn-danger {
+        border-width: 2px;
+    }
+
+}
+
+/* ==========================================
+   PRINT STYLES (ако е необходимо за reports)
+   ========================================== */
+
+@media print {
+
+    .shipping-controls-overlay,
+    .mobile-controls,
+    .btn-refresh,
+    .modal-overlay {
+        display: none !important;
+    }
+
+    .shipping-header {
+        background: none !important;
+        color: black !important;
+    }
+
+    .order-items-container {
+        margin-bottom: var(--space-4) !important;
+    }
+
+    .order-item-card {
+        break-inside: avoid;
+        margin-bottom: var(--space-3);
+    }
+
+}

@@ -4,14 +4,15 @@
       lang="bg">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Изпращане на поръчка | Warehouse Portal</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Изпращане на поръчка | Shipping Dashboard</title>
 
     <!-- Core project imports -->
     <div th:replace="~{fragments/topHtmlImports :: topImports}"></div>
 
-    <!-- Shipped orders specific stylesheets -->
-    <link rel="stylesheet" href="/css/order-detail-shipped.css">
+    <!-- Order Shipping specific stylesheets -->
+    <link rel="stylesheet" href="/css/order-shipping-catalog.css">
+    <link rel="stylesheet" href="/css/order-shipping-responsive.css">
 </head>
 <body>
 
@@ -24,84 +25,121 @@
 <!-- Toast notification container -->
 <div th:replace="~{fragments/toastSystem.html :: toastContainer}"></div>
 
-<!-- Main Shipped Orders Interface -->
-<section class="shipped-orders-section">
+<!-- Main Order Shipping Interface -->
+<section class="order-shipping-section">
     <div class="container">
 
-        <!-- Shipped Orders Header -->
-        <div class="shipped-header">
+        <!-- Order Shipping Header -->
+        <div class="shipping-header">
             <div class="header-main">
-                <div class="shipped-title">
+                <div class="shipping-title">
                     <h1>
                         <i class="bi bi-truck"></i>
-                        Изпращане на поръчка №<span id="order-number" th:text="${order.get().id}">123</span>
+                        Изпращане на поръчка №<span id="order-number" th:text="${orderId}">123</span>
                     </h1>
-                    <div class="shipped-subtitle">
-                        Mobile интерфейс за складови служители
+                    <div class="shipping-subtitle">
+                        Warehouse loading tracker с реално време мониторинг
                     </div>
                 </div>
 
-                <!-- Back to dashboard button -->
-                <a href="/employer/dashboard" class="back-btn">
-                    <i class="bi bi-arrow-left"></i>
-                    Назад
-                </a>
-            </div>
-
-            <!-- Client Information Card - Mobile Optimized -->
-            <div class="client-info-card">
-                <div class="client-primary">
-                    <div class="client-identity">
-                        <div class="client-avatar">
-                            <i class="bi bi-building"></i>
+                <!-- Client Information Card - Адаптирана от order-review -->
+                <div class="client-info-card">
+                    <div class="client-primary">
+                        <div class="client-identity">
+                            <div class="client-avatar">
+                                <i class="bi bi-building"></i>
+                            </div>
+                            <div class="client-details">
+                                <h2 class="client-name" th:text="${clientInfo?.companyName ?: 'Неизвестен клиент'}">
+                                    ООД "Примерна Фирма"
+                                </h2>
+                                <span class="client-username" th:text="'@' + ${clientInfo?.username ?: 'unknown'}">
+                                    @client_username
+                                </span>
+                            </div>
                         </div>
-                        <div class="client-details">
-                            <h2 class="client-name" th:text="${clientInfo?.companyName ?: 'Неизвестен клиент'}">
-                                ООД "Примерна Фирма"
-                            </h2>
-                            <span class="client-username" th:text="'@' + ${clientInfo?.username ?: 'unknown'}">
-                                @client_username
+                        <div class="client-status">
+                            <span class="status-badge status-shipping">
+                                <i class="bi bi-truck"></i>
+                                За изпращане
                             </span>
                         </div>
                     </div>
-                    <div class="client-status">
-                        <span class="status-badge status-shipped">
-                            <i class="bi bi-check-circle"></i>
-                            За изпращане
-                        </span>
-                    </div>
-                </div>
-            </div>
 
-            <!-- Order Progress Indicators -->
-            <div class="progress-indicators">
-                <div class="progress-step completed">
-                    <i class="bi bi-check-circle-fill"></i>
-                    <span>Получена</span>
-                </div>
-                <div class="progress-step completed">
-                    <i class="bi bi-check-circle-fill"></i>
-                    <span>Обработена</span>
-                </div>
-                <div class="progress-step active">
-                    <i class="bi bi-truck"></i>
-                    <span>Изпращане</span>
-                </div>
-                <div class="progress-step">
-                    <i class="bi bi-geo-alt"></i>
-                    <span>Доставена</span>
+                    <div class="client-metadata">
+                        <div class="metadata-group">
+                            <div class="metadata-item" th:if="${clientInfo?.email}">
+                                <i class="bi bi-envelope"></i>
+                                <span th:text="${clientInfo.email}">office@example.com</span>
+                            </div>
+                            <div class="metadata-item" th:if="${clientInfo?.phone}">
+                                <i class="bi bi-telephone"></i>
+                                <span th:text="${clientInfo.phone}">+359 888 123 456</span>
+                            </div>
+                            <div class="metadata-item" th:if="${clientInfo?.location}">
+                                <i class="bi bi-geo-alt"></i>
+                                <span th:text="${clientInfo.location}">София, България</span>
+                            </div>
+                        </div>
+
+                        <div class="metadata-group">
+                            <div class="metadata-item truck-number-input">
+                                <i class="bi bi-truck-front"></i>
+                                <input type="text" id="truck-number" placeholder="Номер на камиона" maxlength="12" class="truck-input">
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Order Statistics Panel -->
-        <div class="order-statistics">
+        <!-- Real-time Loading Progress Panel - Ключова функционалност -->
+        <div id="loading-progress-panel" class="loading-progress-panel">
+            <div class="progress-header">
+                <h3><i class="bi bi-graph-up"></i> Прогрес на товарене</h3>
+                <div class="progress-actions">
+                    <button type="button" id="refresh-progress" class="btn-refresh" title="Обнови данните">
+                        <i class="bi bi-arrow-clockwise"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Визуален прогрес бар -->
+            <div class="progress-visualization">
+                <div class="progress-stats">
+                    <div class="stat-item">
+                        <span class="stat-number" id="loaded-count">0</span>
+                        <span class="stat-label">Заредени</span>
+                    </div>
+                    <div class="stat-divider">от</div>
+                    <div class="stat-item">
+                        <span class="stat-number" id="total-count">0</span>
+                        <span class="stat-label">Общо</span>
+                    </div>
+                </div>
+
+                <div class="progress-bar-container">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+                        <div class="progress-text" id="progress-text">0%</div>
+                    </div>
+                </div>
+
+                <div class="progress-details">
+                    <span class="remaining-items">Остават: <strong id="remaining-count">0</strong> артикула</span>
+                    <span class="completion-status" id="completion-status">В процес на товарене</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Order Statistics Panel - Адаптирана от order-review -->
+        <div id="order-statistics" class="order-statistics">
             <div class="stat-card">
                 <div class="stat-icon info">
-                    <i class="bi bi-box"></i>
+                    <i class="bi bi-box-seam"></i>
                 </div>
                 <div class="stat-content">
-                    <div class="stat-value" id="total-items">0</div>
+                    <div class="stat-value" id="total-items-stat">0</div>
                     <div class="stat-label">Общо артикули</div>
                 </div>
             </div>
@@ -110,27 +148,36 @@
                     <i class="bi bi-check-circle"></i>
                 </div>
                 <div class="stat-content">
-                    <div class="stat-value" id="loaded-items">0</div>
+                    <div class="stat-value" id="loaded-items-stat">0</div>
                     <div class="stat-label">Заредени</div>
                 </div>
             </div>
             <div class="stat-card">
                 <div class="stat-icon warning">
-                    <i class="bi bi-clock"></i>
+                    <i class="bi bi-hourglass-split"></i>
                 </div>
                 <div class="stat-content">
-                    <div class="stat-value" id="remaining-items">0</div>
-                    <div class="stat-label">Остават</div>
+                    <div class="stat-value" id="pending-items-stat">0</div>
+                    <div class="stat-label">Чакащи</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon primary">
+                    <i class="bi bi-percent"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value" id="completion-percentage">0%</div>
+                    <div class="stat-label">Завършен</div>
                 </div>
             </div>
         </div>
 
-        <!-- Mobile Controls Panel -->
+        <!-- Mobile-Friendly Controls Panel -->
         <div class="mobile-controls">
             <div class="controls-header">
                 <h3>
                     <i class="bi bi-funnel"></i>
-                    Управление
+                    Филтри и търсене
                 </h3>
                 <button type="button" id="toggle-controls" class="toggle-btn">
                     <i class="bi bi-chevron-down"></i>
@@ -142,7 +189,7 @@
                 <div class="search-container">
                     <div class="search-input-wrapper">
                         <i class="bi bi-search search-icon"></i>
-                        <input type="text" id="search-input" placeholder="Търси артикул..." autocomplete="off">
+                        <input type="text" id="search-input" placeholder="Търси артикул или категория..." autocomplete="off">
                         <button type="button" id="clear-search" class="clear-btn hidden">
                             <i class="bi bi-x"></i>
                         </button>
@@ -168,10 +215,10 @@
                 <!-- Sort Options -->
                 <div class="sort-container">
                     <select id="sort-select" class="sort-select">
-                        <option value="name">По име</option>
+                        <option value="name">По име на артикул</option>
                         <option value="category">По категория</option>
                         <option value="quantity">По количество</option>
-                        <option value="status">По статус</option>
+                        <option value="status">По статус на зареждане</option>
                     </select>
                 </div>
             </div>
@@ -183,7 +230,7 @@
             <p>Зареждане на артикулите...</p>
         </div>
 
-        <!-- Main items container -->
+        <!-- Main catalog container for order items - Адаптиран от order-review -->
         <div id="order-items-container" class="order-items-container hidden">
             <!-- Order items will be rendered here by JavaScript -->
         </div>
@@ -194,40 +241,77 @@
                 <i class="bi bi-inbox"></i>
             </div>
             <h3>Няма артикули за зареждане</h3>
-            <p>Всички артикули са заредени в камиона.</p>
+            <p>Тази поръчка не съдържа артикули за товарене в камиона.</p>
         </div>
 
     </div>
 </section>
 
-<!-- Shipping Complete Controls - Fixed bottom bar -->
-<div class="shipping-controls-bar" id="shipping-controls">
-    <div class="controls-wrapper">
-        <div class="progress-summary">
-            <div class="progress-bar">
-                <div class="progress-fill" id="progress-fill"></div>
+<!-- Shipping Completion Controls - Fixed position за лесен достъп -->
+<div class="shipping-controls-overlay" id="shipping-controls-overlay">
+    <div id="shipping-controls" class="shipping-controls">
+        <div class="controls-content">
+            <div class="shipping-summary">
+                <div class="summary-progress">
+                    <span id="summary-progress-text">0% завършен</span>
+                    <div class="mini-progress-bar">
+                        <div class="mini-progress-fill" id="mini-progress-fill" style="width: 0%"></div>
+                    </div>
+                </div>
+                <span id="shipping-status">Товарене в процес</span>
             </div>
-            <div class="progress-text">
-                <span id="progress-loaded">0</span> от <span id="progress-total">0</span> заредени
+            <div class="shipping-actions">
+                <button type="button" id="add-shipping-note" class="btn-secondary">
+                    <i class="bi bi-sticky"></i>
+                    Бележка
+                </button>
+                <button type="button" id="complete-shipping" class="btn-success" disabled>
+                    <i class="bi bi-check-circle"></i>
+                    Завърши изпращането
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Shipping Note Modal -->
+<div id="shipping-note-modal" class="modal-overlay hidden">
+    <div class="modal-container">
+        <div class="modal-header">
+            <h3><i class="bi bi-sticky"></i> Бележка към изпращането</h3>
+            <button type="button" class="modal-close" id="close-shipping-note-modal">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="shipping-note-text">Бележка към поръчката:</label>
+                <textarea id="shipping-note-text" class="form-textarea" rows="4"
+                          placeholder="Добавете бележка за изпращането (по желание)"></textarea>
             </div>
         </div>
 
-        <button type="button" id="complete-shipping" class="complete-btn" disabled>
-            <i class="bi bi-check-circle"></i>
-            Потвърди изпращането
-        </button>
+        <div class="modal-footer">
+            <button type="button" class="btn-secondary" id="cancel-shipping-note">
+                Отказ
+            </button>
+            <button type="button" class="btn-primary" id="save-shipping-note">
+                Запази бележката
+            </button>
+        </div>
     </div>
 </div>
 
 <!-- Shipping Confirmation Modal -->
-<div id="shipping-modal" class="modal-overlay hidden">
+<div id="shipping-confirmation-modal" class="modal-overlay hidden">
     <div class="modal-container">
         <div class="modal-header">
             <h3>
                 <i class="bi bi-truck"></i>
                 Потвърждаване на изпращането
             </h3>
-            <button type="button" class="modal-close" id="close-shipping-modal">
+            <button type="button" class="modal-close" id="close-shipping-confirmation-modal">
                 <i class="bi bi-x"></i>
             </button>
         </div>
@@ -237,7 +321,7 @@
                 <div class="confirmation-icon">
                     <i class="bi bi-exclamation-triangle"></i>
                 </div>
-                <p>Сигурни ли сте, че искате да потвърдите изпращането на тази поръчка?</p>
+                <p>Сигурни ли сте, че искате да завършите изпращането на тази поръчка?</p>
                 <p class="warning-text">
                     След потвърждаване статусът ще се промени на "ИЗПРАТЕНА" и няма да може да се редактира.
                 </p>
@@ -247,6 +331,10 @@
                 <div class="detail-row">
                     <span class="detail-label">Номер на поръчката:</span>
                     <span class="detail-value" id="modal-order-number">123</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Номер на камиона:</span>
+                    <span class="detail-value" id="modal-truck-number">Не е въведен</span>
                 </div>
                 <div class="detail-row">
                     <span class="detail-label">Общо артикули:</span>
@@ -260,10 +348,11 @@
         </div>
 
         <div class="modal-footer">
-            <button type="button" class="btn-secondary" id="cancel-shipping">
+            <button type="button" class="btn-secondary" id="cancel-shipping-confirmation">
                 Отказ
             </button>
             <button type="button" class="btn-success" id="confirm-shipping">
+                <i class="bi bi-check-circle"></i>
                 Потвърди изпращането
             </button>
         </div>
@@ -275,18 +364,32 @@
 
 <!-- Order data for JavaScript initialization -->
 <script th:inline="javascript">
-    // ОСНОВЕН CONFIG обект за shipped orders
-    window.shippedOrderConfig = /*[[${dashboardConfig}]]*/ {};
+    // Основен CONFIG обект за shipped orders - адаптиран от order-review
+    window.shippedOrderConfig = {
+        orderId: /*[[${orderId}]]*/ null,
+        csrfToken: /*[[${csrfToken}]]*/ '',
+        csrfHeader: /*[[${csrfHeader}]]*/ 'X-CSRF-TOKEN',
+        orderData: /*[[${order}]]*/ {},
+        clientInfo: /*[[${clientInfo}]]*/ {},
+        dashboardMode: 'shipping',
 
-    // Backup config ако има проблем с Thymeleaf
+        // WebSocket конфигурация за real-time updates
+        websocket: {
+            enabled: true,
+            progressTopic: '/topic/shipping/progress/' + /*[[${orderId}]]*/ null,
+            statusTopic: '/topic/shipping/status/' + /*[[${orderId}]]*/ null
+        }
+    };
+
+    // Backup конфигурация ако има проблем с Thymeleaf
     if (!window.shippedOrderConfig || !window.shippedOrderConfig.orderId) {
         window.shippedOrderConfig = {
             orderId: /*[[${orderId}]]*/ null,
             csrfToken: /*[[${csrfToken}]]*/ '',
             csrfHeader: /*[[${csrfHeader}]]*/ 'X-CSRF-TOKEN',
-            orderData: /*[[${orderData}]]*/ {},
+            orderData: /*[[${order}]]*/ {},
             clientInfo: /*[[${clientInfo}]]*/ {},
-            dashboardMode: 'shipped'
+            dashboardMode: 'shipping'
         };
     }
 </script>
@@ -294,24 +397,33 @@
 <!-- Core project scripts -->
 <div th:replace="~{fragments/bottomHtmlImports :: bottomImports}"></div>
 
-<script src="/js/employersDashboard/dashboardApi.js"></script>
-<script src="/js/employersDashboard/dashboardManager.js"></script>
-<script src="/js/employersDashboard/dashboardUI.js"></script>
+<!-- API Layer - Отделен файл за endpoint управление -->
+<script src="/js/employersDashboard/shippingApi.js"></script>
 
-<!-- Shipped orders specific scripts -->
-<script src="/js/employersDashboard/orderDetailShipped.js"></script>
+<!-- Shipping orders specific scripts -->
+<script src="/js/employersDashboard/order-detail-shipped.js"></script>
 
-<!-- Shipped Orders Initialization -->
+<!-- Shipping Orders Initialization -->
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // Проверяваме дали всички dependencies са заредени
-        if (typeof OrderDetailShipped !== 'undefined' && window.shippedOrderConfig) {
-            console.log('Initializing OrderDetailShipped...');
+        if (typeof OrderDetailShipped !== 'undefined' &&
+            typeof ShippingApi !== 'undefined' &&
+            window.shippedOrderConfig) {
+
+            console.log('Initializing Order Shipping interface...');
+
+            // Инициализираме API слоя първи
+            window.shippingApi = new ShippingApi();
+
+            // След това инициализираме основния интерфейс
             window.orderDetailShipped = new OrderDetailShipped();
             window.orderDetailShipped.initialize();
+
         } else {
-            console.error('OrderDetailShipped или shippedOrderConfig не са налични:', {
+            console.error('Липсват dependencies за shipping интерфейса:', {
                 OrderDetailShipped: typeof OrderDetailShipped !== 'undefined',
+                ShippingApi: typeof ShippingApi !== 'undefined',
                 shippedOrderConfig: !!window.shippedOrderConfig
             });
         }
