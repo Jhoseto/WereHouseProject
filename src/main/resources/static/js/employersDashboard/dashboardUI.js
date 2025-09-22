@@ -595,7 +595,6 @@ class DashboardUI {
     }
 
     generateOrderCardHtml(order) {
-        // Status mapping с компактни български labels
         const statusMap = {
             'URGENT': {label: 'Спешна', class: 'urgent'},
             'PENDING': {label: 'Изчакваща', class: 'pending'},
@@ -605,12 +604,10 @@ class DashboardUI {
 
         const status = statusMap[order.status] || {label: 'Изчакваща', class: 'pending'};
 
-        // Форматиране на финансови данни - винаги 2 десетични знака
         const totalGross = order.totalGross ? Number(order.totalGross).toFixed(2) : '0.00';
         const totalNet = order.totalNet ? Number(order.totalNet).toFixed(2) : '0.00';
         const itemsCount = order.itemsCount || 0;
 
-        // Форматиране на дата и час с българска локализация
         const submittedDate = order.submittedAt ?
             new Date(order.submittedAt).toLocaleDateString('bg-BG', {
                 day: '2-digit', month: '2-digit', year: 'numeric'
@@ -621,19 +618,22 @@ class DashboardUI {
                 hour: '2-digit', minute: '2-digit'
             }) : '';
 
-        // Съкращаване на дълги фирмени имена за компактност
         const clientCompany = order.clientCompany && order.clientCompany.length > 35
             ? order.clientCompany.substring(0, 35) + '...'
             : order.clientCompany || 'Неизвестна фирма';
 
-        // Форматиране на клиентски детайли с проверка за null/undefined
         const clientDetails = [
             order.clientName,
             order.clientPhone,
             order.clientLocation
         ].filter(detail => detail).join(' • ') || 'Няма данни';
 
-        // Генериране на HTML с нова три-секционна структура
+        // Избор на правилен метод според статуса
+        let viewMethod = 'viewOrderDetails';
+        if (order.status === 'CONFIRMED') {
+            viewMethod = 'viewShippedOrderDetails';
+        }
+
         return `
 <div class="order-card" data-order-id="${order.id}" data-status="${status.class}">
     <div class="status-bar ${status.class}"></div>
@@ -665,7 +665,7 @@ class DashboardUI {
                 <div class="order-time">${submittedTime}</div>
             </div>
             <div class="order-actions">
-                <button class="btn-view" onclick="viewOrderDetails(${order.id})">
+                <button class="btn-view" onclick="${viewMethod}(${order.id})">
                     👁 Преглед
                 </button>
             </div>
@@ -673,6 +673,7 @@ class DashboardUI {
     </div>
 </div>`;
     }
+
 
     // ==========================================
     // LOADING AND ERROR STATES

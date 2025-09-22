@@ -1,5 +1,6 @@
 package com.yourco.warehouse.service;
 
+import com.yourco.warehouse.dto.OrderDTO;
 import com.yourco.warehouse.entity.Order;
 import com.yourco.warehouse.entity.UserEntity;
 import org.springframework.data.domain.Page;
@@ -85,4 +86,6 @@ public interface OrderService {
      * @return Map с резултат и детайли за операцията
      */
     Map<String, Object> updateOrderBatch(Long orderId, Map<Long, Integer> itemUpdates, Long clientId);
+
+    Optional<OrderDTO> getOrderById(Long id);
 }

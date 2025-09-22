@@ -1,413 +1,114 @@
 /**
- * SHIPPING API - DEDICATED API CLIENT FOR SHIPPING OPERATIONS
- * ==========================================================
- * Специализиран API клас само за shipping функционалност
- * Използва /shipping-order/** endpoints
+ * ОПРОСТЕН SHIPPING API - САМО ДВЕ ЗАЯВКИ
+ * =====================================
+ *
+ * Заменя сложния shippingApi.js с максимално опростена логика:
+ * 1. Зарежда цялата информация веднъж
+ * 2. Потвърждава shipping и сменя статуса
+ *
+ * Всичко друго се случва в реално време във frontend-а
  */
 
-class ShippingApi {
+class ShippedApi {
     constructor() {
-        this.baseUrl = '/shipping-order';
-        this.csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content') ||
-            window.shippedOrderConfig?.csrfToken || '';
-        this.csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content') ||
-            window.shippedOrderConfig?.csrfHeader || 'X-CSRF-TOKEN';
+        // Основен URL path за shipping операции
+        this.basePath = '/api/shipping-orders';
 
-        // Request cache for performance optimization
-        this.cache = new Map();
-        this.cacheTimeout = 60000; // 1 minute cache
+        // Headers за POST/PUT заявки
+        this.defaultHeaders = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        };
+
+        console.log('ShippedApi инициализиран успешно');
     }
 
-    /**
-     * Make HTTP request with proper headers and error handling
-     */
-    async makeRequest(method, endpoint, data = null) {
-        const url = `${this.baseUrl}${endpoint}`;
 
-        const config = {
-            method: method,
-            headers: {
-                'Content-Type': 'application/json',
-                [this.csrfHeader]: this.csrfToken
+    /**
+     * 🔹 ЗАЯВКА 2: ПОТВЪРЖДЕНИЕ И SHIPPING
+     *
+     * Единствената заявка за потвърждение която:
+     * - Сменя статуса от CONFIRMED → SHIPPED
+     * - Добавя shipping note ако е подаден
+     * - Записва timestamp за shipping
+     * - Завършва процеса
+     *
+     * Това е финалната операция - след нея поръчката е изпратена
+     */
+    async confirmShipping(orderId, shippedNote = null) {
+        try {
+            console.log(`📦 Потвърждение на shipping за поръчка ${orderId}`);
+
+            const requestData = {
+                orderId: orderId,
+                shippedNote: shippedNote?.trim() || null,
+                shippedAt: new Date().toISOString(),
+                action: 'CONFIRM_SHIPPING'
+            };
+
+            const response = await this.makeRequest('PUT', `/${orderId}/confirm-shipping`, requestData);
+
+            if (response.success) {
+                console.log(`✅ Поръчка ${orderId} е потвърдена като изпратена`);
+
+                return {
+                    success: true,
+                    orderId: orderId,
+                    newStatus: 'SHIPPED',
+                    shippedAt: requestData.shippedAt,
+                    message: response.message || 'Поръчката е успешно изпратена'
+                };
+            } else {
+                throw new Error(response.message || 'Грешка при потвърждение на shipping');
             }
-        };
 
-        if (data && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
-            config.body = JSON.stringify(data);
-        }
-
-        try {
-            const response = await fetch(url, config);
-
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
-
-            return response;
         } catch (error) {
-            console.error(`Shipping API request failed: ${method} ${url}`, error);
-            throw error;
+            console.error(`❌ Грешка при потвърждение на shipping за поръчка ${orderId}:`, error);
+
+            return {
+                success: false,
+                error: error.message,
+                message: 'Неуспешно потвърждение. Моля опитайте отново.'
+            };
         }
     }
 
-    /**
-     * Get from cache if available and not expired
-     */
-    getFromCache(key) {
-        const cached = this.cache.get(key);
-        if (cached && (Date.now() - cached.timestamp) < this.cacheTimeout) {
-            return cached.data;
-        }
-        return null;
-    }
-
-    /**
-     * Set cache entry
-     */
-    setCache(key, data) {
-        this.cache.set(key, {
-            data: data,
-            timestamp: Date.now()
-        });
-    }
-
-    /**
-     * Clear cache entries
-     */
-    clearCache(pattern = null) {
-        if (pattern) {
-            for (const [key] of this.cache) {
-                if (key.includes(pattern)) {
-                    this.cache.delete(key);
-                }
-            }
-        } else {
-            this.cache.clear();
-        }
-    }
-
-    // ==========================================
-    // SHIPPING ORDER DETAILS API
-    // ==========================================
-
-    /**
-     * Get order details for shipping interface
-     */
-    async getOrderDetails(orderId) {
-        const cacheKey = `order_details_${orderId}`;
-        const cached = this.getFromCache(cacheKey);
-
-        if (cached) {
-            return cached;
-        }
-
-        try {
-            const response = await this.makeRequest('GET', `/${orderId}/details`);
-            const data = await response.json();
-
-            this.setCache(cacheKey, data);
-            return data;
-        } catch (error) {
-            console.error(`Failed to get order details for ${orderId}:`, error);
-            throw error;
-        }
-    }
-
-    /**
-     * Get shipping progress for order
-     */
-    async getShippingProgress(orderId) {
-        try {
-            const response = await this.makeRequest('GET', `/${orderId}/progress`);
-            return await response.json();
-        } catch (error) {
-            console.error(`Failed to get shipping progress for ${orderId}:`, error);
-            throw error;
-        }
-    }
-
-    // ==========================================
-    // ITEM LOADING MANAGEMENT API
-    // ==========================================
-
-    /**
-     * Update single item loading status
-     */
-    async updateItemLoadingStatus(orderId, itemId, isLoaded, notes = null) {
-        const data = {
-            isLoaded: isLoaded,
-            notes: notes,
-            timestamp: new Date().toISOString()
-        };
-
-        try {
-            const response = await this.makeRequest('PUT', `/${orderId}/item/${itemId}/loading-status`, data);
-            const result = await response.json();
-
-            // Clear relevant cache
-            this.clearCache(`order_${orderId}`);
-
-            return result;
-        } catch (error) {
-            console.error(`Failed to update loading status for item ${itemId}:`, error);
-            throw error;
-        }
-    }
-
-    /**
-     * Batch update multiple items loading status
-     */
-    async batchUpdateItemsLoadingStatus(orderId, itemUpdates) {
-        const data = {
-            itemUpdates: itemUpdates,
-            batchTimestamp: new Date().toISOString()
-        };
-
-        try {
-            const response = await this.makeRequest('PUT', `/${orderId}/items/batch-loading-status`, data);
-            const result = await response.json();
-
-            // Clear relevant cache
-            this.clearCache(`order_${orderId}`);
-
-            return result;
-        } catch (error) {
-            console.error(`Failed to batch update items for order ${orderId}:`, error);
-            throw error;
-        }
-    }
-
-    // ==========================================
-    // ORDER SHIPPING COMPLETION API
-    // ==========================================
-
-    /**
-     * Mark order as shipped (complete shipping process)
-     */
-    async markOrderAsShipped(orderId, shippingNotes = null) {
-        const data = {
-            shippingNotes: shippingNotes,
-            shippedAt: new Date().toISOString()
-        };
-
-        try {
-            const response = await this.makeRequest('PUT', `/${orderId}/mark-shipped`, data);
-            const result = await response.json();
-
-            // Clear all cache since order status changed
-            this.clearCache();
-
-            return result;
-        } catch (error) {
-            console.error(`Failed to mark order ${orderId} as shipped:`, error);
-            throw error;
-        }
-    }
-
-    /**
-     * Cancel shipping for order
-     */
-    async cancelShipping(orderId, reason) {
-        const data = {
-            reason: reason,
-            cancelledAt: new Date().toISOString()
-        };
-
-        try {
-            const response = await this.makeRequest('PUT', `/${orderId}/cancel-shipping`, data);
-            const result = await response.json();
-
-            // Clear all cache since order status changed
-            this.clearCache();
-
-            return result;
-        } catch (error) {
-            console.error(`Failed to cancel shipping for order ${orderId}:`, error);
-            throw error;
-        }
-    }
-
-    // ==========================================
-    // SHIPPING NOTES API
-    // ==========================================
-
-    /**
-     * Add shipping note to order
-     */
-    async addShippingNote(orderId, note) {
-        const data = {
-            note: note,
-            addedAt: new Date().toISOString()
-        };
-
-        try {
-            const response = await this.makeRequest('POST', `/${orderId}/shipping-note`, data);
-            const result = await response.json();
-
-            // Clear order cache
-            this.clearCache(`order_${orderId}`);
-
-            return result;
-        } catch (error) {
-            console.error(`Failed to add shipping note to order ${orderId}:`, error);
-            throw error;
-        }
-    }
-
-    // ==========================================
-    // SHIPPING STATISTICS API
-    // ==========================================
-
-    /**
-     * Get shipping statistics
-     */
-    async getShippingStatistics(timeframe = 'today') {
-        const cacheKey = `shipping_stats_${timeframe}`;
-        const cached = this.getFromCache(cacheKey);
-
-        if (cached) {
-            return cached;
-        }
-
-        try {
-            const response = await this.makeRequest('GET', `/statistics?timeframe=${timeframe}`);
-            const data = await response.json();
-
-            this.setCache(cacheKey, data);
-            return data;
-        } catch (error) {
-            console.error(`Failed to get shipping statistics for ${timeframe}:`, error);
-            throw error;
-        }
-    }
-
-    /**
-     * Get orders ready for shipping
-     */
-    async getOrdersReadyForShipping(limit = 20, offset = 0) {
-        const cacheKey = `ready_orders_${limit}_${offset}`;
-        const cached = this.getFromCache(cacheKey);
-
-        if (cached) {
-            return cached;
-        }
-
-        try {
-            const response = await this.makeRequest('GET', `/ready?limit=${limit}&offset=${offset}`);
-            const data = await response.json();
-
-            this.setCache(cacheKey, data);
-            return data;
-        } catch (error) {
-            console.error('Failed to get orders ready for shipping:', error);
-            throw error;
-        }
-    }
-
-    // ==========================================
-    // VALIDATION API
-    // ==========================================
-
-    /**
-     * Validate order for shipping
-     */
-    async validateOrderForShipping(orderId) {
-        try {
-            const response = await this.makeRequest('GET', `/${orderId}/validate`);
-            return await response.json();
-        } catch (error) {
-            console.error(`Failed to validate order ${orderId} for shipping:`, error);
-            throw error;
-        }
-    }
-
-    // ==========================================
-    // MOBILE OPTIMIZATION METHODS
-    // ==========================================
-
-    /**
-     * Preload data for better mobile performance
-     */
-    async preloadOrderData(orderId) {
-        try {
-            const promises = [
-                this.getOrderDetails(orderId),
-                this.getShippingProgress(orderId)
-            ];
-
-            await Promise.allSettled(promises);
-            console.log(`Preloaded shipping data for order ${orderId}`);
-        } catch (error) {
-            console.warn(`Failed to preload data for order ${orderId}:`, error);
-        }
-    }
-
-    /**
-     * Retry mechanism for mobile connections
-     */
-    async retryRequest(requestFn, maxRetries = 3) {
-        for (let attempt = 1; attempt <= maxRetries; attempt++) {
-            try {
-                return await requestFn();
-            } catch (error) {
-                if (attempt === maxRetries) {
-                    throw error;
-                }
-
-                // Exponential backoff
-                const delay = Math.pow(2, attempt) * 1000;
-                await new Promise(resolve => setTimeout(resolve, delay));
-
-                console.warn(`Retry attempt ${attempt}/${maxRetries} for shipping API request`);
-            }
-        }
-    }
-
-    /**
-     * Check connection status
-     */
-    async checkConnection() {
-        try {
-            const response = await this.makeRequest('GET', '/health');
-            return response.ok;
-        } catch (error) {
-            return false;
-        }
-    }
-
-    // ==========================================
-    // UTILITY METHODS
-    // ==========================================
-
-    /**
-     * Update CSRF token (for long-running sessions)
-     */
-    updateCsrfToken(token, header = null) {
-        this.csrfToken = token;
-        if (header) {
-            this.csrfHeader = header;
-        }
-        console.log('CSRF token updated for shipping API');
-    }
-
-    /**
-     * Get cache statistics
-     */
-    getCacheStats() {
-        return {
-            size: this.cache.size,
-            entries: Array.from(this.cache.keys())
-        };
-    }
-
-    /**
-     * Cleanup method
-     */
-    destroy() {
-        this.clearCache();
-        console.log('ShippingApi instance destroyed');
-    }
 }
 
-// Export for global access
-window.ShippingApi = ShippingApi;
+// ==========================================
+// ГЛОБАЛНА ИНИЦИАЛИЗАЦИЯ
+// ==========================================
+
+/**
+ * Създава глобален instance при зареждане на страницата
+ */
+document.addEventListener('DOMContentLoaded', function() {
+    // Създай глобалния shipping API
+    window.shippedApi = new ShippedApi();
+
+    console.log('✅ ShippedApi е готов за използване');
+
+    // Експортирай основните функции глобално за HTML onclick events
+    window.loadOrderForShipping = async function(orderId) {
+        return await window.shippedApi.loadCompleteOrderData(orderId);
+    };
+
+    window.confirmOrderShipping = async function(orderId, note) {
+        return await window.shippedApi.confirmShipping(orderId, note);
+    };
+});
+
+// ==========================================
+// EXPORT ЗА ES6 MODULES
+// ==========================================
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = ShippedApi;
+}
+/*
+ * // 2. Потвърждение на shipping
+ * const shipped = await window.shippedApi.confirmShipping(123, "Всичко е заредено успешно");
+ * if (shipped.success) {
+ *     // Поръчката е SHIPPED - готово!
+ *     // Можеш да обновиш UI локално
+ * }
+ */

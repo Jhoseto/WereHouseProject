@@ -1,7 +1,9 @@
 package com.yourco.warehouse.service.impl;
 
+import com.yourco.warehouse.dto.OrderDTO;
 import com.yourco.warehouse.entity.*;
 import com.yourco.warehouse.entity.enums.OrderStatus;
+import com.yourco.warehouse.mapper.OrderMapper;
 import com.yourco.warehouse.repository.OrderRepository;
 import com.yourco.warehouse.repository.OrderItemRepository;
 import com.yourco.warehouse.repository.ProductRepository;
@@ -33,18 +35,21 @@ public class OrderServiceImpl implements OrderService {
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
     private final CartService cartService;
+    private final OrderMapper orderMapper;
 
     @Autowired
     public OrderServiceImpl(OrderRepository orderRepository,
                             OrderItemRepository orderItemRepository,
                             ProductRepository productRepository,
                             UserRepository userRepository,
-                            CartService cartService) {
+                            CartService cartService,
+                            OrderMapper orderMapper) {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
         this.productRepository = productRepository;
         this.userRepository = userRepository;
         this.cartService = cartService;
+        this.orderMapper = orderMapper;
     }
 
     @Override
@@ -426,5 +431,12 @@ public class OrderServiceImpl implements OrderService {
         }
 
         return result;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<OrderDTO> getOrderById(Long id) {
+        return orderRepository.findByIdWithItems(id)
+                .map(orderMapper::toDTO);
     }
 }

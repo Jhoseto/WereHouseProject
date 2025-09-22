@@ -16,7 +16,6 @@ public class OrderDTO {
     private String notes;
     private LocalDateTime submittedAt;
     private LocalDateTime confirmedAt;
-    private LocalDateTime processedAt;
     private LocalDateTime shippedAt;
     private String shippingNotes;
 
@@ -82,11 +81,21 @@ public class OrderDTO {
     public LocalDateTime getConfirmedAt() { return confirmedAt; }
     public void setConfirmedAt(LocalDateTime confirmedAt) { this.confirmedAt = confirmedAt; }
 
-    public LocalDateTime getProcessedAt() { return processedAt; }
-    public void setProcessedAt(LocalDateTime processedAt) { this.processedAt = processedAt; }
+    public LocalDateTime getShippedAt() {
+        return shippedAt;
+    }
 
-    public LocalDateTime getShippedAt() { return shippedAt; }
-    public void setShippedAt(LocalDateTime shippedAt) { this.shippedAt = shippedAt; }
+    public void setShippedAt(LocalDateTime shippedAt) {
+        this.shippedAt = shippedAt;
+    }
+
+    public Boolean getFullyLoaded() {
+        return isFullyLoaded;
+    }
+
+    public void setFullyLoaded(Boolean fullyLoaded) {
+        isFullyLoaded = fullyLoaded;
+    }
 
     public String getShippingNotes() { return shippingNotes; }
     public void setShippingNotes(String shippingNotes) { this.shippingNotes = shippingNotes; }

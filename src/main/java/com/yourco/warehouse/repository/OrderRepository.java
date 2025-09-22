@@ -1,5 +1,6 @@
 package com.yourco.warehouse.repository;
 
+import com.yourco.warehouse.dto.OrderDTO;
 import com.yourco.warehouse.entity.UserEntity;
 import com.yourco.warehouse.entity.Order;
 import com.yourco.warehouse.entity.enums.OrderStatus;
@@ -382,4 +383,5 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     })
     @Transactional(readOnly = true)
     List<Order> findByClientIdOrderBySubmittedAtDesc(@Param("clientId") Long clientId);
+
 }

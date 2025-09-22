@@ -26,7 +26,6 @@ public class Order {
 
     private LocalDateTime submittedAt;
     private LocalDateTime confirmedAt;
-    private LocalDateTime processedAt;
     private LocalDateTime shippedAt;
 
     @Column(name = "has_modifications")
@@ -98,13 +97,6 @@ public class Order {
     public List<OrderItem> getItems() { return items; }
     public void setItems(List<OrderItem> items) { this.items = items; }
 
-    public LocalDateTime getProcessedAt() {
-        return processedAt;
-    }
-
-    public void setProcessedAt(LocalDateTime processedAt) {
-        this.processedAt = processedAt;
-    }
 
     public LocalDateTime getShippedAt() {
         return shippedAt;

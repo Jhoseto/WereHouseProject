@@ -634,7 +634,7 @@ class OrderDetailShipped {
             `;
 
             // Call API to mark order as shipped
-            const response = await this.dashboardApi.markOrderAsShipped(this.orderId);
+            const response = await this.dashboardApi.confirmShipping(this.orderId);
 
             if (response.success) {
                 // Show success message

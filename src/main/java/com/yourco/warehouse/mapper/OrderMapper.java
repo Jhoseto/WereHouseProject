@@ -14,7 +14,6 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Component
@@ -37,9 +36,6 @@ public class OrderMapper {
         dto.setNotes(order.getNotes());
         dto.setSubmittedAt(order.getSubmittedAt());
         dto.setConfirmedAt(order.getConfirmedAt());
-
-        // ДОБАВЕНИ shipping полета
-        dto.setProcessedAt(order.getProcessedAt());
         dto.setShippedAt(order.getShippedAt());
         dto.setShippingNotes(order.getShippingNotes());
 
@@ -65,9 +61,30 @@ public class OrderMapper {
                     .collect(Collectors.toList());
             dto.setItems(itemDTOs);
             dto.setItemsCount(itemDTOs.size());
+
+            // Изчисляване на totalItems, loadedItems, remainingItems, completionPercentage, isFullyLoaded
+            int totalItems = itemDTOs.stream()
+                    .mapToInt(item -> item.getQuantity() != null ? item.getQuantity().intValue() : 0)
+                    .sum();
+            int loadedItems = itemDTOs.stream()
+                    .mapToInt(item -> item.getLoaded() != null && item.getLoaded() ? item.getQuantity().intValue() : 0)
+                    .sum();
+            dto.setTotalItems(totalItems);
+            dto.setLoadedItems(loadedItems);
+            dto.setRemainingItems(totalItems - loadedItems);
+            dto.setCompletionPercentage(totalItems > 0 ? (double) loadedItems / totalItems * 100 : 0.0);
+            dto.setIsFullyLoaded(loadedItems == totalItems);
+        } else {
+            dto.setItems(Collections.emptyList());
+            dto.setItemsCount(0);
+            dto.setTotalItems(0);
+            dto.setLoadedItems(0);
+            dto.setRemainingItems(0);
+            dto.setCompletionPercentage(0.0);
+            dto.setIsFullyLoaded(false);
         }
 
-        // Calculated полета
+        // Calculated поле
         dto.setTimeAgo(formatTimeAgo(order.getSubmittedAt()));
 
         return dto;
@@ -102,22 +119,14 @@ public class OrderMapper {
                 dto.setProductId(orderItem.getProduct().getId());
                 dto.setProductSku(orderItem.getProduct().getSku());
                 dto.setProductName(orderItem.getProduct().getName());
-
-                // Добавяме category mapping
                 dto.setCategory(orderItem.getProduct().getCategory());
-
-                // Stock информация
                 Integer availableStock = orderItem.getProduct().getQuantityAvailable();
                 dto.setAvailableStock(availableStock != null ? availableStock : 0);
-
-                // Проверяваме за stock issues
                 boolean hasStockIssue = orderItem.getQty() != null &&
                         availableStock != null &&
                         orderItem.getQty().intValue() > availableStock;
                 dto.setHasStockIssue(hasStockIssue);
-
             } catch (Exception e) {
-                // Fallback ако има lazy loading проблеми с product
                 dto.setProductId(null);
                 dto.setProductSku("N/A");
                 dto.setProductName("Продуктът не е достъпен");
@@ -153,20 +162,15 @@ public class OrderMapper {
         }
 
         OrderDTO dto = new OrderDTO();
-
-        // Само най-основните данни които винаги са достъпни
         dto.setId(order.getId());
         dto.setStatus(order.getStatus() != null ? order.getStatus().name() : "UNKNOWN");
         dto.setTotalGross(order.getTotalGross() != null ? order.getTotalGross() : BigDecimal.ZERO);
         dto.setSubmittedAt(order.getSubmittedAt());
-
-        // Safe fallback стойности
         dto.setClientId(null);
         dto.setClientName("Грешка при зареждане на данните");
         dto.setItemsCount(0);
         dto.setItems(Collections.emptyList());
         dto.setTimeAgo("Неизвестно");
-
         return dto;
     }
 
@@ -177,13 +181,10 @@ public class OrderMapper {
 
         try {
             LocalDateTime now = LocalDateTime.now();
-
-            // Изчисляваме разликата в различни единици
             long minutes = ChronoUnit.MINUTES.between(submittedAt, now);
             long hours = ChronoUnit.HOURS.between(submittedAt, now);
             long days = ChronoUnit.DAYS.between(submittedAt, now);
 
-            // Връщаме най-подходящия формат
             if (minutes < 60) {
                 return minutes + "мин";
             } else if (hours < 24) {
@@ -191,10 +192,8 @@ public class OrderMapper {
             } else if (days < 30) {
                 return days + "д";
             } else {
-                // За по-стари поръчки показваме датата
                 return submittedAt.format(DateTimeFormatter.ofPattern("dd.MM.yy"));
             }
-
         } catch (Exception e) {
             return "Неизвестно";
         }
@@ -206,26 +205,19 @@ public class OrderMapper {
         }
 
         try {
-            // Опитваме се да достъпим всички lazy-loaded properties
             if (order.getClient() != null) {
-                order.getClient().getUsername(); // Trigger lazy loading
+                order.getClient().getUsername();
             }
-
             if (order.getItems() != null) {
-                order.getItems().size(); // Trigger collection loading
-
-                // Проверяваме и продуктите в items
+                order.getItems().size();
                 for (OrderItem item : order.getItems()) {
                     if (item.getProduct() != null) {
-                        item.getProduct().getName(); // Trigger product loading
+                        item.getProduct().getName();
                     }
                 }
             }
-
             return true;
-
         } catch (Exception e) {
-            // Ако получим lazy initialization exception, данните не са пълни
             return false;
         }
     }
@@ -246,7 +238,6 @@ public class OrderMapper {
             }
         }
 
-        // В production можем да log-ваме това в metrics системата
         System.out.printf("Mapping %s: %d orders total, %d fully loaded, %d partially loaded%n",
                 operation, orders.size(), fullyLoaded, partiallyLoaded);
     }

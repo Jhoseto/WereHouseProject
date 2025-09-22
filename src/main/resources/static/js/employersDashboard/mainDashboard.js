@@ -218,7 +218,17 @@ class MainDashboard {
         // Global function for order details viewing
         window.viewOrderDetails = function(orderId) {
             if (window.mainDashboard?.manager) {
+
                 const detailUrl = `/employer/dashboard/order/${orderId}/detailOrder`;
+                window.open(detailUrl, '_blank');
+            }
+        };
+
+        // Global function for order sipped details viewing
+        window.viewShippedOrderDetails = function(orderId) {
+            if (window.mainDashboard?.manager) {
+
+                const detailUrl = `/employer/shipped/ordersDetail/${orderId}`;
                 window.open(detailUrl, '_blank');
             }
         };
