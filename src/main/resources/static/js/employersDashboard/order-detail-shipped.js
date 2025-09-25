@@ -1,7 +1,8 @@
 /**
- * ORDER DETAIL SHIPPED - МИНИМАЛНА ЛОГИКА
- * =======================================
+ * ORDER DETAIL SHIPPED - МИНИМАЛНА ЛОГИКА С ВСИЧКИ ENDPOINTS
+ * =========================================================
  * Прост код за товарене. Без класове, без сложности.
+ * Използва всички API endpoints креативно.
  */
 
 // Глобални променливи
@@ -10,6 +11,7 @@ let currentTruck = null;
 let startTime = null;
 let timerInterval = null;
 let heartbeatInterval = null;
+let warehouseMonitorInterval = null;
 let loadedItems = new Set();
 let orderItems = [];
 let currentMode = 'selection'; // 'selection', 'loading', 'observer'
@@ -43,7 +45,7 @@ function setupEventListeners() {
 // Проверява за активна сесия
 async function checkActiveSession() {
     try {
-        const status = await getStatus();
+        const status = await getLoadingStatus();
 
         if (status.hasActiveSession) {
             const session = status.session;
@@ -66,11 +68,15 @@ async function checkActiveSession() {
 }
 
 // Превключва режимите
-function switchToSelectionMode() {
+async function switchToSelectionMode() {
     currentMode = 'selection';
     document.getElementById('truck-section').style.display = 'block';
     document.getElementById('loading-section').style.display = 'none';
     document.getElementById('observer-section').style.display = 'none';
+
+    // ✅ WAREHOUSE ACTIVITY DISPLAY
+    await showWarehouseActivity();
+    startWarehouseMonitoring();
 }
 
 function switchToLoadingMode(session) {
@@ -90,7 +96,7 @@ function switchToLoadingMode(session) {
     if (statusBar) {
         const operatorInfo = statusBar.querySelector('.ms-3') || document.createElement('span');
         operatorInfo.className = 'ms-3';
-        operatorInfo.innerHTML = `<i class="bi bi-person-fill"></i> ${window.orderConfig.currentUser.username || 'Вие'}`;
+        operatorInfo.innerHTML = `<i class="bi bi-person-fill"></i> ${window.orderConfig.currentUsername || 'Вие'}`;
         if (!statusBar.contains(operatorInfo)) {
             statusBar.querySelector('div').appendChild(operatorInfo);
         }
@@ -105,17 +111,22 @@ function switchToLoadingMode(session) {
     renderItems(true); // true = може да редактира
     updateProgress();
 
+    // ✅ ПОПРАВКА ЗА LOADING STATE
+    hideLoadingState();
+    showOrderInterface();
+
     // Стартира timer ако няма startTime
     if (!startTime) {
         startTime = new Date(session.startedAt || Date.now());
         startTimer();
     }
 
-    // Стартира heartbeat
-    startHeartbeat();
+    // ✅ SMART HEARTBEAT с automatic error detection
+    startSmartHeartbeat();
+    stopWarehouseMonitoring();
 }
 
-function switchToObserverMode(session) {
+async function switchToObserverMode(session) {
     currentMode = 'observer';
 
     document.getElementById('truck-section').style.display = 'none';
@@ -135,8 +146,114 @@ function switchToObserverMode(session) {
     renderObserverItems();
     updateObserverProgress();
 
+    // ✅ TEAM ACTIVITY DISPLAY
+    await showTeamActivity();
+
     // Стартира мониторинг
     startObserverMonitoring();
+    stopWarehouseMonitoring();
+}
+
+// ==========================================
+// ✅ UI STATE MANAGEMENT FUNCTIONS
+// ==========================================
+
+function hideLoadingState() {
+    const loadingState = document.getElementById('loading-state');
+    if (loadingState) {
+        loadingState.classList.add('hidden');
+        loadingState.style.display = 'none';
+    }
+}
+
+function showOrderInterface() {
+    const itemsContainer = document.getElementById('items-container');
+    if (itemsContainer) {
+        itemsContainer.classList.remove('hidden');
+        itemsContainer.style.display = 'block';
+    }
+
+    const emptyState = document.getElementById('empty-state');
+    if (emptyState) {
+        emptyState.classList.add('hidden');
+        emptyState.style.display = 'none';
+    }
+}
+
+function showLoadingState() {
+    const loadingState = document.getElementById('loading-state');
+    if (loadingState) {
+        loadingState.classList.remove('hidden');
+        loadingState.style.display = 'block';
+    }
+
+    const itemsContainer = document.getElementById('items-container');
+    if (itemsContainer) {
+        itemsContainer.classList.add('hidden');
+    }
+}
+
+// ==========================================
+// ✅ WAREHOUSE ACTIVITY FUNCTIONS
+// ==========================================
+
+async function showWarehouseActivity() {
+    try {
+        const count = await getActiveSessionsCount();
+        const warehouseStatus = document.getElementById('warehouse-status');
+
+        // ✅ SAFE PROPERTY ACCESS
+        const activeCount = count?.activeSessionsCount || count?.count || 0;
+
+        if (activeCount > 0) {
+            warehouseStatus.innerHTML = `<span class="text-warning"><i class="bi bi-people"></i> ${activeCount} активни товарни операции</span>`;
+        } else {
+            warehouseStatus.innerHTML = `<span class="text-success"><i class="bi bi-check-circle"></i> Склад свободен</span>`;
+        }
+    } catch (error) {
+        // Тихо - не нарушаваме потребителското преживяване
+        document.getElementById('warehouse-status').innerHTML = `<span class="text-muted">Статус недостъпен</span>`;
+    }
+}
+
+async function showTeamActivity() {
+    try {
+        const sessions = await getActiveSessions();
+        if (!sessions.activeSessions || !Array.isArray(sessions.activeSessions)) {
+            return;
+        }
+
+        const otherSessions = sessions.activeSessions.filter(s => s.orderId !== window.orderConfig.orderId);
+        const otherActivity = document.getElementById('other-activity');
+
+        if (otherSessions.length > 0) {
+            const details = otherSessions.map(s => `Поръчка ${s.orderId}: ${s.completionPercentage || 0}%`).join(' • ');
+            otherActivity.innerHTML = `<i class="bi bi-truck"></i> Други товарни операции: ${details}`;
+        } else {
+            otherActivity.innerHTML = `<i class="bi bi-info-circle"></i> Това е единствената активна товарна операция`;
+        }
+    } catch (error) {
+        // Тихо
+        const otherActivity = document.getElementById('other-activity');
+        if (otherActivity) {
+            otherActivity.innerHTML = '';
+        }
+    }
+}
+
+function startWarehouseMonitoring() {
+    warehouseMonitorInterval = setInterval(async () => {
+        if (currentMode === 'selection') {
+            await showWarehouseActivity();
+        }
+    }, 15000); // 15 секунди
+}
+
+function stopWarehouseMonitoring() {
+    if (warehouseMonitorInterval) {
+        clearInterval(warehouseMonitorInterval);
+        warehouseMonitorInterval = null;
+    }
 }
 
 // Стартира товарене
@@ -175,9 +292,12 @@ async function handleCompleteLoading() {
 
         await completeLoading(currentSessionId);
 
+        // ✅ BACKGROUND MAINTENANCE след завършване
+        await backgroundMaintenance();
+
         // Cleanup и redirect
         stopTimer();
-        stopHeartbeat();
+        stopSmartHeartbeat();
 
         alert('Товарене завършено успешно!');
         window.location.href = '/employer/dashboard';
@@ -194,10 +314,11 @@ function renderItems(canEdit) {
     const container = document.getElementById('items-container');
 
     container.innerHTML = orderItems.map(item => {
-        const isLoaded = loadedItems.has(item.id);
+        // ✅ ИЗПОЛЗВАЙ productId вместо id
+        const isLoaded = loadedItems.has(item.productId);
         const toggleHtml = canEdit ?
             `<button class="btn btn-sm ${isLoaded ? 'btn-success' : 'btn-outline-secondary'}" 
-                     onclick="toggleItemLoading(${item.id})">
+                     onclick="toggleItemLoading(${item.productId})">
                 <i class="bi ${isLoaded ? 'bi-check-circle-fill' : 'bi-circle'}"></i>
              </button>` :
             `<span class="badge ${isLoaded ? 'bg-success' : 'bg-secondary'}">
@@ -221,7 +342,8 @@ function renderObserverItems() {
     const container = document.getElementById('observer-items');
 
     container.innerHTML = orderItems.map(item => {
-        const isLoaded = loadedItems.has(item.id);
+        // ✅ ИЗПОЛЗВАЙ productId вместо id
+        const isLoaded = loadedItems.has(item.productId);
 
         return `
             <div class="d-flex justify-content-between align-items-center border-bottom py-2">
@@ -272,6 +394,11 @@ function updateProgress() {
     document.getElementById('progress-percent').textContent = percent + '%';
     document.getElementById('progress-bar').style.width = percent + '%';
 
+    // Обновява статистиките
+    document.getElementById('total-items-stat').textContent = total.toString();
+    document.getElementById('loaded-items-stat').textContent = loaded.toString();
+    document.getElementById('pending-items-stat').textContent = (total - loaded).toString();
+
     // Показва complete button при 100%
     document.getElementById('complete-section').style.display =
         (percent === 100 && total > 0) ? 'block' : 'none';
@@ -313,32 +440,53 @@ function updateTimer() {
         `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 }
 
-// Heartbeat функции
-function startHeartbeat() {
+// ==========================================
+// ✅ SMART HEARTBEAT FUNCTIONS
+// ==========================================
+
+function startSmartHeartbeat() {
     heartbeatInterval = setInterval(async () => {
         try {
             const success = await sendHeartbeat(currentSessionId);
-            updateSignalStatus(success ? 'online' : 'warning');
+
+            // ✅ AUTOMATIC LOST SIGNAL DETECTION при проблеми
+            if (!success) {
+                try {
+                    const lostSignalsResponse = await detectLostSignals(3); // 3 минути threshold
+                    if (lostSignalsResponse.affectedSessions > 0) {
+                        updateSignalStatus('warning', `Открити ${lostSignalsResponse.affectedSessions} проблема с връзката`);
+                    } else {
+                        updateSignalStatus('warning', 'Временен проблем с връзката');
+                    }
+                } catch (detectError) {
+                    updateSignalStatus('warning', 'Слаб сигнал');
+                }
+            } else {
+                updateSignalStatus('online');
+            }
+
         } catch (error) {
-            updateSignalStatus('warning');
+            updateSignalStatus('error', 'Грешка в комуникацията');
         }
     }, 10000); // 10 секунди
 }
 
-function stopHeartbeat() {
+function stopSmartHeartbeat() {
     if (heartbeatInterval) {
         clearInterval(heartbeatInterval);
         heartbeatInterval = null;
     }
 }
 
-function updateSignalStatus(status) {
+function updateSignalStatus(status, message) {
     const signalElement = document.getElementById('signal-status');
 
     if (status === 'online') {
         signalElement.innerHTML = '<i class="bi bi-wifi text-success"></i> Активен';
+    } else if (status === 'warning') {
+        signalElement.innerHTML = `<i class="bi bi-wifi text-warning"></i> ${message || 'Слаб сигнал'}`;
     } else {
-        signalElement.innerHTML = '<i class="bi bi-wifi text-warning"></i> Слаб сигнал';
+        signalElement.innerHTML = `<i class="bi bi-wifi text-danger"></i> ${message || 'Без връзка'}`;
     }
 }
 
@@ -347,7 +495,7 @@ function startObserverMonitoring() {
     setInterval(async () => {
         if (currentMode === 'observer') {
             try {
-                const status = await getStatus();
+                const status = await getLoadingStatus();
                 if (status.hasActiveSession) {
                     // Синхронизира данни
                     loadedItems.clear();
@@ -357,9 +505,28 @@ function startObserverMonitoring() {
                     renderObserverItems();
                     updateObserverProgress();
                 }
+
+                // ✅ REFRESH TEAM ACTIVITY periodically
+                await showTeamActivity();
+
             } catch (error) {
                 console.error('Observer monitoring грешка:', error);
             }
         }
     }, 5000); // 5 секунди
+}
+
+// ==========================================
+// ✅ BACKGROUND MAINTENANCE FUNCTIONS
+// ==========================================
+
+async function backgroundMaintenance() {
+    try {
+        // Тихо почистване на стари сесии (2 часа threshold)
+        await cleanupOldSessions(2);
+        console.log('Background maintenance завършен успешно');
+    } catch (error) {
+        // Тихо - не показваме грешки при background операции
+        console.warn('Background maintenance неуспешен:', error.message);
+    }
 }
