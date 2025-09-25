@@ -55,15 +55,15 @@ async function checkActiveSession() {
                 switchToLoadingMode(session);
             } else {
                 // Някой друг товари - observer mode
-                switchToObserverMode(session);
+                await switchToObserverMode(session);
             }
         } else {
             // Няма активна сесия
-            switchToSelectionMode();
+            await switchToSelectionMode();
         }
     } catch (error) {
         console.error('Грешка при проверка на статус:', error);
-        switchToSelectionMode();
+        await switchToSelectionMode();
     }
 }
 

@@ -116,6 +116,30 @@
                         </div>
                     </div>
                 </div>
+                <div class="employer-info-card">
+                    <div class="employer-primary">
+                        <div class="employer-identity">
+                            <div class="employer-avatar">
+                                <i class="bi bi-person-gear"></i>
+                            </div>
+                            <div class="employer-details">
+                                <h2 class="employer-name"
+                                    th:text="${loadingEmployer != null && loadingEmployer.username != null ? loadingEmployer.username : 'Няма служител поел товаренето'}">Служител
+                                </h2>
+                                <span class="employer-phone"
+                                      th:text="${loadingEmployer != null && loadingEmployer.phone != null ? loadingEmployer.phone : '-'}">Телефон</span>
+                            </div>
+                        </div>
+
+                        <div class="client-status">
+                            <span class="status-badge"
+                                  th:classappend="${clientInfo?.userStatus.name() == 'ACTIVE' ? 'status-active' : 'status-inactive'}"
+                                  th:text="${clientInfo?.userStatus.name() == 'ACTIVE' ? 'Активен' : 'Неактивен'}">
+                                Активен
+                            </span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 

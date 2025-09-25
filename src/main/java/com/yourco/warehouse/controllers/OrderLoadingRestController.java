@@ -1,6 +1,6 @@
 package com.yourco.warehouse.controllers;
 
-import com.yourco.warehouse.service.OrderShippingService;
+import com.yourco.warehouse.service.OrderLoadingService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,15 +19,16 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/loading")
 @PreAuthorize("hasRole('ADMIN') or hasRole('EMPLOYER')")
-public class OrderShippingRestController {
+public class OrderLoadingRestController {
 
-    private static final Logger log = LoggerFactory.getLogger(OrderShippingRestController.class);
+    private static final Logger log = LoggerFactory.getLogger(OrderLoadingRestController.class);
 
-    private final OrderShippingService orderShippingService;
+    private final OrderLoadingService orderLoadingService;
 
     @Autowired
-    public OrderShippingRestController(OrderShippingService orderShippingService) {
-        this.orderShippingService = orderShippingService;
+    public OrderLoadingRestController(OrderLoadingService orderLoadingService) {
+
+        this.orderLoadingService = orderLoadingService;
     }
 
     // ==========================================
@@ -51,8 +52,8 @@ public class OrderShippingRestController {
                     orderId, truckNumber, employeeId);
 
             // РЕАЛЕН SERVICE CALL
-            Map<String, Object> result = orderShippingService.startShipping(
-                    orderId, truckNumber, employeeId, employeeUsername);
+            Map<String, Object> result = orderLoadingService.startLoading(
+                    orderId, truckNumber);
 
             return ResponseEntity.ok(result);
 
@@ -77,7 +78,7 @@ public class OrderShippingRestController {
             log.debug("Toggling item {} in session {}", itemId, sessionId);
 
             // РЕАЛЕН SERVICE CALL
-            Map<String, Object> result = orderShippingService.toggleItem(sessionId, itemId);
+            Map<String, Object> result = orderLoadingService.toggleItem(sessionId, itemId);
 
             return ResponseEntity.ok(result);
 
@@ -101,7 +102,7 @@ public class OrderShippingRestController {
             log.debug("Completing loading for session {}", sessionId);
 
             // РЕАЛЕН SERVICE CALL
-            Map<String, Object> result = orderShippingService.completeShipping(sessionId);
+            Map<String, Object> result = orderLoadingService.completeLoading(sessionId);
 
             return ResponseEntity.ok(result);
 
@@ -122,7 +123,7 @@ public class OrderShippingRestController {
             log.debug("Getting loading status for order {}", orderId);
 
             // РЕАЛЕН SERVICE CALL
-            Map<String, Object> result = orderShippingService.getShippingStatus(orderId);
+            Map<String, Object> result = orderLoadingService.getLoadingStatus(orderId);
 
             return ResponseEntity.ok(result);
 
@@ -145,7 +146,7 @@ public class OrderShippingRestController {
             log.trace("Heartbeat for session {}", sessionId);
 
             // РЕАЛЕН SERVICE CALL
-            orderShippingService.updateHeartbeat(sessionId);
+            orderLoadingService.updateHeartbeat(sessionId);
 
             return ResponseEntity.ok(Map.of("success", true));
 
@@ -171,7 +172,7 @@ public class OrderShippingRestController {
             log.debug("Getting active sessions progress");
 
             // РЕАЛЕН SERVICE CALL
-            List<Map<String, Object>> result = orderShippingService.getActiveSessionsProgress();
+            List<Map<String, Object>> result = orderLoadingService.getActiveLoadingProgress();
 
             return ResponseEntity.ok(Map.of(
                     "success", true,
@@ -197,7 +198,7 @@ public class OrderShippingRestController {
             log.debug("Getting active sessions count");
 
             // РЕАЛЕН SERVICE CALL
-            long count = orderShippingService.getActiveSessionsCount();
+            long count = orderLoadingService.getActiveLoadingSessionsCount();
 
             return ResponseEntity.ok(Map.of(
                     "success", true,
@@ -226,7 +227,7 @@ public class OrderShippingRestController {
             log.debug("Detecting lost signals with threshold {} minutes", thresholdMinutes);
 
             // РЕАЛЕН SERVICE CALL
-            int affectedSessions = orderShippingService.detectLostSignalSessions(thresholdMinutes);
+            int affectedSessions = orderLoadingService.detectLostConnectionSessions(thresholdMinutes);
 
             return ResponseEntity.ok(Map.of(
                     "success", true,
@@ -258,7 +259,7 @@ public class OrderShippingRestController {
             log.debug("Cleaning up sessions older than {} hours", maxAgeHours);
 
             // РЕАЛЕН SERVICE CALL
-            int deletedSessions = orderShippingService.cleanupOldLostSessions(maxAgeHours);
+            int deletedSessions = orderLoadingService.cleanupAbandonedSessions(maxAgeHours);
 
             return ResponseEntity.ok(Map.of(
                     "success", true,

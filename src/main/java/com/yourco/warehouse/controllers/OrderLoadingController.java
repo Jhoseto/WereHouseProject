@@ -2,7 +2,10 @@ package com.yourco.warehouse.controllers;
 
 import com.yourco.warehouse.dto.ClientDTO;
 import com.yourco.warehouse.dto.OrderDTO;
+import com.yourco.warehouse.entity.UserEntity;
+import com.yourco.warehouse.repository.ShippedProcessRepository;
 import com.yourco.warehouse.service.DashboardService;
+import com.yourco.warehouse.service.OrderLoadingService;
 import com.yourco.warehouse.service.OrderService;
 import com.yourco.warehouse.service.UserService;
 import org.slf4j.Logger;
@@ -27,19 +30,23 @@ import java.util.Optional;
 @Controller
 @RequestMapping("/employer/shipped")
 @PreAuthorize("hasRole('ADMIN') or hasRole('EMPLOYER')")
-public class OrderShippingController {
+public class OrderLoadingController {
 
-    private static final Logger log = LoggerFactory.getLogger(OrderShippingController.class);
+    private static final Logger log = LoggerFactory.getLogger(OrderLoadingController.class);
 
     private final DashboardService dashboardService;
     private final OrderService orderService;
     private final UserService userService;
+    private final OrderLoadingService orderLoadingService;
+    private final ShippedProcessRepository shippedProcessRepository;
 
     @Autowired
-    public OrderShippingController(DashboardService dashboardService, OrderService orderService, UserService userService) {
+    public OrderLoadingController(DashboardService dashboardService, OrderService orderService, UserService userService, OrderLoadingService orderLoadingService, ShippedProcessRepository shippedProcessRepository) {
         this.dashboardService = dashboardService;
         this.orderService = orderService;
         this.userService = userService;
+        this.orderLoadingService = orderLoadingService;
+        this.shippedProcessRepository = shippedProcessRepository;
     }
 
     /**
@@ -84,8 +91,11 @@ public class OrderShippingController {
             model.addAttribute("currentUserId", currentUserId);
             model.addAttribute("currentUsername", currentUsername);
 
-            log.debug("Successfully loaded shipping page for order: {} with {} items",
-                    orderId, orderDetails.get().getItems() != null ? orderDetails.get().getItems().size() : 0);
+            if (shippedProcessRepository.findByOrderId(orderId).isPresent()){
+
+                UserEntity loadingEmployer = orderLoadingService.getEmployer(orderId);
+                model.addAttribute("loadingEmployer", loadingEmployer);
+            };
 
             return "employer/order-detail-shipped";
 

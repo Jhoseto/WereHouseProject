@@ -36,12 +36,16 @@ public class ShippedProcessEntity {
     @Column(name = "status", nullable = false)
     private ShippingSignalStatusEnum status = ShippingSignalStatusEnum.ACTIVE;
 
+    @Column(name = "employee_username", nullable = false, length = 50)
+    private String employeeUsername;
+
     // Constructors
     public ShippedProcessEntity() {}
 
-    public ShippedProcessEntity(Long orderId, Integer totalItems) {
+    public ShippedProcessEntity(Long orderId, Integer totalItems, String employeeUsername) {
         this.orderId = orderId;
         this.totalItems = totalItems;
+        this.employeeUsername = employeeUsername;
         this.startedAt = LocalDateTime.now();
         this.lastHeartbeat = LocalDateTime.now();
     }
@@ -67,4 +71,12 @@ public class ShippedProcessEntity {
 
     public ShippingSignalStatusEnum getStatus() { return status; }
     public void setStatus(ShippingSignalStatusEnum status) { this.status = status; }
+
+    public String getEmployeeUsername() {
+        return employeeUsername;
+    }
+
+    public void setEmployeeUsername(String employeeUsername) {
+        this.employeeUsername = employeeUsername;
+    }
 }
