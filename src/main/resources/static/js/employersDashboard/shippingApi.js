@@ -33,7 +33,7 @@ async function startLoading(truckNumber) {
 }
 
 // Toggle артикул
-async function toggleItem(sessionId, itemId) {
+async function toggleItemAPI(sessionId, itemId) {  // ✅ ПРЕИМЕНУВАНО
     const response = await fetch('/api/loading/toggle-item', {
         method: 'PATCH',
         headers: {

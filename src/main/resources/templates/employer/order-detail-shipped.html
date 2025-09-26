@@ -5,11 +5,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Изпращане на поръчка | Shipping Dashboard</title>
+    <title>Товарене на поръчка | Shipping Dashboard</title>
 
     <!-- Core project imports -->
     <div th:replace="~{fragments/topHtmlImports :: topImports}"></div>
-
     <!-- Order Shipping specific stylesheets -->
     <link rel="stylesheet" href="/css/order-shipping-catalog.css">
 </head>
@@ -24,90 +23,66 @@
 <!-- Toast notification container -->
 <div th:replace="~{fragments/toastSystem.html :: toastContainer}"></div>
 
-<!-- TRUCK SELECTION SECTION - Нова секция за избор на камион -->
-<section id="truck-section" class="order-shipping-section">
+<!-- MAIN LOADING INTERFACE - Нов единен интерфейс -->
+<section id="main-loading-section" class="order-shipping-section">
     <div class="container">
-        <div class="shipping-header">
-            <div class="header-main">
-                <div class="shipping-title">
-                    <h1>
-                        <i class="bi bi-truck"></i>
-                        Започни товарене на поръчка №<span th:text="${orderId}">123</span>
-                    </h1>
-                    <div class="shipping-subtitle">
-                        Избери камион за започване на процеса на товарене
-                    </div>
+
+        <!-- Truck Input Header - Винаги видим най-отгоре -->
+        <div class="truck-header-section">
+            <div class="shipping-title-block">
+                <h1>
+                    <i class="bi bi-truck"></i>
+                    Товарене на поръчка №<span th:text="${orderId}">123</span>
+                </h1>
+                <div class="shipping-subtitle">
+                    Управление на товарителен процес и мониторинг
                 </div>
             </div>
-        </div>
 
-        <!-- Warehouse Activity Status -->
-        <div class="alert alert-light d-flex justify-content-between align-items-center mb-4">
-            <div>
-                <i class="bi bi-building"></i>
-                <strong>Складова активност:</strong>
-                <span id="warehouse-status" class="ms-2 text-muted">Зареждане...</span>
-            </div>
-            <small class="text-muted">Реално време</small>
-        </div>
-
-        <div class="row justify-content-center">
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header">
-                        <h3><i class="bi bi-truck-front-fill"></i> Избор на камион</h3>
-                    </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <label for="truck-input" class="form-label">Номер на камион:</label>
-                            <input type="text" id="truck-input" class="form-control"
-                                   placeholder="напр. BG1234AB" maxlength="12">
-                            <div class="form-text">Въведете валиден номер на камион (4-12 символа)</div>
-                        </div>
-                        <button id="start-btn" class="btn btn-primary" disabled>
-                            <i class="bi bi-play-circle"></i> Започни товарене
+            <!-- Truck Input Controls - Винаги активни -->
+            <div class="truck-controls-panel">
+                <div class="truck-input-group">
+                    <label for="truck-input" class="form-label">
+                        <i class="bi bi-truck-front-fill"></i>
+                        Номер на камион:
+                    </label>
+                    <div class="input-button-group">
+                        <input type="text"
+                               id="truck-input"
+                               class="form-control truck-number-input"
+                               placeholder="напр. BG1234AB"
+                               maxlength="12">
+                        <button id="start-loading-btn" class="btn btn-primary" disabled>
+                            <i class="bi bi-play-circle"></i>
+                            Започни товарене
                         </button>
                     </div>
+                    <div class="form-text">Въведете валиден номер на камион (4-12 символа)</div>
+                </div>
+
+                <!-- Session Status Indicator -->
+                <div id="session-status" class="session-status hidden">
+                    <div class="status-indicator loading">
+                        <i class="bi bi-hourglass-split"></i>
+                        <span>Стартиране на сесия...</span>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-</section>
 
-<!-- LOADING SECTION - Основен интерфейс за товарене -->
-<section id="loading-section" class="order-shipping-section" style="display: none;">
-    <div class="container">
+        <!-- Main Content Area - Неактивна до стартиране -->
+        <div id="loading-content" class="loading-content-area disabled">
 
-        <!-- Order Shipping Header -->
-        <div class="shipping-header">
-            <div class="header-main">
-                <div class="shipping-title">
-                    <h1>
-                        <i class="bi bi-truck"></i>
-                        Натоварване и изпращане на поръчка №<span id="order-number" th:text="${orderId}">123</span>
-                    </h1>
-                    <div class="shipping-subtitle">
-                        Управление на товарителница и мониторинг
-                    </div>
-                </div>
-
-                <!-- Client Information Card - Адаптирана от order-review -->
-                <div class="client-info-card">
-                    <div class="client-primary">
-                        <div class="client-identity">
-                            <div class="client-avatar">
-                                <i class="bi bi-building"></i>
-                            </div>
-                            <div class="client-details">
-                                <h2 class="client-name" th:text="${clientInfo?.companyName ?: 'Неизвестен клиент'}">
-                                    ООД "Примерна Фирма"
-                                </h2>
-                                <span class="client-username" th:text="'@' + ${clientInfo?.username ?: 'unknown'}">
-                                    @client_username
-                                </span>
-                            </div>
-                        </div>
-                        <div class="client-status">
+            <!-- Information Panels Row -->
+            <div class="info-panels-row">
+                <!-- Client Information Panel -->
+                <div class="info-panel client-panel">
+                    <div class="panel-header">
+                        <h3>
+                            <i class="bi bi-building"></i>
+                            Информация за клиент
+                        </h3>
+                        <div class="panel-status">
                             <span class="status-badge"
                                   th:classappend="${clientInfo?.userStatus == 'ACTIVE' ? 'status-active' : 'status-inactive'}"
                                   th:text="${clientInfo?.userStatus == 'ACTIVE' ? 'Активен' : 'Неактивен'}">
@@ -115,172 +90,202 @@
                             </span>
                         </div>
                     </div>
-                </div>
-                <div class="employer-info-card">
-                    <div class="employer-primary">
-                        <div class="employer-identity">
-                            <div class="employer-avatar">
-                                <i class="bi bi-person-gear"></i>
+                    <div class="panel-content">
+                        <div class="client-identity">
+                            <div class="client-avatar">
+                                <i class="bi bi-building"></i>
                             </div>
-                            <div class="employer-details">
-                                <h2 class="employer-name"
-                                    th:text="${loadingEmployer != null && loadingEmployer.username != null ? loadingEmployer.username : 'Няма служител поел товаренето'}">Служител
-                                </h2>
-                                <span class="employer-phone"
-                                      th:text="${loadingEmployer != null && loadingEmployer.phone != null ? loadingEmployer.phone : '-'}">Телефон</span>
+                            <div class="client-details">
+                                <h4 class="client-name" th:text="${clientInfo?.companyName ?: 'Неизвестен клиент'}">
+                                    ООД "Примерна Фирма"
+                                </h4>
+                                <span class="client-username" th:text="'@' + ${clientInfo?.username ?: 'unknown'}">
+                                    @client_username
+                                </span>
+                                <div class="client-contact">
+                                    <small th:if="${clientInfo?.email}" th:text="${clientInfo.email}">email@example.com</small>
+                                    <small th:if="${clientInfo?.phone}" th:text="${clientInfo.phone}">+359 888 123 456</small>
+                                </div>
                             </div>
                         </div>
 
-                        <div class="client-status">
-                            <span class="status-badge"
-                                  th:classappend="${clientInfo?.userStatus.name() == 'ACTIVE' ? 'status-active' : 'status-inactive'}"
-                                  th:text="${clientInfo?.userStatus.name() == 'ACTIVE' ? 'Активен' : 'Неактивен'}">
-                                Активен
+                        <div class="client-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">Общо поръчки:</span>
+                                <span class="stat-value" th:text="${clientInfo?.totalOrders ?: '0'}">12</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Последна поръчка:</span>
+                                <span class="stat-value" th:text="${clientInfo?.lastOrderDate ?: 'Няма'}">15.12.2024</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Средна стойност:</span>
+                                <span class="stat-value" th:text="${clientInfo?.averageOrderValue ?: '0.00 лв'}">2,450.00 лв</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Employee Information Panel - Зарежда се след стартиране -->
+                <div class="info-panel employee-panel">
+                    <div class="panel-header">
+                        <h3>
+                            <i class="bi bi-person-gear"></i>
+                            Информация за служител
+                        </h3>
+                        <div class="panel-status">
+                            <span id="employee-status-badge" class="status-badge status-inactive">
+                                Не е започнато
                             </span>
+                        </div>
+                    </div>
+                    <div class="panel-content">
+                        <div id="employee-placeholder" class="employee-placeholder">
+                            <i class="bi bi-person-dash"></i>
+                            <p>Служителят ще бъде определен след стартиране на процеса</p>
+                        </div>
+
+                        <div id="employee-details" class="employee-details hidden">
+                            <div class="employee-identity">
+                                <div class="employee-avatar">
+                                    <i class="bi bi-person-circle"></i>
+                                </div>
+                                <div class="employee-info">
+                                    <h4 id="employee-name">-</h4>
+                                    <span id="employee-username">@-</span>
+                                    <div class="employee-contact">
+                                        <small id="employee-email">-</small>
+                                        <small id="employee-phone">-</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="session-info">
+                                <div class="info-item">
+                                    <span class="info-label">Започнато:</span>
+                                    <span id="session-start-time">-</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">Време на работа:</span>
+                                    <span id="session-duration">-</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">Камион:</span>
+                                    <span id="active-truck-number">-</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Status Bar - За signal status и timer -->
-        <div class="alert alert-info d-flex justify-content-between align-items-center mb-4">
-            <div>
-                <i class="bi bi-truck"></i>
-                Камион: <strong id="truck-display"></strong>
-                <span id="signal-status" class="ms-3">
-                    <i class="bi bi-wifi text-success"></i> Активен
-                </span>
-            </div>
-            <div>
-                <i class="bi bi-stopwatch"></i>
-                Време: <strong id="timer-display">00:00:00</strong>
-            </div>
-        </div>
+            <!-- Progress Visualization -->
+            <div class="progress-section">
+                <div class="progress-header">
+                    <h3>
+                        <i class="bi bi-bar-chart"></i>
+                        Прогрес на товарене
+                    </h3>
+                    <div class="progress-actions">
+                        <button id="complete-loading-btn" class="btn btn-success" disabled>
+                            <i class="bi bi-check-circle"></i>
+                            Завърши товарене
+                        </button>
+                    </div>
+                </div>
 
-        <!-- Progress Visualization -->
-        <div class="progress-visualization">
-            <div class="progress-stats">
-                <div class="stat-item">
-                    <span class="stat-number" id="loaded-count">0</span>
-                    <span class="stat-label">Заредени</span>
-                </div>
-                <div class="stat-divider">от</div>
-                <div class="stat-item">
-                    <span class="stat-number" id="total-count">0</span>
-                    <span class="stat-label">Общо</span>
+                <div class="progress-visualization">
+                    <div class="progress-stats">
+                        <div class="stat-item">
+                            <span class="stat-number" id="loaded-count">0</span>
+                            <span class="stat-label">Заредени</span>
+                        </div>
+                        <div class="stat-divider">от</div>
+                        <div class="stat-item">
+                            <span class="stat-number" id="total-count">0</span>
+                            <span class="stat-label">Общо</span>
+                        </div>
+                    </div>
+
+                    <div class="progress-bar-container">
+                        <div class="progress-bar">
+                            <div id="progress-fill" class="progress-fill" style="width: 0%"></div>
+                        </div>
+                        <span id="progress-percentage">0%</span>
+                    </div>
                 </div>
             </div>
 
-            <div class="progress-bar-container">
-                <div class="progress-bar">
-                    <div class="progress-fill" id="progress-bar" style="width: 0%"></div>
-                    <div class="progress-text" id="progress-percent">0%</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Order Statistics Panel - Запазваме оригиналните статистики -->
-        <div id="order-statistics" class="order-statistics">
-            <div class="stat-card">
-                <div class="stat-icon info">
-                    <i class="bi bi-box-seam"></i>
-                </div>
-                <div class="stat-content">
-                    <div class="stat-value" id="total-items-stat">0</div>
-                    <div class="stat-label">Общо артикули</div>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon success">
-                    <i class="bi bi-check-circle"></i>
-                </div>
-                <div class="stat-content">
-                    <div class="stat-value" id="loaded-items-stat">0</div>
-                    <div class="stat-label">Заредени</div>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon warning">
-                    <i class="bi bi-clock"></i>
-                </div>
-                <div class="stat-content">
-                    <div class="stat-value" id="pending-items-stat">0</div>
-                    <div class="stat-label">Остават</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Control and Filter Panel - Адаптирано от оригинала -->
-        <div class="catalog-controls">
-            <div class="controls-header">
+            <!-- Search and Filters -->
+            <div class="catalog-controls">
                 <div class="search-container">
-                    <input type="text" id="items-search" class="search-input" placeholder="Търсене на артикул...">
-                    <i class="bi bi-search search-icon"></i>
+                    <div class="search-box">
+                        <input type="text"
+                               id="search-input"
+                               class="search-input"
+                               placeholder="Търсене по име, SKU или описание..."
+                               disabled>
+                        <i class="bi bi-search search-icon"></i>
+                    </div>
                 </div>
 
-                <!-- Filter Buttons -->
                 <div class="filter-container">
-                    <button type="button" class="filter-btn active" data-filter="all">
-                        <i class="bi bi-list"></i>
-                        Всички
+                    <button class="filter-btn active" data-filter="all" disabled>
+                        <i class="bi bi-grid"></i> Всички
                     </button>
-                    <button type="button" class="filter-btn" data-filter="loaded">
-                        <i class="bi bi-check-circle"></i>
-                        Заредени
+                    <button class="filter-btn" data-filter="loaded" disabled>
+                        <i class="bi bi-check-circle"></i> Заредени
                     </button>
-                    <button type="button" class="filter-btn" data-filter="pending">
-                        <i class="bi bi-clock"></i>
-                        Чакащи
+                    <button class="filter-btn" data-filter="pending" disabled>
+                        <i class="bi bi-circle"></i> Чакащи
                     </button>
                 </div>
 
-                <!-- Sort Options -->
                 <div class="sort-container">
-                    <select id="sort-select" class="sort-select">
+                    <select id="sort-select" class="sort-select" disabled>
                         <option value="name">По име на артикул</option>
                         <option value="category">По категория</option>
                         <option value="quantity">По количество</option>
                     </select>
                 </div>
             </div>
-        </div>
 
-        <!-- Loading state -->
-        <div id="loading-state" class="loading-state">
-            <div class="loading-spinner"></div>
-            <p>Зареждане на артикулите...</p>
-        </div>
-
-        <!-- Main catalog container for order items -->
-        <div id="items-container" class="order-items-container hidden">
-            <!-- Order items will be rendered here by JavaScript -->
-        </div>
-
-        <!-- Empty state -->
-        <div id="empty-state" class="empty-state hidden">
-            <div class="empty-icon">
-                <i class="bi bi-inbox"></i>
+            <!-- Loading state -->
+            <div id="loading-state" class="loading-state">
+                <div class="loading-spinner"></div>
+                <p>Зареждане на артикулите...</p>
             </div>
-            <h3>Няма артикули за зареждане</h3>
-            <p>Тази поръчка не съдържа артикули за товарене в камиона.</p>
-        </div>
 
+            <!-- Main catalog container for order items -->
+            <div id="items-container" class="order-items-container hidden">
+                <!-- Order items will be rendered here by JavaScript -->
+            </div>
+
+            <!-- Empty state -->
+            <div id="empty-state" class="empty-state hidden">
+                <div class="empty-icon">
+                    <i class="bi bi-inbox"></i>
+                </div>
+                <h3>Няма артикули за товарене</h3>
+                <p>Тази поръчка не съдържа артикули за товарене в камиона.</p>
+            </div>
+
+        </div>
     </div>
 </section>
 
-<!-- OBSERVER SECTION - За наблюдение на друг служител -->
+<!-- OBSERVER SECTION - Показва се когато някой друг товари -->
 <section id="observer-section" class="order-shipping-section" style="display: none;">
     <div class="container">
         <div class="alert alert-warning mb-4">
             <i class="bi bi-eye"></i>
-            <span id="observer-message">Някой товари тази поръчка</span>
+            <span id="observer-message">Друг служител товари тази поръчка</span>
             <div class="mt-2">
-                <small id="other-activity" class="text-muted"></small>
+                <small id="other-activity" class="text-muted">Зареждане на информация...</small>
             </div>
         </div>
 
-        <!-- Progress (същото като в loading mode) -->
+        <!-- Observer Progress (същото като в loading mode, но read-only) -->
         <div class="progress-visualization">
             <div class="progress-stats">
                 <div class="stat-item">
@@ -296,54 +301,40 @@
 
             <div class="progress-bar-container">
                 <div class="progress-bar">
-                    <div class="progress-fill" id="observer-progress" style="width: 0%"></div>
-                    <div class="progress-text" id="observer-percent">0%</div>
+                    <div id="observer-progress-fill" class="progress-fill" style="width: 0%"></div>
                 </div>
+                <span id="observer-progress-percentage">0%</span>
             </div>
         </div>
 
-        <div class="card">
-            <div class="card-header">
-                <h5>Артикули в реално време</h5>
-            </div>
-            <div class="card-body">
-                <div id="observer-items">
-                    <!-- Observer items -->
-                </div>
-            </div>
+        <!-- Read-only items view -->
+        <div id="observer-items-container" class="order-items-container">
+            <!-- Observer items will be rendered here -->
         </div>
     </div>
 </section>
 
-<!-- Complete Loading Controls - Показва се при 100% -->
-<div id="complete-section" style="display: none; position: fixed; bottom: 20px; right: 20px; z-index: 1000;">
-    <button id="complete-btn" class="btn btn-success btn-lg">
-        <i class="bi bi-check-circle"></i> Завърши товарене
-    </button>
-</div>
-
 <!-- Include Footer Fragment -->
 <div th:replace="~{fragments/footer :: footer}"></div>
 
-<!-- Order data for JavaScript initialization -->
+<!-- JavaScript Configuration -->
 <script th:inline="javascript">
-    // CONFIG обект за новата логика
     window.orderConfig = {
-        orderId: /*[[${orderId}]]*/ null,
-        csrfToken: /*[[${csrfToken}]]*/ '',
-        csrfHeader: /*[[${csrfHeader}]]*/ 'X-CSRF-TOKEN',
-        currentUserId: /*[[${currentUserId}]]*/ null,
+        orderId: /*[[${orderId}]]*/ 0,
+        orderItems: /*[[${order.items}]]*/ [],
+        clientInfo: /*[[${clientInfo}]]*/ {},
+        employerInfo: /*[[${loadingEmployer}]]*/ {},
+        currentUserId: /*[[${currentUserId}]]*/ 0,
         currentUsername: /*[[${currentUsername}]]*/ '',
-        orderItems: /*[[${order?.items}]]*/ [],
-        order: /*[[${order}]]*/ {},
-        clientInfo: /*[[${clientInfo}]]*/ {}
+        csrfToken: /*[[${csrfToken}]]*/ '',
+        csrfHeader: /*[[${csrfHeader}]]*/ '',
+        loadingEmployer: /*[[${loadingEmployer}]]*/ null
     };
 </script>
 
-<!-- Core JavaScript imports - КРИТИЧНО ВАЖНО -->
 <div th:replace="~{fragments/bottomHtmlImports :: bottomImports}"></div>
 
-<!-- JavaScript Files -->
+<!-- JavaScript imports -->
 <script src="/js/employersDashboard/shippingApi.js"></script>
 <script src="/js/employersDashboard/order-detail-shipped.js"></script>
 
