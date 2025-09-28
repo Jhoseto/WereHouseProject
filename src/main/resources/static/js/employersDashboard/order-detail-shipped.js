@@ -223,6 +223,8 @@ async function checkActiveSession() {
 async function enterInitialMode() {
     console.log('Entering initial mode');
 
+    document.querySelectorAll('.order-shipping-section').forEach(s => s.classList.remove('active'));
+    document.getElementById('main-loading-section').classList.add('active');
     currentMode = 'initial';
     currentSessionId = null;
     currentTruck = null;
@@ -265,6 +267,9 @@ async function enterInitialMode() {
 // Loading mode - активно товарене
 async function enterLoadingMode(sessionData) {
     console.log('Entering loading mode with session:', sessionData);
+
+    document.querySelectorAll('.order-shipping-section').forEach(s => s.classList.remove('active'));
+    document.getElementById('main-loading-section').classList.add('active');
 
     try {
         currentMode = 'loading';
@@ -338,6 +343,9 @@ async function enterLoadingMode(sessionData) {
 // Observer mode - наблюдение на чужда сесия
 async function enterObserverMode(sessionData) {
     console.log('Entering observer mode for session:', sessionData);
+
+    document.querySelectorAll('.order-shipping-section').forEach(s => s.classList.remove('active'));
+    document.getElementById('observer-section').classList.add('active');
 
     try {
         currentMode = 'observer';
