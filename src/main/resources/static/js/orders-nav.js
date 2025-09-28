@@ -368,10 +368,9 @@ class OrdersNavManager {
 
     mapStatusToGroup(statusText) {
         // Map display text to filter groups
-        // Both "Нова" (PENDING) and "Спешна" (URGENT) map to 'pending'
+        // Both "Чака одобрение" (PENDING) and "Спешна" (URGENT) map to 'pending'
         switch(statusText) {
-            case 'Нова':     // PENDING status
-            case 'Спешна':   // URGENT status
+            case 'Чака одобрение':     // PENDING status
                 return 'pending';
             case 'Потвърдена':
                 return 'confirmed';
@@ -729,8 +728,7 @@ class OrdersNavManager {
     compareStatusPriority(statusA, statusB) {
         // Define priority order for statuses (lower number = higher priority)
         const statusPriority = {
-            'Спешна': 1,    // URGENT
-            'Нова': 2,      // PENDING
+            'Чака одобрение': 1,    // URGENT
             'Потвърдена': 3, // CONFIRMED
             'Изпратена': 4,  // SHIPPED
             'Отменена': 5    // CANCELLED

@@ -60,8 +60,8 @@
                         </div>
                         <div class="client-status">
             <span class="status-badge"
-                  th:classappend="${clientInfo?.userStatus == 'ACTIVE' ? 'status-active' : 'status-inactive'}"
-                  th:text="${clientInfo?.userStatus == 'ACTIVE' ? 'Активен' : 'Неактивен'}">
+                  th:classappend="${clientInfo.userStatus == 'ACTIVE' ? 'status-active' : 'status-inactive'}"
+                  th:text="${clientInfo.userStatus == 'ACTIVE' ? 'Активен' : 'Неактивен'}">
                 Активен
             </span>
                         </div>
@@ -137,7 +137,7 @@
 
             <div class="stat-card">
                 <div class="stat-icon info">
-                    <i class="bi bi-currency-dollar"></i>
+                    <i class="bi bi-currency-euro"></i>
                 </div>
                 <div class="stat-content">
                     <div class="stat-value" id="order-total" th:text="${orderData?.totalGross + ' лв'}">0.00 лв</div>

@@ -20,6 +20,7 @@
 <!-- Navigation -->
 <div th:replace="~{fragments/navbar :: navbar}"></div>
 
+
 <!-- Toast notification container -->
 <div th:replace="~{fragments/toastSystem.html :: toastContainer}"></div>
 
@@ -152,7 +153,7 @@
                                 </div>
                                 <div class="employee-info">
                                     <h4 id="employee-name">-</h4>
-                                    <span id="employee-username">@-</span>
+                                    <span id="employee-username"></span>
                                     <div class="employee-contact">
                                         <small id="employee-email">-</small>
                                         <small id="employee-phone">-</small>
@@ -170,48 +171,11 @@
                                     <span id="session-duration">-</span>
                                 </div>
                                 <div class="info-item">
-                                    <span class="info-label">Камион:</span>
+                                    <span class="info-label">Номер на камион:</span>
                                     <span id="active-truck-number">-</span>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Progress Visualization -->
-            <div class="progress-section">
-                <div class="progress-header">
-                    <h3>
-                        <i class="bi bi-bar-chart"></i>
-                        Прогрес на товарене
-                    </h3>
-                    <div class="progress-actions">
-                        <button id="complete-loading-btn" class="btn btn-success" disabled>
-                            <i class="bi bi-check-circle"></i>
-                            Завърши товарене
-                        </button>
-                    </div>
-                </div>
-
-                <div class="progress-visualization">
-                    <div class="progress-stats">
-                        <div class="stat-item">
-                            <span class="stat-number" id="loaded-count">0</span>
-                            <span class="stat-label">Заредени</span>
-                        </div>
-                        <div class="stat-divider">от</div>
-                        <div class="stat-item">
-                            <span class="stat-number" id="total-count">0</span>
-                            <span class="stat-label">Общо</span>
-                        </div>
-                    </div>
-
-                    <div class="progress-bar-container">
-                        <div class="progress-bar">
-                            <div id="progress-fill" class="progress-fill" style="width: 0%"></div>
-                        </div>
-                        <span id="progress-percentage">0%</span>
                     </div>
                 </div>
             </div>
@@ -248,12 +212,6 @@
                         <option value="quantity">По количество</option>
                     </select>
                 </div>
-            </div>
-
-            <!-- Loading state -->
-            <div id="loading-state" class="loading-state">
-                <div class="loading-spinner"></div>
-                <p>Зареждане на артикулите...</p>
             </div>
 
             <!-- Main catalog container for order items -->
@@ -313,6 +271,33 @@
         </div>
     </div>
 </section>
+
+<!-- Fixed Progress Bar -->
+<div class="fixed-progress-container">
+    <div class="progress-content">
+        <div class="progress-icon">
+            <i class="bi bi-truck"></i>
+        </div>
+        <div class="progress-bar-section">
+            <div class="progress-header">
+                <span class="progress-title">Прогрес на товарене</span>
+                <div class="progress-stats">
+                    <span id="loaded-count">0</span> / <span id="total-count">0</span> артикула
+                </div>
+            </div>
+            <div class="progress-bar">
+                <div id="progress-fill" class="progress-fill" style="width: 0%"></div>
+            </div>
+        </div>
+        <div class="progress-percentage" id="progress-percentage">0%</div>
+        <div class="complete-section">
+            <button id="complete-loading-btn" class="complete-loading-btn" disabled>
+                <i class="bi bi-check-circle"></i>
+                Завърши товарене
+            </button>
+        </div>
+    </div>
+</div>
 
 <!-- Include Footer Fragment -->
 <div th:replace="~{fragments/footer :: footer}"></div>

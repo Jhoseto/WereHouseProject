@@ -1,171 +1,138 @@
 /**
- * REVOLUTIONARY ORDER SHIPPING INTERFACE
- * =====================================
- * Напълно нова концепция за модерен shipping dashboard
- * Grid-based layout, чисти отстояния, професионален вид
+ * ENHANCED ORDER DETAIL LOADING - КОРИГИРАН ЗА ПРАВИЛНИ ПОЛЕТА
+ * ===========================================================
+ * CSS който работи точно със структурата от HTML-а и JavaScript-а
+ * Използва цветовете от main.css за консистентност
+ * Плоски полета за артикулите вместо карти
  */
 
 /* ==========================================
-   MODERN DESIGN SYSTEM
+   CSS VARIABLES - ЦВЕТОВА СХЕМА ОТ MAIN.CSS
    ========================================== */
 :root {
-    /* Premium color palette */
-    --primary-600: #2563eb;
-    --primary-500: #3b82f6;
-    --primary-400: #60a5fa;
-    --primary-100: #dbeafe;
-    --primary-50: #eff6ff;
+    /* Основни цветове от main.css */
+    --color-primary: #2c3e50;
+    --color-primary-light: #34495e;
+    --color-primary-dark: #1a252f;
 
-    --success-600: #059669;
-    --success-500: #10b981;
-    --success-400: #34d399;
-    --success-100: #d1fae5;
-    --success-50: #ecfdf5;
+    --color-secondary: #3498db;
+    --color-secondary-light: #5dade2;
+    --color-secondary-dark: #2980b9;
 
-    --warning-600: #d97706;
-    --warning-500: #f59e0b;
-    --warning-100: #fef3c7;
+    --color-accent: #f39c12;
+    --color-accent-light: #f8c471;
+    --color-accent-dark: #d68910;
 
-    --red-600: #dc2626;
-    --red-500: #ef4444;
-    --red-100: #fee2e2;
+    --color-success: #27ae60;
+    --color-success-light: #58d68d;
+    --color-success-dark: #1e8449;
 
-    /* Sophisticated grays */
-    --slate-900: #0f172a;
-    --slate-800: #1e293b;
-    --slate-700: #334155;
-    --slate-600: #475569;
-    --slate-500: #64748b;
-    --slate-400: #94a3b8;
-    --slate-300: #cbd5e1;
-    --slate-200: #e2e8f0;
-    --slate-100: #f1f5f9;
-    --slate-50: #f8fafc;
-    --white: #ffffff;
+    --color-warning: #f39c12;
+    --color-danger: #e74c3c;
+    --color-info: #3498db;
 
-    /* Advanced spacing system */
-    --space-px: 1px;
-    --space-0: 0;
-    --space-1: 0.25rem;   /* 4px */
-    --space-2: 0.5rem;    /* 8px */
-    --space-3: 0.75rem;   /* 12px */
-    --space-4: 1rem;      /* 16px */
-    --space-5: 1.25rem;   /* 20px */
-    --space-6: 1.5rem;    /* 24px */
-    --space-8: 2rem;      /* 32px */
-    --space-10: 2.5rem;   /* 40px */
-    --space-12: 3rem;     /* 48px */
-    --space-16: 4rem;     /* 64px */
-    --space-20: 5rem;     /* 80px */
+    /* Неутрални цветове */
+    --color-white: #ffffff;
+    --color-light: #f8f9fa;
+    --color-muted: #bdc3c7;
+    --color-gray: #95a5a6;
+    --color-gray-dark: #7f8c8d;
+    --color-dark: #34495e;
+    --color-black: #212529;
 
-    /* Typography scale */
-    --text-xs: 0.75rem;    /* 12px */
-    --text-sm: 0.875rem;   /* 14px */
-    --text-base: 1rem;     /* 16px */
-    --text-lg: 1.125rem;   /* 18px */
-    --text-xl: 1.25rem;    /* 20px */
-    --text-2xl: 1.5rem;    /* 24px */
-    --text-3xl: 1.875rem;  /* 30px */
+    /* Текст цветове */
+    --color-text-primary: #2c3e50;
+    --color-text-secondary: #737373;
+    --color-text-muted: #95a5a6;
+    --color-text-light: #ffffff;
 
-    /* Modern shadows */
-    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-    --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+    /* Сенки от main.css */
+    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.06);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 8px 25px rgba(0, 0, 0, 0.15);
+    --shadow-xl: 0 12px 40px rgba(0, 0, 0, 0.2);
 
-    /* Border radius system */
-    --rounded-none: 0px;
-    --rounded-sm: 0.125rem;   /* 2px */
-    --rounded: 0.25rem;       /* 4px */
-    --rounded-md: 0.375rem;   /* 6px */
-    --rounded-lg: 0.5rem;     /* 8px */
-    --rounded-xl: 0.75rem;    /* 12px */
-    --rounded-2xl: 1rem;      /* 16px */
-    --rounded-3xl: 1.5rem;    /* 24px */
-    --rounded-full: 9999px;
+    /* Отстояния */
+    --space-1: 0.25rem;
+    --space-2: 0.5rem;
+    --space-3: 0.75rem;
+    --space-4: 1rem;
+    --space-5: 1.25rem;
+    --space-6: 1.5rem;
+    --space-8: 2rem;
+    --space-10: 2.5rem;
+    --space-12: 3rem;
+
+    /* Border radius */
+    --radius-sm: 0.375rem;
+    --radius-md: 0.5rem;
+    --radius-lg: 0.75rem;
+    --radius-xl: 1rem;
+    --radius-2xl: 1.5rem;
 
     /* Transitions */
-    --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-normal: 300ms cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-slow: 500ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-fast: 0.15s ease-in-out;
+    --transition-normal: 0.3s ease-in-out;
+    --transition-slow: 0.5s ease-in-out;
 
-    /* Layout constants */
-    --progress-bar-height: 5rem;  /* 80px */
-    --header-height: auto;
-    --max-width: 1400px;
+    /* Progress bar */
+    --progress-height: 85px;
+    --progress-z-index: 1000;
 }
 
 /* ==========================================
-   COMPLETE RESET & BASE
+   ОСНОВНА СТРУКТУРА - СЪВМЕСТИМОСТ СЪС JS
    ========================================== */
-*,
-*::before,
-*::after {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-}
 
-/* ==========================================
-   REVOLUTIONARY LAYOUT SYSTEM
-   ========================================== */
-.order-shipping-section {
-    display: none;
-    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
-    font-size: var(--text-base);
-    line-height: 1.6;
-    color: var(--slate-700);
-    background: linear-gradient(135deg, var(--slate-50) 0%, #fafbfc 50%, var(--slate-100) 100%);
+/* Main loading section - управлявана от JS */
+#main-loading-section {
     min-height: 100vh;
-    padding-bottom: calc(var(--progress-bar-height) + var(--space-6));
+    background: linear-gradient(135deg, var(--color-light) 0%, #e9ecef 100%);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    padding-bottom: calc(var(--progress-height) + var(--space-6));
+    display: none;
 }
 
-.order-shipping-section.active {
+#main-loading-section.active {
+    display: block;
+}
+
+/* Observer section */
+#observer-section {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    padding-bottom: calc(var(--progress-height) + var(--space-6));
+    display: none;
+}
+
+#observer-section.active {
     display: block;
 }
 
 .container {
-    max-width: var(--max-width);
+    max-width: 1400px;
     margin: 0 auto;
     padding: 0 var(--space-6);
 }
 
 /* ==========================================
-   MODERN GRID LAYOUT SYSTEM
-   ========================================== */
-.shipping-grid {
-    display: grid;
-    grid-template-areas:
-        "header header"
-        "info-left info-right"
-        "truck-controls truck-controls"
-        "progress-section progress-section"
-        "catalog-controls catalog-controls"
-        "items-content items-content";
-    grid-template-columns: 1fr 1fr;
-    gap: var(--space-8);
-    padding: var(--space-8) 0;
-}
-
-/* ==========================================
-   PREMIUM HEADER SECTION
+   TRUCK HEADER SECTION
    ========================================== */
 .truck-header-section {
-    grid-area: header;
-    background: var(--white);
-    border-radius: var(--rounded-2xl);
+    background: var(--color-white);
+    border-radius: var(--radius-2xl);
     box-shadow: var(--shadow-lg);
-    border: 1px solid var(--slate-200);
+    margin: var(--space-8) 0;
     overflow: hidden;
-    margin-bottom: var(--space-2);
+    border: 1px solid rgba(44, 62, 80, 0.1);
 }
 
 .shipping-title-block {
-    padding: var(--space-12) var(--space-8) var(--space-8);
+    background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light));
+    color: var(--color-white);
+    padding: var(--space-8);
     text-align: center;
-    background: linear-gradient(135deg, var(--primary-50) 0%, var(--white) 50%, var(--primary-50) 100%);
-    border-bottom: 1px solid var(--slate-200);
     position: relative;
 }
 
@@ -176,155 +143,262 @@
     left: 0;
     right: 0;
     height: 4px;
-    background: linear-gradient(90deg, var(--primary-600), var(--primary-400), var(--success-500));
+    background: linear-gradient(90deg, var(--color-accent), var(--color-success), var(--color-secondary));
 }
 
 .shipping-title-block h1 {
-    font-size: var(--text-3xl);
+    font-size: 2.2rem;
     font-weight: 700;
-    color: var(--slate-900);
-    margin-bottom: var(--space-3);
+    margin: 0;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: var(--space-4);
-    letter-spacing: -0.025em;
-}
-
-.shipping-title-block h1 i {
-    color: var(--primary-600);
-    font-size: var(--text-2xl);
+    gap: var(--space-3);
+    color: #ffc130;
 }
 
 .shipping-subtitle {
-    font-size: var(--text-lg);
-    color: var(--slate-600);
-    font-weight: 400;
-    letter-spacing: -0.01em;
+    font-size: 1rem;
+    opacity: 0.9;
+    margin-top: var(--space-2);
+}
+
+/* Truck Controls Panel */
+.truck-controls-panel {
+    padding: var(--space-8);
+    background: var(--color-white);
+}
+
+.truck-input-group {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.form-label {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin-bottom: var(--space-3);
+    font-size: 1.1rem;
+}
+
+.input-button-group {
+    display: flex;
+    gap: var(--space-4);
+    margin-bottom: var(--space-3);
+}
+
+/* JS търси #truck-input */
+#truck-input {
+    flex: 1;
+    padding: var(--space-4) var(--space-5);
+    border: 2px solid #dee2e6;
+    border-radius: var(--radius-lg);
+    font-size: 1.1rem;
+    font-weight: 500;
+    transition: all var(--transition-normal);
+    background: var(--color-white);
+}
+
+#truck-input:focus {
+    outline: none;
+    border-color: var(--color-secondary);
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+#truck-input:disabled {
+    background: #f8f9fa;
+    color: var(--color-text-muted);
+}
+
+/* JS търси #start-loading-btn */
+#start-loading-btn {
+    padding: var(--space-4) var(--space-8);
+    background: linear-gradient(135deg, var(--color-success), var(--color-success-dark));
+    color: var(--color-white);
+    border: none;
+    border-radius: var(--radius-lg);
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    box-shadow: var(--shadow-md);
+    white-space: nowrap;
+}
+
+#start-loading-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--color-success-dark), var(--color-success));
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+#start-loading-btn:disabled {
+    background: var(--color-gray);
+    cursor: not-allowed;
+    transform: none;
+}
+
+.form-text {
+    font-size: 0.9rem;
+    color: var(--color-text-muted);
+    text-align: center;
+}
+
+/* Session Status */
+.session-status {
+    margin-top: var(--space-4);
+    text-align: center;
+}
+
+.session-status.hidden {
+    display: none;
+}
+
+.status-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-5);
+    border-radius: var(--radius-lg);
+    font-weight: 500;
+}
+
+.status-indicator.loading {
+    background: rgba(243, 156, 18, 0.1);
+    color: var(--color-warning);
+    border: 1px solid var(--color-warning);
 }
 
 /* ==========================================
-   INFORMATION PANELS - REVOLUTIONARY DESIGN
+   LOADING CONTENT AREA - КОНТРОЛИРА ОТ JS
+   ========================================== */
+.loading-content-area {
+    transition: all var(--transition-normal);
+}
+
+.loading-content-area.disabled {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.loading-content-area.observer-mode {
+    opacity: 0.8;
+    pointer-events: none;
+}
+
+/* ==========================================
+   INFO PANELS ROW - КОРИГИРАНИ ПОЛЕТА
    ========================================== */
 .info-panels-row {
-    grid-area: info-left / info-left / info-right / info-right;
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: var(--space-8);
-    margin: var(--space-8) 0;
+    gap: var(--space-6);
+    margin-bottom: var(--space-8);
 }
 
 .info-panel {
-    background: var(--white);
-    border-radius: var(--rounded-2xl);
-    padding: var(--space-8);
+    background: var(--color-white);
+    border-radius: var(--radius-xl);
     box-shadow: var(--shadow-md);
-    border: 1px solid var(--slate-200);
-    transition: all var(--transition-normal);
-    position: relative;
     overflow: hidden;
-}
-
-.info-panel::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 4px;
-    background: var(--primary-500);
-    transition: all var(--transition-normal);
-}
-
-.info-panel.employee-panel::before {
-    background: var(--success-500);
-}
-
-.info-panel:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-xl);
-    border-color: var(--slate-300);
+    border: 1px solid rgba(44, 62, 80, 0.1);
 }
 
 .panel-header {
+    background: linear-gradient(135deg, #49586a, #617589);
+    color: var(--color-white);
+    padding: var(--space-5);
     display: flex;
-    align-items: center;
     justify-content: space-between;
-    margin-bottom: var(--space-6);
-    padding-bottom: var(--space-4);
-    border-bottom: 1px solid var(--slate-100);
+    align-items: center;
 }
 
 .panel-header h3 {
-    font-size: var(--text-xl);
-    font-weight: 600;
-    color: var(--slate-900);
     display: flex;
     align-items: center;
-    gap: var(--space-3);
+    gap: var(--space-2);
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #ffc130;
 }
 
-.panel-header h3 i {
-    color: var(--primary-600);
-    font-size: var(--text-lg);
+.panel-status {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.status-badge {
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-md);
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.status-active {
+    background: var(--color-success-light);
+    color: #232323;
+}
+
+.status-inactive {
+    background: var(--color-gray);
+    color: var(--color-white);
 }
 
 .panel-content {
-    font-size: var(--text-sm);
-    color: var(--slate-600);
-    line-height: 1.6;
+    padding: var(--space-6);
 }
 
-.panel-content strong {
-    color: var(--slate-900);
-    font-weight: 600;
-}
-
-/* Client info styling */
-.client-identity {
+/* CLIENT PANEL SPECIFIC */
+.client-panel .client-identity {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: var(--space-4);
     margin-bottom: var(--space-6);
 }
 
 .client-avatar {
-    width: 3rem;
-    height: 3rem;
-    background: var(--primary-100);
-    border-radius: var(--rounded-xl);
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--color-accent), var(--color-accent-dark));
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--primary-600);
-    font-size: var(--text-xl);
-    flex-shrink: 0;
+    color: var(--color-white);
+    font-size: 1.5rem;
 }
 
 .client-details h4 {
-    font-size: var(--text-lg);
-    font-weight: 600;
-    color: var(--slate-900);
+    color: var(--color-text-primary);
+    font-size: 1.3rem;
     margin-bottom: var(--space-1);
 }
 
 .client-username {
-    font-size: var(--text-sm);
-    color: var(--slate-500);
+    color: var(--color-text-muted);
+    font-size: 0.9rem;
     font-weight: 500;
-    margin-bottom: var(--space-2);
-    display: block;
 }
 
 .client-contact {
+    margin-top: var(--space-2);
     display: flex;
     flex-direction: column;
     gap: var(--space-1);
 }
 
 .client-contact small {
-    font-size: var(--text-xs);
-    color: var(--slate-500);
+    color: var(--color-text-muted);
+    font-size: 0.85rem;
 }
 
 .client-stats {
@@ -337,141 +411,140 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: var(--space-3) var(--space-4);
-    background: var(--slate-50);
-    border-radius: var(--rounded-lg);
+    padding: var(--space-2) 0;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
 }
 
 .stat-label {
-    font-size: var(--text-xs);
-    color: var(--slate-500);
-    font-weight: 500;
+    color: var(--color-text-muted);
+    font-size: 0.9rem;
 }
 
 .stat-value {
-    font-size: var(--text-sm);
-    color: var(--slate-900);
+    color: var(--color-text-primary);
     font-weight: 600;
 }
 
-/* ==========================================
-   PREMIUM TRUCK CONTROLS
-   ========================================== */
-.truck-controls-panel {
-    background: var(--white);
-    border-radius: var(--rounded-2xl);
-    padding: var(--space-10);
-    box-shadow: var(--shadow-md);
-    border: 1px solid var(--slate-200);
-    margin: var(--space-8) 0;
-}
-
-.truck-input-group {
+/* EMPLOYEE PANEL SPECIFIC - ПРАВИЛНИ ID-ТА ОТ JS */
+.employee-panel .employee-placeholder {
     text-align: center;
+    color: var(--color-text-muted);
+    padding: var(--space-8);
 }
 
-.truck-input-group label {
-    display: block;
-    font-size: var(--text-lg);
-    font-weight: 600;
-    color: var(--slate-900);
+.employee-placeholder i {
+    font-size: 3rem;
+    margin-bottom: var(--space-4);
+    opacity: 0.5;
+}
+
+/* JS търси #employee-details */
+#employee-details {
+    transition: all var(--transition-normal);
+}
+
+#employee-details.hidden {
+    display: none;
+}
+
+.employee-identity {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
     margin-bottom: var(--space-6);
 }
 
-.truck-input-group label i {
-    color: var(--primary-600);
-    margin-right: var(--space-3);
-    font-size: var(--text-xl);
-}
-
-.input-button-group {
+.employee-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: var(--space-6);
-    flex-wrap: wrap;
-    margin-bottom: var(--space-4);
+    color: var(--color-white);
+    font-size: 1.5rem;
 }
 
-.truck-number-input {
-    padding: var(--space-5) var(--space-6);
-    border: 2px solid var(--slate-300);
-    border-radius: var(--rounded-xl);
-    font-size: var(--text-xl);
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    background: var(--white);
-    transition: all var(--transition-normal);
-    width: 280px;
-    text-align: center;
-    color: var(--slate-900);
-    box-shadow: var(--shadow-sm);
+.employee-info h4 {
+    color: var(--color-text-primary);
+    font-size: 1.3rem;
+    margin-bottom: var(--space-1);
 }
 
-.truck-number-input:focus {
-    outline: none;
-    border-color: var(--primary-500);
-    box-shadow: 0 0 0 4px var(--primary-100), var(--shadow-md);
-    transform: translateY(-1px);
-}
-
-.truck-number-input:disabled {
-    background: var(--slate-100);
-    color: var(--slate-500);
-    cursor: not-allowed;
-    border-color: var(--slate-300);
-}
-
-.start-loading-btn {
-    padding: var(--space-5) var(--space-8);
-    background: linear-gradient(135deg, var(--success-600), var(--success-500));
-    color: var(--white);
-    border: none;
-    border-radius: var(--rounded-xl);
-    font-size: var(--text-lg);
-    font-weight: 600;
-    cursor: pointer;
-    transition: all var(--transition-normal);
+.employee-contact {
+    margin-top: var(--space-2);
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.employee-contact small {
+    color: var(--color-text-muted);
+    font-size: 0.85rem;
+}
+
+.session-info {
+    display: grid;
+    grid-template-columns: 1fr;
     gap: var(--space-3);
-    box-shadow: var(--shadow-lg);
-    letter-spacing: -0.01em;
 }
 
-.start-loading-btn:hover:not(:disabled) {
-    background: linear-gradient(135deg, var(--success-700), var(--success-600));
-    box-shadow: var(--shadow-xl);
-    transform: translateY(-2px);
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-2) 0;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
 }
 
-.start-loading-btn:disabled {
-    background: var(--slate-400);
-    cursor: not-allowed;
-    transform: none;
-    box-shadow: var(--shadow-sm);
+.info-label {
+    color: var(--color-text-muted);
+    font-size: 0.9rem;
 }
 
-.form-text {
-    font-size: var(--text-sm);
-    color: var(--slate-500);
-    margin-top: var(--space-3);
+/* JS търси тези ID-та за обновяване */
+#employee-name,
+#employee-username,
+#employee-email,
+#employee-phone,
+#active-truck-number,
+#session-start-time,
+#session-duration {
+    color: var(--color-text-primary);
+    font-weight: 600;
+}
+
+/* Connection status indicator */
+.connection-status {
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.connection-status.online {
+    background: rgb(232, 232, 232);
+    color: #4b9f3e;
+}
+
+.connection-status.offline {
+    background: rgb(231, 231, 231);
+    color: var(--color-danger);
 }
 
 /* ==========================================
-   MODERN CATALOG CONTROLS
+   CATALOG CONTROLS - ТЪРСЕНИ ОТ JS
    ========================================== */
 .catalog-controls {
-    background: var(--white);
-    border-radius: var(--rounded-2xl);
-    padding: var(--space-6);
+    background: var(--color-white);
+    border-radius: var(--radius-xl);
     box-shadow: var(--shadow-md);
-    border: 1px solid var(--slate-200);
-    margin: var(--space-8) 0;
+    padding: var(--space-6);
+    margin-bottom: var(--space-6);
     display: grid;
     grid-template-columns: 2fr auto auto;
-    gap: var(--space-6);
+    gap: var(--space-4);
     align-items: center;
 }
 
@@ -479,30 +552,37 @@
     position: relative;
 }
 
-.search-input {
-    width: 100%;
-    padding: var(--space-4) var(--space-4) var(--space-4) var(--space-12);
-    border: 2px solid var(--slate-300);
-    border-radius: var(--rounded-full);
-    font-size: var(--text-base);
-    background: var(--white);
-    transition: all var(--transition-normal);
-    color: var(--slate-900);
+.search-box {
+    position: relative;
 }
 
-.search-input:focus {
+/* JS търси #search-input */
+#search-input {
+    width: 100%;
+    padding: var(--space-3) var(--space-4) var(--space-3) var(--space-10);
+    border: 2px solid #dee2e6;
+    border-radius: var(--radius-lg);
+    font-size: 1rem;
+    transition: all var(--transition-normal);
+}
+
+#search-input:focus {
     outline: none;
-    border-color: var(--primary-500);
-    box-shadow: 0 0 0 4px var(--primary-100);
+    border-color: var(--color-secondary);
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+#search-input:disabled {
+    background: #f8f9fa;
+    color: var(--color-text-muted);
 }
 
 .search-icon {
     position: absolute;
-    left: var(--space-4);
+    left: var(--space-3);
     top: 50%;
     transform: translateY(-50%);
-    color: var(--slate-500);
-    font-size: var(--text-lg);
+    color: var(--color-text-muted);
 }
 
 .filter-container {
@@ -510,474 +590,223 @@
     gap: var(--space-2);
 }
 
+/* JS търси .filter-btn */
 .filter-btn {
     padding: var(--space-3) var(--space-4);
-    border: 2px solid var(--slate-300);
-    background: var(--white);
-    border-radius: var(--rounded-full);
-    font-size: var(--text-sm);
+    border: 2px solid #dee2e6;
+    background: var(--color-white);
+    border-radius: var(--radius-lg);
+    font-size: 0.9rem;
     font-weight: 500;
     cursor: pointer;
     transition: all var(--transition-normal);
     white-space: nowrap;
-    color: var(--slate-700);
+    color: var(--color-text-primary);
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
 }
 
 .filter-btn:hover:not(:disabled) {
-    border-color: var(--primary-500);
-    color: var(--primary-600);
-    background: var(--primary-50);
+    border-color: var(--color-secondary);
+    color: var(--color-secondary);
+    background: rgba(52, 152, 219, 0.05);
+}
+
+.filter-btn:disabled {
+    background: #f8f9fa;
+    color: var(--color-text-muted);
+    cursor: not-allowed;
 }
 
 .filter-btn.active {
-    background: linear-gradient(135deg, var(--primary-600), var(--primary-500));
-    border-color: var(--primary-600);
-    color: var(--white);
-    box-shadow: var(--shadow-md);
+    background: linear-gradient(135deg, var(--color-secondary), var(--color-secondary-light));
+    border-color: var(--color-secondary);
+    color: var(--color-white);
 }
 
-.sort-select {
+.sort-container {
+    position: relative;
+}
+
+/* JS търси #sort-select */
+#sort-select {
     padding: var(--space-3) var(--space-4);
-    border: 2px solid var(--slate-300);
-    border-radius: var(--rounded-lg);
-    font-size: var(--text-sm);
-    background: var(--white);
+    border: 2px solid #dee2e6;
+    border-radius: var(--radius-lg);
+    background: var(--color-white);
+    font-size: 0.9rem;
     cursor: pointer;
-    color: var(--slate-700);
-    font-weight: 500;
+    transition: all var(--transition-normal);
+    min-width: 180px;
+}
+
+#sort-select:focus {
+    outline: none;
+    border-color: var(--color-secondary);
+}
+
+#sort-select:disabled {
+    background: #f8f9fa;
+    color: var(--color-text-muted);
+    cursor: not-allowed;
 }
 
 /* ==========================================
-   PROFESSIONAL ITEMS TABLE
+   ITEMS CONTAINER - ПЛОСКИ ПОЛЕТА НА ДВА РЕДА
    ========================================== */
-.order-items-container {
-    background: var(--white);
-    border-radius: var(--rounded-2xl);
-    box-shadow: var(--shadow-lg);
-    border: 1px solid var(--slate-200);
-    margin: var(--space-8) 0;
-    overflow: hidden;
-}
 
-.items-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: var(--text-sm);
-}
-
-.items-table thead {
-    background: linear-gradient(135deg, var(--slate-50) 0%, var(--slate-100) 100%);
-}
-
-.items-table th {
-    padding: var(--space-5) var(--space-6);
-    text-align: left;
-    font-weight: 600;
-    color: var(--slate-700);
-    font-size: var(--text-xs);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    border-bottom: 2px solid var(--slate-200);
-}
-
-.items-table tbody tr {
-    border-bottom: 1px solid var(--slate-100);
-    transition: all var(--transition-fast);
-}
-
-.items-table tbody tr:hover {
-    background: var(--slate-50);
-}
-
-.items-table tbody tr.loaded {
-    background: linear-gradient(135deg, var(--success-50) 0%, var(--white) 100%);
-}
-
-.items-table tbody tr.loaded:hover {
-    background: var(--success-100);
-}
-
-.items-table td {
-    padding: var(--space-5) var(--space-6);
-    vertical-align: middle;
-}
-
-/* Table columns */
-.col-toggle {
-    width: 80px;
-    text-align: center;
-}
-
-.col-name {
-    min-width: 200px;
-}
-
-.col-sku {
-    width: 140px;
-}
-
-.col-quantity {
-    width: 100px;
-    text-align: center;
-}
-
-.col-category {
-    width: 150px;
-}
-
-.col-status {
-    width: 120px;
-    text-align: center;
-}
-
-/* Table content */
-.item-name {
-    font-weight: 600;
-    color: var(--slate-900);
-    margin-bottom: var(--space-1);
-    font-size: var(--text-base);
-    line-height: 1.4;
-}
-
-.item-description {
-    font-size: var(--text-xs);
-    color: var(--slate-500);
-    line-height: 1.4;
-}
-
-.item-sku {
-    font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
-    font-size: var(--text-xs);
-    color: var(--slate-700);
-    background: var(--slate-100);
-    padding: var(--space-1) var(--space-2);
-    border-radius: var(--rounded);
-    font-weight: 600;
-}
-
-.item-quantity {
-    font-weight: 700;
-    color: var(--slate-900);
-    font-size: var(--text-base);
-}
-
-.item-category {
-    font-size: var(--text-xs);
-    padding: var(--space-2) var(--space-3);
-    background: var(--primary-100);
-    border-radius: var(--rounded-full);
-    color: var(--primary-700);
-    font-weight: 600;
-    display: inline-block;
-}
-
-.item-status {
-    padding: var(--space-2) var(--space-4);
-    border-radius: var(--rounded-full);
-    font-size: var(--text-xs);
-    font-weight: 600;
-    text-align: center;
-}
-
-.item-status.pending {
-    background: var(--slate-200);
-    color: var(--slate-700);
-}
-
-.item-status.loaded {
-    background: var(--success-100);
-    color: var(--success-700);
-}
-
-/* Premium toggle button */
-.item-toggle {
-    width: 48px;
-    height: 48px;
-    border: 3px solid var(--slate-300);
-    border-radius: var(--rounded-xl);
-    background: var(--white);
-    cursor: pointer;
+/* JS търси #items-container */
+#items-container {
     display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all var(--transition-normal);
-    font-size: var(--text-xl);
-    color: var(--slate-500);
-    position: relative;
-    overflow: hidden;
+    flex-direction: column;
+    gap: var(--space-4);
+    padding: var(--space-4);
+}
+
+#items-container.hidden {
+    display: none;
+}
+
+/* JS генерира .order-item елементи - ПЛОСКИ ПОЛЕТА */
+.order-item {
+    background: var(--color-white);
+    border-radius: var(--radius-lg);
     box-shadow: var(--shadow-sm);
-}
-
-.item-toggle::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    background: linear-gradient(135deg, var(--success-500), var(--success-400));
-    border-radius: 50%;
-    transform: translate(-50%, -50%);
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    z-index: 1;
-}
-
-.item-toggle i {
-    position: relative;
-    z-index: 2;
+    border: 2px solid transparent;
     transition: all var(--transition-normal);
-}
-
-.item-toggle:hover:not(:disabled) {
-    border-color: var(--success-500);
-    color: var(--success-600);
-    box-shadow: var(--shadow-lg);
-    transform: scale(1.05);
-}
-
-.item-toggle:hover:not(:disabled)::before {
-    width: 120%;
-    height: 120%;
-}
-
-.item-toggle:hover:not(:disabled) i {
-    color: var(--white);
-}
-
-.item-toggle.loaded {
-    background: linear-gradient(135deg, var(--success-500), var(--success-400));
-    border-color: var(--success-500);
-    color: var(--white);
-    box-shadow: var(--shadow-lg);
-}
-
-.item-toggle.loaded::before {
-    width: 120%;
-    height: 120%;
-}
-
-.item-toggle:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
-    box-shadow: var(--shadow-sm);
-}
-
-.observer-mode .item-toggle {
-    opacity: 0.6;
-    cursor: not-allowed;
-    pointer-events: none;
-}
-
-/* ==========================================
-   STUNNING FIXED PROGRESS BAR
-   ========================================== */
-.progress-visualization {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: linear-gradient(135deg, var(--white) 0%, rgba(248, 250, 252, 0.95) 100%);
-    backdrop-filter: blur(20px) saturate(180%);
-    border-top: 1px solid var(--slate-200);
-    box-shadow: var(--shadow-2xl);
-    padding: var(--space-6) var(--space-8);
-    z-index: 1000;
-    height: var(--progress-bar-height);
-}
-
-.progress-content {
-    max-width: var(--max-width);
-    margin: 0 auto;
-    display: flex;
+    padding: var(--space-5);
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: var(--space-4);
     align-items: center;
-    gap: var(--space-8);
-    height: 100%;
+    min-height: 80px;
 }
 
-.progress-stats {
-    display: flex;
-    align-items: center;
-    gap: var(--space-6);
-    flex-shrink: 0;
-}
-
-.stat-item {
-    text-align: center;
-    padding: var(--space-4) var(--space-5);
-    background: linear-gradient(135deg, var(--slate-50) 0%, var(--white) 100%);
-    border: 2px solid var(--slate-200);
-    border-radius: var(--rounded-xl);
-    min-width: 80px;
-    box-shadow: var(--shadow-sm);
-}
-
-.stat-number {
-    display: block;
-    font-size: var(--text-2xl);
-    font-weight: 800;
-    color: var(--slate-900);
-    line-height: 1;
-    letter-spacing: -0.025em;
-}
-
-.stat-label {
-    display: block;
-    font-size: var(--text-xs);
-    color: var(--slate-600);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    font-weight: 600;
-    margin-top: var(--space-1);
-}
-
-.stat-divider {
-    color: var(--slate-400);
-    font-size: var(--text-lg);
-    font-weight: 300;
-}
-
-.progress-bar-container {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    gap: var(--space-6);
-}
-
-.progress-bar {
-    flex: 1;
-    height: 16px;
-    background: var(--slate-200);
-    border-radius: var(--rounded-full);
-    overflow: hidden;
-    position: relative;
-    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, var(--success-500) 0%, var(--primary-500) 50%, var(--success-400) 100%);
-    border-radius: var(--rounded-full);
-    transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-    position: relative;
-    overflow: hidden;
-    box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
-}
-
-.progress-fill::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(
-            90deg,
-            transparent 0%,
-            rgba(255, 255, 255, 0.6) 50%,
-            transparent 100%
-    );
-    animation: shimmer 3s infinite;
-}
-
-@keyframes shimmer {
-    0% { transform: translateX(-100%); }
-    100% { transform: translateX(100%); }
-}
-
-.progress-percentage {
-    font-size: var(--text-xl);
-    font-weight: 800;
-    color: var(--slate-900);
-    flex-shrink: 0;
-    min-width: 70px;
-    text-align: right;
-    letter-spacing: -0.025em;
-}
-
-.complete-loading-btn {
-    padding: var(--space-4) var(--space-6);
-    background: linear-gradient(135deg, var(--success-600), var(--success-500));
-    color: var(--white);
-    border: none;
-    border-radius: var(--rounded-xl);
-    font-size: var(--text-base);
-    font-weight: 600;
-    cursor: pointer;
-    transition: all var(--transition-normal);
-    display: flex;
-    align-items: center;
-    gap: var(--space-3);
-    flex-shrink: 0;
-    box-shadow: var(--shadow-lg);
-    letter-spacing: -0.01em;
-}
-
-.complete-loading-btn:hover:not(:disabled) {
-    background: linear-gradient(135deg, var(--success-700), var(--success-600));
-    box-shadow: var(--shadow-xl);
+.order-item:hover {
+    box-shadow: var(--shadow-md);
     transform: translateY(-2px);
 }
 
-.complete-loading-btn:disabled {
-    background: var(--slate-400);
-    cursor: not-allowed;
-    transform: none;
-    box-shadow: var(--shadow-sm);
+/* JS добавя .loaded и .pending класове */
+.order-item.loaded {
+    border-color: var(--color-success);
+    background: linear-gradient(135deg, #ffffff, #f0f9ff);
+    box-shadow: 0 4px 12px rgba(39, 174, 96, 0.15);
 }
 
-/* ==========================================
-   ALERTS & MESSAGES
-   ========================================== */
-.alert-warning {
-    background: linear-gradient(135deg, var(--warning-100) 0%, var(--white) 100%);
-    border: 2px solid var(--warning-500);
-    border-left: 6px solid var(--warning-600);
-    border-radius: var(--rounded-xl);
-    padding: var(--space-6);
-    margin: var(--space-6) 0;
+.order-item.pending {
+    border-color: var(--color-warning);
+    background: linear-gradient(135deg, #ffffff, #fff8e1);
+}
+
+/* JS генерира .item-details структура - ДВА РЕДА */
+.item-details {
+    display: grid;
+    grid-template-rows: auto auto;
+    gap: var(--space-2);
+}
+
+.item-name {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    line-height: 1.3;
+}
+
+.item-info {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: var(--space-4);
-    color: #92400e;
-    box-shadow: var(--shadow-md);
+    flex-wrap: wrap;
 }
 
-.alert-warning i {
-    color: var(--warning-600);
-    font-size: var(--text-xl);
-    margin-top: var(--space-1);
+.item-sku {
+    color: var(--color-text-muted);
+    font-size: 0.9rem;
+    font-weight: 500;
+    background: rgba(0,0,0,0.05);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+}
+
+.item-quantity {
+    color: var(--color-accent);
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.item-category {
+    color: var(--color-text-muted);
+    font-size: 0.85rem;
+    font-style: italic;
+}
+
+/* JS генерира .item-toggle бутони */
+.item-toggle {
+    width: 60px;
+    height: 60px;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    box-shadow: var(--shadow-sm);
     flex-shrink: 0;
 }
 
-.alert-warning strong {
-    color: #92400e;
-    font-weight: 700;
+.item-toggle.pending {
+    background: linear-gradient(135deg, var(--color-warning), var(--color-accent-dark));
+    color: var(--color-white);
+}
+
+.item-toggle.loaded {
+    background: linear-gradient(135deg, var(--color-success), var(--color-success-dark));
+    color: var(--color-white);
+    transform: scale(1.05);
+}
+
+.item-toggle:hover:not(:disabled) {
+    transform: scale(1.1);
+    box-shadow: var(--shadow-md);
+}
+
+.item-toggle:disabled {
+    background: var(--color-gray);
+    color: var(--color-white);
+    cursor: not-allowed;
+    transform: scale(1);
 }
 
 /* ==========================================
-   LOADING & EMPTY STATES
+   LOADING STATES - ТЪРСЕНИ ОТ JS
    ========================================== */
-.loading-state,
-.empty-state {
-    text-align: center;
-    padding: var(--space-16);
-    color: var(--slate-600);
-    background: var(--white);
-    border: 2px solid var(--slate-200);
-    border-radius: var(--rounded-2xl);
-    margin: var(--space-8) 0;
-    box-shadow: var(--shadow-md);
+
+/* JS търси #loading-state */
+#loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-12);
+    color: var(--color-text-muted);
+}
+
+#loading-state.hidden {
+    display: none;
 }
 
 .loading-spinner {
     width: 40px;
     height: 40px;
-    border: 4px solid var(--slate-200);
-    border-top: 4px solid var(--primary-500);
+    border: 4px solid #e9ecef;
+    border-top: 4px solid var(--color-secondary);
     border-radius: 50%;
     animation: spin 1s linear infinite;
-    margin: 0 auto var(--space-6);
+    margin-bottom: var(--space-4);
 }
 
 @keyframes spin {
@@ -985,45 +814,320 @@
     100% { transform: rotate(360deg); }
 }
 
+/* JS търси #empty-state */
+#empty-state {
+    text-align: center;
+    padding: var(--space-12);
+    color: var(--color-text-muted);
+}
+
+#empty-state.hidden {
+    display: none;
+}
+
 .empty-icon {
     font-size: 4rem;
-    margin-bottom: var(--space-6);
-    color: var(--slate-400);
+    color: var(--color-gray);
+    margin-bottom: var(--space-4);
 }
 
-.empty-state h3 {
-    font-size: var(--text-2xl);
-    font-weight: 700;
-    color: var(--slate-900);
-    margin-bottom: var(--space-3);
-    letter-spacing: -0.025em;
+/* ==========================================
+   FIXED PROGRESS BAR - ДОЛУ НА СТРАНИЦАТА
+   ========================================== */
+.fixed-progress-container {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: var(--progress-height);
+    background: var(--color-white);
+    border-top: 3px solid var(--color-accent);
+    box-shadow: 0 -8px 25px rgba(0, 0, 0, 0.15);
+    z-index: var(--progress-z-index);
+    display: flex;
+    align-items: center;
+    padding: 0 var(--space-8);
+    backdrop-filter: blur(10px);
 }
 
-.empty-state p {
-    font-size: var(--text-lg);
-    color: var(--slate-600);
-    max-width: 500px;
+.progress-content {
+    max-width: 1400px;
+    width: 100%;
     margin: 0 auto;
-    line-height: 1.6;
+    display: grid;
+    grid-template-columns: auto 1fr auto auto;
+    gap: var(--space-6);
+    align-items: center;
+}
+
+.progress-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-white);
+    font-size: 1.3rem;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+.progress-bar-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.progress-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+.progress-stats {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: 0.9rem;
+    color: var(--color-text-muted);
+}
+
+.progress-bar {
+    width: 100%;
+    height: 12px;
+    background: #e9ecef;
+    border-radius: 6px;
+    overflow: hidden;
+    position: relative;
+}
+
+/* JS търси #progress-fill */
+#progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--color-success), var(--color-success-light), var(--color-accent));
+    border-radius: 6px;
+    transition: width var(--transition-slow);
+    position: relative;
+}
+
+#progress-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+/* JS търси #progress-percentage */
+#progress-percentage {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    min-width: 60px;
+    text-align: center;
+}
+
+.complete-section {
+    display: flex;
+    gap: var(--space-3);
+}
+
+/* JS търси #complete-loading-btn */
+#complete-loading-btn {
+    padding: var(--space-4) var(--space-6);
+    background: linear-gradient(135deg, var(--color-success), var(--color-success-dark));
+    color: var(--color-white);
+    border: none;
+    border-radius: var(--radius-lg);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    box-shadow: var(--shadow-md);
+}
+
+#complete-loading-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--color-success-dark), var(--color-success));
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+#complete-loading-btn:disabled {
+    background: var(--color-gray);
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* JS търси #loaded-count, #total-count за обновяване */
+#loaded-count,
+#total-count {
+    font-weight: 700;
+    color: var(--color-text-primary);
+}
+
+/* ==========================================
+   ALERTS & NOTIFICATIONS - ГЕНЕРИРАНИ ОТ JS
+   ========================================== */
+.alert {
+    border-radius: var(--radius-lg);
+    padding: var(--space-5);
+    margin-bottom: var(--space-6);
+    border: 1px solid transparent;
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.alert-warning {
+    background: rgba(243, 156, 18, 0.1);
+    border-color: var(--color-warning);
+    color: var(--color-warning);
+}
+
+.alert-info {
+    background: rgba(52, 152, 219, 0.1);
+    border-color: var(--color-info);
+    color: var(--color-info);
+}
+
+/* JS генерира .observer-alert */
+.observer-alert {
+    animation: slideDown 0.5s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ==========================================
+   OBSERVER SECTION SPECIFIC STYLES
+   ========================================== */
+
+/* Observer progress elements - JS търси тези ID-та */
+#observer-loaded,
+#observer-total {
+    font-weight: 700;
+    color: var(--color-text-primary);
+}
+
+#observer-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--color-info), var(--color-secondary-light));
+    border-radius: 6px;
+    transition: width var(--transition-slow);
+}
+
+#observer-progress-percentage {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    min-width: 60px;
+    text-align: center;
+}
+
+#observer-items-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    padding: var(--space-4);
+}
+
+/* Progress visualization for observer */
+.progress-visualization {
+    background: var(--color-white);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-md);
+    padding: var(--space-6);
+    margin-bottom: var(--space-6);
+}
+
+.progress-stats {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-4);
+    margin-bottom: var(--space-4);
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-1);
+}
+
+.stat-number {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+}
+
+.stat-label {
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+    font-weight: 500;
+}
+
+.stat-divider {
+    font-size: 1.2rem;
+    color: var(--color-text-muted);
+    font-weight: 600;
+}
+
+.progress-bar-container {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
 }
 
 /* ==========================================
    RESPONSIVE DESIGN
    ========================================== */
-@media (max-width: 1024px) {
-    .shipping-grid {
-        grid-template-columns: 1fr;
-        gap: var(--space-6);
+@media (max-width: 1200px) {
+    .progress-content {
+        grid-template-columns: auto 1fr auto;
+        gap: var(--space-4);
+    }
+
+    .complete-section {
+        grid-column: span 3;
+        justify-content: center;
+        margin-top: var(--space-2);
     }
 
     .info-panels-row {
         grid-template-columns: 1fr;
-        gap: var(--space-6);
-    }
-
-    .catalog-controls {
-        grid-template-columns: 1fr;
-        gap: var(--space-4);
     }
 }
 
@@ -1032,83 +1136,41 @@
         padding: 0 var(--space-4);
     }
 
-    .shipping-grid {
-        gap: var(--space-4);
-        padding: var(--space-4) 0;
+    .fixed-progress-container {
+        height: auto;
+        padding: var(--space-4);
     }
 
-    .truck-controls-panel {
-        padding: var(--space-6);
+    .progress-content {
+        grid-template-columns: 1fr;
+        gap: var(--space-3);
+        text-align: center;
+    }
+
+    .catalog-controls {
+        grid-template-columns: 1fr;
+        gap: var(--space-3);
     }
 
     .input-button-group {
         flex-direction: column;
-        gap: var(--space-4);
     }
 
-    .truck-number-input {
-        width: 100%;
-        max-width: 300px;
-    }
-
-    .progress-content {
+    .item-info {
         flex-direction: column;
-        gap: var(--space-4);
-        padding: var(--space-4);
-        align-items: stretch;
-    }
-
-    .progress-stats {
-        order: 2;
-        justify-content: center;
-        gap: var(--space-4);
-    }
-
-    .progress-bar-container {
-        order: 1;
-    }
-
-    .order-items-container {
-        overflow-x: auto;
-        margin: var(--space-4) 0;
-    }
-
-    .items-table {
-        min-width: 700px;
-    }
-
-    .col-category,
-    .col-sku {
-        display: none;
-    }
-}
-
-@media (max-width: 480px) {
-    .shipping-title-block h1 {
-        font-size: var(--text-xl);
-        flex-direction: column;
+        align-items: flex-start;
         gap: var(--space-2);
     }
 
-    .item-toggle {
-        width: 44px;
-        height: 44px;
-        font-size: var(--text-lg);
-    }
-
-    .progress-visualization {
-        height: auto;
-        min-height: var(--progress-bar-height);
-    }
-
-    .stat-item {
-        min-width: 70px;
-        padding: var(--space-3) var(--space-4);
+    .shipping-title-block h1 {
+        font-size: 1.8rem;
+        flex-direction: column;
+        gap: var(--space-2);
     }
 }
 
 /* ==========================================
-   UTILITY CLASSES
+   UTILITY CLASSES - ИЗПОЛЗВАНИ ОТ JS
    ========================================== */
 .hidden {
     display: none !important;
@@ -1123,35 +1185,51 @@
     text-align: center;
 }
 
+.text-muted {
+    color: var(--color-text-muted);
+}
+
+.mb-4 {
+    margin-bottom: var(--space-6);
+}
+
+.mt-2 {
+    margin-top: var(--space-2);
+}
+
 .d-block {
     display: block;
 }
 
-/* Legacy spacing for compatibility */
-.mt-1 { margin-top: var(--space-1); }
-.mt-2 { margin-top: var(--space-2); }
-.mb-4 { margin-bottom: var(--space-4); }
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-5);
+    border: none;
+    border-radius: var(--radius-md);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    text-decoration: none;
+}
 
-/* ==========================================
-   PRINT STYLES
-   ========================================== */
-@media print {
-    .progress-visualization,
-    .catalog-controls,
-    .truck-controls-panel {
-        display: none !important;
-    }
+.btn-primary {
+    background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light));
+    color: var(--color-white);
+}
 
-    .order-shipping-section {
-        padding-bottom: 0;
-        background: white !important;
-    }
+.btn-success {
+    background: linear-gradient(135deg, var(--color-success), var(--color-success-dark));
+    color: var(--color-white);
+}
 
-    .items-table {
-        font-size: 12px;
-    }
+.btn-secondary {
+    background: linear-gradient(135deg, var(--color-gray), var(--color-gray-dark));
+    color: var(--color-white);
+}
 
-    .item-toggle {
-        display: none;
-    }
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
 }

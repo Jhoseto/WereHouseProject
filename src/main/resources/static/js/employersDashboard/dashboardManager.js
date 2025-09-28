@@ -326,51 +326,6 @@ class DashboardManager {
 
 
     // ==========================================
-    // CHANGE TRACKING & MODIFICATION MANAGEMENT
-    // ==========================================
-
-    /**
-     * Track changes made to an order
-     */
-    trackOrderChange(orderId, changeType, changeData) {
-        if (!this.orderChanges.has(orderId)) {
-            this.orderChanges.set(orderId, []);
-        }
-
-        const changes = this.orderChanges.get(orderId);
-        changes.push({
-            type: changeType,
-            data: changeData,
-            timestamp: Date.now()
-        });
-
-        console.log(`Tracked ${changeType} change for order ${orderId}:`, changeData);
-    }
-
-    /**
-     * Mark order as modified
-     */
-    markOrderAsModified(orderId) {
-        this.modifiedOrders.add(orderId);
-        this.ui.showOrderModificationIndicator(orderId);
-        console.log(`Order ${orderId} marked as modified`);
-    }
-
-    /**
-     * Get changes for specific order
-     */
-    getOrderChanges(orderId) {
-        return this.orderChanges.get(orderId) || [];
-    }
-
-    /**
-     * Check if order has unsaved changes
-     */
-    hasOrderChanges(orderId) {
-        return this.modifiedOrders.has(orderId);
-    }
-
-    // ==========================================
     // REFRESH & DATA MANAGEMENT
     // ==========================================
 
@@ -398,17 +353,6 @@ class DashboardManager {
         }
     }
 
-    /**
-     * Refresh current tab data
-     */
-    async refreshCurrentTab() {
-        try {
-            await this.loadTabData(this.currentTab);
-
-        } catch (error) {
-            console.error('Error refreshing current tab:', error);
-        }
-    }
 
     /**
      * Refresh only counters (lightweight operation)
@@ -458,113 +402,6 @@ class DashboardManager {
         }
     }
 
-
-
-
-    initOrderState(orderId, orderData) {
-        this.orderStates.set(orderId, {
-            original: this.cloneOrderData(orderData),
-            pending: new Map(), // {productId: {quantity, action}}
-            inventory: new Map(), // {productId: availableQty}
-            hasChanges: false
-        });
-
-        // Extract inventory data
-        orderData.items.forEach(item => {
-            this.orderStates.get(orderId).inventory.set(
-                item.productId,
-                item.availableQuantity || 0
-            );
-        });
-    }
-
-    cloneOrderData(orderData) {
-        return JSON.parse(JSON.stringify(orderData));
-    }
-
-    updatePendingQuantity(orderId, productId, newQuantity) {
-        const state = this.orderStates.get(orderId);
-        if (!state) return false;
-
-        const original = state.original.items.find(item => item.productId === productId);
-        const available = state.inventory.get(productId);
-
-        // Validation
-        if (newQuantity > available) {
-            this.ui.showInventoryWarning(productId, newQuantity, available);
-            return false;
-        }
-
-        // Track change
-        if (newQuantity === original.quantity) {
-            state.pending.delete(productId);
-        } else {
-            state.pending.set(productId, {
-                quantity: newQuantity,
-                originalQuantity: original.quantity,
-                action: newQuantity === 0 ? 'remove' : 'modify'
-            });
-        }
-
-        state.hasChanges = state.pending.size > 0;
-        this.ui.updateOrderChangeIndicator(orderId, state.hasChanges);
-
-        return true;
-    }
-
-    async processOrderWithChanges(orderId, operatorNote) {
-        const state = this.orderStates.get(orderId);
-        if (!state) return;
-
-        try {
-            // Phase 1: Real-time inventory check
-            const inventoryCheck = await this.api.validateInventoryForChanges(orderId, Array.from(state.pending.entries()));
-
-            if (!inventoryCheck.valid) {
-                const resolution = await this.ui.showInventoryConflictDialog(inventoryCheck.conflicts);
-                if (!resolution) return; // User cancelled
-
-                // Apply resolution (auto-adjust quantities)
-                this.applyInventoryResolution(orderId, resolution);
-            }
-
-            // Phase 2: Generate change summary
-            const changesSummary = this.generateChangesSummary(orderId);
-
-            // Phase 3: Atomic approval
-            const approval = await this.api.approveOrderWithChanges(orderId, {
-                changes: Array.from(state.pending.entries()),
-                operatorNote,
-                changesSummary
-            });
-
-            if (approval.success) {
-                this.ui.showSuccessMessage(approval.message);
-                this.orderStates.delete(orderId);
-                this.refreshCurrentTab();
-            }
-
-        } catch (error) {
-            this.ui.showErrorMessage('Грешка при обработка на поръчката');
-        }
-    }
-
-    generateChangesSummary(orderId) {
-        const state = this.orderStates.get(orderId);
-        const changes = [];
-
-        state.pending.forEach((change, productId) => {
-            const original = state.original.items.find(item => item.productId === productId);
-
-            if (change.action === 'remove') {
-                changes.push(`• Премахнат: ${original.productName}`);
-            } else {
-                changes.push(`• ${original.productName}: ${change.originalQuantity} → ${change.quantity} бр.`);
-            }
-        });
-
-        return changes.join('\n');
-    }
 
     // ==========================================
     // UTILITY METHODS
@@ -639,19 +476,6 @@ class DashboardManager {
         if (window.toastManager) {
             window.toastManager.warning(message);
         }
-    }
-
-    showOrderUpdateNotification(orderId, newStatus) {
-        const statusMap = {
-            'urgent': 'URGENT',
-            'pending': 'PENDING',
-            'confirmed': 'CONFIRMED',  // ← Това е ключово!
-            'cancelled': 'CANCELLED',
-            'activity': null
-        };
-
-        const statusText = statusMap[newStatus] || 'обновена';
-        this.showSuccessNotification(`Поръчка #${orderId} е ${statusText}`);
     }
 
     showNewOrderNotification(orderId, orderData) {

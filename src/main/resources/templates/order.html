@@ -181,28 +181,28 @@
                             <td class="status-cell" th:switch="${order.status.name()}">
                                 <!-- PENDING статус: Нова поръчка -->
                                 <span th:case="'PENDING'" class="status-badge status-pending"
-                                      title="Нова поръчка, очаква обработка">
+                                      title="Поръчката е направена успешно и очаква да бъде обработена от служител">
                         <i class="bi bi-clock"></i>
-                        <span>Нова</span>
+                        <span>Чака одобрение</span>
                     </span>
 
                                 <!-- URGENT статус: Спешна поръчка -->
                                 <span th:case="'URGENT'" class="status-badge status-pending"
-                                      title="Спешна поръчка, изисква незабавна обработка">
+                                      title="Поръчката е направена успешно и очаква да бъде обработена от служител">
                         <i class="bi bi-exclamation-triangle"></i>
-                        <span>Спешна</span>
+                        <span>Чака одобрение</span>
                     </span>
 
                                 <!-- CONFIRMED статус: Потвърдена поръчка -->
                                 <span th:case="'CONFIRMED'" class="status-badge status-confirmed"
-                                      title="Потвърдена и готова за изпращане">
+                                      title="Поръчката е потвърдена и предстои да бъде натоварена и изпратена">
                         <i class="bi bi-check-circle"></i>
                         <span>Потвърдена</span>
                     </span>
 
                                 <!-- SHIPPED статус: Изпратена поръчка -->
                                 <span th:case="'SHIPPED'" class="status-badge status-shipped"
-                                      title="Изпратена за доставка">
+                                      title="Поръчката е натоварена и изпратена">
                         <i class="bi bi-truck"></i>
                         <span>Изпратена</span>
                     </span>

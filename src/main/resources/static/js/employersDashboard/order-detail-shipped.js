@@ -32,6 +32,9 @@ let lastHeartbeatSuccess = Date.now();
 document.addEventListener('DOMContentLoaded', async function() {
     console.log('Initializing shipping system');
 
+    // Показване на универсалния loader
+    window.universalLoader.show('Зареждане на товарителница за поръчката...', 'Моля изчакайте', 'primary', 'system_init');
+
     try {
         // Валидация на конфигурацията
         validateConfiguration();
@@ -947,16 +950,16 @@ function showEmployeeInfo(sessionData) {
 
     // Update employee info
     if (elements.employeeName) elements.employeeName.textContent = window.orderConfig.currentUsername;
-    if (elements.employeeUsername) elements.employeeUsername.textContent = '@' + window.orderConfig.currentUsername;
-    if (elements.employeeEmail) elements.employeeEmail.textContent = window.orderConfig.loadingEmployer?.email || 'Няма данни';
-    if (elements.employeePhone) elements.employeePhone.textContent = window.orderConfig.loadingEmployer?.phone || 'Няма данни';
+    if (elements.employeeUsername) elements.employeeUsername.textContent = 'Поръчката е поета за товарене от: ' + window.orderConfig.currentUsername;
+    if (elements.employeeEmail) elements.employeeEmail.textContent = 'Емейл ' + (sessionData.employeeEmail) || 'Няма данни';
+    if (elements.employeePhone) elements.employeePhone.textContent = 'Телефон ' + (sessionData.employeePhone) || 'Няма данни';
     if (elements.activeTruck) elements.activeTruck.textContent = currentTruck;
     if (elements.sessionStart) elements.sessionStart.textContent = formatDateTime(startTime);
 
     // Update status badge
     if (elements.employeeStatusBadge) {
         elements.employeeStatusBadge.className = 'status-badge status-active';
-        elements.employeeStatusBadge.textContent = 'Активен';
+        elements.employeeStatusBadge.textContent = 'В процес на товарене';
     }
 
     // Show panels
@@ -991,9 +994,9 @@ function showOtherEmployeeInfo(sessionData) {
 
     // Update with other user info
     if (elements.employeeName) elements.employeeName.textContent = sessionData.employeeUsername || 'Неизвестен служител';
-    if (elements.employeeUsername) elements.employeeUsername.textContent = '@' + (sessionData.employeeUsername || 'unknown');
-    if (elements.employeeEmail) elements.employeeEmail.textContent = sessionData.employeeEmail || 'Няма данни';
-    if (elements.employeePhone) elements.employeePhone.textContent = sessionData.employeePhone || 'Няма данни';
+    if (elements.employeeUsername) elements.employeeUsername.textContent = 'Поръчката е поета за товарене от: ' + (sessionData.employeeUsername || 'unknown');
+    if (elements.employeeEmail) elements.employeeEmail.textContent = 'Емейл ' + (sessionData.employeeEmail) || 'Няма данни';
+    if (elements.employeePhone) elements.employeePhone.textContent = 'Телефон ' + (sessionData.employeePhone) || 'Няма данни';
     if (elements.activeTruck) elements.activeTruck.textContent = sessionData.truckNumber;
     if (elements.sessionStart) elements.sessionStart.textContent = formatDateTime(startTime);
 
@@ -1237,13 +1240,11 @@ function updateDurationDisplay() {
 
 // DOM helpers
 function showLoading() {
-    const loading = document.getElementById('loading-state');
-    if (loading) loading.style.display = 'block';
+    window.universalLoader.show('Зареждане...', 'Моля изчакайте', 'primary', 'generic_loading');
 }
 
 function hideLoading() {
-    const loading = document.getElementById('loading-state');
-    if (loading) loading.style.display = 'none';
+    window.universalLoader.hide();
 }
 
 function showItemsContainer() {
@@ -1262,24 +1263,30 @@ function showEmptyState() {
 
 // Notification helpers
 function showSuccess(message) {
-    if (window.toastManager) {
+    if (window.toastManager && window.toastManager.success) {
         window.toastManager.success(message);
+    } else if (window.showToast) {
+        window.showToast('success', message,1500);
     } else {
         alert('✅ ' + message);
     }
 }
 
 function showError(message) {
-    if (window.toastManager) {
+    if (window.toastManager && window.toastManager.error) {
         window.toastManager.error(message);
+    } else if (window.showToast) {
+        window.showToast('error', message, 1500);
     } else {
         alert('❌ Грешка: ' + message);
     }
 }
 
 function showWarning(message) {
-    if (window.toastManager) {
+    if (window.toastManager && window.toastManager.warning) {
         window.toastManager.warning(message);
+    } else if (window.showToast) {
+        window.showToast('warning', message, 1500);
     } else {
         alert('⚠️ ' + message);
     }
