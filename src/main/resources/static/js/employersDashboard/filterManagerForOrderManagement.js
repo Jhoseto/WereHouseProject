@@ -213,7 +213,7 @@ class ProductionFilterManager {
         }
 
         let allExtractedOrders = [];
-        ['urgent', 'pending', 'confirmed', 'cancelled'].forEach(tabName => {
+        ['urgent', 'pending', 'confirmed', 'shipped','cancelled'].forEach(tabName => {
             const container = document.querySelector(`#${tabName}-orders-list`);
             if (!container) return;
 
@@ -599,6 +599,7 @@ class ProductionFilterManager {
             'urgent': 'Спешни поръчки',
             'pending': 'Изчакващи поръчки',
             'confirmed': 'Обработени поръчки',
+            'shipped': 'Завършени поръчки',
             'cancelled': 'Отказани поръчки'
         };
 

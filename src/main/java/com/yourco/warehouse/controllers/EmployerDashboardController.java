@@ -107,7 +107,8 @@ public class EmployerDashboardController {
                         counters.getUrgentCount(),
                         counters.getPendingCount(),
                         counters.getCompletedCount(),
-                        counters.getCancelledCount()
+                        counters.getCancelledCount(),
+                        counters.getShippedCount()
                 );
 
                 log.debug("Counters updated and broadcasted: urgent={}, pending={}, completed={}, cancelled={}",
@@ -353,7 +354,8 @@ public class EmployerDashboardController {
                             freshCounters.getUrgentCount(),
                             freshCounters.getPendingCount(),
                             freshCounters.getCompletedCount(),
-                            freshCounters.getCancelledCount()
+                            freshCounters.getCancelledCount(),
+                            freshCounters.getShippedCount()
                     );
                 }
                 return ResponseEntity.ok(response);
@@ -408,7 +410,8 @@ public class EmployerDashboardController {
                             freshCounters.getUrgentCount(),
                             freshCounters.getPendingCount(),
                             freshCounters.getCompletedCount(),
-                            freshCounters.getCancelledCount()
+                            freshCounters.getCancelledCount(),
+                            freshCounters.getShippedCount()
                     );
                 }
 
@@ -531,7 +534,8 @@ public class EmployerDashboardController {
                             freshCounters.getUrgentCount(),
                             freshCounters.getPendingCount(),
                             freshCounters.getCompletedCount(),
-                            freshCounters.getCancelledCount()
+                            freshCounters.getCancelledCount(),
+                            freshCounters.getShippedCount()
                     );
                 }
             }

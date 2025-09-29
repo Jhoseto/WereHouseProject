@@ -180,6 +180,7 @@ public class MainController {
             model.addAttribute("urgentCount", dashboardData.getUrgentCount() != null ? dashboardData.getUrgentCount() : 0);
             model.addAttribute("pendingCount", dashboardData.getPendingCount() != null ? dashboardData.getPendingCount() : 0);
             model.addAttribute("confirmedCount", dashboardData.getCompletedCount() != null ? dashboardData.getCompletedCount() : 0);
+            model.addAttribute("shippedCount", dashboardData.getShippedCount() != null ? dashboardData.getShippedCount() : 0);
             model.addAttribute("cancelledCount", dashboardData.getCancelledCount() != null ? dashboardData.getCancelledCount() : 0);
 
             model.addAttribute("dailyStats", dashboardData); // Template ще използва полетата processed, revenue, avgTime, activeClients

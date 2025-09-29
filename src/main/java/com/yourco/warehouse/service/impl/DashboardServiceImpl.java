@@ -95,18 +95,19 @@ public class DashboardServiceImpl implements DashboardService {
 
             DashboardDTO dashboard = new DashboardDTO();
 
-            // ✅ ПОПРАВЕНО: Правилни статуси за всеки counter
             dashboard.setUrgentCount(orderRepository.countByStatus(OrderStatus.URGENT));
             dashboard.setPendingCount(orderRepository.countByStatus(OrderStatus.PENDING));
             dashboard.setCompletedCount(orderRepository.countByStatus(OrderStatus.CONFIRMED));
             dashboard.setCancelledCount(orderRepository.countByStatus(OrderStatus.CANCELLED));
+            dashboard.setShippedCount(orderRepository.countByStatus(OrderStatus.SHIPPED));
 
             dashboard.setHasUrgentAlerts(dashboard.getUrgentCount() > 0);
             dashboard.setMessage("Броячите са обновени успешно");
 
-            log.debug("Counters updated: urgent={}, pending={}, completed={}, cancelled={}",
+            log.debug("Counters updated: urgent={}, pending={}, completed={}, cancelled={}, shipped={}",
                     dashboard.getUrgentCount(), dashboard.getPendingCount(),
-                    dashboard.getCompletedCount(), dashboard.getCancelledCount());
+                    dashboard.getCompletedCount(), dashboard.getCancelledCount(),
+                    dashboard.getShippedCount());  // ⭐ НОВО
 
             return dashboard;
 

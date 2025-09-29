@@ -158,6 +158,14 @@
         <span class="tab-count" id="confirmed-tab-count" th:text="${confirmedCount ?: 0}">0</span>
     </button>
     <button class="tab-btn"
+            data-tab="shipped"
+            onclick="switchTab('shipped')"
+            title="Завършени поръчки - изпратени за доставка.">
+        <i class="tab-icon bi bi-truck"></i>
+        <span class="tab-label">Завършени</span>
+        <span class="tab-count" id="shipped-tab-count" th:text="${shippedCount ?: 0}">0</span>
+    </button>
+    <button class="tab-btn"
             data-tab="cancelled"
             onclick="switchTab('cancelled')"
             title="Отказани поръчки - отменени заявки за справка и анализ.">
@@ -263,6 +271,35 @@
                         <div class="orders-list" id="confirmed-orders-list">
                             <!-- JavaScript ще генерира order карти тук -->
                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Shipped Orders Tab -->
+    <div class="tab-content" id="shipped-tab">
+        <div class="processing-panel shipped-panel">
+            <div class="panel-header shipped-header">
+                <div class="panel-title-section">
+                    <i class="bi bi-truck panel-icon"></i>
+                    <div class="panel-title-text">
+                        <h2 class="panel-title">Завършени поръчки</h2>
+                        <p class="panel-subtitle">Изпратени поръчки за доставка до клиента</p>
+                    </div>
+                </div>
+                <div class="panel-actions">
+                    <button class="action-btn refresh-btn" onclick="refreshDashboard()">
+                        <i class="bi bi-arrow-clockwise"></i>
+                        <span>Обнови</span>
+                    </button>
+                    <div class="panel-badge shipped-panel-badge" id="shipped-badge" th:text="${shippedCount ?: 0}">0</div>
+                </div>
+            </div>
+            <div class="panel-content">
+                <div id="shipped-orders-container" class="orders-container">
+                    <div class="orders-list" id="shipped-orders-list">
+                        <!-- JavaScript ще генерира order карти тук -->
                     </div>
                 </div>
             </div>

@@ -22,6 +22,9 @@ public class DashboardDTO {
     @JsonProperty("completedCount")
     private Long completedCount;
 
+    @JsonProperty("shippedCount")
+    private Long shippedCount;
+
     @JsonProperty("cancelledCount")
     private Long cancelledCount;
 
@@ -42,7 +45,6 @@ public class DashboardDTO {
     @JsonProperty("orders")
     private List<OrderDTO> orders;
 
-    // ✅ НОВО: За един order details
     @JsonProperty("order")
     private OrderDTO order;
 
@@ -78,6 +80,14 @@ public class DashboardDTO {
 
     public Long getCompletedCount() { return completedCount; }
     public void setCompletedCount(Long completedCount) { this.completedCount = completedCount; }
+
+    public Long getShippedCount() {
+        return shippedCount;
+    }
+
+    public void setShippedCount(Long shippedCount) {
+        this.shippedCount = shippedCount;
+    }
 
     public Long getCancelledCount() { return cancelledCount; }
     public void setCancelledCount(Long cancelledCount) { this.cancelledCount = cancelledCount; }

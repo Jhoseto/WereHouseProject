@@ -95,25 +95,23 @@ public class DashboardBroadcastServiceImpl implements DashboardBroadcastService 
      */
     @Override
     public void broadcastCounterUpdate(Long urgentCount, Long pendingCount,
-                                       Long completedCount, Long cancelledCount) {
+                                       Long completedCount, Long cancelledCount,
+                                       Long shippedCount) {
         try {
-            log.debug("Broadcasting counter update: urgent={}, pending={}, completed={}, cancelled={}",
-                    urgentCount, pendingCount, completedCount, cancelledCount);
+            log.debug("Broadcasting counter update: urgent={}, pending={}, completed={}, cancelled={}, shipped={}",
+                    urgentCount, pendingCount, completedCount, cancelledCount, shippedCount);
 
-            // Create structured message payload
             Map<String, Object> counterData = new HashMap<>();
             counterData.put("urgentCount", urgentCount != null ? urgentCount : 0L);
             counterData.put("pendingCount", pendingCount != null ? pendingCount : 0L);
             counterData.put("completedCount", completedCount != null ? completedCount : 0L);
             counterData.put("cancelledCount", cancelledCount != null ? cancelledCount : 0L);
+            counterData.put("shippedCount", shippedCount != null ? shippedCount : 0L);
             counterData.put("timestamp", LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
             counterData.put("hasUrgentAlerts", urgentCount != null && urgentCount > 0);
-            counterData.put("totalActive", urgentCount + pendingCount);
+            counterData.put("totalActive", urgentCount + pendingCount + shippedCount);
 
-            // Broadcast to all dashboard clients subscribed to counters topic
             messagingTemplate.convertAndSend(TOPIC_COUNTERS, counterData);
-
-            // Update performance metrics
             messagesSent.incrementAndGet();
 
             log.info("Counter update broadcasted successfully to {} active connections",
@@ -123,9 +121,6 @@ public class DashboardBroadcastServiceImpl implements DashboardBroadcastService 
             messagesFailures.incrementAndGet();
             serviceHealthy = false;
             log.error("Failed to broadcast counter update", e);
-
-            // В production environment, тук може да добавите alerting mechanism
-            // за immediate notification на operations team при messaging failures
         }
     }
 

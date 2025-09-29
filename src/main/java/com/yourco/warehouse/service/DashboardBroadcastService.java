@@ -44,7 +44,7 @@ public interface DashboardBroadcastService {
      * @param cancelledCount текущ брой отказани поръчки (CANCELLED status)
      */
     void broadcastCounterUpdate(Long urgentCount, Long pendingCount,
-                                Long completedCount, Long cancelledCount);
+                                Long completedCount, Long cancelledCount, Long shippedCount);
 
     // ==========================================
     // ORDER STATUS CHANGES - за real-time order tracking

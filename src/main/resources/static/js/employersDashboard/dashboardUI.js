@@ -22,9 +22,10 @@ class DashboardUI {
         // Status to tab mapping - CORRECTED MAPPING
         this.statusToTabMapping = {
             'urgent': 'urgent',
-            'pending': 'pending',     // ПРОМЕНЕНО: беше 'warning'
-            'confirmed': 'confirmed', // ПРОМЕНЕНО: беше 'info'
-            'cancelled': 'cancelled', // ПРОМЕНЕНО: беше 'danger'
+            'pending': 'pending',
+            'confirmed': 'confirmed',
+            'shipped': 'shipped',
+            'cancelled': 'cancelled',
             'activity': 'activity'
         };
 
@@ -67,12 +68,14 @@ class DashboardUI {
             urgentCount: document.getElementById('urgent-tab-count'),
             pendingCount: document.getElementById('pending-tab-count'),
             confirmedCount: document.getElementById('confirmed-tab-count'),
+            shippedCount: document.getElementById('shipped-tab-count'),
             cancelledCount: document.getElementById('cancelled-tab-count'),
 
             // Badge elements - ОПРАВЕНИ ID-ТА
             urgentBadge: document.getElementById('urgent-badge'),
             pendingBadge: document.getElementById('pending-badge'),
             confirmedBadge: document.getElementById('confirmed-badge'),
+            shippedBadge: document.getElementById('shipped-badge'),
             cancelledBadge: document.getElementById('cancelled-badge'),
 
             // Tab navigation
@@ -147,16 +150,16 @@ class DashboardUI {
         try {
             console.log('UI updating counters with:', data);
 
-            // ТОЧНИ DOM ID-та от HTML
             const urgentEl = document.getElementById('urgent-tab-count');
             const pendingEl = document.getElementById('pending-tab-count');
             const confirmedEl = document.getElementById('confirmed-tab-count');
+            const shippedEl = document.getElementById('shipped-tab-count');
             const cancelledEl = document.getElementById('cancelled-tab-count');
 
-            // АНИМИРАНИ counter обновления
             if (urgentEl) this.animateCounter(urgentEl, data.urgentCount || 0);
             if (pendingEl) this.animateCounter(pendingEl, data.pendingCount || 0);
             if (confirmedEl) this.animateCounter(confirmedEl, data.completedCount || 0);
+            if (shippedEl) this.animateCounter(shippedEl, data.shippedCount || 0);
             if (cancelledEl) this.animateCounter(cancelledEl, data.cancelledCount || 0);
 
             console.log('✓ Counters animated successfully');

@@ -197,7 +197,11 @@ body {
 }
 
 .tab-btn[data-tab="confirmed"] {
-    border-bottom-color: var(--confirmed-color);
+    border-bottom-color: #0891b2; /* Син цвят за обработени */
+}
+
+.tab-btn[data-tab="shipped"] {
+    border-bottom-color: #28a745; /* Зелен цвят за завършени */
 }
 
 .tab-btn[data-tab="cancelled"] {
@@ -222,8 +226,13 @@ body {
 }
 
 .tab-btn[data-tab="confirmed"]:hover:not(.active) {
-    background: rgba(40, 167, 69, 0.05);
-    color: var(--confirmed-dark);
+    background: rgba(8, 145, 178, 0.05); /* Син hover */
+    color: #0e7490;
+}
+
+.tab-btn[data-tab="shipped"]:hover:not(.active) {
+    background: rgba(40, 167, 69, 0.05); /* Зелен hover */
+    color: #1e7e34;
 }
 
 .tab-btn[data-tab="cancelled"]:hover:not(.active) {
@@ -249,8 +258,13 @@ body {
 }
 
 .tab-btn.active[data-tab="confirmed"] {
-    background: var(--confirmed-color);
-    border-bottom-color: var(--confirmed-dark);
+    background: #0891b2; /* Син фон за активен */
+    border-bottom-color: #0e7490;
+}
+
+.tab-btn.active[data-tab="shipped"] {
+    background: #28a745; /* Зелен фон за активен */
+    border-bottom-color: #1e7e34;
 }
 
 .tab-btn.active[data-tab="cancelled"] {
@@ -299,6 +313,33 @@ body {
         transform: scale(1.05);
     }
 }
+
+/* ==========================================
+   7. PANEL HEADERS WITH STATUS COLORS
+   ========================================== */
+
+/* Confirmed panel styling - СИН */
+.confirmed-panel .panel-header {
+    background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%);
+    color: white;
+}
+
+.confirmed-panel-badge {
+    background: rgba(255, 255, 255, 0.25);
+    color: white;
+}
+
+/* Shipped panel styling - ЗЕЛЕН */
+.shipped-panel .panel-header {
+    background: linear-gradient(135deg, #28a745 0%, #34ce57 100%);
+    color: white;
+}
+
+.shipped-panel-badge {
+    background: rgba(255, 255, 255, 0.25);
+    color: white;
+}
+
 
 /* ==========================================
    7. CONTENT PANELS - MINIMAL STYLING

@@ -109,6 +109,7 @@ class DashboardManager {
                     urgentCount: dashboardResponse.urgentCount || 0,
                     pendingCount: dashboardResponse.pendingCount || 0,
                     completedCount: dashboardResponse.completedCount || 0,
+                    shippedCount: dashboardResponse.shippedCount || 0,
                     cancelledCount: dashboardResponse.cancelledCount || 0
                 };
 
@@ -219,16 +220,13 @@ class DashboardManager {
     }
 
     refreshAllTabs() {
-        // Мигновенно обновяване на всички табове
-        const tabs = ['urgent', 'pending', 'confirmed', 'cancelled'];
+        const tabs = ['urgent', 'pending', 'confirmed', 'shipped', 'cancelled'];
 
         tabs.forEach(tab => {
             this.loadTabData(tab);
         });
 
-        // Обнови брояците
         this.refreshCounters();
-
         console.log('✓ Force refreshed all tabs via WebSocket');
     }
 
@@ -248,17 +246,15 @@ class DashboardManager {
                 urgentCount: data.urgentCount || 0,
                 pendingCount: data.pendingCount || 0,
                 completedCount: data.completedCount || 0,
+                shippedCount: data.shippedCount || 0,
                 cancelledCount: data.cancelledCount || 0
             };
 
-            // Update UI with animation
             this.ui.updateCounters(this.currentCounters);
-
             this.lastUpdate = Date.now();
-            this.updateCount++;
 
         } catch (error) {
-            console.error('Error handling counters update:', error);
+            console.error('Error handling counter update:', error);
         }
     }
 
@@ -280,6 +276,7 @@ class DashboardManager {
                     'URGENT': 'urgent',
                     'PENDING': 'pending',
                     'CONFIRMED': 'confirmed',
+                    'SHIPPED': 'shipped',
                     'CANCELLED': 'cancelled'
                 };
                 if (newStatus in tabMap) {
@@ -450,6 +447,7 @@ class DashboardManager {
             'URGENT': 'urgent',
             'PENDING': 'pending',
             'CONFIRMED': 'confirmed',
+            'SHIPPED': 'shipped',
             'CANCELLED': 'cancelled'
         };
 
