@@ -92,7 +92,7 @@ class EmployersManager {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="_csrf"]').content
+                    [window.csrfHeader]: window.csrfToken
                 },
                 body: JSON.stringify({ username })
             });
@@ -138,7 +138,7 @@ class EmployersManager {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="_csrf"]').content
+                    [window.csrfHeader]: window.csrfToken
                 },
                 body: JSON.stringify(employerData)
             });
@@ -146,8 +146,11 @@ class EmployersManager {
             const data = await response.json();
 
             if (data.success) {
-                showToast('success', data.message || 'Служителят е създаден успешно');
-                form.reset();
+                window.toastManager?.success(
+                    `Служител "${employerData.username}" е създаден успешно!`,
+                    'Създаване на нов служител'
+                );
+               form.reset();
                 // Clear validation classes
                 form.querySelectorAll('.is-valid, .is-invalid').forEach(el => {
                     el.classList.remove('is-valid', 'is-invalid');
@@ -172,7 +175,8 @@ class EmployersManager {
         try {
             const response = await fetch('/admin/employersManagement/list', {
                 headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="_csrf"]').content
+                    'Accept': 'application/json',
+                    [window.csrfHeader]: window.csrfToken
                 }
             });
 
@@ -429,7 +433,7 @@ class EmployersManager {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="_csrf"]').content
+                    [window.csrfHeader]: window.csrfToken
                 }
             });
 

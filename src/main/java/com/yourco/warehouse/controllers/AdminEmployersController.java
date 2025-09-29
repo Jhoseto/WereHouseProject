@@ -228,10 +228,6 @@ public class AdminEmployersController {
             String trimmedUsername = username.trim();
             boolean isAvailable = userService.findUserByUsername(trimmedUsername).isEmpty();
 
-            log.debug("Admin {} checked username '{}': {}",
-                    authentication.getName(), trimmedUsername,
-                    isAvailable ? "available" : "taken");
-
             AdminResponseDTO response = new AdminResponseDTO();
             response.setSuccess(true);
             response.setMessage(isAvailable ?

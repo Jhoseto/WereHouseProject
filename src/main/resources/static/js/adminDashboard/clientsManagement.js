@@ -317,7 +317,7 @@ class ClientsManager {
             { id: 'clientsUsernameFilter', key: 'username' },
             { id: 'clientsEmailFilter', key: 'email' },
             { id: 'clientsPhoneFilter', key: 'phone' },
-            { id: 'clientsLocationFilter', key: 'location' } // Променено от userCode на location
+            { id: 'clientsLocationFilter', key: 'location' }
         ];
 
         advancedFilters.forEach(filterConfig => {
