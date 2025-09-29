@@ -41,7 +41,7 @@
                                 <!-- Role badges -->
                                 <span sec:authorize="hasRole('ADMIN')" class="role-badge role-admin">
                                     <i class="bi bi-shield-check"></i>
-                                    Админ
+                                    Администратор
                                 </span>
                                 <span sec:authorize="hasRole('EMPLOYER')" class="role-badge role-employer">
                                     <i class="bi bi-briefcase"></i>
@@ -89,6 +89,15 @@
                                 <i class="bi bi-box-seam"></i>
                                 Управление поръчки
                             </a>
+                            <a th:href="@{/catalog}" class="dropdown-item">
+                                <i class="bi bi-grid-3x3-gap"></i>
+                                Каталог за клиенти
+                            </a>
+                            <div class="dropdown-divider"></div>
+                            <a th:href="@{admin/helpAdmin}" class="dropdown-item">
+                                <i class="bi bi-info-circle"></i>
+                                Помощ / FAQ
+                            </a>
                         </div>
 
                         <!-- Опции за EMPLOYER -->
@@ -100,6 +109,11 @@
                             <a th:href="@{/catalog}" class="dropdown-item">
                                 <i class="bi bi-grid-3x3-gap"></i>
                                 Каталог продукти
+                            </a>
+                            <div class="dropdown-divider"></div>
+                            <a th:href="@{/helpEmployers}" class="dropdown-item">
+                                <i class="bi bi-info-circle"></i>
+                                Помощ / FAQ
                             </a>
                         </div>
 
@@ -118,14 +132,15 @@
                                 <i class="bi bi-person-gear"></i>
                                 Профил настройки
                             </a>
+                            <div class="dropdown-divider"></div>
+                            <a th:href="@{/about}" class="dropdown-item">
+                                <i class="bi bi-info-circle"></i>
+                                За нас
+                            </a>
                         </div>
 
                         <!-- Общи опции за всички логнати -->
-                        <div class="dropdown-divider"></div>
-                        <a th:href="@{/about}" class="dropdown-item">
-                            <i class="bi bi-info-circle"></i>
-                            За нас
-                        </a>
+
 
                         <div class="dropdown-divider"></div>
 
