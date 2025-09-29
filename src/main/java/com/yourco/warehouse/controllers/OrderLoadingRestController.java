@@ -275,4 +275,27 @@ public class OrderLoadingRestController {
                     .body(Map.of("success", false, "message", e.getMessage()));
         }
     }
+
+
+    /**
+     * Прекратява товарене - POST /api/loading/cancel
+     * Request: { sessionId, reason? }
+     * Response: { success: true, orderId: 123, cancelledBy: "admin" }
+     */
+    @PostMapping("/cancel")
+    public ResponseEntity<?> cancelLoading(@RequestBody Map<String, Object> request) {
+        try {
+            Long sessionId = ((Number) request.get("sessionId")).longValue();
+            String reason = (String) request.get("reason"); // Optional
+
+            Map<String, Object> result = orderLoadingService.cancelLoading(sessionId, reason);
+
+            return ResponseEntity.ok(result);
+
+        } catch (Exception e) {
+            log.error("Error cancelling loading: {}", e.getMessage(), e);
+            return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
 }

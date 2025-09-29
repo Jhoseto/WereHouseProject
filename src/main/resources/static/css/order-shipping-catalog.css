@@ -344,7 +344,7 @@
 }
 
 .status-active {
-    background: var(--color-success-light);
+    background:#bae5ba;
     color: #232323;
 }
 
@@ -982,6 +982,33 @@
     transform: none;
 }
 
+.cancel-loading-btn {
+    background: linear-gradient(135deg, #dc3545, #c82333);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 20px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    margin-right: 12px;
+}
+
+.cancel-loading-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, #c82333, #bd2130);
+    transform: translateY(-1px);
+}
+
+.complete-section {
+    display: flex;
+    align-items: center;
+}
+
+
+
 /* JS търси #loaded-count, #total-count за обновяване */
 #loaded-count,
 #total-count {
@@ -1027,6 +1054,138 @@
     to {
         opacity: 1;
         transform: translateY(0);
+    }
+}
+
+/* КОМПАКТЕН ПАНЕЛ ЗА LOADING SESSION */
+.loading-session-panel {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Две равни колони които съответстват на горните панели */
+    gap: 20px; /* Същото разстояние като при info-panels-row */
+    margin: 20px 0;
+    transition: all 0.3s ease;
+}
+
+/* Лява секция - съответства на клиентския панел */
+.session-left-section {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Дясна секция - двете малки карти една до друга хоризонтално */
+.session-right-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Две равни колони за малките карти */
+    gap: 12px; /* Разстояние между двете малки карти */
+}
+
+/* Компактни карти остават същите */
+.compact-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    padding: 16px;
+    border: 1px solid #e9ecef;
+}
+
+/* Employee card заема цялата лява секция */
+.employee-card {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 120px; /* Достатъчно височина за добра пропорция */
+}
+
+/* Малките карти сега са едни до други */
+.timing-card,
+.transport-card {
+    min-height: 120px; /* Същата височина като employee card за баланс */
+    display: flex;
+    flex-direction: column;
+}
+
+/* Останалите стилове остават същите */
+.compact-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 12px;
+    font-size: 14px;
+}
+
+.compact-header i {
+    font-size: 16px;
+    color: #007bff;
+}
+
+.compact-content {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1; /* Заема останалото място в картата */
+}
+
+.compact-status {
+    margin-top: auto; /* Бутне connection badge-а към дъното на employee card */
+}
+
+.timing-item,
+.truck-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+}
+
+.timing-label,
+.truck-label {
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.truck-number {
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    color: #28a745;
+    font-size: 14px;
+}
+
+.connection-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.connection-badge.online {
+    background: #d4edda;
+    color: #19861c;
+    border: 1px solid #c3e6cb;
+}
+
+.connection-badge.offline {
+    background: #f8d7da;
+    color: #9d2e3a;
+    border: 1px solid #f5c6cb;
+}
+
+/* МОБИЛНА АДАПТАЦИЯ */
+@media (max-width: 768px) {
+    .loading-session-panel {
+        grid-template-columns: 1fr; /* Една колона на мобилни устройства */
+        gap: 12px;
+    }
+
+    .session-right-section {
+        grid-template-columns: 1fr; /* Малките карти една под друга на мобилни */
+        gap: 12px;
     }
 }
 

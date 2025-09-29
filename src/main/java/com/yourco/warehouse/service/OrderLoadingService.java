@@ -1,6 +1,7 @@
 package com.yourco.warehouse.service;
 
 import com.yourco.warehouse.entity.UserEntity;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
@@ -98,4 +99,7 @@ public interface OrderLoadingService {
     long getActiveLoadingSessionsCount();
 
     UserEntity getEmployer(Long orderId);
+
+    @Transactional
+    Map<String, Object> cancelLoading(Long sessionId, String reason);
 }

@@ -84,10 +84,9 @@
                             Информация за клиент
                         </h3>
                         <div class="panel-status">
-                            <span class="status-badge"
-                                  th:classappend="${clientInfo?.userStatus == 'ACTIVE' ? 'status-active' : 'status-inactive'}"
-                                  th:text="${clientInfo?.userStatus == 'ACTIVE' ? 'Активен' : 'Неактивен'}">
-                                Активен
+                           <span class="status-badge"
+                                 th:classappend="${clientInfo?.userStatus?.name() == 'ACTIVE' ? 'status-active' : 'status-inactive'}"
+                                 th:text="${clientInfo?.userStatus?.name() == 'ACTIVE' ? 'Активен' : 'Неактивен'}">
                             </span>
                         </div>
                     </div>
@@ -107,21 +106,6 @@
                                     <small th:if="${clientInfo?.email}" th:text="${clientInfo.email}">email@example.com</small>
                                     <small th:if="${clientInfo?.phone}" th:text="${clientInfo.phone}">+359 888 123 456</small>
                                 </div>
-                            </div>
-                        </div>
-
-                        <div class="client-stats">
-                            <div class="stat-item">
-                                <span class="stat-label">Общо поръчки:</span>
-                                <span class="stat-value" th:text="${clientInfo?.totalOrders ?: '0'}">12</span>
-                            </div>
-                            <div class="stat-item">
-                                <span class="stat-label">Последна поръчка:</span>
-                                <span class="stat-value" th:text="${clientInfo?.lastOrderDate ?: 'Няма'}">15.12.2024</span>
-                            </div>
-                            <div class="stat-item">
-                                <span class="stat-label">Средна стойност:</span>
-                                <span class="stat-value" th:text="${clientInfo?.averageOrderValue ?: '0.00 лв'}">2,450.00 лв</span>
                             </div>
                         </div>
                     </div>
@@ -160,26 +144,65 @@
                                     </div>
                                 </div>
                             </div>
-
-                            <div class="session-info">
-                                <div class="info-item">
-                                    <span class="info-label">Започнато:</span>
-                                    <span id="session-start-time">-</span>
-                                </div>
-                                <div class="info-item">
-                                    <span class="info-label">Време на работа:</span>
-                                    <span id="session-duration">-</span>
-                                </div>
-                                <div class="info-item">
-                                    <span class="info-label">Номер на камион:</span>
-                                    <span id="active-truck-number">-</span>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
+            <!-- Loading Session Details - Компактни карти -->
+            <!-- Loading Session Details - Двукратна структура -->
+            <div id="loading-session-panel" class="loading-session-panel hidden">
+
+                <!-- Лява секция - съответства на клиентския панел -->
+                <div class="session-left-section">
+                    <div class="compact-card employee-card">
+                        <div class="compact-header">
+                            <i class="bi bi-person-check"></i>
+                            <span id="loading-employee-text">Поръчката е поета за товарене от: -</span>
+                        </div>
+                        <div class="compact-status">
+                            <div id="connection-status" class="connection-badge online">
+                                <i class="bi bi-wifi"></i> Онлайн
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Дясна секция - съответства на служителския панел -->
+                <div class="session-right-section">
+                    <!-- Времева информация -->
+                    <div class="compact-card timing-card">
+                        <div class="compact-header">
+                            <i class="bi bi-clock"></i>
+                            <span>Времева информация</span>
+                        </div>
+                        <div class="compact-content">
+                            <div class="timing-item">
+                                <span class="timing-label">Започнато:</span>
+                                <span id="session-start-time">-</span>
+                            </div>
+                            <div class="timing-item">
+                                <span class="timing-label">Време на работа:</span>
+                                <span id="session-duration">00:00:00</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Транспорт информация -->
+                    <div class="compact-card transport-card">
+                        <div class="compact-header">
+                            <i class="bi bi-truck"></i>
+                            <span>Транспорт</span>
+                        </div>
+                        <div class="compact-content">
+                            <div class="truck-info">
+                                <span class="truck-label">Номер на камион:</span>
+                                <span id="active-truck-number" class="truck-number">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <!-- Search and Filters -->
             <div class="catalog-controls">
                 <div class="search-container">
@@ -291,6 +314,12 @@
         </div>
         <div class="progress-percentage" id="progress-percentage">0%</div>
         <div class="complete-section">
+            <!-- Cancel бутон -->
+            <button id="cancel-loading-btn" class="cancel-loading-btn" style="display: none;">
+                <i class="bi bi-x-circle"></i>
+                Прекрати товарене
+            </button>
+
             <button id="complete-loading-btn" class="complete-loading-btn" disabled>
                 <i class="bi bi-check-circle"></i>
                 Завърши товарене
@@ -318,7 +347,7 @@
 </script>
 
 <div th:replace="~{fragments/bottomHtmlImports :: bottomImports}"></div>
-
+<script src="/js/toastNotificationsAdvanced.js"></script>
 <!-- JavaScript imports -->
 <script src="/js/employersDashboard/shippingApi.js"></script>
 <script src="/js/employersDashboard/order-detail-shipped.js"></script>

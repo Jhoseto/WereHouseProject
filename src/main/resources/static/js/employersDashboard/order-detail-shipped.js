@@ -26,6 +26,10 @@ let lostSignalsInterval = null;
 let isConnectionHealthy = true;
 let lastHeartbeatSuccess = Date.now();
 
+let lastSuccessfulHeartbeat = Date.now();
+let isCurrentlyOffline = false;
+let offlineStartTime = null;
+
 // ==========================================
 // ИНИЦИАЛИЗАЦИЯ
 // ==========================================
@@ -130,13 +134,14 @@ function updateConnectionStatus(isHealthy) {
 
 // Визуален индикатор за connection
 function updateConnectionIndicator(isHealthy) {
+    // Стария indicator (ако съществува)
     const indicator = document.getElementById('connection-status') || createConnectionIndicator();
 
     if (isHealthy) {
-        indicator.className = 'connection-status online';
+        indicator.className = 'connection-badge online';
         indicator.innerHTML = '<i class="bi bi-wifi"></i> Онлайн';
     } else {
-        indicator.className = 'connection-status offline';
+        indicator.className = 'connection-badge offline';
         indicator.innerHTML = '<i class="bi bi-wifi-off"></i> Офлайн';
     }
 }
@@ -177,34 +182,46 @@ async function checkActiveSession() {
         if (statusData.hasActiveSession && statusData.session) {
             const session = statusData.session;
 
-            // Надеждна проверка на user identity
-            const sessionEmployeeId = Number(session.employeeId);
-            const currentUserId = Number(window.orderConfig.currentUserId);
+            //  USERNAME СРАВНЕНИЕ
             const sessionUsername = (session.employeeUsername || '').toLowerCase().trim();
             const currentUsername = (window.orderConfig.currentUsername || '').toLowerCase().trim();
 
-            console.log('User comparison:', {
-                sessionEmployeeId,
-                currentUserId,
-                sessionUsername,
-                currentUsername,
-                idMatch: sessionEmployeeId === currentUserId,
-                usernameMatch: sessionUsername === currentUsername
-            });
-
-            // Определяваме ownership с двойна проверка
-            let isMySession = false;
-            if (sessionEmployeeId && currentUserId) {
-                isMySession = sessionEmployeeId === currentUserId;
-            } else if (sessionUsername && currentUsername) {
-                isMySession = sessionUsername === currentUsername;
-            }
+            // Определяваме ownership само по username
+            const isMySession = sessionUsername === currentUsername;
 
             if (isMySession) {
                 console.log('Restoring my loading session');
+
+                // ДОБАВЕНО: Проверяваме дали нашата сесия е offline
+                const lastHeartbeat = new Date(session.lastHeartbeat).getTime();
+                const timeSinceHeartbeat = Date.now() - lastHeartbeat;
+
+                if (timeSinceHeartbeat > 30000) {
+                    // Нашата сесия е била offline - стартираме offline режим
+                    console.log('My session was offline, starting offline mode');
+                    isCurrentlyOffline = true;
+                    offlineStartTime = lastHeartbeat;
+                    window.showStickyOfflineToast(offlineStartTime);
+                    setUIBlockedState(true);
+                } else {
+                    // Всичко е наред, обновяваме последния успешен heartbeat
+                    lastSuccessfulHeartbeat = Date.now();
+                }
+
                 await enterLoadingMode(session);
             } else {
                 console.log('Entering observer mode for other user');
+
+                // ДОБАВЕНО: Проверяваме дали активния служител е offline
+                const lastHeartbeat = new Date(session.lastHeartbeat).getTime();
+                const timeSinceHeartbeat = Date.now() - lastHeartbeat;
+
+                if (timeSinceHeartbeat > 30000) {
+                    // Активния служител е offline
+                    console.log('Active employee is offline');
+                    window.showStickyOfflineToast(lastHeartbeat);
+                }
+
                 await enterObserverMode(session);
             }
         } else {
@@ -226,6 +243,11 @@ async function checkActiveSession() {
 async function enterInitialMode() {
     console.log('Entering initial mode');
 
+    const truckControlsPanel = document.querySelector('.truck-controls-panel');
+    if (truckControlsPanel) {
+        truckControlsPanel.style.display = 'block';
+    }
+
     document.querySelectorAll('.order-shipping-section').forEach(s => s.classList.remove('active'));
     document.getElementById('main-loading-section').classList.add('active');
     currentMode = 'initial';
@@ -244,27 +266,21 @@ async function enterInitialMode() {
         contentArea.classList.add('disabled');
         contentArea.classList.remove('observer-mode');
     }
-
     // Reset truck UI
     resetTruckUI();
-
     // Hide employee info
     hideEmployeeInfo();
-
     // Clear alerts
     clearAlerts();
-
     // Зареждаме артикулите (деактивирани)
     await loadOrderItems(false);
-
     // Reset progress
     updateProgress(0, orderItems.length);
-
     // Hide complete button
     hideCompleteButton();
-
     // Start warehouse monitoring
     startWarehouseMonitoring();
+    hideCancelButton();
 }
 
 // Loading mode - активно товарене
@@ -273,6 +289,11 @@ async function enterLoadingMode(sessionData) {
 
     document.querySelectorAll('.order-shipping-section').forEach(s => s.classList.remove('active'));
     document.getElementById('main-loading-section').classList.add('active');
+
+    const truckControlsPanel = document.querySelector('.truck-controls-panel');
+    if (truckControlsPanel) {
+        truckControlsPanel.style.display = 'none';
+    }
 
     try {
         currentMode = 'loading';
@@ -309,31 +330,23 @@ async function enterLoadingMode(sessionData) {
             contentArea.classList.remove('disabled');
             contentArea.classList.remove('observer-mode');
         }
-
         // Update truck UI for active session
         updateTruckUI(currentTruck, true);
-
         // Show employee info
         showEmployeeInfo(sessionData);
-
         // Clear alerts
         clearAlerts();
-
         // Зареждаме артикулите (активни)
         await loadOrderItems(true);
-
         // Update progress
         updateProgress(loadedItems.size, orderItems.length);
-
         // Check if ready to complete
         checkCompletion();
-
         // Start heartbeat (всеки 10 секунди според документацията)
         startHeartbeat();
-
         // Start duration timer
         startDurationTimer();
-
+        showCancelButton();
         console.log('Loading mode activated successfully');
 
     } catch (error) {
@@ -346,6 +359,11 @@ async function enterLoadingMode(sessionData) {
 // Observer mode - наблюдение на чужда сесия
 async function enterObserverMode(sessionData) {
     console.log('Entering observer mode for session:', sessionData);
+
+    const truckControlsPanel = document.querySelector('.truck-controls-panel');
+    if (truckControlsPanel) {
+        truckControlsPanel.style.display = 'none';
+    }
 
     document.querySelectorAll('.order-shipping-section').forEach(s => s.classList.remove('active'));
     document.getElementById('observer-section').classList.add('active');
@@ -393,6 +411,7 @@ async function enterObserverMode(sessionData) {
 
         // Start monitoring for live updates
         startObserverMonitoring();
+        hideCancelButton();
 
         console.log('Observer mode activated');
 
@@ -933,7 +952,6 @@ function resetTruckUI() {
     }
 }
 
-// Employee info панел
 function showEmployeeInfo(sessionData) {
     const elements = {
         employeeName: document.getElementById('employee-name'),
@@ -948,24 +966,33 @@ function showEmployeeInfo(sessionData) {
         employeePlaceholder: document.getElementById('employee-placeholder')
     };
 
-    // Update employee info
+
     if (elements.employeeName) elements.employeeName.textContent = window.orderConfig.currentUsername;
-    if (elements.employeeUsername) elements.employeeUsername.textContent = 'Поръчката е поета за товарене от: ' + window.orderConfig.currentUsername;
-    if (elements.employeeEmail) elements.employeeEmail.textContent = 'Емейл ' + (sessionData.employeeEmail) || 'Няма данни';
-    if (elements.employeePhone) elements.employeePhone.textContent = 'Телефон ' + (sessionData.employeePhone) || 'Няма данни';
+    if (elements.employeeEmail) elements.employeeEmail.textContent = 'Емейл: ' + (sessionData.employeeEmail || 'Няма данни');
+    if (elements.employeePhone) elements.employeePhone.textContent = 'Телефон: ' + (sessionData.employeePhone || 'Няма данни');
     if (elements.activeTruck) elements.activeTruck.textContent = currentTruck;
     if (elements.sessionStart) elements.sessionStart.textContent = formatDateTime(startTime);
 
-    // Update status badge
     if (elements.employeeStatusBadge) {
         elements.employeeStatusBadge.className = 'status-badge status-active';
         elements.employeeStatusBadge.textContent = 'В процес на товарене';
     }
 
-    // Show panels
     if (elements.employeeDetails) elements.employeeDetails.classList.remove('hidden');
     if (elements.employeePlaceholder) elements.employeePlaceholder.style.display = 'none';
+
+    const sessionPanel = document.getElementById('loading-session-panel');
+    if (sessionPanel) {
+        sessionPanel.classList.remove('hidden');
+    }
+
+    // Обновяваме текста за служителя в новия панел
+    const loadingEmployeeText = document.getElementById('loading-employee-text');
+    if (loadingEmployeeText) {
+        loadingEmployeeText.textContent = `Поръчката е поета за товарене от: ${window.orderConfig.currentUsername}`;
+    }
 }
+
 
 // Hide employee info
 function hideEmployeeInfo() {
@@ -976,6 +1003,11 @@ function hideEmployeeInfo() {
 
     if (elements.employeeDetails) elements.employeeDetails.classList.add('hidden');
     if (elements.employeePlaceholder) elements.employeePlaceholder.style.display = 'block';
+
+    const sessionPanel = document.getElementById('loading-session-panel');
+    if (sessionPanel) {
+        sessionPanel.classList.add('hidden');
+    }
 }
 
 // Show other employee info (observer mode)
@@ -994,7 +1026,6 @@ function showOtherEmployeeInfo(sessionData) {
 
     // Update with other user info
     if (elements.employeeName) elements.employeeName.textContent = sessionData.employeeUsername || 'Неизвестен служител';
-    if (elements.employeeUsername) elements.employeeUsername.textContent = 'Поръчката е поета за товарене от: ' + (sessionData.employeeUsername || 'unknown');
     if (elements.employeeEmail) elements.employeeEmail.textContent = 'Емейл ' + (sessionData.employeeEmail) || 'Няма данни';
     if (elements.employeePhone) elements.employeePhone.textContent = 'Телефон ' + (sessionData.employeePhone) || 'Няма данни';
     if (elements.activeTruck) elements.activeTruck.textContent = sessionData.truckNumber;
@@ -1009,6 +1040,16 @@ function showOtherEmployeeInfo(sessionData) {
     // Show panels
     if (elements.employeeDetails) elements.employeeDetails.classList.remove('hidden');
     if (elements.employeePlaceholder) elements.employeePlaceholder.style.display = 'none';
+
+    const sessionPanel = document.getElementById('loading-session-panel');
+    if (sessionPanel) {
+        sessionPanel.classList.remove('hidden');
+    }
+
+    const loadingEmployeeText = document.getElementById('loading-employee-text');
+    if (loadingEmployeeText) {
+        loadingEmployeeText.textContent = `Поръчката е поета за товарене от: ${sessionData.employeeUsername || 'Неизвестен служител'}`;
+    }
 }
 
 // Show observer alert
@@ -1053,6 +1094,93 @@ function hideCompleteButton() {
     }
 }
 
+// Setup event listeners за cancel бутона
+function setupEventListeners() {
+    // Existing listeners...
+
+    // Cancel loading бутон
+    const cancelBtn = document.getElementById('cancel-loading-btn');
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', handleCancelLoading);
+    }
+}
+
+// Показва cancel бутона
+function showCancelButton() {
+    const cancelBtn = document.getElementById('cancel-loading-btn');
+    if (cancelBtn) {
+        cancelBtn.style.display = 'flex';
+    }
+}
+
+// Скрива cancel бутона
+function hideCancelButton() {
+    const cancelBtn = document.getElementById('cancel-loading-btn');
+    if (cancelBtn) {
+        cancelBtn.style.display = 'none';
+    }
+}
+
+// Handle cancel loading
+async function handleCancelLoading() {
+    if (currentMode !== 'loading') {
+        showError('Не сте в режим на товарене!');
+        return;
+    }
+
+    if (!currentSessionId) {
+        showError('Няма активна сесия за прекратяване!');
+        return;
+    }
+
+    // Confirmation диалог
+    const reason = prompt(`Сигурни ли сте, че искате да ПРЕКРАТИТЕ товаренето?\n\nТова действие ще:\n- Върне поръчката в статус "Потвърдена"\n- Изтрие номера на камиона\n- Изтрие всички отметки за заредени артикули\n\nОпционално посочете причина:`, '');
+
+    if (reason === null) return; // Потребителят отказа
+
+    const cancelBtn = document.getElementById('cancel-loading-btn');
+
+    try {
+        console.log('Cancelling loading for session:', currentSessionId);
+
+        if (cancelBtn) {
+            cancelBtn.disabled = true;
+            cancelBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Прекратяване...';
+        }
+
+        // Използваме cancelLoading от shippingApi.js
+        const result = await cancelLoading(currentSessionId, reason.trim() || null);
+        console.log('Cancel loading response:', result);
+
+        if (result.success !== true) {
+            throw new Error(result.message || 'Товаренето не беше прекратено успешно');
+        }
+
+        // Success cleanup
+        stopHeartbeat();
+        stopDurationTimer();
+
+        showSuccess(`Товарене прекратено успешно!${result.reason ? ` Причина: ${result.reason}` : ''}`);
+
+        console.log('Loading cancelled successfully');
+
+        // Redirect to dashboard after delay
+        setTimeout(() => {
+            window.location.href = '/employer/dashboard';
+        }, 2000);
+
+    } catch (error) {
+        console.error('Cancel loading error:', error);
+        showError('Грешка при прекратяване на товарене: ' + error.message);
+
+        // Restore cancel button
+        if (cancelBtn) {
+            cancelBtn.disabled = false;
+            cancelBtn.innerHTML = '<i class="bi bi-x-circle"></i> Прекрати товарене';
+        }
+    }
+}
+
 // ==========================================
 // BACKGROUND OPERATIONS - ИЗПОЛЗВАМЕ ВСИЧКИ API МЕТОДИ
 // ==========================================
@@ -1088,29 +1216,51 @@ function startBackgroundOperations() {
 
 // ОБНОВЕНА HEARTBEAT СИСТЕМА С CONNECTION MONITORING
 function startHeartbeat() {
-    if (heartbeatInterval || !currentSessionId) return;
-
     heartbeatInterval = setInterval(async () => {
+        if (!currentSessionId) return;
+
         try {
-            // Използваме sendHeartbeat от shippingApi.js
             const success = await sendHeartbeat(currentSessionId);
-
-            // Обнови connection status
-            updateConnectionStatus(success);
-
             if (success) {
-                console.log('Heartbeat sent successfully');
+                lastSuccessfulHeartbeat = Date.now();
+                updateConnectionStatus(true);
+
+                // Ако сме били offline, възстановяваме
+                if (isCurrentlyOffline) {
+                    window.hideStickyOfflineToast();
+                    showSuccess('Връзката е възстановена');
+                    isCurrentlyOffline = false;
+                    setUIBlockedState(false);
+                }
             } else {
-                console.warn('Heartbeat failed');
+                updateConnectionStatus(false);
+                checkOfflineStatus();
             }
-
         } catch (error) {
-            console.error('Heartbeat error:', error);
-            updateConnectionStatus(false);
+            checkOfflineStatus();
         }
-    }, 10000); // 10 секунди според документацията
+    }, 10000);
+}
 
-    console.log('Heartbeat started with connection monitoring (10 second intervals)');
+function checkOfflineStatus() {
+    if (Date.now() - lastSuccessfulHeartbeat >= 30000 && !isCurrentlyOffline) {
+        isCurrentlyOffline = true;
+        offlineStartTime = lastSuccessfulHeartbeat;
+        window.showStickyOfflineToast(offlineStartTime);
+        setUIBlockedState(true);
+    }
+}
+
+function setUIBlockedState(blocked) {
+    const buttons = document.querySelectorAll('.toggle-item-btn, #complete-loading-btn');
+    buttons.forEach(btn => {
+        btn.disabled = blocked;
+        if (blocked) {
+            btn.classList.add('ui-blocked');
+        } else {
+            btn.classList.remove('ui-blocked');
+        }
+    });
 }
 
 function stopHeartbeat() {

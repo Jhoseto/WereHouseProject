@@ -4,6 +4,7 @@ import com.yourco.warehouse.entity.Order;
 import com.yourco.warehouse.entity.ShippedProcessEntity;
 import com.yourco.warehouse.entity.UserEntity;
 import com.yourco.warehouse.entity.enums.OrderStatus;
+import com.yourco.warehouse.entity.enums.Role;
 import com.yourco.warehouse.repository.OrderRepository;
 import com.yourco.warehouse.repository.ShippedProcessRepository;
 import com.yourco.warehouse.repository.UserRepository;
@@ -12,6 +13,7 @@ import com.yourco.warehouse.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -52,13 +54,9 @@ public class OrderLoadingServiceImpl implements OrderLoadingService {
     }
 
     @Override
+    @Transactional
     public Map<String, Object> startLoading(Long orderId, String truckNumber) {
         try {
-            // Проверка дали вече има активна session за тази поръчка
-            if (shippedProcessRepository.existsByOrderId(orderId)) {
-                throw new RuntimeException("Поръчката вече се товари от друг служител");
-            }
-
             // Намери поръчката и валидирай статуса
             Order order = orderRepository.findById(orderId)
                     .orElseThrow(() -> new RuntimeException("Поръчката не е намерена"));
@@ -72,10 +70,10 @@ public class OrderLoadingServiceImpl implements OrderLoadingService {
             String employeeUsername = currentEmployee.getUsername();
             Long employeeId = currentEmployee.getId();
 
-            // Създай shipping session с username на служителя
+            // Създай shipping session директно - database constraint ще предотврати дубликати
             int totalItems = order.getItems() != null ? order.getItems().size() : 0;
             ShippedProcessEntity session = new ShippedProcessEntity(orderId, totalItems, employeeUsername);
-            session = shippedProcessRepository.save(session);
+            session = shippedProcessRepository.save(session); // Atomic operation
 
             // Обнови Order entity с данни за товаренето
             order.setShippingByEmployeeId(employeeId);
@@ -90,6 +88,11 @@ public class OrderLoadingServiceImpl implements OrderLoadingService {
                     "employeeUsername", employeeUsername,
                     "message", "Товарене стартирано успешно"
             );
+
+        } catch (DataIntegrityViolationException ex) {
+            // Unique constraint violation - друг служител вече товари тази поръчка
+            log.info("Attempted concurrent session creation for order {}", orderId);
+            throw new RuntimeException("Поръчката вече се товари от друг служител");
 
         } catch (Exception e) {
             log.error("Грешка при стартиране на товарене за поръчка {}: {}", orderId, e.getMessage());
@@ -193,20 +196,26 @@ public class OrderLoadingServiceImpl implements OrderLoadingService {
 
         ShippedProcessEntity session = sessionOpt.get();
         Order order = orderRepository.findById(orderId).orElse(null);
+        Optional<UserEntity> employeeOpt = userRepository.findByUsername(session.getEmployeeUsername());
+
+        // Използвай HashMap вместо Map.of() за повече от 10 entries
+        Map<String, Object> sessionData = new HashMap<>();
+        sessionData.put("id", session.getId());
+        sessionData.put("orderId", session.getOrderId());
+        sessionData.put("totalItems", session.getTotalItems());
+        sessionData.put("shippedItems", session.getShippedItems());
+        sessionData.put("startedAt", session.getStartedAt());
+        sessionData.put("lastHeartbeat", session.getLastHeartbeat());
+        sessionData.put("status", session.getStatus());
+        sessionData.put("employeeId", employeeOpt.map(UserEntity::getId).orElse(null));
+        sessionData.put("employeeUsername", session.getEmployeeUsername());
+        sessionData.put("employeeEmail", employeeOpt.map(UserEntity::getEmail).orElse("Няма данни"));
+        sessionData.put("employeePhone", employeeOpt.map(UserEntity::getPhone).orElse("Няма данни"));
+        sessionData.put("truckNumber", order != null ? order.getTruckNumber() : "Неизвестен");
 
         return Map.of(
                 "hasActiveSession", true,
-                "session", Map.of(
-                        "id", session.getId(),
-                        "orderId", session.getOrderId(),
-                        "totalItems", session.getTotalItems(),
-                        "shippedItems", session.getShippedItems(),
-                        "startedAt", session.getStartedAt(),
-                        "lastHeartbeat", session.getLastHeartbeat(),
-                        "status", session.getStatus(),
-                        "employeeUsername", session.getEmployeeUsername(),
-                        "truckNumber", order != null ? order.getTruckNumber() : "Неизвестен"
-                )
+                "session", sessionData
         );
     }
 
@@ -292,5 +301,61 @@ public class OrderLoadingServiceImpl implements OrderLoadingService {
             }
         }
         return null;
+    }
+
+    @Transactional
+    @Override
+    public Map<String, Object> cancelLoading(Long sessionId, String reason) {
+        try {
+            // Намери активната session
+            ShippedProcessEntity session = shippedProcessRepository.findById(sessionId)
+                    .orElseThrow(() -> new RuntimeException("Активна session не е намерена"));
+
+            // AUTHORIZATION ПРОВЕРКА
+            UserEntity currentUser = userService.getCurrentUser();
+            String currentUsername = currentUser.getUsername();
+            boolean isAdmin = currentUser.getRole() == Role.ADMIN;
+            boolean isSessionOwner = session.getEmployeeUsername().equals(currentUsername);
+
+            if (!isAdmin && !isSessionOwner) {
+                throw new RuntimeException("Само " + session.getEmployeeUsername() + " или администратор може да прекрати товаренето");
+            }
+
+            // Намери поръчката
+            Order order = orderRepository.findById(session.getOrderId())
+                    .orElseThrow(() -> new RuntimeException("Поръчката не е намерена"));
+
+            // Изчисли времето на сесията
+            LocalDateTime startTime = session.getStartedAt();
+            LocalDateTime endTime = LocalDateTime.now();
+            long durationSeconds = Duration.between(startTime, endTime).getSeconds();
+
+            // Върни поръчката в CONFIRMED статус
+            order.setStatus(OrderStatus.CONFIRMED);
+            order.setTruckNumber(null); // Изчистваме камиона
+            orderRepository.save(order);
+
+            // Логвай операцията
+            log.warn("Loading cancelled for order {} by {} (session owner: {}). Reason: {}. Duration: {}s",
+                    session.getOrderId(), currentUsername, session.getEmployeeUsername(),
+                    reason != null ? reason : "Не е посочена", durationSeconds);
+
+            // Изтрий временната session
+            shippedProcessRepository.deleteByOrderId(session.getOrderId());
+
+            return Map.of(
+                    "success", true,
+                    "orderId", session.getOrderId(),
+                    "cancelledBy", currentUsername,
+                    "sessionOwner", session.getEmployeeUsername(),
+                    "duration", durationSeconds,
+                    "reason", reason != null ? reason : "Не е посочена",
+                    "message", "Товаренето е прекратено успешно"
+            );
+
+        } catch (Exception e) {
+            log.error("Грешка при прекратяване на товарене за session {}: {}", sessionId, e.getMessage());
+            throw e;
+        }
     }
 }

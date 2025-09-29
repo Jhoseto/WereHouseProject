@@ -187,3 +187,25 @@ async function cleanupOldSessions(maxAgeHours = 24) {
 
     return await response.json();
 }
+
+// Прекратява товарене
+async function cancelLoading(sessionId, reason) {
+    const response = await fetch('/api/loading/cancel', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            [window.orderConfig.csrfHeader]: window.orderConfig.csrfToken
+        },
+        body: JSON.stringify({
+            sessionId: sessionId,
+            reason: reason || null
+        })
+    });
+
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.message || 'Грешка при прекратяване');
+    }
+
+    return await response.json();
+}

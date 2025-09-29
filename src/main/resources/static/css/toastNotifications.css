@@ -253,6 +253,44 @@
     }
 }
 
+
+/* STICKY OFFLINE TOAST STYLES */
+.sticky-offline-toast {
+    position: relative;
+}
+
+.sticky-offline-toast .toast-close {
+    display: none; /* Без бутон за затваряне на offline toast */
+}
+
+/* Disabled UI състояние */
+.ui-blocked {
+    opacity: 0.6;
+    pointer-events: none;
+    cursor: not-allowed;
+}
+
+.ui-blocked::after {
+    content: "Недостъпно без мрежова връзка";
+    position: absolute;
+    background: rgba(0,0,0,0.8);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    top: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.ui-blocked:hover::after {
+    opacity: 1;
+}
+
 /* ==========================================
    RESPONSIVE DESIGN
    ========================================== */
