@@ -434,6 +434,44 @@ document.addEventListener('DOMContentLoaded', async function() {
 });
 
 /**
+ * Инициализира Help dropdown функционалността
+ */
+function initializeHelpDropdown() {
+    const helpTrigger = document.getElementById('help-trigger');
+    const helpDropdown = document.getElementById('help-dropdown');
+
+    if (!helpTrigger || !helpDropdown) {
+        return;
+    }
+
+    // Toggle dropdown при click на бутона
+    helpTrigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        helpDropdown.classList.toggle('active');
+    });
+
+    // Затваряне при click извън dropdown-а
+    document.addEventListener('click', (e) => {
+        if (!helpDropdown.contains(e.target) && !helpTrigger.contains(e.target)) {
+            helpDropdown.classList.remove('active');
+        }
+    });
+
+    // Затваряне с Escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && helpDropdown.classList.contains('active')) {
+            helpDropdown.classList.remove('active');
+            helpTrigger.focus();
+        }
+    });
+
+    console.log('✓ Help dropdown initialized');
+}
+
+// Извикай при DOMContentLoaded
+document.addEventListener('DOMContentLoaded', initializeHelpDropdown);
+
+/**
  * Cleanup on page unload
  */
 window.addEventListener('beforeunload', function() {

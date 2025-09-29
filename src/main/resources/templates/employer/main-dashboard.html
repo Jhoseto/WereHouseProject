@@ -21,17 +21,106 @@
 <div th:replace="~{fragments/toastSystem :: toastContainer}"></div>
 
 <!-- Compact Header with WebSocket Status -->
-<header class="processing-header">
+<!-- Professional Compact Dashboard Header -->
+<header class="dashboard-header">
     <div class="header-container">
-        <!-- Title and Live Status -->
-        <div class="header-title-section">
-            <h1 class="processing-title">Обработка на поръчки</h1>
-            <div class="live-status-indicator"
-                 title="Показва състоянието на real-time връзката за автоматично обновяване на данните">
-                <div class="live-dot" id="websocket-indicator"></div>
-                <span class="live-text" id="websocket-status">Свързване...</span>
+
+        <!-- ГОРЕН РЕД: Идентификация и статуси -->
+        <div class="header-top-row">
+
+            <!-- Заглавие и подзаглавие -->
+            <div class="header-branding">
+                <h1 class="header-title">Обработка на поръчки</h1>
+                <p class="header-subtitle">Управление на пръчки в реално време. Интерфейс за офис-менаджери, и служители на терен (в склад)</p>
             </div>
+
+            <!-- Статуси и информация -->
+            <div class="header-status-group">
+
+                <!-- WebSocket Connection Status -->
+                <div class="connection-badge"
+                     id="connection-status-badge"
+                     title="Показва състоянието на връзката">
+                    <div class="status-dot" id="websocket-indicator"></div>
+                    <span class="status-label" id="websocket-status">Свързване...</span>
+                </div>
+
+                <!-- Последно обновяване -->
+                <div class="last-update-badge"
+                     id="last-update-badge"
+                     title="Време от последната актуализация на данните">
+                    <i class="bi bi-clock-history"></i>
+                    <span class="update-label" id="last-update-text">Обновяване...</span>
+                </div>
+
+            </div>
+
         </div>
+
+        <!-- ДОЛЕН РЕД: Легенда и работен процес -->
+        <div class="header-info-row">
+
+            <!-- Легенда на статусите -->
+            <div class="status-legend">
+                <div class="legend-title">Легенда статуси:</div>
+                <div class="legend-items">
+                    <div class="legend-item">
+                        <span class="legend-badge urgent">Спешни</span>
+                        <span class="legend-text">Приоритетни клиенти</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-badge pending">Изчакващи</span>
+                        <span class="legend-text">Очакват одобрение</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-badge confirmed">Обработени</span>
+                        <span class="legend-text">Готови за товарене</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-badge shipped">Завършени</span>
+                        <span class="legend-text">Изпратени за доставка</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-badge cancelled">Отказани</span>
+                        <span class="legend-text">Отменени заявки</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Работен процес -->
+            <div class="workflow-visual">
+                <div class="workflow-title">Процес:</div>
+                <div class="workflow-steps">
+                    <div class="workflow-step">
+                        <i class="bi bi-inbox-fill step-icon"></i>
+                        <span class="step-label">Получена</span>
+                    </div>
+                    <div class="workflow-arrow">
+                        <i class="bi bi-arrow-right"></i>
+                    </div>
+                    <div class="workflow-step">
+                        <i class="bi bi-clipboard-check step-icon"></i>
+                        <span class="step-label">Одобрение</span>
+                    </div>
+                    <div class="workflow-arrow">
+                        <i class="bi bi-arrow-right"></i>
+                    </div>
+                    <div class="workflow-step">
+                        <i class="bi bi-box-seam step-icon"></i>
+                        <span class="step-label">Товарене</span>
+                    </div>
+                    <div class="workflow-arrow">
+                        <i class="bi bi-arrow-right"></i>
+                    </div>
+                    <div class="workflow-step">
+                        <i class="bi bi-truck step-icon"></i>
+                        <span class="step-label">Изпратена</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
     </div>
 </header>
 
@@ -55,8 +144,9 @@
     </div>
 
     <div class="filter-panel-content" id="filter-panel-content">
-        <!-- ТЪРСЕНЕ И СОРТИРАНЕ -->
+        <!-- ВСИЧКИ ФИЛТРИ -->
         <div class="filter-row">
+            <!-- Търсене -->
             <div class="filter-group">
                 <label for="search-input">Търсене</label>
                 <div class="search-input-wrapper">
@@ -64,67 +154,63 @@
                     <input type="text"
                            id="search-input"
                            class="filter-input"
-                           placeholder="Търси по фирма, име, телефон..."
+                           placeholder="Фирма, име, телефон..."
                            autocomplete="off">
                 </div>
             </div>
-        </div>
 
-        <!-- ФИЛТРИ ПЕРИОД -->
-        <div class="filter-row">
+            <!-- Период -->
             <div class="filter-group">
                 <label for="period-filter">Период</label>
                 <select id="period-filter" class="filter-select">
-                    <option value="">Всички периоди</option>
+                    <option value="">Всички</option>
                     <option value="today">Днес</option>
                     <option value="yesterday">Вчера</option>
-                    <option value="last-3-days">Последни 3 дни</option>
-                    <option value="this-week">Тази седмица</option>
-                    <option value="last-week">Миналата седмица</option>
-                    <option value="this-month">Този месец</option>
-                </select>
-            </div>
-            <div class="filter-group">
-                <label for="sort-select">Сортиране</label>
-                <select id="sort-select" class="filter-select">
-                    <option value="newest">Най-нови първо</option>
-                    <option value="oldest">Най-стари първо</option>
-                    <option value="amount-high">Най-скъпи първо</option>
-                    <option value="amount-low">Най-евтини първо</option>
-                    <option value="items-most">Повече артикули първо</option>
-                    <option value="items-least">По-малко артикули първо</option>
-                    <option value="company-az">Фирма А-Я</option>
-                    <option value="company-za">Фирма Я-А</option>
-                    <option value="client-az">Клиент А-Я</option>
-                    <option value="client-za">Клиент Я-А</option>
+                    <option value="last-3-days">3 дни</option>
+                    <option value="this-week">Седмица</option>
+                    <option value="this-month">Месец</option>
                 </select>
             </div>
 
+            <!-- Сортиране -->
+            <div class="filter-group">
+                <label for="sort-select">Сортиране</label>
+                <select id="sort-select" class="filter-select">
+                    <option value="newest">Най-нови</option>
+                    <option value="oldest">Най-стари</option>
+                    <option value="amount-high">Най-скъпи</option>
+                    <option value="amount-low">Най-евтини</option>
+                    <option value="items-most">Повече арт.</option>
+                    <option value="items-least">По-малко арт.</option>
+                    <option value="company-az">Фирма А-Я</option>
+                    <option value="company-za">Фирма Я-А</option>
+                </select>
+            </div>
+
+            <!-- Локация -->
             <div class="filter-group">
                 <label for="location-filter">Локация</label>
                 <select id="location-filter" class="filter-select">
-                    <option value="">Всички локации</option>
-                    <!-- Динамично зареждане от данните -->
+                    <option value="">Всички</option>
                 </select>
             </div>
         </div>
 
-        <!-- РЕЗУЛТАТИ И СТАТИСТИКА -->
+        <!-- Резултати на отделен ред -->
         <div class="filter-results-row">
             <div class="results-count">
                 <span id="filtered-count">0</span> от <span id="total-count">0</span> поръчки
-                <span class="active-filters" id="active-filters-text"></span>
             </div>
             <div class="results-stats">
+            <span class="stat-item">
+                С ДДС: <strong id="total-amount-filtered">0.00 лв</strong>
+            </span>
                 <span class="stat-item">
-                    С ДДС: <strong id="total-amount-filtered">0.00 лв</strong>
-                </span>
+                Без ДДС: <strong id="total-net-filtered">0.00 лв</strong>
+            </span>
                 <span class="stat-item">
-                    Без ДДС: <strong id="total-net-filtered">0.00 лв</strong>
-                </span>
-                <span class="stat-item">
-                    Артикули: <strong id="total-items-filtered">0</strong>
-                </span>
+                Артикули: <strong id="total-items-filtered">0</strong>
+            </span>
             </div>
         </div>
     </div>
@@ -415,48 +501,115 @@
 
 <!-- Enhanced WebSocket Status Management -->
 <script>
-    // WebSocket status indicator management
+    // WebSocket status indicator management - актуализирана за новия header
     function updateWebSocketStatus(isConnected, message) {
-        const container = document.querySelector('.live-status-indicator');
+        const badge = document.getElementById('connection-status-badge');
         const indicator = document.getElementById('websocket-indicator');
         const statusText = document.getElementById('websocket-status');
 
-        if (!indicator || !statusText || !container) {
+        if (!indicator || !statusText || !badge) {
             console.warn('WebSocket status elements not found');
             return;
         }
 
+        // Премахни всички предишни състояния
+        indicator.classList.remove('connected', 'disconnected', 'connecting');
+
         if (isConnected) {
-            indicator.classList.remove('disconnected');
+            // Свързано състояние - зелено с pulse анимация
             indicator.classList.add('connected');
             statusText.textContent = message || 'На живо';
 
-            container.title = 'Системата е свързана със сървъра и получава моментални актуализации.\n ' +
-                'Когато дойде нова поръчка или се промени статус, \n ' +
+            badge.title = 'Системата е свързана със сървъра и получава моментални актуализации.\n' +
+                'Когато дойде нова поръчка или се промени статус,\n' +
                 'ще видите промяната веднага без да опреснявате страницата.';
 
         } else {
-            indicator.classList.remove('connected');
-            indicator.classList.add('disconnected');
-            statusText.textContent = message || 'Прекъсната връзка';
-
+            // Проверка дали е в процес на свързване или е изгубена връзка
             if (message && message.includes('Свързване')) {
-                container.title = 'Системата се свързва към сървъра.\n Това отнема няколко секунди.';
+                // Свързващо се състояние - оранжево с мигаща анимация
+                indicator.classList.add('connecting');
+                statusText.textContent = 'Свързване...';
+
+                badge.title = 'Системата се свързва към сървъра.\n' +
+                    'Това отнема няколко секунди.';
             } else {
-                container.title = 'Връзката към сървъра е прекъсната.\n ' +
-                    'Поръчките ще се актуализират автоматично на всеки 30 секунди.\n ' +
+                // Изключено състояние - червено
+                indicator.classList.add('disconnected');
+                statusText.textContent = message || 'Без връзка';
+
+                badge.title = 'Връзката към сървъра е прекъсната.\n' +
+                    'Поръчките ще се актуализират автоматично на всеки 30 секунди.\n' +
                     'Проверете интернет връзката или опреснете страницата.';
             }
         }
     }
+
     // Initialize WebSocket status on page load
     document.addEventListener('DOMContentLoaded', function() {
+        // Стартираме в "connecting" режим
         updateWebSocketStatus(false, 'Свързване...');
 
-        // Listen for WebSocket connection events
+        // Listen for WebSocket connection events от API-то
         if (window.mainDashboard && window.mainDashboard.api) {
             window.mainDashboard.api.onConnectionChange = updateWebSocketStatus;
         }
+
+    });
+
+    // Последно обновяване timestamp
+    let lastUpdateTime = Date.now();
+
+    function updateLastUpdateTimestamp() {
+        const badge = document.getElementById('last-update-badge');
+        const text = document.getElementById('last-update-text');
+
+        if (!text) return;
+
+        const now = Date.now();
+        const diff = Math.floor((now - lastUpdateTime) / 1000);
+
+        let timeText;
+        if (diff < 10) {
+            timeText = 'Току-що';
+        } else if (diff < 60) {
+            timeText = `Преди ${diff} сек`;
+        } else if (diff < 3600) {
+            const minutes = Math.floor(diff / 60);
+            timeText = `Преди ${minutes} мин`;
+        } else {
+            const hours = Math.floor(diff / 3600);
+            timeText = `Преди ${hours} ч`;
+        }
+
+        text.textContent = timeText;
+
+        if (badge) {
+            badge.title = `Последна актуализация: ${new Date(lastUpdateTime).toLocaleString('bg-BG')}`;
+        }
+    }
+
+    // Маркирай update когато данните се обновят
+    function markDataUpdated() {
+        lastUpdateTime = Date.now();
+        updateLastUpdateTimestamp();
+    }
+
+    // Обновявай timestamp на всяка секунда
+    setInterval(updateLastUpdateTimestamp, 1000);
+
+    // Извикай когато има WebSocket update или refresh
+    document.addEventListener('DOMContentLoaded', function() {
+        updateLastUpdateTimestamp();
+
+        // Hook в съществуващия код за да маркира updates
+        const originalUpdateStatus = updateWebSocketStatus;
+        updateWebSocketStatus = function(isConnected, message) {
+            originalUpdateStatus(isConnected, message);
+            if (isConnected) {
+                markDataUpdated();
+            }
+        };
     });
 </script>
 

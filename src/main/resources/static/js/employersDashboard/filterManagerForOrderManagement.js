@@ -25,6 +25,8 @@ class ProductionFilterManager {
             period: ''
         };
 
+        this.initializePanelToggle();
+
         // DOM елементи
         this.elements = {};
 
@@ -637,6 +639,59 @@ class ProductionFilterManager {
         }
     }
 
+    /**
+     * Инициализира toggle функционалността на филтър панела
+     */
+    initializePanelToggle() {
+        const filterPanel = document.getElementById('filter-sort-panel');
+        const toggleBtn = document.getElementById('toggle-filters');
+        const panelHeader = document.querySelector('.filter-panel-header');
+
+        if (!filterPanel || !toggleBtn) {
+            console.warn('Filter panel elements not found');
+            return;
+        }
+
+        // Click на toggle бутона
+        toggleBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.togglePanel(filterPanel);
+        });
+
+        // Click на целия header също toggle-ва (освен ако не е на бутоните)
+        if (panelHeader) {
+            panelHeader.addEventListener('click', (e) => {
+                // Игнорирай clicks на бутоните
+                if (e.target.closest('.btn-toggle-filters') || e.target.closest('.btn-reset-filters')) {
+                    return;
+                }
+                this.togglePanel(filterPanel);
+            });
+        }
+
+        // Възстанови запазеното състояние от localStorage
+        const savedState = localStorage.getItem('filterPanelCollapsed');
+        if (savedState === 'true') {
+            filterPanel.classList.add('collapsed');
+        }
+
+        console.log('✓ Filter panel toggle initialized');
+    }
+
+    /**
+     * Toggle състоянието на панела
+     */
+    togglePanel(panel) {
+        panel.classList.toggle('collapsed');
+
+        // Запази състоянието
+        const isCollapsed = panel.classList.contains('collapsed');
+        localStorage.setItem('filterPanelCollapsed', isCollapsed);
+
+        // Log за debugging
+        console.log(`Filter panel ${isCollapsed ? 'collapsed' : 'expanded'}`);
+    }
+
     // ==========================================
     // RESET FUNCTION
     // ==========================================
@@ -677,22 +732,6 @@ class ProductionFilterManager {
         }
     }
 
-    // ==========================================
-    // DEBUGGING И MONITORING
-    // ==========================================
-
-    getPerformanceStats() {
-        return {
-            filterCount: this.filterCount,
-            lastFilterTime: this.lastFilterTime,
-            avgFilterTime: this.filterCount > 0 ? (this.lastFilterTime / this.filterCount).toFixed(2) : 0,
-            totalOrders: this.allOrders.length,
-            filteredOrders: this.filteredOrders.length,
-            activeFilters: Object.entries(this.filters)
-                .filter(([_, value]) => value !== '' && value !== null)  // ← Промени 'key' на '_'
-                .map(([key, value]) => `${key}:${value}`)
-        };
-    }
 }
 
 // ==========================================
