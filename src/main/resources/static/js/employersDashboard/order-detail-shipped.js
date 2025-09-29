@@ -115,6 +115,11 @@ function setupEventListeners() {
     if (completeBtn) {
         completeBtn.addEventListener('click', handleCompleteLoading);
     }
+    // Cancel loading бутон
+    const cancelBtn = document.getElementById('cancel-loading-btn');
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', handleCancelLoading);
+    }
 }
 
 // ==========================================
@@ -1095,15 +1100,11 @@ function hideCompleteButton() {
 }
 
 // Setup event listeners за cancel бутона
-function setupEventListeners() {
-    // Existing listeners...
-
-    // Cancel loading бутон
-    const cancelBtn = document.getElementById('cancel-loading-btn');
-    if (cancelBtn) {
-        cancelBtn.addEventListener('click', handleCancelLoading);
-    }
-}
+// function setupEventListeners() {
+//     // Existing listeners...
+//
+//
+// }
 
 // Показва cancel бутона
 function showCancelButton() {
