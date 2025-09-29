@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
-      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       lang="bg">
 
 <head>
@@ -118,7 +117,10 @@
             </div>
             <div class="results-stats">
                 <span class="stat-item">
-                    Общо: <strong id="total-amount-filtered">0.00 лв</strong>
+                    С ДДС: <strong id="total-amount-filtered">0.00 лв</strong>
+                </span>
+                <span class="stat-item">
+                    Без ДДС: <strong id="total-net-filtered">0.00 лв</strong>
                 </span>
                 <span class="stat-item">
                     Артикули: <strong id="total-items-filtered">0</strong>
@@ -164,6 +166,14 @@
         <span class="tab-count" id="cancelled-tab-count" th:text="${cancelledCount ?: 0}">0</span>
     </button>
 </nav>
+
+<!-- ⭐ Loading Spinner -->
+<div class="orders-loading-spinner" id="orders-loading-spinner">
+    <div class="spinner-content">
+        <div class="spinner-circle"></div>
+        <p class="spinner-text">Зареждане на поръчки...</p>
+    </div>
+</div>
 
 <!-- Order Processing Content -->
 <main class="processing-content">
@@ -367,21 +377,39 @@
 <!-- Enhanced WebSocket Status Management -->
 <script>
     // WebSocket status indicator management
-    function updateWebSocketStatus(connected, message) {
+    function updateWebSocketStatus(isConnected, message) {
+        const container = document.querySelector('.live-status-indicator');
         const indicator = document.getElementById('websocket-indicator');
         const statusText = document.getElementById('websocket-status');
 
-        if (connected) {
-            indicator.className = 'live-dot connected';
-            statusText.textContent = 'На живо';
-            statusText.className = 'live-text connected';
+        if (!indicator || !statusText || !container) {
+            console.warn('WebSocket status elements not found');
+            return;
+        }
+
+        if (isConnected) {
+            indicator.classList.remove('disconnected');
+            indicator.classList.add('connected');
+            statusText.textContent = message || 'На живо';
+
+            container.title = 'Системата е свързана със сървъра и получава моментални актуализации.\n ' +
+                'Когато дойде нова поръчка или се промени статус, \n ' +
+                'ще видите промяната веднага без да опреснявате страницата.';
+
         } else {
-            indicator.className = 'live-dot disconnected';
+            indicator.classList.remove('connected');
+            indicator.classList.add('disconnected');
             statusText.textContent = message || 'Прекъсната връзка';
-            statusText.className = 'live-text disconnected';
+
+            if (message && message.includes('Свързване')) {
+                container.title = 'Системата се свързва към сървъра.\n Това отнема няколко секунди.';
+            } else {
+                container.title = 'Връзката към сървъра е прекъсната.\n ' +
+                    'Поръчките ще се актуализират автоматично на всеки 30 секунди.\n ' +
+                    'Проверете интернет връзката или опреснете страницата.';
+            }
         }
     }
-
     // Initialize WebSocket status on page load
     document.addEventListener('DOMContentLoaded', function() {
         updateWebSocketStatus(false, 'Свързване...');

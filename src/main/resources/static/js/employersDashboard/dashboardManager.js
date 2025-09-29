@@ -75,6 +75,12 @@ class DashboardManager {
             // Start auto-refresh as fallback for WebSocket
             this.startAutoRefresh();
 
+            // Провери дали WebSocket е вече свързан
+            if (this.api.wsConnected && this.api.stompClient?.connected) {
+                console.log('✓ WebSocket вече свързан при инициализация - актуализирам индикатора');
+                this.handleConnectionStatus(true);
+            }
+
             this.isInitialized = true;
             console.log('✓ DashboardManager initialized successfully');
 
@@ -149,18 +155,31 @@ class DashboardManager {
             // Update UI immediately for better UX
             this.ui.updateTabUI(tabName, this.previousTab);
 
+            // Изчистване на филтри при смяна на таб
+            if (window.productionFilterManager) {
+                window.productionFilterManager.currentTab = tabName;
+                window.productionFilterManager.updateTabIndicator();
+                window.productionFilterManager.resetAllFilters();
+            }
+
             // Load data for new tab
             await this.loadTabData(tabName);
+
+            //  Принудително извличане на данни СЛЕД зареждане
+            if (window.productionFilterManager) {
+                // Малка забавяне за да се рендерират DOM елементите
+                setTimeout(() => {
+                    window.productionFilterManager.extractDataFromDOM();
+                    window.productionFilterManager.applyAllFiltersInstantly();
+                }, 100);
+            }
 
             console.log(`✓ Successfully switched to tab: ${tabName}`);
 
         } catch (error) {
             console.error(`Error switching to tab ${tabName}:`, error);
-
-            // Revert tab on error
             this.currentTab = this.previousTab;
             this.ui.updateTabUI(this.previousTab, tabName);
-
             this.showErrorNotification('Грешка при зареждане на данните');
         }
     }
@@ -172,14 +191,15 @@ class DashboardManager {
      */
     async loadTabData(tabName) {
         try {
+            // ⭐ Покажи spinner
+            this.showLoadingSpinner();
+
             const response = await this.api.getOrdersByStatus(tabName.toUpperCase());
 
             if (response.success && response.orders) {
-                // Форсирано рендериране
                 this.ui.renderOrdersList(response.orders, `#${tabName}-orders-list`);
                 console.log(`✓ Loaded ${response.orders.length} orders for ${tabName} tab`);
             } else {
-                // При липса на данни
                 const container = document.getElementById(`${tabName}-orders-list`);
                 if (container) {
                     container.innerHTML = '<div class="no-orders">Няма поръчки за показване</div>';
@@ -192,6 +212,9 @@ class DashboardManager {
             if (container) {
                 container.innerHTML = '<div class="no-orders error">Грешка при зареждане на данните</div>';
             }
+        } finally {
+            // ⭐ Скрий spinner (винаги, дори при грешка)
+            this.hideLoadingSpinner();
         }
     }
 
@@ -305,23 +328,17 @@ class DashboardManager {
     handleConnectionStatus(connected) {
         this.isConnected = connected;
 
-        if (connected) {
-            console.log('✓ Real-time connection established');
-            this.showSuccessNotification('Връзката е възстановена');
-
-            // Disable auto-refresh when WebSocket is connected
-            this.stopAutoRefresh();
-
-        } else {
-            console.warn('⚠ Real-time connection lost');
-            this.showWarningNotification('Загубена е real-time връзката');
-
-            // Enable auto-refresh as fallback
-            this.startAutoRefresh();
+        // Актуализирай визуалния индикатор
+        if (typeof window.updateWebSocketStatus === 'function') {
+            window.updateWebSocketStatus(connected, connected ? 'Връзка в реално време' : 'Прекъсната връзка');
         }
 
-        // Update UI connection indicator
-        this.ui.updateConnectionStatus(connected);
+        if (connected) {
+            console.log('WebSocket connected - real-time updates active');
+        } else {
+            console.log('WebSocket disconnected - switching to polling mode');
+            this.refreshAllTabs();
+        }
     }
 
 
@@ -374,18 +391,13 @@ class DashboardManager {
      * Start auto-refresh timer (fallback when WebSocket is down)
      */
     startAutoRefresh() {
-        if (this.autoRefreshInterval || !this.autoRefreshEnabled) return;
-
-        console.log(`Starting auto-refresh every ${this.refreshIntervalMs}ms`);
-
-        this.autoRefreshInterval = setInterval(async () => {
+        this.autoRefreshInterval = setInterval(() => {
+            // Проверка: refresh само ако WebSocket НЕ работи
             if (!this.isConnected) {
                 console.log('Auto-refreshing all tabs (WebSocket down)');
-                const tabs = ['urgent', 'pending', 'confirmed', 'cancelled'];
-                for (const tab of tabs) {
-                    await this.loadTabData(tab);
-                }
-                await this.refreshCounters();
+                this.refreshAllTabs();
+            } else {
+                console.log('WebSocket active - skipping auto-refresh');
             }
         }, this.refreshIntervalMs);
     }
@@ -453,6 +465,24 @@ class DashboardManager {
             if (tabName === this.currentTab) {
                 this.ui.updateOrdersList(tabName, orders);
             }
+        }
+    }
+
+    // ==========================================
+    // LOADING SPINNER HELPERS
+    // ==========================================
+
+    showLoadingSpinner() {
+        const spinner = document.getElementById('orders-loading-spinner');
+        if (spinner) {
+            spinner.classList.add('active');
+        }
+    }
+
+    hideLoadingSpinner() {
+        const spinner = document.getElementById('orders-loading-spinner');
+        if (spinner) {
+            spinner.classList.remove('active');
         }
     }
 

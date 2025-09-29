@@ -3,7 +3,7 @@ package com.yourco.warehouse.controllers;
 import com.yourco.warehouse.entity.enums.OrderStatus;
 import com.yourco.warehouse.entity.Order;
 import com.yourco.warehouse.entity.UserEntity;
-import com.yourco.warehouse.service.OrderService;
+import com.yourco.warehouse.service.ClientOrderService;
 import com.yourco.warehouse.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,12 +24,12 @@ public class ClientOrdersController {
 
     private static final Logger log = LoggerFactory.getLogger(ClientOrdersController.class);
 
-    private final OrderService orderService;
+    private final ClientOrderService clientOrderService;
     private final UserService userService;
 
     @Autowired
-    public ClientOrdersController(OrderService orderService, UserService userService) {
-        this.orderService = orderService;
+    public ClientOrdersController(ClientOrderService clientOrderService, UserService userService) {
+        this.clientOrderService = clientOrderService;
         this.userService = userService;
     }
 
@@ -50,7 +50,7 @@ public class ClientOrdersController {
             }
 
             UserEntity currentUser = userService.getCurrentUser();
-            Optional<Order> orderOpt = orderService.getOrderByIdForClient(orderId, currentUser.getId());
+            Optional<Order> orderOpt = clientOrderService.getOrderByIdForClient(orderId, currentUser.getId());
 
             if (orderOpt.isEmpty()) {
                 model.addAttribute("error", "Поръчката не е намерена");
@@ -59,7 +59,7 @@ public class ClientOrdersController {
 
             Order order = orderOpt.get();
             model.addAttribute("order", order);
-            model.addAttribute("canEdit", orderService.canEditOrder(order));
+            model.addAttribute("canEdit", clientOrderService.canEditOrder(order));
             model.addAttribute("pageTitle", "Поръчка №" + order.getId());
 
             return "order-detail";
@@ -89,7 +89,7 @@ public class ClientOrdersController {
             }
 
             UserEntity currentUser = userService.getCurrentUser();
-            boolean success = orderService.updateOrderItemQuantity(orderId, productId, quantity, currentUser.getId());
+            boolean success = clientOrderService.updateOrderItemQuantity(orderId, productId, quantity, currentUser.getId());
 
             if (success) {
                 response.put("success", true);
@@ -126,7 +126,7 @@ public class ClientOrdersController {
             }
 
             UserEntity currentUser = userService.getCurrentUser();
-            List<Order> orders = orderService.getOrdersForClient(currentUser.getId());
+            List<Order> orders = clientOrderService.getOrdersForClient(currentUser.getId());
 
             long pendingCount = orders.stream()
                     .filter(order -> order.getStatus() == OrderStatus.PENDING)
@@ -166,7 +166,7 @@ public class ClientOrdersController {
             }
 
             UserEntity currentUser = userService.getCurrentUser();
-            boolean success = orderService.removeOrderItem(orderId, productId, currentUser.getId());
+            boolean success = clientOrderService.removeOrderItem(orderId, productId, currentUser.getId());
 
             if (success) {
                 response.put("success", true);
@@ -234,7 +234,7 @@ public class ClientOrdersController {
             }
 
             // Извикване на batch update метода
-            Map<String, Object> result = orderService.updateOrderBatch(orderId, itemUpdates, currentUser.getId());
+            Map<String, Object> result = clientOrderService.updateOrderBatch(orderId, itemUpdates, currentUser.getId());
 
             return ResponseEntity.ok(result);
 

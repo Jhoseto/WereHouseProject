@@ -105,11 +105,11 @@ class ProductionFilterManager {
             filteredCount: document.getElementById('filtered-count'),
             totalCount: document.getElementById('total-count'),
             totalAmountFiltered: document.getElementById('total-amount-filtered'),
+            totalNetFiltered: document.getElementById('total-net-filtered'),
+            totalItemsFiltered: document.getElementById('total-items-filtered'),
             resetBtn: document.getElementById('reset-filters'),
             tabName: document.getElementById('active-tab-name')
         };
-
-        const foundElements = Object.keys(this.elements).filter(key => this.elements[key]);
     }
 
     // ==========================================
@@ -212,18 +212,13 @@ class ProductionFilterManager {
             this.updateTabIndicator();
         }
 
-        // Събираме данни от всички табове
         let allExtractedOrders = [];
-        let tabsWithData = [];
-
         ['urgent', 'pending', 'confirmed', 'cancelled'].forEach(tabName => {
             const container = document.querySelector(`#${tabName}-orders-list`);
             if (!container) return;
 
             const orderCards = container.querySelectorAll('.order-card');
             if (orderCards.length > 0) {
-                tabsWithData.push(`${tabName}:${orderCards.length}`);
-
                 orderCards.forEach(card => {
                     const orderData = this.extractOrderDataFromCard(card);
                     if (orderData) {
@@ -234,12 +229,10 @@ class ProductionFilterManager {
             }
         });
 
-        // Проверяваме дали има промяна в данните
         if (allExtractedOrders.length !== this.allOrders.length) {
             this.allOrders = allExtractedOrders;
             this.updateLocationOptions();
             this.applyAllFiltersInstantly();
-
         }
     }
 
@@ -341,8 +334,8 @@ class ProductionFilterManager {
             return;
         }
 
-        // Започваме с всички поръчки
-        let results = [...this.allOrders];
+        // Първо филтрираме само поръчките от активния таб
+        let results = this.allOrders.filter(order => order.sourceTab === this.currentTab);
 
         // 1. Intelligent Search филтър - partial word matching
         if (this.filters.search) {
@@ -530,26 +523,38 @@ class ProductionFilterManager {
     // ==========================================
 
     updateVisualOrderFast() {
-        // Създаваме Set за бърз lookup на видими order IDs
+        const container = document.querySelector(`#${this.currentTab}-orders-list`);
+        if (!container) return;
+
+        // Set за бърз lookup на видими IDs
         const visibleOrderIds = new Set(this.filteredOrders.map(order => order.id));
 
-        // Намираме всички order cards в DOM-а
-        const allOrderCards = document.querySelectorAll('.order-card');
+        // Всички карти в контейнера
+        const allCards = Array.from(container.querySelectorAll('.order-card'));
 
-        // Скриваме/показваме карти с minimum DOM manipulation
-        allOrderCards.forEach(card => {
+        // 1: Пренареждаме картите според реда в filteredOrders
+        this.filteredOrders.forEach(order => {
+            const card = allCards.find(c => {
+                const orderIdEl = c.querySelector('.order-id');
+                if (!orderIdEl) return false;
+                const cardOrderId = orderIdEl.textContent.replace(/[^0-9]/g, '');
+                return cardOrderId === order.id;
+            });
+
+            if (card) {
+                card.style.display = 'block';
+                // ⭐ appendChild премества елемента в края - това пренарежда DOM-а!
+                container.appendChild(card);
+            }
+        });
+
+        // 2: Скриваме картите които не са във filteredOrders
+        allCards.forEach(card => {
             const orderIdEl = card.querySelector('.order-id');
             if (orderIdEl) {
                 const cardOrderId = orderIdEl.textContent.replace(/[^0-9]/g, '');
-
-                if (visibleOrderIds.has(cardOrderId)) {
-                    if (card.style.display === 'none') {
-                        card.style.display = 'block';
-                    }
-                } else {
-                    if (card.style.display !== 'none') {
-                        card.style.display = 'none';
-                    }
+                if (!visibleOrderIds.has(cardOrderId)) {
+                    card.style.display = 'none';
                 }
             }
         });
@@ -564,18 +569,28 @@ class ProductionFilterManager {
         const totalCount = this.allOrders.length;
 
         if (this.elements.filteredCount) {
-            this.elements.filteredCount.textContent = filteredCount;
+            this.elements.filteredCount.textContent = filteredCount.toString();
         }
 
         if (this.elements.totalCount) {
-            this.elements.totalCount.textContent = totalCount;
+            this.elements.totalCount.textContent = totalCount.toString();
         }
 
-        // Обща сума на филтрираните поръчки
-        const totalAmount = this.filteredOrders.reduce((sum, order) => sum + (order.totalGross || 0), 0);
+        // Изчисляване на всички агрегати
+        const totalGross = this.filteredOrders.reduce((sum, order) => sum + (order.totalGross || 0), 0);
+        const totalNet = this.filteredOrders.reduce((sum, order) => sum + (order.totalNet || 0), 0);
+        const totalItems = this.filteredOrders.reduce((sum, order) => sum + (order.itemsCount || 0), 0);
 
         if (this.elements.totalAmountFiltered) {
-            this.elements.totalAmountFiltered.textContent = `${totalAmount.toFixed(2)} лв`;
+            this.elements.totalAmountFiltered.textContent = `${totalGross.toFixed(2)} лв`;
+        }
+
+        if (this.elements.totalNetFiltered) {
+            this.elements.totalNetFiltered.textContent = `${totalNet.toFixed(2)} лв`;
+        }
+
+        if (this.elements.totalItemsFiltered) {
+            this.elements.totalItemsFiltered.textContent = totalItems;
         }
     }
 
@@ -673,7 +688,7 @@ class ProductionFilterManager {
             totalOrders: this.allOrders.length,
             filteredOrders: this.filteredOrders.length,
             activeFilters: Object.entries(this.filters)
-                .filter(([key, value]) => value !== '' && value !== null)
+                .filter(([_, value]) => value !== '' && value !== null)  // ← Промени 'key' на '_'
                 .map(([key, value]) => `${key}:${value}`)
         };
     }

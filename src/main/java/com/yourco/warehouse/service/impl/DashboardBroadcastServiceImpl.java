@@ -146,8 +146,6 @@ public class DashboardBroadcastServiceImpl implements DashboardBroadcastService 
     public void broadcastOrderStatusChange(Long orderId, String newStatus,
                                            String previousStatus, Map<String, Object> orderData) {
         try {
-            log.info("Broadcasting order status change: order={}, {} -> {}",
-                    orderId, previousStatus, newStatus);
 
             // Create comprehensive event payload
             Map<String, Object> eventData = new HashMap<>();
@@ -189,7 +187,6 @@ public class DashboardBroadcastServiceImpl implements DashboardBroadcastService 
     @Override
     public void broadcastNewOrder(Long orderId, Map<String, Object> orderData) {
         try {
-            log.info("Broadcasting new order arrival: order={}", orderId);
 
             Map<String, Object> eventData = new HashMap<>();
             eventData.put("eventType", "NEW_ORDER");
@@ -198,10 +195,6 @@ public class DashboardBroadcastServiceImpl implements DashboardBroadcastService 
             eventData.put("timestamp", LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
             eventData.put("messageId", generateMessageId());
 
-            // Enhanced metadata за new order processing
-            eventData.put("isUrgent", determineOrderUrgency(orderData));
-            eventData.put("estimatedProcessingTime", calculateProcessingEstimate(orderData));
-            eventData.put("requiresSpecialHandling", checkSpecialRequirements(orderData));
 
             // Broadcast to all dashboard clients
             messagingTemplate.convertAndSend(TOPIC_ORDERS, eventData);
@@ -522,37 +515,6 @@ public class DashboardBroadcastServiceImpl implements DashboardBroadcastService 
             case "CANCELLED" -> "RESOLVED";
             default -> "UNKNOWN";
         };
-    }
-
-    /**
-     * Determine order urgency based на order metadata
-     */
-    private boolean determineOrderUrgency(Map<String, Object> orderData) {
-        if (orderData == null) return false;
-
-        // TODO: Implement sophisticated urgency detection logic
-        // Consider factors like: client priority, deadline, order value, special requirements
-        return orderData.containsKey("priority") &&
-                "HIGH".equals(orderData.get("priority"));
-    }
-
-    /**
-     * Calculate estimated processing time за new orders
-     */
-    private String calculateProcessingEstimate(Map<String, Object> orderData) {
-        // TODO: Implement processing time estimation based on order complexity
-        return "2-4 hours"; // Placeholder estimation
-    }
-
-    /**
-     * Check if order requires special handling procedures
-     */
-    private boolean checkSpecialRequirements(Map<String, Object> orderData) {
-        if (orderData == null) return false;
-
-        // TODO: Implement special requirements detection
-        return orderData.containsKey("specialHandling") ||
-                orderData.containsKey("customInstructions");
     }
 
     /**

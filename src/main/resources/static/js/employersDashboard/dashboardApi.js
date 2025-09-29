@@ -199,19 +199,20 @@ class DashboardApi {
      * Subscribe to dashboard-specific channels using STOMP subscriptions
      */
     subscribeToChannels() {
-        console.log('Subscribing to dashboard channels...');
 
         // Subscribe to dashboard counters updates
-        this.counterSubscription = this.stompClient.subscribe('/topic/dashboard/counters', (message) => {
+        this.orderSubscription = this.stompClient.subscribe('/topic/dashboard/orders', (message) => {
             try {
                 const data = JSON.parse(message.body);
-                console.log('Received counter update:', data);
+                console.log('Received order update:', data.eventType, data.orderId);
 
-                if (this.onCountersUpdate) {
-                    this.onCountersUpdate(data);
+                // Предай събитието към manager-а за обработка
+                if (this.onOrderUpdate) {
+                    this.onOrderUpdate(data);
                 }
+
             } catch (error) {
-                console.error('Error processing counter update:', error);
+                console.error('Error processing order update:', error);
             }
         });
 
@@ -246,6 +247,11 @@ class DashboardApi {
         const delay = this.reconnectDelay * Math.pow(2, this.wsReconnectAttempts - 1);
 
         console.log(`Scheduling WebSocket reconnect attempt ${this.wsReconnectAttempts} in ${delay}ms`);
+
+        // Известяваме че се reconnect-ваме
+        if (this.onConnectionStatus) {
+            this.onConnectionStatus(false, `Свързване... (опит ${this.wsReconnectAttempts})`);
+        }
 
         setTimeout(() => {
             this.connectWebSocket();
@@ -355,54 +361,6 @@ class DashboardApi {
     }
 
     /**
-     * Update product quantity in order (with change tracking)
-     */
-    async updateProductQuantity(orderId, productId, newQuantity) {
-        try {
-            const requestData = {
-                orderId: orderId,
-                productId: productId,
-                quantity: newQuantity
-            };
-
-            const response = await this.makeRequest('PUT', `/order/${orderId}/product/${productId}/quantity`, requestData);
-            const data = await response.json();
-
-            // Clear cached order details since data changed
-            this.clearOrderCache(orderId);
-
-            return data;
-
-        } catch (error) {
-            console.error(`Error updating quantity for product ${productId} in order ${orderId}:`, error);
-            throw error;
-        }
-    }
-
-    /**
-     * Remove product from order completely
-     */
-    async removeProductFromOrder(orderId, productId, reason) {
-        try {
-            const requestData = {
-                orderId: orderId,
-                productId: productId,
-                removalReason: reason
-            };
-
-            const response = await this.makeRequest('DELETE', `/order/${orderId}/product/${productId}`, requestData);
-            const data = await response.json();
-
-            this.clearOrderCache(orderId);
-            return data;
-
-        } catch (error) {
-            console.error(`Error removing product ${productId} from order ${orderId}:`, error);
-            throw error;
-        }
-    }
-
-    /**
      * Approve entire order
      */
     async approveOrder(orderId, operatorNote = '') {
@@ -454,23 +412,6 @@ class DashboardApi {
         }
     }
 
-    /**
-     * Validate inventory before applying changes
-     */
-    async validateInventoryForChanges(orderId, changes) {
-        try {
-            console.log(`Validating inventory for order ${orderId} with ${changes.length} changes`);
-
-            const response = await this.makeRequest('POST', `/order/${orderId}/validate-inventory`, { changes });
-            const data = await response.json();
-
-            console.log(`Inventory validation result:`, data);
-            return data;
-        } catch (error) {
-            console.error('Inventory validation failed:', error);
-            throw error;
-        }
-    }
 
     /**
      * Approve order with batch changes

@@ -3,7 +3,7 @@ package com.yourco.warehouse.controllers;
 import com.yourco.warehouse.dto.CartDTO;
 import com.yourco.warehouse.entity.Order;
 import com.yourco.warehouse.entity.UserEntity;
-import com.yourco.warehouse.service.OrderService;
+import com.yourco.warehouse.service.ClientOrderService;
 import com.yourco.warehouse.service.impl.CartServiceImpl;
 import com.yourco.warehouse.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,15 +33,15 @@ public class ClientCartController {
 
     private final CartServiceImpl cartService;
     private final UserService userService;
-    private final OrderService orderService;
+    private final ClientOrderService clientOrderService;
 
     @Autowired
     public ClientCartController(CartServiceImpl cartService,
                                 UserService userService,
-                                OrderService orderService) {
+                                ClientOrderService clientOrderService) {
         this.cartService = cartService;
         this.userService = userService;
-        this.orderService = orderService;
+        this.clientOrderService = clientOrderService;
     }
 
     /**
@@ -420,7 +420,7 @@ public class ClientCartController {
             }
 
             UserEntity currentUser = userService.getCurrentUser();
-            Order order = orderService.createOrderFromCart(currentUser.getId(), notes);
+            Order order = clientOrderService.createOrderFromCart(currentUser.getId(), notes);
 
             response.put("success", true);
             response.put("message", "Поръчката е създадена успешно");

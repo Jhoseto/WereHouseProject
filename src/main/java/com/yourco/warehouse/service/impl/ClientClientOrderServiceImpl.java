@@ -9,7 +9,7 @@ import com.yourco.warehouse.repository.OrderItemRepository;
 import com.yourco.warehouse.repository.ProductRepository;
 import com.yourco.warehouse.repository.UserRepository;
 import com.yourco.warehouse.service.CartService;
-import com.yourco.warehouse.service.OrderService;
+import com.yourco.warehouse.service.ClientOrderService;
 import com.yourco.warehouse.dto.CartItemDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,9 +26,9 @@ import java.util.*;
 
 @Service
 @Transactional
-public class OrderServiceImpl implements OrderService {
+public class ClientClientOrderServiceImpl implements ClientOrderService {
 
-    private static final Logger log = LoggerFactory.getLogger(OrderServiceImpl.class);
+    private static final Logger log = LoggerFactory.getLogger(ClientClientOrderServiceImpl.class);
 
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
@@ -38,12 +38,12 @@ public class OrderServiceImpl implements OrderService {
     private final OrderMapper orderMapper;
 
     @Autowired
-    public OrderServiceImpl(OrderRepository orderRepository,
-                            OrderItemRepository orderItemRepository,
-                            ProductRepository productRepository,
-                            UserRepository userRepository,
-                            CartService cartService,
-                            OrderMapper orderMapper) {
+    public ClientClientOrderServiceImpl(OrderRepository orderRepository,
+                                        OrderItemRepository orderItemRepository,
+                                        ProductRepository productRepository,
+                                        UserRepository userRepository,
+                                        CartService cartService,
+                                        OrderMapper orderMapper) {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
         this.productRepository = productRepository;

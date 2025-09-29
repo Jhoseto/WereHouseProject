@@ -10,7 +10,7 @@ import com.yourco.warehouse.entity.enums.OrderStatus;
 import com.yourco.warehouse.service.DashboardService;
 import com.yourco.warehouse.service.ProductService;
 import com.yourco.warehouse.service.UserService;
-import com.yourco.warehouse.service.OrderService;
+import com.yourco.warehouse.service.ClientOrderService;
 import com.yourco.warehouse.utils.RequestUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,17 +33,17 @@ public class MainController {
 
 
     private final UserService userService;
-    private final OrderService orderService;
+    private final ClientOrderService clientOrderService;
     private final DashboardService dashboardService;
     private final ProductService productService;
 
     @Autowired
     public MainController(UserService userService,
-                          OrderService orderService,
+                          ClientOrderService clientOrderService,
                           DashboardService dashboardService,
                           ProductService productService) {
         this.userService = userService;
-        this.orderService = orderService;
+        this.clientOrderService = clientOrderService;
         this.dashboardService = dashboardService;
         this.productService = productService;
     }
@@ -120,7 +120,7 @@ public class MainController {
                 return "redirect:/";
             }
 
-            List<Order> orders = orderService.getOrdersForClient(currentUser.getId());
+            List<Order> orders = clientOrderService.getOrdersForClient(currentUser.getId());
             model.addAttribute("orders", orders);
             model.addAttribute("pageTitle", "Моите поръчки");
 

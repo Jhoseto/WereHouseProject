@@ -7,7 +7,7 @@ import com.yourco.warehouse.entity.enums.UserStatus;
 import com.yourco.warehouse.repository.ShippedProcessRepository;
 import com.yourco.warehouse.service.DashboardService;
 import com.yourco.warehouse.service.OrderLoadingService;
-import com.yourco.warehouse.service.OrderService;
+import com.yourco.warehouse.service.ClientOrderService;
 import com.yourco.warehouse.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,15 +35,15 @@ public class OrderLoadingController {
     private static final Logger log = LoggerFactory.getLogger(OrderLoadingController.class);
 
     private final DashboardService dashboardService;
-    private final OrderService orderService;
+    private final ClientOrderService clientOrderService;
     private final UserService userService;
     private final OrderLoadingService orderLoadingService;
     private final ShippedProcessRepository shippedProcessRepository;
 
     @Autowired
-    public OrderLoadingController(DashboardService dashboardService, OrderService orderService, UserService userService, OrderLoadingService orderLoadingService, ShippedProcessRepository shippedProcessRepository) {
+    public OrderLoadingController(DashboardService dashboardService, ClientOrderService clientOrderService, UserService userService, OrderLoadingService orderLoadingService, ShippedProcessRepository shippedProcessRepository) {
         this.dashboardService = dashboardService;
-        this.orderService = orderService;
+        this.clientOrderService = clientOrderService;
         this.userService = userService;
         this.orderLoadingService = orderLoadingService;
         this.shippedProcessRepository = shippedProcessRepository;
@@ -61,7 +61,7 @@ public class OrderLoadingController {
             // ==========================================
             // 1. ВАЛИДАЦИЯ НА ПОРЪЧКАТА
             // ==========================================
-            Optional<OrderDTO> orderDetails = orderService.getOrderById(orderId);
+            Optional<OrderDTO> orderDetails = clientOrderService.getOrderById(orderId);
             if (orderDetails.isEmpty()) {
                 log.warn("Order not found: {}", orderId);
                 model.addAttribute("error", "Поръчката не е намерена");
