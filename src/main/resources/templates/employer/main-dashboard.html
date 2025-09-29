@@ -367,6 +367,7 @@
             urgent: /*[[${urgentCount}]]*/ 0,
             pending: /*[[${pendingCount}]]*/ 0,
             confirmed: /*[[${confirmedCount}]]*/ 0,
+            shipped: /*[[${shippedCount}]]*/ 0,
             cancelled: /*[[${cancelledCount}]]*/ 0
         },
 
@@ -405,6 +406,7 @@
 <div th:replace="~{fragments/bottomHtmlImports :: bottomImports}"></div>
 
 <!-- Dashboard JavaScript Modules -->
+<script src="/js/orders-nav.js"></script>
 <script src="/js/employersDashboard/dashboardApi.js"></script>
 <script src="/js/employersDashboard/dashboardManager.js"></script>
 <script src="/js/employersDashboard/dashboardUI.js"></script>

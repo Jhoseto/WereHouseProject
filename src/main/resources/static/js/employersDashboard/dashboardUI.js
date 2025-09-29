@@ -602,6 +602,7 @@ class DashboardUI {
             'URGENT': {label: 'Спешна', class: 'urgent'},
             'PENDING': {label: 'Изчакваща', class: 'pending'},
             'CONFIRMED': {label: 'Обработена', class: 'confirmed'},
+            'SHIPPED': {label: 'Завършена', class: 'shipped'},
             'CANCELLED': {label: 'Отказана', class: 'cancelled'}
         };
 

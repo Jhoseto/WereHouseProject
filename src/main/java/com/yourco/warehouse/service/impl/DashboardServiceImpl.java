@@ -63,6 +63,7 @@ public class DashboardServiceImpl implements DashboardService {
             // ✅ ПОПРАВЕНО: Правилни броячи
             dashboard.setUrgentCount(orderRepository.countByStatus(OrderStatus.URGENT));
             dashboard.setPendingCount(orderRepository.countByStatus(OrderStatus.PENDING));
+            dashboard.setShippedCount(orderRepository.countByStatus(OrderStatus.SHIPPED));
             dashboard.setCompletedCount(orderRepository.countByStatus(OrderStatus.CONFIRMED));
             dashboard.setCancelledCount(orderRepository.countByStatus(OrderStatus.CANCELLED));
 
