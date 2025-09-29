@@ -40,46 +40,71 @@ class AdminDashboard {
      * @param {string} tabId - ID на таба който да се активира
      */
     switchTab(tabId) {
-        // Проверка дали табът съществува
         const targetTab = document.getElementById(`${tabId}-tab`);
         if (!targetTab) {
-            console.warn(`Таб с ID "${tabId}" не е намерен`);
+            console.warn(`Tab ${tabId} not found`);
             return;
         }
 
-        // Показване на loader с персонализирани съобщения
         const loadingMessages = {
             'clients': { text: 'Зареждане на клиентите...', sub: 'Подготвяме данните за потребителите' },
             'employees': { text: 'Зареждане на служителите...', sub: 'Обработваме информацията за екипа' },
-            'inventory': { text: 'Зареждане на инвентара...', sub: 'Подготвяме продуктовите данни' },
+            'inventory': { text: 'Зареждане на инвентара...', sub: 'Обработваме продуктовите данни' },
             'system': { text: 'Зареждане на системата...', sub: 'Подготвяме системните настройки' },
-            'reports': { text: 'Зареждане на отчетите...', sub: 'Обработваме статистическите данни' }
+            'reports': { text: 'Зареждане на отчетите...', sub: 'Генериране на статистики и анализи' }
         };
 
         const message = loadingMessages[tabId] || { text: 'Зареждане...', sub: 'Моля изчакайте' };
-        this.showLoading(message.text, message.sub, `tab-switch-${tabId}`);
 
-        // Симулиране на малка забавяне за по-добър UX при смяна на табове
+        if (typeof showLoader === 'function') {
+            showLoader(message.text, message.sub);
+        }
+
+        this.tabButtons.forEach(btn => btn.classList.remove('active'));
+        const clickedButton = document.querySelector(`[data-tab="${tabId}"]`);
+        if (clickedButton) clickedButton.classList.add('active');
+
+        this.tabContents.forEach(content => content.classList.remove('active'));
+        targetTab.classList.add('active');
+        this.currentTab = tabId;
+
         setTimeout(() => {
-            // Премахване на active класове от всички табове и бутони
-            this.tabButtons.forEach(btn => btn.classList.remove('active'));
-            this.tabContents.forEach(content => content.classList.remove('active'));
+            const managers = {
+                'clients': {
+                    instance: 'clientsManager',
+                    class: ClientsManager,
+                    container: '.clients-management-container'
+                },
+                'employees': {
+                    instance: 'employersManager',
+                    class: EmployersManager,
+                    container: '.employers-management-container'
+                }
+            };
 
-            // Добавяне на active клас към новия таб и бутон
-            const activeButton = document.querySelector(`[data-tab="${tabId}"]`);
-            const activeContent = document.getElementById(`${tabId}-tab`);
-
-            if (activeButton && activeContent) {
-                activeButton.classList.add('active');
-                activeContent.classList.add('active');
-                this.currentTab = tabId;
-
-                // Обновяване на URL без page reload
-                this.updateURL(tabId);
+            const config = managers[tabId];
+            if (config) {
+                if (!window[config.instance]) {
+                    const container = document.querySelector(config.container);
+                    if (container) {
+                        window[config.instance] = new config.class();
+                        console.log(`✓ ${config.instance} initialized`);
+                    } else {
+                        console.warn(`Container ${config.container} not found`);
+                    }
+                } else if (typeof window[config.instance].loadEmployersData === 'function') {
+                    window[config.instance].loadEmployersData();
+                } else if (typeof window[config.instance].loadClientsData === 'function') {
+                    window[config.instance].loadClientsData();
+                }
             }
 
-            this.hideLoading();
-        }, 250); // Кратко забавяне за smooth UX
+            if (typeof hideLoader === 'function') hideLoader();
+        }, 300);
+
+        if (window.history && window.history.pushState) {
+            window.history.pushState({ tab: tabId }, '', `${window.location.pathname}?tab=${tabId}`);
+        }
     }
 
     /**

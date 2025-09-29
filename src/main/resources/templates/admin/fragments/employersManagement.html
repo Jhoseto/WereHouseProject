@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="bg">
+
+<!-- Employers Management Fragment -->
+<div th:fragment="employersManagement" class="employers-management-container">
+
+    <!-- Employers Tab Navigation -->
+    <div class="employers-tabs-nav">
+        <button class="employers-tab-btn active" data-employers-tab="create" type="button">
+            <i class="bi bi-person-plus-fill"></i>
+            <span>Създаване на служител</span>
+        </button>
+
+        <button class="employers-tab-btn" data-employers-tab="manage" type="button">
+            <i class="bi bi-people-fill"></i>
+            <span>Управление на служители</span>
+        </button>
+    </div>
+
+    <!-- ==========================================
+         CREATE EMPLOYER TAB
+         ========================================== -->
+    <div class="employers-tab-content active" id="create-employer-tab">
+        <div class="create-employer-section">
+            <div class="section-header">
+                <h3>
+                    <i class="bi bi-person-plus-fill"></i>
+                    Създаване на нов служителски профил
+                </h3>
+                <p>Въведете данните за новия служител в системата</p>
+            </div>
+
+            <!-- Create Employer Form -->
+            <form id="createEmployerForm" class="employer-form" novalidate>
+                <div class="form-grid">
+                    <!-- Username -->
+                    <div class="form-group">
+                        <label for="employerUsername" class="form-label">
+                            <i class="bi bi-person"></i>
+                            Потребителско име
+                            <span class="required">*</span>
+                        </label>
+                        <input type="text"
+                               id="employerUsername"
+                               name="username"
+                               class="form-control"
+                               placeholder="username"
+                               required
+                               minlength="3"
+                               maxlength="50">
+                        <small class="form-help">Минимум 3 символа, латински букви и цифри</small>
+                    </div>
+
+                    <!-- Email -->
+                    <div class="form-group">
+                        <label for="employerEmail" class="form-label">
+                            <i class="bi bi-envelope"></i>
+                            Email адрес
+                            <span class="required">*</span>
+                        </label>
+                        <input type="email"
+                               id="employerEmail"
+                               name="email"
+                               class="form-control"
+                               placeholder="email@example.com"
+                               required>
+                        <small class="form-help">Служебен email адрес</small>
+                    </div>
+
+                    <!-- Phone -->
+                    <div class="form-group">
+                        <label for="employerPhone" class="form-label">
+                            <i class="bi bi-telephone"></i>
+                            Телефон
+                            <span class="required">*</span>
+                        </label>
+                        <input type="tel"
+                               id="employerPhone"
+                               name="phone"
+                               class="form-control"
+                               placeholder="+359 888 123 456"
+                               required
+                               minlength="10"
+                               maxlength="20">
+                        <small class="form-help">Телефон за контакт</small>
+                    </div>
+
+                    <!-- Location -->
+                    <div class="form-group">
+                        <label for="employerLocation" class="form-label">
+                            <i class="bi bi-geo-alt"></i>
+                            Локация
+                        </label>
+                        <input type="text"
+                               id="employerLocation"
+                               name="location"
+                               class="form-control"
+                               placeholder="София, България">
+                        <small class="form-help">Работна локация (незадължително)</small>
+                    </div>
+
+                    <!-- Password -->
+                    <div class="form-group">
+                        <label for="employerPassword" class="form-label">
+                            <i class="bi bi-lock"></i>
+                            Парола
+                            <span class="required">*</span>
+                        </label>
+                        <div class="password-input-group">
+                            <input type="password"
+                                   id="employerPassword"
+                                   name="password"
+                                   class="form-control"
+                                   placeholder="Въведете парола"
+                                   required
+                                   autocomplete="new-password"
+                                   minlength="6">
+                            <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('employerPassword')">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                        <small class="form-help">Минимум 6 символа</small>
+                    </div>
+
+                    <!-- Password Confirm -->
+                    <div class="form-group">
+                        <label for="employerPasswordConfirm" class="form-label">
+                            <i class="bi bi-lock-fill"></i>
+                            Потвърди парола
+                            <span class="required">*</span>
+                        </label>
+                        <div class="password-input-group">
+                            <input type="password"
+                                   id="employerPasswordConfirm"
+                                   name="passwordConfirm"
+                                   class="form-control"
+                                   placeholder="Повторете паролата"
+                                   required
+                                   autocomplete="new-password"
+                                   minlength="6">
+                            <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('employerPasswordConfirm')">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="form-actions">
+                    <button type="button" class="btn btn-outline" onclick="resetCreateEmployerForm()">
+                        <i class="bi bi-arrow-clockwise"></i>
+                        Изчисти формата
+                    </button>
+
+                    <button type="submit" class="btn btn-success" id="createEmployerBtn">
+                        <i class="bi bi-person-plus"></i>
+                        Създай служител
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <!-- ==========================================
+             MANAGE EMPLOYERS TAB
+             ========================================== -->
+    <div class="employers-tab-content" id="manage-employers-tab">
+        <div class="manage-employers-section">
+            <div class="section-header">
+                <h3>
+                    <i class="bi bi-people-fill"></i>
+                    Управление на служители
+                </h3>
+                <p>Преглед, търсене и управление на всички служителски профили в системата</p>
+            </div>
+
+            <!-- Filter Panel -->
+            <div class="employers-filter-panel">
+                <div class="filter-row">
+                    <!-- Quick Search -->
+                    <div class="filter-group">
+                        <label for="employersQuickSearch" class="filter-label">
+                            <i class="bi bi-search"></i>
+                            Бързо търсене
+                        </label>
+                        <div class="search-input-group">
+                            <input type="text"
+                                   id="employersQuickSearch"
+                                   class="form-control search-input"
+                                   placeholder="Търсене по име, email, телефон...">
+                            <button type="button" class="search-clear-btn" onclick="clearQuickSearch()">
+                                <i class="bi bi-x-circle-fill"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Status Filter -->
+                    <div class="filter-group">
+                        <label for="employersStatusFilter" class="filter-label">
+                            <i class="bi bi-filter"></i>
+                            Статус
+                        </label>
+                        <select id="employersStatusFilter" class="form-control">
+                            <option value="">Всички статуси</option>
+                            <option value="ACTIVE">Активни</option>
+                            <option value="INACTIVE">Неактивни</option>
+                        </select>
+                    </div>
+
+                    <!-- Location Filter -->
+                    <div class="filter-group">
+                        <label for="employersLocationFilter" class="filter-label">
+                            <i class="bi bi-geo-alt"></i>
+                            Локация
+                        </label>
+                        <input type="text"
+                               id="employersLocationFilter"
+                               class="form-control"
+                               placeholder="Филтрирай по локация">
+                    </div>
+
+                    <!-- Filter Actions -->
+                    <div class="filter-group">
+                        <label class="filter-label" style="visibility: hidden;">Действия</label>
+                        <div class="filter-actions">
+                            <button type="button" class="btn btn-outline btn-sm" onclick="clearAllFilters()">
+                                <i class="bi bi-x-circle"></i>
+                                Изчисти филтри
+                            </button>
+                            <button type="button" class="btn btn-primary btn-sm" onclick="refreshEmployersData()">
+                                <i class="bi bi-arrow-clockwise"></i>
+                                Обнови
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Advanced Filters -->
+                <div class="advanced-filters" id="advancedFilters" style="display: none;">
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label for="employersUsernameFilter" class="filter-label">Потребителско име</label>
+                            <input type="text" id="employersUsernameFilter" class="form-control" placeholder="Търсене по потребителско име">
+                        </div>
+
+                        <div class="filter-group">
+                            <label for="employersEmailFilter" class="filter-label">Email</label>
+                            <input type="email" id="employersEmailFilter" class="form-control" placeholder="Търсене по email">
+                        </div>
+
+                        <div class="filter-group">
+                            <label for="employersPhoneFilter" class="filter-label">Телефон</label>
+                            <input type="tel" id="employersPhoneFilter" class="form-control" placeholder="Търсене по телефон">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="filter-toggle">
+                    <button type="button" class="btn btn-link btn-sm" onclick="toggleAdvancedFilters()">
+                        <i class="bi bi-chevron-down" id="advancedToggleIcon"></i>
+                        <span id="advancedToggleText">Покажи разширени филтри</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Results Summary -->
+            <div class="employers-results-summary">
+                <div class="results-info">
+                    <span class="results-count">
+                        Показани: <strong id="displayedEmployersCount">0</strong> от <strong id="totalEmployersCount">0</strong> служители
+                    </span>
+                    <span class="results-filter" id="activeFilterInfo" style="display: none;">
+                        <i class="bi bi-funnel-fill"></i>
+                        Активни филтри
+                    </span>
+                </div>
+
+                <div class="results-actions">
+                    <div class="sort-controls">
+                        <label for="employersSortBy" class="sort-label">Подреди по:</label>
+                        <select id="employersSortBy" class="form-control form-control-sm">
+                            <option value="username">Потребителско име</option>
+                            <option value="email">Email</option>
+                            <option value="phone">Телефон</option>
+                            <option value="location">Локация</option>
+                            <option value="createdAt">Дата на създаване</option>
+                        </select>
+                        <button type="button" class="btn btn-outline btn-sm" id="sortDirectionBtn" onclick="toggleSortDirection()">
+                            <i class="bi bi-sort-alpha-down"></i>
+                        </button>
+                    </div>
+
+                    <button type="button" class="btn btn-primary btn-sm" onclick="exportEmployersData()">
+                        <i class="bi bi-download"></i>
+                        Експорт CSV
+                    </button>
+                </div>
+            </div>
+
+            <!-- Employers Table -->
+            <div class="employers-table-container">
+                <table class="employers-table">
+                    <thead>
+                    <tr>
+                        <th class="sortable" data-sort="id">
+                            <span>
+                                <i class="bi bi-hash"></i>
+                                ID
+                                <i class="bi bi-arrow-down-up sort-icon"></i>
+                            </span>
+                        </th>
+                        <th class="sortable" data-sort="username">
+                            <span>
+                                <i class="bi bi-person"></i>
+                                Потребителско име
+                                <i class="bi bi-arrow-down-up sort-icon"></i>
+                            </span>
+                        </th>
+                        <th class="sortable" data-sort="email">
+                            <span>
+                                <i class="bi bi-envelope"></i>
+                                Email
+                                <i class="bi bi-arrow-down-up sort-icon"></i>
+                            </span>
+                        </th>
+                        <th class="sortable" data-sort="phone">
+                            <span>
+                                <i class="bi bi-telephone"></i>
+                                Телефон
+                                <i class="bi bi-arrow-down-up sort-icon"></i>
+                            </span>
+                        </th>
+                        <th class="sortable" data-sort="location">
+                            <span>
+                                <i class="bi bi-geo-alt"></i>
+                                Локация
+                                <i class="bi bi-arrow-down-up sort-icon"></i>
+                            </span>
+                        </th>
+                        <th class="sortable" data-sort="createdAt">
+                            <span>
+                                <i class="bi bi-calendar-plus"></i>
+                                Дата на създаване
+                                <i class="bi bi-arrow-down-up sort-icon"></i>
+                            </span>
+                        </th>
+                        <th class="sortable" data-sort="userStatus">
+                            <span>
+                                <i class="bi bi-check-circle"></i>
+                                Статус
+                                <i class="bi bi-arrow-down-up sort-icon"></i>
+                            </span>
+                        </th>
+                        <th>
+                            <span>
+                                <i class="bi bi-gear"></i>
+                                Действия
+                            </span>
+                        </th>
+                    </tr>
+                    </thead>
+                    <tbody id="employersTableBody">
+                    <!-- Динамично попълване чрез JavaScript -->
+                    <tr>
+                        <td colspan="8" style="text-align: center; padding: 3rem; color: var(--color-text-muted);">
+                            <i class="bi bi-hourglass-split" style="font-size: 2rem;"></i>
+                            <p>Зареждане на служители...</p>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <div class="employers-pagination">
+                <div class="pagination-info">
+                    Страница <strong id="currentPageDisplay">1</strong> от <strong id="totalPagesDisplay">1</strong>
+                </div>
+                <div class="pagination-controls">
+                    <button type="button" class="btn btn-outline btn-sm" id="prevPageBtn" onclick="goToPreviousPage()">
+                        <i class="bi bi-chevron-left"></i>
+                        Назад
+                    </button>
+
+                    <div class="page-input-group">
+                        <span>Страница:</span>
+                        <input type="number"
+                               id="pageNumberInput"
+                               class="form-control page-input"
+                               min="1"
+                               value="1">
+                    </div>
+
+                    <button type="button" class="btn btn-outline btn-sm" id="nextPageBtn" onclick="goToNextPage()">
+                        Напред
+                        <i class="bi bi-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</html>

@@ -148,4 +148,59 @@ public class UserServiceImpl implements UserService {
         return "активиран";
     }
 
+    @Override
+    @Transactional
+    public UserEntity createNewEmployer(String username, String email, String plainPassword,
+                                        String phone, String location) {
+
+        // Uniqueness checks
+        if (findUserByUsername(username).isPresent()) {
+            throw new IllegalArgumentException("Потребителското име вече съществува");
+        }
+
+        if (findUserByEmail(email).isPresent()) {
+            throw new IllegalArgumentException("Email адресът вече се използва");
+        }
+
+        // Validation за задължителни полета
+        if (phone == null || phone.trim().isEmpty()) {
+            throw new IllegalArgumentException("Телефонният номер е задължителен за служители");
+        }
+
+        // Създаване на нов служител
+        UserEntity newEmployer = new UserEntity();
+        newEmployer.setUsername(username.trim());
+        newEmployer.setEmail(email.trim().toLowerCase());
+        newEmployer.setPhone(phone.trim());
+        newEmployer.setLocation(location != null ? location.trim() : null);
+        newEmployer.setRole(Role.EMPLOYER);
+        newEmployer.setUserStatus(UserStatus.ACTIVE);
+        newEmployer.setPasswordHash(passwordEncoder.encode(plainPassword));
+
+        // Timestamps
+        LocalDateTime now = LocalDateTime.now();
+        newEmployer.setCreatedAt(now);
+        newEmployer.setUpdatedAt(now);
+
+        return userRepository.save(newEmployer);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<UserEntity> getAllEmployerUsers() {
+        return userRepository.getAllByRole(Role.EMPLOYER);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<UserEntity> findEmployerById(Long id) {
+        return userRepository.findById(id)
+                .filter(user -> user.getRole() == Role.EMPLOYER);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public long countAllEmployers() {
+        return userRepository.findAllByRole(Role.EMPLOYER).size();
+    }
 }

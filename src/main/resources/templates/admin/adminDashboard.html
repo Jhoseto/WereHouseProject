@@ -12,6 +12,7 @@
     <!-- Admin Dashboard Specific Styles -->
     <link rel="stylesheet" href="/css/admin/adminDashboard.css">
     <link rel="stylesheet" href="/css/admin/clientsManagement.css">
+    <link rel="stylesheet" href="/css/admin/employersManagement.css">
 
     <meta name="description" content="Администраторски панел за управление на система, потребители, инвентар и отчети">
 </head>
@@ -142,9 +143,8 @@
                     <p>Управление на служители и техните права в системата</p>
                 </div>
 
-                <div class="content-placeholder">
-<!--                    <div th:replace="~{admin/fragments/employeesManagement :: employeesManagement}"></div>-->
-                </div>
+                <div th:replace="~{admin/fragments/employersManagement :: employersManagement}"></div>
+
             </div>
 
             <!-- Inventory Management Tab -->
@@ -208,6 +208,7 @@
 <!-- Admin Dashboard JavaScript -->
 <script src="/js/adminDashboard/adminDashboard.js"></script>
 <script src="/js/adminDashboard/clientsManagement.js"></script>
+<script src="/js/adminDashboard/employersManagement.js"></script>
 
 </body>
 </html>
