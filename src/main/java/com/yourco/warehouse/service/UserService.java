@@ -19,8 +19,9 @@ public interface UserService {
     UserEntity getCurrentUser();
 
 
-    //CREATE NEW USER
-    void createNewUser(UserEntity userEntity);
+    //CREATE NEW CLIENT
+    UserEntity createNewClient(String username, String email, String plainPassword,
+                         String companyName, String phone, String location);
 
     long getTotalEmployersCount();
 

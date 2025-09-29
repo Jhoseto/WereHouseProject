@@ -15,6 +15,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -79,8 +80,38 @@ public class UserServiceImpl implements UserService {
 
 
     @Override
-    public void createNewUser(UserEntity userEntity) {
-        // TODO: Implement this method
+    @Transactional
+    public UserEntity createNewClient(String username, String email, String plainPassword,
+                                      String companyName, String phone, String location) {
+
+        // Само uniqueness checks
+        if (findUserByUsername(username).isPresent()) {
+            throw new IllegalArgumentException("Потребителското име вече съществува");
+        }
+
+        if (findUserByEmail(email).isPresent()) {
+            throw new IllegalArgumentException("Email адресът вече се използва");
+        }
+
+        // Създаване и запис
+        UserEntity newClient = new UserEntity();
+        // Trim za  data normalization и избягване на space  в username i email
+        newClient.setUsername(username.trim());
+        newClient.setEmail(email.trim().toLowerCase());
+
+        newClient.setCompanyName(companyName != null ? companyName.trim() : null);
+        newClient.setPhone(phone);
+        newClient.setLocation(location);
+        newClient.setRole(Role.CLIENT);
+        newClient.setUserStatus(UserStatus.ACTIVE);
+        newClient.setPasswordHash(passwordEncoder.encode(plainPassword));
+
+        // Timestamps - explicit и ясно точно тук
+        LocalDateTime now = LocalDateTime.now();
+        newClient.setCreatedAt(now);
+        newClient.setUpdatedAt(now);
+
+        return userRepository.save(newClient);
     }
 
     @Override

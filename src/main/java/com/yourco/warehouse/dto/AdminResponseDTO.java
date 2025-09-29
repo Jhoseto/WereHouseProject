@@ -2,6 +2,9 @@ package com.yourco.warehouse.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.yourco.warehouse.entity.enums.UserStatus;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 import java.time.LocalDateTime;
 
@@ -26,12 +29,24 @@ public class AdminResponseDTO {
     // CLIENT FIELDS
     // ==========================================
     private Long clientId;
+
+    @NotBlank(message = "Потребителското име е задължително")
+    @Size(min = 3, max = 20, message = "Потребителското име трябва да е между 3 и 20 символа")
     private String username;
+
     private String companyName;
+
+    @NotBlank(message = "Email адресът е задължителен")
+    @Email(message = "Моля въведете валиден email адрес")
     private String email;
+
     private String phone;
     private String location;
+
+    @NotBlank(message = "Паролата е задължителна")
+    @Size(min = 6, message = "Паролата трябва да е поне 6 символа")
     private String password;
+
     private UserStatus userStatus;
     private String role;
     private LocalDateTime createdAt;

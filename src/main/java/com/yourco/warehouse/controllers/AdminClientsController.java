@@ -15,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -34,13 +35,11 @@ public class AdminClientsController {
     private static final Logger log = LoggerFactory.getLogger(AdminClientsController.class);
 
     private final UserService userService;
-    private final PasswordEncoder passwordEncoder;
+
 
     @Autowired
-    public AdminClientsController(UserService userService,
-                                  PasswordEncoder passwordEncoder) {
+    public AdminClientsController(UserService userService) {
         this.userService = userService;
-        this.passwordEncoder = passwordEncoder;
     }
 
     /**
@@ -50,49 +49,32 @@ public class AdminClientsController {
     @PostMapping("/create")
     public ResponseEntity<AdminResponseDTO> createClient(
             @Valid @RequestBody AdminResponseDTO request,
+            BindingResult bindingResult,
             Authentication authentication) {
 
         try {
+            // Проверка за Bean Validation грешки
+            if (bindingResult.hasErrors()) {
+                String errorMessage = bindingResult.getFieldError().getDefaultMessage();
+                return ResponseEntity.badRequest()
+                        .body(AdminResponseDTO.error(errorMessage));
+            }
+
             log.info("Admin {} attempts to create new client with username: {}",
                     authentication.getName(), request.getUsername());
 
-            // Валидация на входните данни
-            String validationError = validateClientCreateRequest(request);
-            if (validationError != null) {
-                return ResponseEntity.badRequest().body(AdminResponseDTO.error(validationError));
-            }
-
-            // Проверка дали username вече съществува
-            if (userService.findUserByUsername(request.getUsername()).isPresent()) {
-                return ResponseEntity.badRequest().body(
-                        AdminResponseDTO.error("Потребителското име '" + request.getUsername() + "' вече съществува")
-                );
-            }
-
-            // Проверка дали email вече съществува (ако е предоставен)
-            if (request.getEmail() != null && userService.findUserByEmail(request.getEmail()).isPresent()) {
-                return ResponseEntity.badRequest().body(
-                        AdminResponseDTO.error("Email адресът '" + request.getEmail() + "' вече се използва")
-                );
-            }
-
-            UserEntity newClient = new UserEntity();
-            newClient.setUsername(request.getUsername());
-            newClient.setCompanyName(request.getCompanyName());
-            newClient.setEmail(request.getEmail());
-            newClient.setPhone(request.getPhone());
-            newClient.setLocation(request.getLocation());
-            newClient.setRole(Role.CLIENT);
-            newClient.setUserStatus(UserStatus.ACTIVE);
-
-            newClient.setPasswordHash(passwordEncoder.encode(request.getPassword()));
-
-            userService.createNewUser(newClient);
+            UserEntity newClient = userService.createNewClient(
+                    request.getUsername(),
+                    request.getEmail(),
+                    request.getPassword(),
+                    request.getCompanyName(),
+                    request.getPhone(),
+                    request.getLocation()
+            );
 
             log.info("New client created successfully: {} by admin: {}",
-                    request.getUsername(), authentication.getName());
+                    newClient.getUsername(), authentication.getName());
 
-            // Подготвяме response данни
             Map<String, Object> responseData = new HashMap<>();
             responseData.put("clientId", newClient.getId());
             responseData.put("username", newClient.getUsername());
@@ -103,10 +85,14 @@ public class AdminClientsController {
                     responseData
             ));
 
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                    .body(AdminResponseDTO.error(e.getMessage()));
+
         } catch (Exception e) {
-            log.error("Error creating client by admin {}: {}", authentication.getName(), e.getMessage(), e);
+            log.error("Error creating client: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(AdminResponseDTO.error("Възникна грешка при създаване на клиента: " + e.getMessage()));
+                    .body(AdminResponseDTO.error("Възникна грешка при създаване на клиента"));
         }
     }
 
