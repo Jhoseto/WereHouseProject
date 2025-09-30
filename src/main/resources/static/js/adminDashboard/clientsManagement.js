@@ -1184,7 +1184,9 @@ function exportClientsData() {
         })
     ].join('\n');
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    // Добавяме UTF-8 BOM за правилен encoding в Excel
+    const BOM = '\uFEFF';
+    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
     link.download = `clients_export_${new Date().toISOString().split('T')[0]}.csv`;

@@ -212,10 +212,9 @@
                             <i class="bi bi-geo-alt"></i>
                             Локация
                         </label>
-                        <input type="text"
-                               id="employersLocationFilter"
-                               class="form-control"
-                               placeholder="Филтрирай по локация">
+                        <select id="employersLocationFilter" class="form-control">
+                            <option value="">Всички локации</option>
+                        </select>
                     </div>
 
                     <!-- Filter Actions -->
@@ -235,7 +234,7 @@
                 </div>
 
                 <!-- Advanced Filters -->
-                <div class="advanced-filters" id="advancedFilters" style="display: none;">
+                <div class="advanced-filters" id="advancedEmployerFilters" style="display: none;">
                     <div class="filter-row">
                         <div class="filter-group">
                             <label for="employersUsernameFilter" class="filter-label">Потребителско име</label>
@@ -255,7 +254,7 @@
                 </div>
 
                 <div class="filter-toggle">
-                    <button type="button" class="btn btn-link btn-sm" onclick="toggleAdvancedFilters()">
+                    <button type="button" class="btn btn-link btn-sm" onclick="toggleEmployersAdvancedFilters()">
                         <i class="bi bi-chevron-down" id="advancedToggleIcon"></i>
                         <span id="advancedToggleText">Покажи разширени филтри</span>
                     </button>

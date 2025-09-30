@@ -106,6 +106,7 @@ class EmployersManager {
             } else {
                 input.classList.remove('is-valid');
                 input.classList.add('is-invalid');
+                window.toastManager?.warning(`Потребителското име "${username}" вече е заето`);
             }
         } catch (error) {
             console.error('Username check error:', error);
@@ -121,7 +122,7 @@ class EmployersManager {
         const passwordConfirm = formData.get('passwordConfirm');
 
         if (password !== passwordConfirm) {
-            showToast('error', 'Паролите не съвпадат');
+            window.toastManager?.error('Паролите не съвпадат');
             return;
         }
 
@@ -159,11 +160,11 @@ class EmployersManager {
                 this.loadEmployersData();
                 this.switchTab('manage');
             } else {
-                showToast('error', data.message || 'Грешка при създаване на служителя');
+                window.toastManager?.error(data.message || 'Грешка при създаване на служителя');
             }
         } catch (error) {
             console.error('Create employer error:', error);
-            showToast('error', 'Възникна грешка при създаване на служителя');
+            window.toastManager?.error('Възникна грешка при създаване на служителя');
         }
     }
 
@@ -186,6 +187,7 @@ class EmployersManager {
                 this.employers = data.data.employers;
                 this.filteredEmployers = [...this.employers];
                 this.applyFiltersInstantly();
+                this.initLocationFilter();
                 console.log(`✓ Заредени ${this.employers.length} служители`);
             } else {
                 this.employers = [];
@@ -194,7 +196,7 @@ class EmployersManager {
             }
         } catch (error) {
             console.error('Load employers error:', error);
-            showToast('error', 'Грешка при зареждане на служителите');
+            window.toastManager?.error('Грешка при зареждане на служителите');
         }
     }
 
@@ -202,20 +204,62 @@ class EmployersManager {
     // FILTERS AND SEARCH
     // ==========================================
 
-    initFiltersAndSearch() {
-        const filterIds = [
-            'employersQuickSearch',
-            'employersStatusFilter',
-            'employersLocationFilter',
-            'employersUsernameFilter',
-            'employersEmailFilter',
-            'employersPhoneFilter'
-        ];
+    initLocationFilter() {
+        const locationFilter = document.getElementById('employersLocationFilter');
+        if (!locationFilter) return;
 
-        filterIds.forEach(id => {
+        const locations = [...new Set(this.employers
+            .map(emp => emp.location)
+            .filter(location => location && location.trim())
+        )].sort();
+
+        locationFilter.innerHTML = '<option value="">Всички локации</option>';
+
+        locations.forEach(location => {
+            const option = document.createElement('option');
+            option.value = location.toString();
+            option.textContent = location.toString();
+            locationFilter.appendChild(option);
+        });
+    }
+
+    initFiltersAndSearch() {
+        // Quick search
+        const quickSearch = document.getElementById('employersQuickSearch');
+        if (quickSearch) {
+            quickSearch.addEventListener('input', (e) => {
+                this.filters.quickSearch = e.target.value.trim();
+                this.applyFiltersInstantly();
+            });
+        }
+
+        // Status filter
+        const statusFilter = document.getElementById('employersStatusFilter');
+        if (statusFilter) {
+            statusFilter.addEventListener('change', (e) => {
+                this.filters.status = e.target.value;
+                this.applyFiltersInstantly();
+            });
+        }
+
+        // Location filter
+        const locationFilter = document.getElementById('employersLocationFilter');
+        if (locationFilter) {
+            locationFilter.addEventListener('change', (e) => {
+                this.filters.location = e.target.value;
+                this.applyFiltersInstantly();
+            });
+        }
+
+        // Advanced filters
+        ['employersUsernameFilter', 'employersEmailFilter', 'employersPhoneFilter'].forEach(id => {
             const element = document.getElementById(id);
             if (element) {
-                element.addEventListener('input', () => this.applyFiltersInstantly());
+                element.addEventListener('input', (e) => {
+                    const key = id.replace('employers', '').replace('Filter', '').toLowerCase();
+                    this.filters[key] = e.target.value.trim();
+                    this.applyFiltersInstantly();
+                });
             }
         });
     }
@@ -440,14 +484,14 @@ class EmployersManager {
             const data = await response.json();
 
             if (data.success) {
-                showToast('success', data.message);
-                this.loadEmployersData();
+                window.toastManager?.success(data.message);
+                await this.loadEmployersData();
             } else {
-                showToast('error', data.message || 'Грешка при промяна на статуса');
+                window.toastManager?.error(data.message || 'Грешка при промяна на статуса');
             }
         } catch (error) {
             console.error('Toggle status error:', error);
-            showToast('error', 'Възникна грешка при промяна на статуса');
+            window.toastManager?.error('Възникна грешка при промяна на статуса');
         }
     }
 
@@ -537,8 +581,8 @@ function refreshEmployersData() {
     }
 }
 
-function toggleAdvancedFilters() {
-    const advancedFilters = document.getElementById('advancedFilters');
+function toggleEmployersAdvancedFilters() {
+    const advancedFilters = document.getElementById('advancedEmployerFilters');
     const toggleIcon = document.getElementById('advancedToggleIcon');
     const toggleText = document.getElementById('advancedToggleText');
 
@@ -589,7 +633,9 @@ function exportEmployersData() {
         })
     ].join('\n');
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    // Добавяме UTF-8 BOM за правилен encoding в Excel
+    const BOM = '\uFEFF';
+    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
     link.download = `employers_export_${new Date().toISOString().split('T')[0]}.csv`;
