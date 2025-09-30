@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="bg">
+
+<!-- Inventory Management Fragment -->
+<div th:fragment="inventoryManagement" class="inventory-management-container">
+
+    <!-- ==========================================
+         KPI STATISTICS CARDS
+         ========================================== -->
+    <div class="inventory-stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <i class="bi bi-boxes"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-number" id="stat-total-products">0</div>
+                <div class="stat-label">Общо продукти</div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-number" id="stat-low-stock">0</div>
+                <div class="stat-label">Ниски наличности</div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                <i class="bi bi-cash-stack"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-number" id="stat-inventory-value">0 лв.</div>
+                <div class="stat-label">Стойност на склада</div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                <i class="bi bi-tags-fill"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-number" id="stat-categories">0</div>
+                <div class="stat-label">Категории</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         MAIN PRODUCTS TABLE SECTION
+         ========================================== -->
+    <div class="inventory-main-section">
+
+        <!-- Table Header với Controls -->
+        <div class="table-controls-header">
+            <div class="controls-left">
+                <button class="btn-primary" id="btn-create-product" type="button">
+                    <i class="bi bi-plus-circle"></i>
+                    <span>Нов продукт</span>
+                </button>
+            </div>
+
+            <div class="controls-center">
+                <!-- Search Bar -->
+                <div class="search-box">
+                    <i class="bi bi-search"></i>
+                    <input type="text"
+                           id="search-input"
+                           class="search-input"
+                           placeholder="Търсене по име или SKU..."
+                           autocomplete="off">
+                    <button class="search-clear" id="btn-clear-search" type="button">
+                        <i class="bi bi-x"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="controls-right">
+                <!-- Filters -->
+                <select id="filter-category" class="filter-select">
+                    <option value="">Всички категории</option>
+                </select>
+
+                <select id="filter-status" class="filter-select">
+                    <option value="">Всички статуси</option>
+                    <option value="true">Активни</option>
+                    <option value="false">Неактивни</option>
+                </select>
+
+                <button class="btn-icon" id="btn-refresh" type="button" title="Опресни">
+                    <i class="bi bi-arrow-clockwise"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Products Table -->
+        <div class="table-wrapper">
+            <table class="inventory-table">
+                <thead>
+                <tr>
+                    <th data-sort="sku">SKU <i class="bi bi-chevron-expand"></i></th>
+                    <th data-sort="name">Име <i class="bi bi-chevron-expand"></i></th>
+                    <th data-sort="category">Категория <i class="bi bi-chevron-expand"></i></th>
+                    <th data-sort="unit">Единица</th>
+                    <th data-sort="price">Цена <i class="bi bi-chevron-expand"></i></th>
+                    <th data-sort="vatRate">ДДС %</th>
+                    <th data-sort="quantityAvailable">Налични <i class="bi bi-chevron-expand"></i></th>
+                    <th data-sort="quantityReserved">Запазени</th>
+                    <th data-sort="actualAvailable">Свободни <i class="bi bi-chevron-expand"></i></th>
+                    <th data-sort="active">Статус</th>
+                    <th class="actions-column">Действия</th>
+                </tr>
+                </thead>
+                <tbody id="products-table-body">
+                <!-- Rows will be inserted by JavaScript -->
+                <tr class="empty-state">
+                    <td colspan="11">
+                        <div class="empty-state-content">
+                            <i class="bi bi-inbox"></i>
+                            <p>Няма намерени продукти</p>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Loading State -->
+        <div class="table-loading" id="table-loading" style="display: none;">
+            <div class="spinner"></div>
+            <p>Зареждане на продукти...</p>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         PRODUCT MODAL (Create/Edit)
+         ========================================== -->
+    <div class="modal-overlay" id="product-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">Нов продукт</h3>
+                <button class="modal-close" id="btn-close-modal" type="button">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+
+            <form id="product-form" class="modal-body">
+
+                <!-- Basic Info -->
+                <div class="form-section">
+                    <h4 class="section-title">Основна информация</h4>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="input-sku">SKU <span class="required">*</span></label>
+                            <input type="text"
+                                   id="input-sku"
+                                   name="sku"
+                                   class="form-control"
+                                   placeholder="напр. PROD001"
+                                   required
+                                   pattern="[A-Z0-9-_]+"
+                                   title="Само главни букви, цифри, тире и долна черта">
+                            <small class="form-help">Уникален идентификатор на продукта</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="input-name">Име на продукта <span class="required">*</span></label>
+                            <input type="text"
+                                   id="input-name"
+                                   name="name"
+                                   class="form-control"
+                                   placeholder="Име на продукта"
+                                   required
+                                   minlength="2"
+                                   maxlength="200">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="input-category">Категория</label>
+                            <input type="text"
+                                   id="input-category"
+                                   name="category"
+                                   class="form-control"
+                                   placeholder="Категория"
+                                   list="categories-datalist"
+                                   maxlength="100">
+                            <datalist id="categories-datalist">
+                                <!-- Options will be populated by JavaScript -->
+                            </datalist>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="input-unit">Мерна единица <span class="required">*</span></label>
+                            <input type="text"
+                                   id="input-unit"
+                                   name="unit"
+                                   class="form-control"
+                                   placeholder="напр. бр, кг, л"
+                                   required
+                                   value="бр">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="input-description">Описание</label>
+                        <textarea id="input-description"
+                                  name="description"
+                                  class="form-control"
+                                  rows="3"
+                                  placeholder="Описание на продукта"
+                                  maxlength="1000"></textarea>
+                    </div>
+                </div>
+
+                <!-- Pricing -->
+                <div class="form-section">
+                    <h4 class="section-title">Ценова информация</h4>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="input-price">Цена без ДДС <span class="required">*</span></label>
+                            <div class="input-with-icon">
+                                <input type="number"
+                                       id="input-price"
+                                       name="price"
+                                       class="form-control"
+                                       placeholder="0.00"
+                                       step="0.01"
+                                       min="0.01"
+                                       required>
+                                <span class="input-icon">лв</span>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="input-vat">ДДС <span class="required">*</span></label>
+                            <select id="input-vat" name="vatRate" class="form-control" required>
+                                <option value="0">0% (без ДДС)</option>
+                                <option value="9">9% (намален)</option>
+                                <option value="20" selected>20% (стандартен)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Inventory -->
+                <div class="form-section">
+                    <h4 class="section-title">Наличности</h4>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="input-quantity">Налично количество</label>
+                            <input type="number"
+                                   id="input-quantity"
+                                   name="quantityAvailable"
+                                   class="form-control"
+                                   placeholder="0"
+                                   min="0"
+                                   value="0">
+                            <small class="form-help">Физическо количество на склад</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="input-status">Статус</label>
+                            <select id="input-status" name="active" class="form-control">
+                                <option value="true" selected>Активен</option>
+                                <option value="false">Неактивен</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <input type="hidden" id="input-product-id" name="id">
+            </form>
+
+            <div class="modal-footer">
+                <button class="btn-secondary" id="btn-cancel-modal" type="button">
+                    Отказ
+                </button>
+                <button class="btn-primary" id="btn-save-product" type="button">
+                    <i class="bi bi-check-circle"></i>
+                    <span>Запази</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+</html>

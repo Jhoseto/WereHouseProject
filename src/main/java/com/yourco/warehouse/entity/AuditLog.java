@@ -1,5 +1,6 @@
 package com.yourco.warehouse.entity;
 
+import com.yourco.warehouse.entity.enums.Role;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
@@ -26,8 +27,9 @@ public class AuditLog {
 
     private String ipAddress;
 
-    @Column(length = 1000)
-    private String userAgent;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Role role;
 
     @Column(nullable = false)
     private LocalDateTime timestamp;
@@ -52,8 +54,17 @@ public class AuditLog {
     public String getIpAddress() { return ipAddress; }
     public void setIpAddress(String ipAddress) { this.ipAddress = ipAddress; }
 
-    public String getUserAgent() { return userAgent; }
-    public void setUserAgent(String userAgent) { this.userAgent = userAgent; }
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Role getRole() {
+        return role;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
+    }
 
     public LocalDateTime getTimestamp() { return timestamp; }
     public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }

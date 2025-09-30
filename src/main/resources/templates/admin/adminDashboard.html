@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="/css/admin/adminDashboard.css">
     <link rel="stylesheet" href="/css/admin/clientsManagement.css">
     <link rel="stylesheet" href="/css/admin/employersManagement.css">
+    <link rel="stylesheet" href="/css/admin/inventoryManagement.css">
 
     <meta name="description" content="Администраторски панел за управление на система, потребители, инвентар и отчети">
 </head>
@@ -157,9 +158,8 @@
                     <p>Управление на продукти, категории, цени и наличности</p>
                 </div>
 
-                <div class="content-placeholder">
-<!--                    <div th:replace="~{admin/fragments/inventoryManagement :: inventoryManagement}"></div>-->
-                </div>
+                <div th:replace="~{admin/fragments/inventoryManagement :: inventoryManagement}"></div>
+
             </div>
 
             <!-- System Management Tab -->
@@ -209,6 +209,7 @@
 <script src="/js/adminDashboard/adminDashboard.js"></script>
 <script src="/js/adminDashboard/clientsManagement.js"></script>
 <script src="/js/adminDashboard/employersManagement.js"></script>
+<script src="/js/adminDashboard/inventoryManagement.js"></script>
 
 </body>
 </html>

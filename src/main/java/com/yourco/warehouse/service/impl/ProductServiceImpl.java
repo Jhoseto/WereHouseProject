@@ -1,22 +1,260 @@
 package com.yourco.warehouse.service.impl;
 
+import com.yourco.warehouse.dto.ProductAdminDTO;
+import com.yourco.warehouse.dto.ProductStatsDTO;
+import com.yourco.warehouse.entity.ProductEntity;
 import com.yourco.warehouse.repository.ProductRepository;
 import com.yourco.warehouse.service.ProductService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.util.List;
 
 @Service
 public class ProductServiceImpl implements ProductService {
 
-
+    private static final Logger log = LoggerFactory.getLogger(ProductServiceImpl.class);
     private final ProductRepository productRepository;
 
+
+    @Autowired
     public ProductServiceImpl(ProductRepository productRepository) {
         this.productRepository = productRepository;
     }
 
     @Override
     public long getActiveProductsCount() {
-        return productRepository.findAll().size();
+        return productRepository.countByActiveTrue();
+    }
+
+
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ProductAdminDTO> getAllProducts(String search, String category, Boolean active) {
+        log.debug("Getting products with filters - search: {}, category: {}, active: {}",
+                search, category, active);
+
+        List<ProductEntity> entities;
+
+        // Логика за филтриране - МИНИМАЛЕН КОД, МАКСИМАЛНА ЕФЕКТИВНОСТ
+        if (search != null && !search.trim().isEmpty()) {
+            // Search в име или SKU
+            entities = productRepository.searchActiveProducts(search);
+            // Допълнителни филтри ако има
+            if (category != null) {
+                entities = entities.stream()
+                        .filter(p -> category.equals(p.getCategory()))
+                        .toList();
+            }
+            if (active != null) {
+                entities = entities.stream()
+                        .filter(p -> active.equals(p.isActive()))
+                        .toList();
+            }
+        } else if (category != null || active != null) {
+            // Филтриране само по категория/статус
+            entities = productRepository.findAll().stream()
+                    .filter(p -> (category == null || category.equals(p.getCategory())))
+                    .filter(p -> (active == null || active.equals(p.isActive())))
+                    .toList();
+        } else {
+            // Всички продукти
+            entities = productRepository.findAll();
+        }
+
+        log.debug("Found {} products", entities.size());
+        return ProductAdminDTO.from(entities);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ProductAdminDTO getProductById(Long id) {
+        log.debug("Getting product by id: {}", id);
+
+        ProductEntity entity = productRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Продуктът не е намерен: " + id));
+
+        return ProductAdminDTO.from(entity);
+    }
+
+    @Override
+    @Transactional
+    public ProductAdminDTO createProduct(ProductAdminDTO dto) {
+        log.info("Creating new product: {}", dto.getSku());
+
+        // Проверка за дубликат SKU
+        if (productRepository.existsBySku(dto.getSku())) {
+            throw new IllegalArgumentException("Продукт с SKU '" + dto.getSku() + "' вече съществува");
+        }
+
+        // Конвертираме DTO към Entity
+        ProductEntity entity = dto.toEntity();
+        entity.setId(null); // Гарантираме че е нов
+
+        // Запазваме
+        ProductEntity saved = productRepository.save(entity);
+        log.info("Product created successfully: {} - {}", saved.getId(), saved.getSku());
+
+        return ProductAdminDTO.from(saved);
+    }
+
+    @Override
+    @Transactional
+    public ProductAdminDTO updateProduct(Long id, ProductAdminDTO dto) {
+        log.info("Updating product: {}", id);
+
+        // Намираме съществуващия
+        ProductEntity existing = productRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Продуктът не е намерен: " + id));
+
+        // Проверка дали SKU се променя и дали новият не е зает
+        if (!existing.getSku().equals(dto.getSku())) {
+            if (productRepository.existsBySku(dto.getSku())) {
+                throw new IllegalArgumentException("Продукт с SKU '" + dto.getSku() + "' вече съществува");
+            }
+        }
+
+        // Обновяваме полетата
+        existing.setSku(dto.getSku());
+        existing.setName(dto.getName());
+        existing.setUnit(dto.getUnit());
+        existing.setPrice(dto.getPrice());
+        existing.setVatRate(dto.getVatRate());
+        existing.setDescription(dto.getDescription());
+        existing.setCategory(dto.getCategory());
+        existing.setActive(dto.isActive());
+
+        // Запазваме
+        ProductEntity saved = productRepository.save(existing);
+        log.info("Product updated successfully: {}", id);
+
+        return ProductAdminDTO.from(saved);
+    }
+
+    @Override
+    @Transactional
+    public void deactivateProduct(Long id) {
+        log.info("Deactivating product: {}", id);
+
+        ProductEntity entity = productRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Продуктът не е намерен: " + id));
+
+        entity.setActive(false);
+        productRepository.save(entity);
+
+        log.info("Product deactivated: {}", id);
+    }
+
+    @Override
+    @Transactional
+    public void activateProduct(Long id) {
+        log.info("Activating product: {}", id);
+
+        ProductEntity entity = productRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Продуктът не е намерен: " + id));
+
+        entity.setActive(true);
+        productRepository.save(entity);
+
+        log.info("Product activated: {}", id);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ProductStatsDTO getProductStats() {
+        log.debug("Calculating product statistics");
+
+        long totalProducts = productRepository.count();
+        long activeProducts = productRepository.countByActiveTrue();
+
+        // Low stock (actual available <= 10)
+        long lowStockCount = productRepository.findAll().stream()
+                .filter(ProductEntity::isActive)
+                .filter(p -> {
+                    int actual = (p.getQuantityAvailable() != null ? p.getQuantityAvailable() : 0) -
+                            (p.getQuantityReserved() != null ? p.getQuantityReserved() : 0);
+                    return actual > 0 && actual <= 10;
+                })
+                .count();
+
+        // Out of stock (actual available <= 0)
+        long outOfStockCount = productRepository.findAll().stream()
+                .filter(ProductEntity::isActive)
+                .filter(p -> {
+                    int actual = (p.getQuantityAvailable() != null ? p.getQuantityAvailable() : 0) -
+                            (p.getQuantityReserved() != null ? p.getQuantityReserved() : 0);
+                    return actual <= 0;
+                })
+                .count();
+
+        // Total inventory value
+        BigDecimal totalValue = productRepository.findAll().stream()
+                .filter(ProductEntity::isActive)
+                .map(p -> {
+                    int qty = p.getQuantityAvailable() != null ? p.getQuantityAvailable() : 0;
+                    BigDecimal price = p.getPrice() != null ? p.getPrice() : BigDecimal.ZERO;
+                    return price.multiply(BigDecimal.valueOf(qty));
+                })
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        // Categories count
+        long categoriesCount = productRepository.findDistinctCategories().size();
+
+        log.debug("Stats calculated - total: {}, active: {}, lowStock: {}, outOfStock: {}, value: {}, categories: {}",
+                totalProducts, activeProducts, lowStockCount, outOfStockCount, totalValue, categoriesCount);
+
+        return new ProductStatsDTO(totalProducts, activeProducts, lowStockCount,
+                outOfStockCount, totalValue, categoriesCount);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<String> getAllCategories() {
+        return productRepository.findDistinctCategories();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<String> getAllUnits() {
+        return productRepository.findAllActiveUnits();
+    }
+
+    @Override
+    @Transactional
+    public ProductAdminDTO adjustInventory(Long productId, Integer quantity, String type) {
+        log.info("Adjusting inventory for product: {}, type: {}, quantity: {}",
+                productId, type, quantity);
+
+        ProductEntity entity = productRepository.findById(productId)
+                .orElseThrow(() -> new IllegalArgumentException("Продуктът не е намерен: " + productId));
+
+        int currentQty = entity.getQuantityAvailable() != null ? entity.getQuantityAvailable() : 0;
+        int newQty;
+
+        // Минимална логика за трите типа корекции
+        switch (type.toUpperCase()) {
+            case "ADD":
+                newQty = currentQty + quantity;
+                break;
+            case "REMOVE":
+                newQty = Math.max(0, currentQty - quantity);
+                break;
+            case "SET":
+                newQty = quantity;
+                break;
+            default:
+                throw new IllegalArgumentException("Невалиден тип корекция: " + type);
+        }
+
+        entity.setQuantityAvailable(newQty);
+        ProductEntity saved = productRepository.save(entity);
+
+        log.info("Inventory adjusted: {} -> {}", currentQty, newQty);
+        return ProductAdminDTO.from(saved);
     }
 }

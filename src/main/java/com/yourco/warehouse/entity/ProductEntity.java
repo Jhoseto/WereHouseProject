@@ -65,6 +65,11 @@ public class ProductEntity {
     }
 
     // Getters и Setters
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
     public Long getId() {
         return id;
     }
@@ -225,4 +230,6 @@ public class ProductEntity {
     public int hashCode() {
         return sku != null ? sku.hashCode() : 0;
     }
+
+
 }
