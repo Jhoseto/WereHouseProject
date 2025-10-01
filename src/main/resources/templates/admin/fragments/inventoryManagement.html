@@ -49,7 +49,28 @@
         </div>
     </div>
 
-    <!-- Sub-Tabs Navigation -->
+    <!-- ✅ WebSocket Connection Status Badge -->
+    <div class="inventory-connection-status">
+        <div class="connection-badge" id="inventory-ws-badge" data-status="connecting">
+            <span class="connection-indicator"></span>
+            <span class="connection-text">Свързване...</span>
+            <i class="bi bi-info-circle connection-info"></i>
+        </div>
+
+        <!-- Tooltip with explanation -->
+        <div class="connection-tooltip" id="inventory-ws-tooltip">
+            <div class="tooltip-header">
+                <strong id="tooltip-title">Статус на връзката</strong>
+            </div>
+            <div class="tooltip-body" id="tooltip-body">
+                Свързване към сървъра...
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         SUB-TABS NAVIGATION
+         ========================================== -->
     <div class="inventory-sub-tabs">
         <button class="sub-tab-btn active" data-sub-tab="products" type="button">
             <i class="bi bi-box-seam"></i> Продукти
@@ -60,11 +81,11 @@
     </div>
 
     <!-- ==========================================
-         MAIN PRODUCTS TABLE SECTION
+         PRODUCTS TABLE SECTION (Default visible)
          ========================================== -->
-    <div class="inventory-main-section">
+    <div class="inventory-main-section" id="products-section">
 
-        <!-- Table Header với Controls -->
+        <!-- Table Header with Controls -->
         <div class="table-controls-header">
             <div class="controls-left">
                 <button class="btn-primary" id="btn-create-product" type="button">
@@ -146,6 +167,64 @@
     </div>
 
     <!-- ==========================================
+         HISTORY TAB SECTION (Initially hidden)
+         ========================================== -->
+    <div class="history-tab-section" id="history-section" style="display: none;">
+
+        <!-- History Controls -->
+        <div class="history-controls-header">
+            <div class="controls-left">
+                <button class="btn-primary" id="btn-new-adjustment" type="button">
+                    <i class="bi bi-plus-circle"></i>
+                    <span>Нова корекция</span>
+                </button>
+            </div>
+
+            <div class="controls-right">
+                <button class="btn-icon" id="btn-refresh-history" type="button" title="Опресни история">
+                    <i class="bi bi-arrow-clockwise"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Adjustments Table -->
+        <div class="adjustments-table-wrapper">
+            <table class="adjustments-table">
+                <thead>
+                <tr>
+                    <th>Дата и час</th>
+                    <th>Продукт (SKU)</th>
+                    <th>Тип</th>
+                    <th>Промяна</th>
+                    <th>Преди</th>
+                    <th>След</th>
+                    <th>Причина</th>
+                    <th>Бележка</th>
+                    <th>От потребител</th>
+                </tr>
+                </thead>
+                <tbody id="adjustments-table-body">
+                <!-- Rows will be inserted by JavaScript -->
+                <tr class="empty-state">
+                    <td colspan="9">
+                        <div class="empty-state-content">
+                            <i class="bi bi-inbox"></i>
+                            <p>Няма намерени корекции</p>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Loading State -->
+        <div class="adjustments-loading" id="adjustments-loading" style="display: none;">
+            <div class="spinner"></div>
+            <p>Зареждане на история...</p>
+        </div>
+    </div>
+
+    <!-- ==========================================
          PRODUCT MODAL (Create/Edit)
          ========================================== -->
     <div class="modal-overlay" id="product-modal">
@@ -170,11 +249,9 @@
                                    id="input-sku"
                                    name="sku"
                                    class="form-control"
-                                   placeholder="напр. PROD001"
+                                   placeholder="напр. PRD-001"
                                    required
-                                   pattern="[A-Z0-9\-_]+"
-                                   title="Само главни букви, цифри, тире и долна черта">
-                            <small class="form-help">Уникален идентификатор на продукта</small>
+                                   maxlength="50">
                         </div>
 
                         <div class="form-group">
@@ -183,9 +260,8 @@
                                    id="input-name"
                                    name="name"
                                    class="form-control"
-                                   placeholder="Име на продукта"
+                                   placeholder="напр. Лаптоп Dell XPS 15"
                                    required
-                                   minlength="2"
                                    maxlength="200">
                         </div>
                     </div>
@@ -197,23 +273,26 @@
                                    id="input-category"
                                    name="category"
                                    class="form-control"
-                                   placeholder="Категория"
+                                   placeholder="напр. Електроника"
                                    list="categories-datalist"
                                    maxlength="100">
                             <datalist id="categories-datalist">
-                                <!-- Options will be populated by JavaScript -->
+                                <!-- Categories will be loaded by JavaScript -->
                             </datalist>
                         </div>
 
                         <div class="form-group">
                             <label for="input-unit">Мерна единица <span class="required">*</span></label>
-                            <input type="text"
-                                   id="input-unit"
-                                   name="unit"
-                                   class="form-control"
-                                   placeholder="напр. бр, кг, л"
-                                   required
-                                   value="бр">
+                            <select id="input-unit" name="unit" class="form-control" required>
+                                <option value="бр">бр (броя)</option>
+                                <option value="кг">кг (килограм)</option>
+                                <option value="л">л (литър)</option>
+                                <option value="м">м (метър)</option>
+                                <option value="м²">м² (кв. метър)</option>
+                                <option value="м³">м³ (куб. метър)</option>
+                                <option value="пакет">пакет</option>
+                                <option value="кутия">кутия</option>
+                            </select>
                         </div>
                     </div>
 
@@ -222,19 +301,19 @@
                         <textarea id="input-description"
                                   name="description"
                                   class="form-control"
-                                  rows="3"
-                                  placeholder="Описание на продукта"
-                                  maxlength="1000"></textarea>
+                                  placeholder="Кратко описание на продукта (незадължително)"
+                                  maxlength="500"
+                                  rows="3"></textarea>
                     </div>
                 </div>
 
                 <!-- Pricing -->
                 <div class="form-section">
-                    <h4 class="section-title">Ценова информация</h4>
+                    <h4 class="section-title">Ценообразуване</h4>
 
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="input-price">Цена без ДДС <span class="required">*</span></label>
+                            <label for="input-price">Единична цена <span class="required">*</span></label>
                             <div class="input-with-icon">
                                 <input type="number"
                                        id="input-price"
@@ -242,18 +321,18 @@
                                        class="form-control"
                                        placeholder="0.00"
                                        step="0.01"
-                                       min="0.01"
+                                       min="0"
                                        required>
                                 <span class="input-icon">лв</span>
                             </div>
                         </div>
 
                         <div class="form-group">
-                            <label for="input-vat">ДДС <span class="required">*</span></label>
+                            <label for="input-vat">ДДС ставка <span class="required">*</span></label>
                             <select id="input-vat" name="vatRate" class="form-control" required>
                                 <option value="0">0% (без ДДС)</option>
-                                <option value="9">9% (намален)</option>
-                                <option value="20" selected>20% (стандартен)</option>
+                                <option value="9">9% (намалена)</option>
+                                <option value="20" selected>20% (стандартна)</option>
                             </select>
                         </div>
                     </div>
@@ -261,18 +340,19 @@
 
                 <!-- Inventory -->
                 <div class="form-section">
-                    <h4 class="section-title">Наличности</h4>
+                    <h4 class="section-title">Наличности и статус</h4>
 
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="input-quantity">Налично количество</label>
+                            <label for="input-quantity">Налично количество <span class="required">*</span></label>
                             <input type="number"
                                    id="input-quantity"
                                    name="quantityAvailable"
                                    class="form-control"
                                    placeholder="0"
                                    min="0"
-                                   value="0">
+                                   value="0"
+                                   required>
                             <small class="form-help">Физическо количество на склад</small>
                         </div>
 
@@ -296,6 +376,101 @@
                 <button class="btn-primary" id="btn-save-product" type="button">
                     <i class="bi bi-check-circle"></i>
                     <span>Запази</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         ADJUSTMENT MODAL (Create Adjustment)
+         ========================================== -->
+    <div class="modal-overlay" id="adjustment-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Нова корекция на наличности</h3>
+                <button class="modal-close" id="btn-close-adjustment-modal" type="button">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+
+            <form id="adjustment-form" class="modal-body">
+
+                <!-- Product Selection -->
+                <div class="form-group">
+                    <label for="adjustment-product">Продукт <span class="required">*</span></label>
+                    <select id="adjustment-product" class="form-control" required>
+                        <option value="">Избери продукт...</option>
+                        <!-- Products will be loaded by JavaScript -->
+                    </select>
+                    <small class="form-help">Избери продукта, за който правиш корекция</small>
+                </div>
+
+                <!-- Current Stock Display -->
+                <div class="current-stock-display" id="current-stock-display" style="display: none;">
+                    <div class="stock-info-card">
+                        <div class="stock-label">Текущи наличности:</div>
+                        <div class="stock-value" id="current-stock-value">0 бр</div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <!-- Adjustment Type -->
+                    <div class="form-group">
+                        <label for="adjustment-type">Тип корекция <span class="required">*</span></label>
+                        <select id="adjustment-type" class="form-control" required>
+                            <option value="ADD">Добавяне (+)</option>
+                            <option value="REMOVE">Премахване (-)</option>
+                            <option value="SET">Задаване (=)</option>
+                        </select>
+                        <small class="form-help" id="type-help">Добавя количество към текущото</small>
+                    </div>
+
+                    <!-- Quantity -->
+                    <div class="form-group">
+                        <label for="adjustment-quantity">Количество <span class="required">*</span></label>
+                        <input type="number"
+                               id="adjustment-quantity"
+                               class="form-control"
+                               min="1"
+                               placeholder="0"
+                               required>
+                        <small class="form-help">Въведи количеството за промяна</small>
+                    </div>
+                </div>
+
+                <!-- Reason -->
+                <div class="form-group">
+                    <label for="adjustment-reason">Причина <span class="required">*</span></label>
+                    <select id="adjustment-reason" class="form-control" required>
+                        <option value="">Избери причина...</option>
+                        <option value="RECEIVED">Приемане на стока</option>
+                        <option value="DAMAGED">Повредена/развалена стока</option>
+                        <option value="THEFT">Кражба/загуба</option>
+                        <option value="RETURN">Връщане от клиент</option>
+                        <option value="CORRECTION">Корекция на грешка в системата</option>
+                        <option value="OTHER">Друго</option>
+                    </select>
+                </div>
+
+                <!-- Note -->
+                <div class="form-group">
+                    <label for="adjustment-note">Бележка</label>
+                    <textarea id="adjustment-note"
+                              class="form-control"
+                              placeholder="Допълнителна информация (незадължително)"
+                              maxlength="500"
+                              rows="3"></textarea>
+                </div>
+
+            </form>
+
+            <div class="modal-footer">
+                <button class="btn-secondary" id="btn-cancel-adjustment" type="button">
+                    Отказ
+                </button>
+                <button class="btn-primary" id="btn-save-adjustment" type="button">
+                    <i class="bi bi-check-circle"></i>
+                    <span>Запази корекцията</span>
                 </button>
             </div>
         </div>

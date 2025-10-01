@@ -77,9 +77,19 @@ class InventoryApi {
     // GET all products with filters
     async getProducts(filters = {}) {
         const params = new URLSearchParams();
-        if (filters.search) params.append('search', filters.search);
-        if (filters.category) params.append('category', filters.category);
-        if (filters.status !== '') params.append('active', filters.status);
+
+        if (filters.search?.trim()) {
+            params.append('search', filters.search.trim());
+        }
+
+        if (filters.category?.trim()) {
+            params.append('category', filters.category.trim());
+        }
+
+        // ✅ ОПРАВЕНО: Добавяме само ако има валидна стойност
+        if (filters.status && filters.status !== '') {
+            params.append('active', filters.status);
+        }
 
         const query = params.toString();
         return this.request(`/products${query ? '?' + query : ''}`);
@@ -125,11 +135,18 @@ class InventoryApi {
 
     // GET units
     async getUnits() {
+
+        // TODO: Ще се използва когато се уточнят различни мерни единици бр. Лтр. Кг.
         return this.request('/units');
     }
 
-    // POST adjust inventory
-    async adjustInventory(data) {
+    // GET all adjustments
+    async getAdjustments() {
+        return this.request('/adjustments');
+    }
+
+    // POST create adjustment
+    async createAdjustment(data) {
         return this.request('/adjustments', {
             method: 'POST',
             body: JSON.stringify(data)
@@ -138,52 +155,110 @@ class InventoryApi {
 }
 
 // ==========================================
-// WEBSOCKET MANAGER CLASS
+// INVENTORY WEBSOCKET CLASS - ОБНОВЕН С BADGE SUPPORT
 // ==========================================
 class InventoryWebSocket {
     constructor() {
         this.stompClient = null;
         this.connected = false;
         this.subscriptions = [];
+        this.badge = document.getElementById('inventory-ws-badge');
+        this.badgeText = this.badge?.querySelector('.connection-text');
+        this.tooltipBody = document.getElementById('tooltip-body');
+        this.tooltipTitle = document.getElementById('tooltip-title');
     }
 
     connect() {
         try {
-            // Use factory function for auto-reconnect support
-            const socketFactory = () => new SockJS('/ws/dashboard');
-            this.stompClient = StompJs.Stomp.over(socketFactory);
+            // Update badge to connecting state
+            this.updateBadge('connecting');
 
-            // Disable debug logs in production
+            const socket = new SockJS('/ws/dashboard');
+            this.stompClient = StompJs.Stomp.over(socket);
+
             this.stompClient.debug = () => {};
 
-            // Configure reconnect behavior
             this.stompClient.reconnectDelay = 5000;
             this.stompClient.heartbeatIncoming = 4000;
             this.stompClient.heartbeatOutgoing = 4000;
 
-            // Connection callbacks
             this.stompClient.onConnect = (frame) => {
                 console.log('✓ Inventory WebSocket connected');
                 this.connected = true;
                 this.subscribe();
+
+                // ✅ UPDATE BADGE (вместо toast)
+                this.updateBadge('connected');
             };
 
             this.stompClient.onDisconnect = () => {
                 console.log('Inventory WebSocket disconnected');
                 this.connected = false;
+
+                // ✅ UPDATE BADGE (вместо toast)
+                this.updateBadge('disconnected');
             };
 
             this.stompClient.onStompError = (frame) => {
                 console.error('Inventory WebSocket STOMP error:', frame.headers['message']);
                 this.connected = false;
+
+                // ✅ UPDATE BADGE (вместо toast)
+                this.updateBadge('disconnected');
             };
 
-            // Activate the connection
             this.stompClient.activate();
 
         } catch (error) {
             console.error('Failed to connect Inventory WebSocket:', error);
+            this.updateBadge('disconnected');
         }
+    }
+
+    /**
+     * Update connection status badge
+     * @param {string} status - 'connecting', 'connected', or 'disconnected'
+     */
+    updateBadge(status) {
+        if (!this.badge) return;
+
+        // Update badge data attribute
+        this.badge.dataset.status = status;
+
+        // Status configurations
+        const statusConfig = {
+            'connecting': {
+                text: 'Свързване...',
+                tooltipTitle: 'Свързване към сървъра',
+                tooltipBody: 'Системата се свързва към сървъра за real-time обновления. Това може да отнеме няколко секунди.'
+            },
+            'connected': {
+                text: 'Online',
+                tooltipTitle: 'Активна връзка',
+                tooltipBody: 'Свързани сте към сървъра и получавате моментални обновления. Когато друг администратор промени продукт или направи корекция, ще видите промяната веднага без да опреснявате страницата.'
+            },
+            'disconnected': {
+                text: 'Offline',
+                tooltipTitle: 'Прекъсната връзка',
+                tooltipBody: 'Връзката към сървъра е прекъсната. Промените от други администратори няма да се показват автоматично. Данните ще се обновяват на всеки 30 секунди или при ръчно опресняване. Проверете интернет връзката си или опреснете страницата.'
+            }
+        };
+
+        const config = statusConfig[status];
+        if (config && this.badgeText) {
+            this.badgeText.textContent = config.text;
+        }
+
+        if (config && this.tooltipTitle) {
+            this.tooltipTitle.textContent = config.tooltipTitle;
+        }
+
+        if (config && this.tooltipBody) {
+            this.tooltipBody.textContent = config.tooltipBody;
+        }
+
+        // Log status change
+        console.log(`WebSocket status changed: ${status}`);
     }
 
     subscribe() {
@@ -192,6 +267,14 @@ class InventoryWebSocket {
             this.stompClient.subscribe(CONFIG.wsTopics.products, (message) => {
                 const data = JSON.parse(message.body);
                 this.handleProductUpdate(data);
+            })
+        );
+
+        // Subscribe to adjustment updates
+        this.subscriptions.push(
+            this.stompClient.subscribe(CONFIG.wsTopics.adjustments, (message) => {
+                const data = JSON.parse(message.body);
+                this.handleAdjustmentUpdate(data);
             })
         );
 
@@ -207,7 +290,7 @@ class InventoryWebSocket {
     handleProductUpdate(data) {
         const { eventType, product } = data;
 
-        // Show notification
+        // Show notification САМО за промени от ДРУГИ admins
         const messages = {
             'created': `Продукт "${product.name}" е създаден`,
             'updated': `Продукт "${product.name}" е обновен`,
@@ -223,14 +306,39 @@ class InventoryWebSocket {
         window.productTable?.loadProducts();
     }
 
+    handleAdjustmentUpdate(data) {
+        const { adjustment } = data;
+
+        // Show notification
+        if (window.toastManager) {
+            window.toastManager.info(
+                `Нова корекция за "${adjustment.productName}"`
+            );
+        }
+
+        // Refresh history if visible
+        const historySection = document.getElementById('history-section');
+        if (historySection && historySection.style.display !== 'none') {
+            window.adjustmentHistory?.loadHistory();
+        }
+
+        // Refresh product table (quantities changed)
+        window.productTable?.loadProducts();
+
+        // Refresh stats
+        window.statsManager?.loadStats();
+    }
+
     disconnect() {
         if (this.stompClient && this.connected) {
             this.subscriptions.forEach(sub => sub.unsubscribe());
             this.stompClient.disconnect();
             this.connected = false;
+            this.updateBadge('disconnected');
         }
     }
 }
+
 
 // ==========================================
 // PRODUCT TABLE CLASS
@@ -364,8 +472,8 @@ class ProductTable {
         try {
             await window.api.deleteProduct(id);
             window.toastManager?.success('Продуктът е деактивиран успешно');
-            this.loadProducts();
-            window.statsManager?.loadStats();
+            await this.loadProducts();
+            await window.statsManager?.loadStats();
         } catch (error) {
             window.toastManager?.error(error.message || 'Грешка при деактивиране');
         }
@@ -382,7 +490,7 @@ class ProductTable {
     }
 
     formatPrice(price) {
-        return parseFloat(price || 0).toFixed(2);
+        return parseFloat(price.toString() || 0).toFixed(2);
     }
 
     escapeHtml(text) {
@@ -515,8 +623,8 @@ class ProductModal {
             }
 
             this.close();
-            window.productTable?.loadProducts();
-            window.statsManager?.loadStats();
+            await window.productTable?.loadProducts();
+            await window.statsManager?.loadStats();
         } catch (error) {
             window.toastManager?.error(error.message || 'Грешка при запазване');
         }
@@ -673,6 +781,41 @@ function setupTableSorting() {
 }
 
 // ==========================================
+// SUB-TABS SWITCHING
+// ==========================================
+function setupSubTabs() {
+    const subTabButtons = document.querySelectorAll('.sub-tab-btn');
+    const productsSection = document.getElementById('products-section');
+    const historySection = document.getElementById('history-section');
+
+    subTabButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            // Remove active from all
+            subTabButtons.forEach(b => b.classList.remove('active'));
+            // Add active to clicked
+            btn.classList.add('active');
+
+            const tab = btn.dataset.subTab;
+
+            if (tab === 'products') {
+                // Show products, hide history
+                productsSection.style.display = 'block';
+                historySection.style.display = 'none';
+            } else if (tab === 'history') {
+                // Show history, hide products
+                productsSection.style.display = 'none';
+                historySection.style.display = 'block';
+
+                // Load history when tab is shown
+                if (window.adjustmentHistory) {
+                    window.adjustmentHistory.loadHistory();
+                }
+            }
+        });
+    });
+}
+
+// ==========================================
 // EVENT HANDLERS
 // ==========================================
 function setupEventHandlers() {
@@ -687,7 +830,322 @@ function setupEventHandlers() {
         window.statsManager?.loadStats();
         window.toastManager?.info('Данните са обновени');
     });
+
+    // New adjustment button
+    document.getElementById('btn-new-adjustment')?.addEventListener('click', () => {
+        window.adjustmentModal?.open();
+    });
+
+    // Refresh history button
+    document.getElementById('btn-refresh-history')?.addEventListener('click', () => {
+        window.adjustmentHistory?.loadHistory();
+        window.toastManager?.info('Историята е обновена');
+    });
 }
+
+// ==========================================
+// ADJUSTMENT HISTORY CLASS
+// ==========================================
+class AdjustmentHistory {
+    constructor() {
+        this.tbody = document.getElementById('adjustments-table-body');
+        this.loadingEl = document.getElementById('adjustments-loading');
+        this.section = document.getElementById('history-section');
+        this.adjustments = [];
+    }
+
+    async loadHistory() {
+        this.showLoading();
+
+        try {
+            const response = await window.api.getAdjustments();
+            this.adjustments = response.adjustments || [];
+            this.render();
+        } catch (error) {
+            console.error('Failed to load adjustments history:', error);
+            window.toastManager?.error('Грешка при зареждане на историята');
+        } finally {
+            this.hideLoading();
+        }
+    }
+
+    render() {
+        if (!this.adjustments.length) {
+            this.tbody.innerHTML = `
+                <tr class="empty-state">
+                    <td colspan="9">
+                        <div class="empty-state-content">
+                            <i class="bi bi-inbox"></i>
+                            <p>Няма намерени корекции</p>
+                        </div>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        this.tbody.innerHTML = this.adjustments.map(adj => this.renderRow(adj)).join('');
+    }
+
+    renderRow(adj) {
+        const typeBadge = this.getTypeBadge(adj.adjustmentType);
+        const changeBadge = this.getChangeBadge(adj.quantityChange);
+        const reasonText = this.getReasonText(adj.reason);
+
+        return `
+            <tr>
+                <td>
+                    <div class="adjustment-date">
+                        ${this.formatDate(adj.performedAt)}
+                    </div>
+                </td>
+                <td>
+                    <div class="adjustment-product">
+                        <strong>${this.escapeHtml(adj.productName)}</strong>
+                        <div class="product-sku">${this.escapeHtml(adj.productSku)}</div>
+                    </div>
+                </td>
+                <td>${typeBadge}</td>
+                <td>${changeBadge}</td>
+                <td><span class="qty-badge">${adj.quantityBefore}</span></td>
+                <td><span class="qty-badge">${adj.quantityAfter}</span></td>
+                <td><span class="reason-badge">${reasonText}</span></td>
+                <td>
+                    <div class="adjustment-note">
+                        ${adj.note ? this.escapeHtml(adj.note) : '<em class="text-muted">-</em>'}
+                    </div>
+                </td>
+                <td>
+                    <div class="user-badge">
+                        <i class="bi bi-person-circle"></i>
+                        ${this.escapeHtml(adj.performedBy)}
+                    </div>
+                </td>
+            </tr>
+        `;
+    }
+
+    getTypeBadge(type) {
+        const types = {
+            'ADD': '<span class="type-badge add"><i class="bi bi-plus-circle"></i> Добавяне</span>',
+            'REMOVE': '<span class="type-badge remove"><i class="bi bi-dash-circle"></i> Премахване</span>',
+            'SET': '<span class="type-badge set"><i class="bi bi-arrow-clockwise"></i> Задаване</span>'
+        };
+        return types[type] || type;
+    }
+
+    getChangeBadge(change) {
+        const isPositive = change > 0;
+        const icon = isPositive ? 'arrow-up' : 'arrow-down';
+        const className = isPositive ? 'positive' : 'negative';
+        const sign = isPositive ? '+' : '';
+
+        return `
+            <span class="change-badge ${className}">
+                <i class="bi bi-${icon}"></i>
+                ${sign}${change}
+            </span>
+        `;
+    }
+
+    getReasonText(reason) {
+        const reasons = {
+            'RECEIVED': 'Приемане',
+            'DAMAGED': 'Повреда',
+            'THEFT': 'Кражба/загуба',
+            'RETURN': 'Връщане',
+            'CORRECTION': 'Корекция',
+            'OTHER': 'Друго'
+        };
+        return reasons[reason] || reason;
+    }
+
+    formatDate(datetime) {
+        if (!datetime) return '-';
+        const date = new Date(datetime);
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+
+        return `
+            <div class="date-primary">${day}.${month}.${year}</div>
+            <div class="date-time">${hours}:${minutes}</div>
+        `;
+    }
+
+    showLoading() {
+        this.tbody.style.display = 'none';
+        this.loadingEl.style.display = 'block';
+    }
+
+    hideLoading() {
+        this.tbody.style.display = '';
+        this.loadingEl.style.display = 'none';
+    }
+
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+}
+
+// ==========================================
+// ADJUSTMENT MODAL CLASS
+// ==========================================
+class AdjustmentModal {
+    constructor() {
+        this.modal = document.getElementById('adjustment-modal');
+        this.form = document.getElementById('adjustment-form');
+
+        this.productSelect = document.getElementById('adjustment-product');
+        this.typeSelect = document.getElementById('adjustment-type');
+        this.quantityInput = document.getElementById('adjustment-quantity');
+        this.reasonSelect = document.getElementById('adjustment-reason');
+        this.noteInput = document.getElementById('adjustment-note');
+
+        this.currentStockDisplay = document.getElementById('current-stock-display');
+        this.currentStockValue = document.getElementById('current-stock-value');
+        this.typeHelp = document.getElementById('type-help');
+
+        this.setupEvents();
+    }
+
+    setupEvents() {
+        // Close buttons
+        document.getElementById('btn-close-adjustment-modal').addEventListener('click', () => this.close());
+        document.getElementById('btn-cancel-adjustment').addEventListener('click', () => this.close());
+
+        // Save button
+        document.getElementById('btn-save-adjustment').addEventListener('click', () => this.save());
+
+        // Close on overlay click
+        this.modal.addEventListener('click', (e) => {
+            if (e.target === this.modal) this.close();
+        });
+
+        // Product selection change
+        this.productSelect.addEventListener('change', (e) => {
+            this.updateCurrentStock(e.target.value);
+        });
+
+        // Type selection change (update help text)
+        this.typeSelect.addEventListener('change', (e) => {
+            this.updateTypeHelp(e.target.value);
+        });
+    }
+
+    async open() {
+        this.form.reset();
+        this.currentStockDisplay.style.display = 'none';
+
+        // Load products
+        await this.loadProducts();
+
+        this.modal.classList.add('active');
+        this.productSelect.focus();
+    }
+
+    close() {
+        this.modal.classList.remove('active');
+        this.form.reset();
+        this.currentStockDisplay.style.display = 'none';
+    }
+
+    async loadProducts() {
+        try {
+            const response = await window.api.getProducts({});
+            const products = response.products || [];
+
+            // Clear and populate product select
+            this.productSelect.innerHTML = '<option value="">Избери продукт...</option>';
+
+            products
+                .filter(p => p.active)
+                .forEach(product => {
+                    const option = document.createElement('option');
+                    option.value = product.id;
+                    option.textContent = `${product.sku} - ${product.name}`;
+                    option.dataset.quantity = product.quantityAvailable || 0;
+                    option.dataset.unit = product.unit || 'бр';
+                    this.productSelect.appendChild(option);
+                });
+
+        } catch (error) {
+            console.error('Failed to load products:', error);
+            window.toastManager?.error('Грешка при зареждане на продукти');
+        }
+    }
+
+    updateCurrentStock(productId) {
+        if (!productId) {
+            this.currentStockDisplay.style.display = 'none';
+            return;
+        }
+
+        const option = this.productSelect.querySelector(`option[value="${productId}"]`);
+        if (option) {
+            const quantity = option.dataset.quantity || 0;
+            const unit = option.dataset.unit || 'бр';
+
+            this.currentStockValue.textContent = `${quantity} ${unit}`;
+            this.currentStockDisplay.style.display = 'block';
+        }
+    }
+
+    updateTypeHelp(type) {
+        const helpTexts = {
+            'ADD': 'Добавя количество към текущото',
+            'REMOVE': 'Премахва количество от текущото',
+            'SET': 'Задава ново общо количество (презаписва)'
+        };
+        this.typeHelp.textContent = helpTexts[type] || '';
+    }
+
+    async save() {
+        // Validate form
+        if (!this.form.checkValidity()) {
+            this.form.reportValidity();
+            return;
+        }
+
+        // Collect data
+        const data = {
+            productId: parseInt(this.productSelect.value),
+            adjustmentType: this.typeSelect.value,
+            quantity: parseInt(this.quantityInput.value),
+            reason: this.reasonSelect.value,
+            note: this.noteInput.value.trim() || null
+        };
+
+        try {
+            await window.api.createAdjustment(data);
+            window.toastManager?.success('Корекцията е записана успешно');
+
+            this.close();
+
+            // Refresh data
+            await window.productTable?.loadProducts();
+            await window.statsManager?.loadStats();
+
+            // Refresh history if visible
+            if (window.adjustmentHistory && this.isHistoryTabVisible()) {
+                await window.adjustmentHistory.loadHistory();
+            }
+
+        } catch (error) {
+            window.toastManager?.error(error.message || 'Грешка при запазване на корекцията');
+        }
+    }
+
+    isHistoryTabVisible() {
+        const historySection = document.getElementById('history-section');
+        return historySection && historySection.style.display !== 'none';
+    }
+}
+
 
 // ==========================================
 // INITIALIZATION
@@ -709,10 +1167,13 @@ async function init() {
     window.statsManager = new StatsManager();
     window.filterManager = new FilterManager();
     window.inventoryWs = new InventoryWebSocket();
+    window.adjustmentHistory = new AdjustmentHistory();
+    window.adjustmentModal = new AdjustmentModal();
 
     // Setup UI
     setupEventHandlers();
     setupTableSorting();
+    setupSubTabs();
 
     // Load initial data
     try {
