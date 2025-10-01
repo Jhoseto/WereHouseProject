@@ -1,5 +1,7 @@
 package com.yourco.warehouse.entity;
 
+import com.yourco.warehouse.entity.enums.AdjustmentReasonEnum;
+import com.yourco.warehouse.entity.enums.AdjustmentTypeEnum;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
@@ -20,7 +22,7 @@ public class InventoryAdjustmentEntity {
     private ProductEntity product;
 
     @Column(name = "adjustment_type", nullable = false, length = 20)
-    private String adjustmentType; // ADD, REMOVE, SET
+    private AdjustmentTypeEnum adjustmentType; // ADD, REMOVE, SET
 
     @Column(name = "quantity_change", nullable = false)
     private Integer quantityChange;
@@ -31,8 +33,9 @@ public class InventoryAdjustmentEntity {
     @Column(name = "quantity_after", nullable = false)
     private Integer quantityAfter;
 
-    @Column(name = "reason", nullable = false, length = 50)
-    private String reason; // RECEIVED, DAMAGED, THEFT, CORRECTION, RETURN, OTHER
+    @Enumerated(EnumType.STRING)
+    @Column(name = "reason", nullable = true)
+    private AdjustmentReasonEnum reason;
 
     @Column(name = "note", length = 500)
     private String note;
@@ -65,11 +68,11 @@ public class InventoryAdjustmentEntity {
         this.product = product;
     }
 
-    public String getAdjustmentType() {
+    public AdjustmentTypeEnum getAdjustmentType() {
         return adjustmentType;
     }
 
-    public void setAdjustmentType(String adjustmentType) {
+    public void setAdjustmentType(AdjustmentTypeEnum adjustmentType) {
         this.adjustmentType = adjustmentType;
     }
 
@@ -97,11 +100,11 @@ public class InventoryAdjustmentEntity {
         this.quantityAfter = quantityAfter;
     }
 
-    public String getReason() {
+    public AdjustmentReasonEnum getReason() {
         return reason;
     }
 
-    public void setReason(String reason) {
+    public void setReason(AdjustmentReasonEnum reason) {
         this.reason = reason;
     }
 

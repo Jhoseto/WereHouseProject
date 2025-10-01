@@ -2,7 +2,10 @@ package com.yourco.warehouse.service.impl;
 
 import com.yourco.warehouse.dto.ProductAdminDTO;
 import com.yourco.warehouse.dto.ProductStatsDTO;
+import com.yourco.warehouse.entity.InventoryAdjustmentEntity;
 import com.yourco.warehouse.entity.ProductEntity;
+import com.yourco.warehouse.entity.enums.AdjustmentTypeEnum;
+import com.yourco.warehouse.repository.InventoryAdjustmentRepository;
 import com.yourco.warehouse.repository.ProductRepository;
 import com.yourco.warehouse.service.ProductService;
 import org.slf4j.Logger;
@@ -11,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -18,9 +22,11 @@ public class ProductServiceImpl implements ProductService {
 
     private static final Logger log = LoggerFactory.getLogger(ProductServiceImpl.class);
     private final ProductRepository productRepository;
+    private final InventoryAdjustmentRepository inventoryAdjustmentRepository;
 
-    public ProductServiceImpl(ProductRepository productRepository) {
+    public ProductServiceImpl(ProductRepository productRepository, InventoryAdjustmentRepository inventoryAdjustmentRepository) {
         this.productRepository = productRepository;
+        this.inventoryAdjustmentRepository = inventoryAdjustmentRepository;
     }
 
     // ===== СЪЩЕСТВУВАЩ МЕТОД =====
@@ -85,18 +91,33 @@ public class ProductServiceImpl implements ProductService {
     public ProductAdminDTO createProduct(ProductAdminDTO dto) {
         log.info("Creating new product: {}", dto.getSku());
 
-        // Проверка за дубликат SKU
         if (productRepository.existsBySku(dto.getSku())) {
             throw new IllegalArgumentException("Продукт с SKU '" + dto.getSku() + "' вече съществува");
         }
 
-        // Конвертираме DTO към Entity
         ProductEntity entity = dto.toEntity();
-        entity.setId(null); // Гарантираме че е нов
+        entity.setId(null);
+        entity.setCreatedAt(LocalDateTime.now());
 
-        // Запазваме
         ProductEntity saved = productRepository.save(entity);
         log.info("Product created successfully: {} - {}", saved.getId(), saved.getSku());
+
+        // Създаваме INITIAL adjustment record за началното количество
+        if (saved.getQuantityAvailable() != null && saved.getQuantityAvailable() > 0) {
+            InventoryAdjustmentEntity initialAdjustment = new InventoryAdjustmentEntity();
+            initialAdjustment.setProduct(saved);
+            initialAdjustment.setAdjustmentType(AdjustmentTypeEnum.INITIAL);
+            initialAdjustment.setQuantityChange(saved.getQuantityAvailable());
+            initialAdjustment.setQuantityBefore(0);
+            initialAdjustment.setQuantityAfter(saved.getQuantityAvailable());
+            initialAdjustment.setReason(null);  // Няма reason при INITIAL
+            initialAdjustment.setNote(dto.getDescription());  // Използваме описанието като бележка
+            initialAdjustment.setPerformedBy("system");
+            initialAdjustment.setPerformedAt(LocalDateTime.now());
+
+            inventoryAdjustmentRepository.save(initialAdjustment);
+            log.info("Initial adjustment record created for product {}", saved.getId());
+        }
 
         return ProductAdminDTO.from(saved);
     }

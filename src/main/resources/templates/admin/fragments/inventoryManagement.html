@@ -49,7 +49,7 @@
         </div>
     </div>
 
-    <!-- ✅ WebSocket Connection Status Badge -->
+    <!-- WebSocket Connection Status Badge -->
     <div class="inventory-connection-status">
         <div class="connection-badge" id="inventory-ws-badge" data-status="connecting">
             <span class="connection-indicator"></span>
@@ -57,7 +57,6 @@
             <i class="bi bi-info-circle connection-info"></i>
         </div>
 
-        <!-- Tooltip with explanation -->
         <div class="connection-tooltip" id="inventory-ws-tooltip">
             <div class="tooltip-header">
                 <strong id="tooltip-title">Статус на връзката</strong>
@@ -73,10 +72,10 @@
          ========================================== -->
     <div class="inventory-sub-tabs">
         <button class="sub-tab-btn active" data-sub-tab="products" type="button">
-            <i class="bi bi-box-seam"></i> Продукти
+            <i class="bi bi-box-seam"></i> Каталог артикули
         </button>
         <button class="sub-tab-btn" data-sub-tab="history" type="button">
-            <i class="bi bi-clock-history"></i> История на корекциите
+            <i class="bi bi-clock-history"></i> История
         </button>
     </div>
 
@@ -174,10 +173,7 @@
         <!-- History Controls -->
         <div class="history-controls-header">
             <div class="controls-left">
-                <button class="btn-primary" id="btn-new-adjustment" type="button">
-                    <i class="bi bi-plus-circle"></i>
-                    <span>Нова корекция</span>
-                </button>
+                <!-- Премахнат бутон "Нова корекция" -->
             </div>
 
             <div class="controls-right">
@@ -260,7 +256,7 @@
                                    id="input-name"
                                    name="name"
                                    class="form-control"
-                                   placeholder="напр. Лаптоп Dell XPS 15"
+                                   placeholder="напр. Минерална вода 1.5л"
                                    required
                                    maxlength="200">
                         </div>
@@ -268,31 +264,26 @@
 
                     <div class="form-row">
                         <div class="form-group">
+                            <label for="input-unit">Мерна единица <span class="required">*</span></label>
+                            <input type="text"
+                                   id="input-unit"
+                                   name="unit"
+                                   class="form-control"
+                                   placeholder="бр"
+                                   value="бр"
+                                   required
+                                   maxlength="20">
+                            <small class="form-help">бр, кг, л, м и т.н.</small>
+                        </div>
+
+                        <div class="form-group">
                             <label for="input-category">Категория</label>
                             <input type="text"
                                    id="input-category"
                                    name="category"
                                    class="form-control"
-                                   placeholder="напр. Електроника"
-                                   list="categories-datalist"
+                                   placeholder="напр. Напитки"
                                    maxlength="100">
-                            <datalist id="categories-datalist">
-                                <!-- Categories will be loaded by JavaScript -->
-                            </datalist>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="input-unit">Мерна единица <span class="required">*</span></label>
-                            <select id="input-unit" name="unit" class="form-control" required>
-                                <option value="бр">бр (броя)</option>
-                                <option value="кг">кг (килограм)</option>
-                                <option value="л">л (литър)</option>
-                                <option value="м">м (метър)</option>
-                                <option value="м²">м² (кв. метър)</option>
-                                <option value="м³">м³ (куб. метър)</option>
-                                <option value="пакет">пакет</option>
-                                <option value="кутия">кутия</option>
-                            </select>
                         </div>
                     </div>
 
@@ -301,8 +292,8 @@
                         <textarea id="input-description"
                                   name="description"
                                   class="form-control"
-                                  placeholder="Кратко описание на продукта (незадължително)"
-                                  maxlength="500"
+                                  placeholder="Допълнително описание на продукта..."
+                                  maxlength="1000"
                                   rows="3"></textarea>
                     </div>
                 </div>
@@ -313,26 +304,26 @@
 
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="input-price">Единична цена <span class="required">*</span></label>
+                            <label for="input-price">Единична цена (без ДДС) <span class="required">*</span></label>
                             <div class="input-with-icon">
                                 <input type="number"
                                        id="input-price"
                                        name="price"
                                        class="form-control"
                                        placeholder="0.00"
-                                       step="0.01"
                                        min="0"
+                                       step="0.01"
                                        required>
                                 <span class="input-icon">лв</span>
                             </div>
                         </div>
 
                         <div class="form-group">
-                            <label for="input-vat">ДДС ставка <span class="required">*</span></label>
+                            <label for="input-vat">ДДС % <span class="required">*</span></label>
                             <select id="input-vat" name="vatRate" class="form-control" required>
-                                <option value="0">0% (без ДДС)</option>
-                                <option value="9">9% (намалена)</option>
-                                <option value="20" selected>20% (стандартна)</option>
+                                <option value="0">0% (Без ДДС)</option>
+                                <option value="9">9% (Намален)</option>
+                                <option value="20" selected>20% (Стандартен)</option>
                             </select>
                         </div>
                     </div>
@@ -366,6 +357,52 @@
                     </div>
                 </div>
 
+                <!-- Removal Section (показва се само при редакция) -->
+                <div class="form-section" id="removal-section" style="display: none;">
+                    <h4 class="section-title">Премахване на бройки</h4>
+
+                    <div class="alert alert-info" style="margin-bottom: 16px; padding: 12px; background: #e3f2fd; border-left: 4px solid #2196f3; border-radius: 6px;">
+                        <i class="bi bi-info-circle"></i>
+                        Текущи наличности: <strong id="current-qty-display">0 бр</strong>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="remove-qty">Количество за премахване</label>
+                            <input type="number"
+                                   id="remove-qty"
+                                   class="form-control"
+                                   placeholder="0"
+                                   min="0">
+                            <small class="form-help">Колко бройки да премахнем от склада</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="remove-reason">Причина <span class="required">*</span></label>
+                            <select id="remove-reason" class="form-control">
+                                <option value="">Избери причина...</option>
+                                <option value="MISSING">Липса/загуба</option>
+                                <option value="DAMAGED">Повреда</option>
+                                <option value="EXPIRED">Изтичане на срок</option>
+                            </select>
+                            <small class="form-help">Задължително при премахване</small>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="remove-note">Бележка</label>
+                        <textarea id="remove-note"
+                                  class="form-control"
+                                  rows="2"
+                                  placeholder="Допълнителни детайли..."></textarea>
+                    </div>
+
+                    <div class="alert alert-warning" style="padding: 12px; background: #fff3e0; border-left: 4px solid #ff9800; border-radius: 6px;">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <strong>Важно:</strong> За добавяне на нови бройки използвай системата за доставки вместо директна редакция.
+                    </div>
+                </div>
+
                 <input type="hidden" id="input-product-id" name="id">
             </form>
 
@@ -376,101 +413,6 @@
                 <button class="btn-primary" id="btn-save-product" type="button">
                     <i class="bi bi-check-circle"></i>
                     <span>Запази</span>
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ==========================================
-         ADJUSTMENT MODAL (Create Adjustment)
-         ========================================== -->
-    <div class="modal-overlay" id="adjustment-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Нова корекция на наличности</h3>
-                <button class="modal-close" id="btn-close-adjustment-modal" type="button">
-                    <i class="bi bi-x-lg"></i>
-                </button>
-            </div>
-
-            <form id="adjustment-form" class="modal-body">
-
-                <!-- Product Selection -->
-                <div class="form-group">
-                    <label for="adjustment-product">Продукт <span class="required">*</span></label>
-                    <select id="adjustment-product" class="form-control" required>
-                        <option value="">Избери продукт...</option>
-                        <!-- Products will be loaded by JavaScript -->
-                    </select>
-                    <small class="form-help">Избери продукта, за който правиш корекция</small>
-                </div>
-
-                <!-- Current Stock Display -->
-                <div class="current-stock-display" id="current-stock-display" style="display: none;">
-                    <div class="stock-info-card">
-                        <div class="stock-label">Текущи наличности:</div>
-                        <div class="stock-value" id="current-stock-value">0 бр</div>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <!-- Adjustment Type -->
-                    <div class="form-group">
-                        <label for="adjustment-type">Тип корекция <span class="required">*</span></label>
-                        <select id="adjustment-type" class="form-control" required>
-                            <option value="ADD">Добавяне (+)</option>
-                            <option value="REMOVE">Премахване (-)</option>
-                            <option value="SET">Задаване (=)</option>
-                        </select>
-                        <small class="form-help" id="type-help">Добавя количество към текущото</small>
-                    </div>
-
-                    <!-- Quantity -->
-                    <div class="form-group">
-                        <label for="adjustment-quantity">Количество <span class="required">*</span></label>
-                        <input type="number"
-                               id="adjustment-quantity"
-                               class="form-control"
-                               min="1"
-                               placeholder="0"
-                               required>
-                        <small class="form-help">Въведи количеството за промяна</small>
-                    </div>
-                </div>
-
-                <!-- Reason -->
-                <div class="form-group">
-                    <label for="adjustment-reason">Причина <span class="required">*</span></label>
-                    <select id="adjustment-reason" class="form-control" required>
-                        <option value="">Избери причина...</option>
-                        <option value="RECEIVED">Приемане на стока</option>
-                        <option value="DAMAGED">Повредена/развалена стока</option>
-                        <option value="THEFT">Кражба/загуба</option>
-                        <option value="RETURN">Връщане от клиент</option>
-                        <option value="CORRECTION">Корекция на грешка в системата</option>
-                        <option value="OTHER">Друго</option>
-                    </select>
-                </div>
-
-                <!-- Note -->
-                <div class="form-group">
-                    <label for="adjustment-note">Бележка</label>
-                    <textarea id="adjustment-note"
-                              class="form-control"
-                              placeholder="Допълнителна информация (незадължително)"
-                              maxlength="500"
-                              rows="3"></textarea>
-                </div>
-
-            </form>
-
-            <div class="modal-footer">
-                <button class="btn-secondary" id="btn-cancel-adjustment" type="button">
-                    Отказ
-                </button>
-                <button class="btn-primary" id="btn-save-adjustment" type="button">
-                    <i class="bi bi-check-circle"></i>
-                    <span>Запази корекцията</span>
                 </button>
             </div>
         </div>

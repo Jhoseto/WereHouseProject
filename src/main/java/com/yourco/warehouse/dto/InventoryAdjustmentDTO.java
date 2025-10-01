@@ -2,11 +2,14 @@ package com.yourco.warehouse.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.yourco.warehouse.entity.InventoryAdjustmentEntity;
+import com.yourco.warehouse.entity.enums.AdjustmentTypeEnum;
+import com.yourco.warehouse.entity.enums.AdjustmentReasonEnum;
 import jakarta.validation.constraints.*;
 import java.time.LocalDateTime;
 
 /**
  * DTO за inventory корекции
+ * Използва enumи за тип и причина за type-safety
  */
 public class InventoryAdjustmentDTO {
 
@@ -37,14 +40,12 @@ public class InventoryAdjustmentDTO {
     @JsonProperty("quantityChange")
     private Integer quantityChange;
 
-    @NotBlank(message = "Типът е задължителен")
-    @Pattern(regexp = "^(ADD|REMOVE|SET)$", message = "Типът трябва да бъде ADD, REMOVE или SET")
+    @NotNull(message = "Типът е задължителен")
     @JsonProperty("adjustmentType")
-    private String adjustmentType; // ADD, REMOVE, SET
+    private AdjustmentTypeEnum adjustmentType;
 
-    @NotBlank(message = "Причината е задължителна")
     @JsonProperty("reason")
-    private String reason; // RECEIVED, DAMAGED, THEFT, CORRECTION, RETURN, OTHER
+    private AdjustmentReasonEnum reason;  // Null при INITIAL, задължителен при REMOVE
 
     @JsonProperty("note")
     private String note;
@@ -83,42 +84,107 @@ public class InventoryAdjustmentDTO {
     }
 
     // Getters and Setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public Long getId() {
+        return id;
+    }
 
-    public Long getProductId() { return productId; }
-    public void setProductId(Long productId) { this.productId = productId; }
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-    public String getProductSku() { return productSku; }
-    public void setProductSku(String productSku) { this.productSku = productSku; }
+    public Long getProductId() {
+        return productId;
+    }
 
-    public String getProductName() { return productName; }
-    public void setProductName(String productName) { this.productName = productName; }
+    public void setProductId(Long productId) {
+        this.productId = productId;
+    }
 
-    public Integer getQuantity() { return quantity; }
-    public void setQuantity(Integer quantity) { this.quantity = quantity; }
+    public String getProductSku() {
+        return productSku;
+    }
 
-    public Integer getQuantityBefore() { return quantityBefore; }
-    public void setQuantityBefore(Integer quantityBefore) { this.quantityBefore = quantityBefore; }
+    public void setProductSku(String productSku) {
+        this.productSku = productSku;
+    }
 
-    public Integer getQuantityAfter() { return quantityAfter; }
-    public void setQuantityAfter(Integer quantityAfter) { this.quantityAfter = quantityAfter; }
+    public String getProductName() {
+        return productName;
+    }
 
-    public Integer getQuantityChange() { return quantityChange; }
-    public void setQuantityChange(Integer quantityChange) { this.quantityChange = quantityChange; }
+    public void setProductName(String productName) {
+        this.productName = productName;
+    }
 
-    public String getAdjustmentType() { return adjustmentType; }
-    public void setAdjustmentType(String adjustmentType) { this.adjustmentType = adjustmentType; }
+    public Integer getQuantity() {
+        return quantity;
+    }
 
-    public String getReason() { return reason; }
-    public void setReason(String reason) { this.reason = reason; }
+    public void setQuantity(Integer quantity) {
+        this.quantity = quantity;
+    }
 
-    public String getNote() { return note; }
-    public void setNote(String note) { this.note = note; }
+    public Integer getQuantityBefore() {
+        return quantityBefore;
+    }
 
-    public String getPerformedBy() { return performedBy; }
-    public void setPerformedBy(String performedBy) { this.performedBy = performedBy; }
+    public void setQuantityBefore(Integer quantityBefore) {
+        this.quantityBefore = quantityBefore;
+    }
 
-    public LocalDateTime getPerformedAt() { return performedAt; }
-    public void setPerformedAt(LocalDateTime performedAt) { this.performedAt = performedAt; }
+    public Integer getQuantityAfter() {
+        return quantityAfter;
+    }
+
+    public void setQuantityAfter(Integer quantityAfter) {
+        this.quantityAfter = quantityAfter;
+    }
+
+    public Integer getQuantityChange() {
+        return quantityChange;
+    }
+
+    public void setQuantityChange(Integer quantityChange) {
+        this.quantityChange = quantityChange;
+    }
+
+    public AdjustmentTypeEnum getAdjustmentType() {
+        return adjustmentType;
+    }
+
+    public void setAdjustmentType(AdjustmentTypeEnum adjustmentType) {
+        this.adjustmentType = adjustmentType;
+    }
+
+    public AdjustmentReasonEnum getReason() {
+        return reason;
+    }
+
+    public void setReason(AdjustmentReasonEnum reason) {
+        this.reason = reason;
+    }
+
+    public String getNote() {
+        return note;
+    }
+
+    public void setNote(String note) {
+        this.note = note;
+    }
+
+    public String getPerformedBy() {
+        return performedBy;
+    }
+
+    public void setPerformedBy(String performedBy) {
+        this.performedBy = performedBy;
+    }
+
+    public LocalDateTime getPerformedAt() {
+        return performedAt;
+    }
+
+    public void setPerformedAt(LocalDateTime performedAt) {
+        this.performedAt = performedAt;
+    }
 }

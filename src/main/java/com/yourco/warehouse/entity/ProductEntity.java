@@ -1,9 +1,12 @@
 package com.yourco.warehouse.entity;
 
+import com.yourco.warehouse.entity.enums.AdjustmentReasonEnum;
+import com.yourco.warehouse.entity.enums.AdjustmentTypeEnum;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "products")
@@ -11,6 +14,9 @@ public class ProductEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
 
     @Column(nullable = false, unique = true, length = 50)
     @NotBlank(message = "SKU не може да бъде празно")
@@ -46,6 +52,7 @@ public class ProductEntity {
     @Column(length = 100)
     private String category;
 
+
     @Column(name = "quantity_available", nullable = false)
     private Integer quantityAvailable = 0;
 
@@ -56,12 +63,13 @@ public class ProductEntity {
     // Конструктор
     public ProductEntity() {}
 
-    public ProductEntity(String sku, String name, String unit, BigDecimal price, int vatRate) {
+    public ProductEntity(String sku, String name, String unit, BigDecimal price, int vatRate, LocalDateTime createdAt) {
         this.sku = sku;
         this.name = name;
         this.unit = unit;
         this.price = price;
         this.vatRate = vatRate;
+        this.createdAt = createdAt;
     }
 
     // Getters и Setters
@@ -72,6 +80,14 @@ public class ProductEntity {
 
     public Long getId() {
         return id;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
     }
 
     public String getSku() {
@@ -165,6 +181,7 @@ public class ProductEntity {
         }
         this.quantityReserved = quantityReserved != null ? quantityReserved : 0;
     }
+
 
     public Integer getQuantityTotal() {
         return quantityAvailable + quantityReserved;

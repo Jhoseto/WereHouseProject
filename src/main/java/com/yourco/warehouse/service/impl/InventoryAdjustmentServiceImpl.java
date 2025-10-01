@@ -4,6 +4,7 @@ import com.yourco.warehouse.dto.InventoryAdjustmentDTO;
 import com.yourco.warehouse.dto.ProductAdminDTO;
 import com.yourco.warehouse.entity.InventoryAdjustmentEntity;
 import com.yourco.warehouse.entity.ProductEntity;
+import com.yourco.warehouse.entity.enums.AdjustmentTypeEnum;
 import com.yourco.warehouse.repository.InventoryAdjustmentRepository;
 import com.yourco.warehouse.repository.ProductRepository;
 import com.yourco.warehouse.service.InventoryAdjustmentService;
@@ -33,10 +34,8 @@ public class InventoryAdjustmentServiceImpl implements InventoryAdjustmentServic
     @Override
     @Transactional
     public ProductAdminDTO createAdjustment(InventoryAdjustmentDTO dto, String username) {
-        log.info("Creating adjustment for product: {}, type: {}, quantity: {}",
-                dto.getProductId(), dto.getAdjustmentType(), dto.getQuantity());
+        log.info("Creating adjustment for product: {}, type: {}", dto.getProductId(), dto.getAdjustmentType());
 
-        // Намираме продукта
         ProductEntity product = productRepository.findById(dto.getProductId())
                 .orElseThrow(() -> new IllegalArgumentException("Продуктът не е намерен"));
 
@@ -44,25 +43,30 @@ public class InventoryAdjustmentServiceImpl implements InventoryAdjustmentServic
         int newQty;
         int change;
 
-        // Изчисляваме новото количество според типа
-        switch (dto.getAdjustmentType().toUpperCase()) {
-            case "ADD":
-                newQty = currentQty + dto.getQuantity();
-                change = dto.getQuantity();
-                break;
-            case "REMOVE":
-                newQty = Math.max(0, currentQty - dto.getQuantity());
-                change = -(dto.getQuantity());
-                break;
-            case "SET":
-                newQty = dto.getQuantity();
-                change = dto.getQuantity() - currentQty;
-                break;
-            default:
-                throw new IllegalArgumentException("Невалиден тип корекция: " + dto.getAdjustmentType());
+        if (dto.getAdjustmentType() == AdjustmentTypeEnum.REMOVE) {
+            // При премахване reason е задължителен
+            if (dto.getReason() == null) {
+                throw new IllegalArgumentException("Причината е задължителна при премахване на бройки");
+            }
+
+            // Проверка дали има достатъчно количество
+            if (currentQty < dto.getQuantity()) {
+                throw new IllegalArgumentException(
+                        "Недостатъчно количество за премахване. Налично: " + currentQty);
+            }
+
+            newQty = currentQty - dto.getQuantity();
+            change = -dto.getQuantity();
+
+        } else if (dto.getAdjustmentType() == AdjustmentTypeEnum.INITIAL) {
+            // Начално количество при създаване
+            newQty = dto.getQuantity();
+            change = dto.getQuantity();
+        } else {
+            throw new IllegalArgumentException("Невалиден тип корекция: " + dto.getAdjustmentType());
         }
 
-        // Създаваме adjustment записа
+        // Създаваме adjustment record
         InventoryAdjustmentEntity adjustment = new InventoryAdjustmentEntity();
         adjustment.setProduct(product);
         adjustment.setAdjustmentType(dto.getAdjustmentType());
@@ -74,15 +78,16 @@ public class InventoryAdjustmentServiceImpl implements InventoryAdjustmentServic
         adjustment.setPerformedBy(username);
         adjustment.setPerformedAt(LocalDateTime.now());
 
-        // Запазваме adjustment-a
         adjustmentRepository.save(adjustment);
 
         // Обновяваме количеството на продукта
         product.setQuantityAvailable(newQty);
-        ProductEntity saved = productRepository.save(product);
+        productRepository.save(product);
 
-        log.info("Adjustment created: {} -> {}", currentQty, newQty);
-        return ProductAdminDTO.from(saved);
+        log.info("Adjustment created successfully. Product {} quantity: {} -> {}",
+                product.getId(), currentQty, newQty);
+
+        return ProductAdminDTO.from(product);
     }
 
     @Override

@@ -3,20 +3,19 @@ package com.yourco.warehouse.dto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.yourco.warehouse.entity.ProductEntity;
 import jakarta.validation.constraints.*;
-
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * DTO за админски операции с продукти
- * Включва всички полета + validation
+ * Admin DTO за продукти с пълна информация за количества и timestamps
  */
 public class ProductAdminDTO {
 
     @JsonProperty("id")
     private Long id;
 
-    @NotBlank(message = "SKU е задължително")
+    @NotBlank(message = "SKU е задължителен")
     @Pattern(regexp = "^[A-Z0-9-_]+$", message = "SKU може да съдържа само главни букви, цифри, тире и долна черта")
     @JsonProperty("sku")
     private String sku;
@@ -43,24 +42,25 @@ public class ProductAdminDTO {
     @JsonProperty("active")
     private boolean active;
 
-    @Size(max = 1000, message = "Описанието не може да надвишава 1000 символа")
     @JsonProperty("description")
     private String description;
 
-    @Size(max = 100, message = "Категорията не може да надвишава 100 символа")
     @JsonProperty("category")
     private String category;
 
-    @Min(value = 0, message = "Наличните не могат да бъдат отрицателни")
+    @Min(value = 0, message = "Количеството не може да бъде отрицателно")
     @JsonProperty("quantityAvailable")
     private Integer quantityAvailable;
 
-    @Min(value = 0, message = "Запазените не могат да бъдат отрицателни")
+    @Min(value = 0, message = "Резервираното количество не може да бъде отрицателно")
     @JsonProperty("quantityReserved")
     private Integer quantityReserved;
 
     @JsonProperty("actualAvailable")
     private Integer actualAvailable;
+
+    @JsonProperty("createdAt")
+    private LocalDateTime createdAt;
 
     // Constructors
     public ProductAdminDTO() {}
@@ -72,18 +72,21 @@ public class ProductAdminDTO {
         if (entity == null) return null;
 
         ProductAdminDTO dto = new ProductAdminDTO();
-        dto.id = entity.getId();
-        dto.sku = entity.getSku();
-        dto.name = entity.getName();
-        dto.unit = entity.getUnit();
-        dto.price = entity.getPrice();
-        dto.vatRate = entity.getVatRate();
-        dto.active = entity.isActive();
-        dto.description = entity.getDescription();
-        dto.category = entity.getCategory();
-        dto.quantityAvailable = entity.getQuantityAvailable();
-        dto.quantityReserved = entity.getQuantityReserved();
-        dto.actualAvailable = Math.max(0,
+        dto.setId(entity.getId());
+        dto.setSku(entity.getSku());
+        dto.setName(entity.getName());
+        dto.setUnit(entity.getUnit());
+        dto.setPrice(entity.getPrice());
+        dto.setVatRate(entity.getVatRate());
+        dto.setActive(entity.isActive());
+        dto.setDescription(entity.getDescription());
+        dto.setCategory(entity.getCategory());
+        dto.setQuantityAvailable(entity.getQuantityAvailable());
+        dto.setQuantityReserved(entity.getQuantityReserved());
+        dto.setCreatedAt(entity.getCreatedAt());
+
+        // Изчисляваме действително наличното количество
+        dto.setActualAvailable(
                 (entity.getQuantityAvailable() != null ? entity.getQuantityAvailable() : 0) -
                         (entity.getQuantityReserved() != null ? entity.getQuantityReserved() : 0)
         );
@@ -116,43 +119,112 @@ public class ProductAdminDTO {
         entity.setCategory(this.category);
         entity.setQuantityAvailable(this.quantityAvailable != null ? this.quantityAvailable : 0);
         entity.setQuantityReserved(this.quantityReserved != null ? this.quantityReserved : 0);
+        // createdAt се задава автоматично от @PrePersist в entity
         return entity;
     }
 
     // Getters and Setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public Long getId() {
+        return id;
+    }
 
-    public String getSku() { return sku; }
-    public void setSku(String sku) { this.sku = sku; }
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
+    public String getSku() {
+        return sku;
+    }
 
-    public String getUnit() { return unit; }
-    public void setUnit(String unit) { this.unit = unit; }
+    public void setSku(String sku) {
+        this.sku = sku;
+    }
 
-    public BigDecimal getPrice() { return price; }
-    public void setPrice(BigDecimal price) { this.price = price; }
+    public String getName() {
+        return name;
+    }
 
-    public int getVatRate() { return vatRate; }
-    public void setVatRate(int vatRate) { this.vatRate = vatRate; }
+    public void setName(String name) {
+        this.name = name;
+    }
 
-    public boolean isActive() { return active; }
-    public void setActive(boolean active) { this.active = active; }
+    public String getUnit() {
+        return unit;
+    }
 
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
+    public void setUnit(String unit) {
+        this.unit = unit;
+    }
 
-    public String getCategory() { return category; }
-    public void setCategory(String category) { this.category = category; }
+    public BigDecimal getPrice() {
+        return price;
+    }
 
-    public Integer getQuantityAvailable() { return quantityAvailable; }
-    public void setQuantityAvailable(Integer quantityAvailable) { this.quantityAvailable = quantityAvailable; }
+    public void setPrice(BigDecimal price) {
+        this.price = price;
+    }
 
-    public Integer getQuantityReserved() { return quantityReserved; }
-    public void setQuantityReserved(Integer quantityReserved) { this.quantityReserved = quantityReserved; }
+    public int getVatRate() {
+        return vatRate;
+    }
 
-    public Integer getActualAvailable() { return actualAvailable; }
-    public void setActualAvailable(Integer actualAvailable) { this.actualAvailable = actualAvailable; }
+    public void setVatRate(int vatRate) {
+        this.vatRate = vatRate;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
+    }
+
+    public Integer getQuantityAvailable() {
+        return quantityAvailable;
+    }
+
+    public void setQuantityAvailable(Integer quantityAvailable) {
+        this.quantityAvailable = quantityAvailable;
+    }
+
+    public Integer getQuantityReserved() {
+        return quantityReserved;
+    }
+
+    public void setQuantityReserved(Integer quantityReserved) {
+        this.quantityReserved = quantityReserved;
+    }
+
+    public Integer getActualAvailable() {
+        return actualAvailable;
+    }
+
+    public void setActualAvailable(Integer actualAvailable) {
+        this.actualAvailable = actualAvailable;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
 }
