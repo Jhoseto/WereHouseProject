@@ -1,6 +1,7 @@
 package com.yourco.warehouse.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.yourco.warehouse.entity.InventoryAdjustmentEntity;
 import jakarta.validation.constraints.*;
 import java.time.LocalDateTime;
 
@@ -23,14 +24,18 @@ public class InventoryAdjustmentDTO {
     private String productName;
 
     @NotNull(message = "Количеството е задължително")
+    @Min(value = 1, message = "Количеството трябва да бъде поне 1")
     @JsonProperty("quantity")
     private Integer quantity;
 
-    @JsonProperty("previousQuantity")
-    private Integer previousQuantity;
+    @JsonProperty("quantityBefore")
+    private Integer quantityBefore;
 
-    @JsonProperty("newQuantity")
-    private Integer newQuantity;
+    @JsonProperty("quantityAfter")
+    private Integer quantityAfter;
+
+    @JsonProperty("quantityChange")
+    private Integer quantityChange;
 
     @NotBlank(message = "Типът е задължителен")
     @Pattern(regexp = "^(ADD|REMOVE|SET)$", message = "Типът трябва да бъде ADD, REMOVE или SET")
@@ -39,7 +44,7 @@ public class InventoryAdjustmentDTO {
 
     @NotBlank(message = "Причината е задължителна")
     @JsonProperty("reason")
-    private String reason; // RECEIVED, DAMAGED, THEFT, CORRECTION, OTHER
+    private String reason; // RECEIVED, DAMAGED, THEFT, CORRECTION, RETURN, OTHER
 
     @JsonProperty("note")
     private String note;
@@ -52,6 +57,30 @@ public class InventoryAdjustmentDTO {
 
     // Constructors
     public InventoryAdjustmentDTO() {}
+
+    /**
+     * Factory method - конвертира Entity към DTO
+     */
+    public static InventoryAdjustmentDTO from(InventoryAdjustmentEntity entity) {
+        if (entity == null) return null;
+
+        InventoryAdjustmentDTO dto = new InventoryAdjustmentDTO();
+        dto.id = entity.getId();
+        dto.productId = entity.getProduct().getId();
+        dto.productSku = entity.getProduct().getSku();
+        dto.productName = entity.getProduct().getName();
+        dto.quantity = Math.abs(entity.getQuantityChange());
+        dto.quantityBefore = entity.getQuantityBefore();
+        dto.quantityAfter = entity.getQuantityAfter();
+        dto.quantityChange = entity.getQuantityChange();
+        dto.adjustmentType = entity.getAdjustmentType();
+        dto.reason = entity.getReason();
+        dto.note = entity.getNote();
+        dto.performedBy = entity.getPerformedBy();
+        dto.performedAt = entity.getPerformedAt();
+
+        return dto;
+    }
 
     // Getters and Setters
     public Long getId() { return id; }
@@ -69,11 +98,14 @@ public class InventoryAdjustmentDTO {
     public Integer getQuantity() { return quantity; }
     public void setQuantity(Integer quantity) { this.quantity = quantity; }
 
-    public Integer getPreviousQuantity() { return previousQuantity; }
-    public void setPreviousQuantity(Integer previousQuantity) { this.previousQuantity = previousQuantity; }
+    public Integer getQuantityBefore() { return quantityBefore; }
+    public void setQuantityBefore(Integer quantityBefore) { this.quantityBefore = quantityBefore; }
 
-    public Integer getNewQuantity() { return newQuantity; }
-    public void setNewQuantity(Integer newQuantity) { this.newQuantity = newQuantity; }
+    public Integer getQuantityAfter() { return quantityAfter; }
+    public void setQuantityAfter(Integer quantityAfter) { this.quantityAfter = quantityAfter; }
+
+    public Integer getQuantityChange() { return quantityChange; }
+    public void setQuantityChange(Integer quantityChange) { this.quantityChange = quantityChange; }
 
     public String getAdjustmentType() { return adjustmentType; }
     public void setAdjustmentType(String adjustmentType) { this.adjustmentType = adjustmentType; }

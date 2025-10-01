@@ -7,7 +7,6 @@ import com.yourco.warehouse.repository.ProductRepository;
 import com.yourco.warehouse.service.ProductService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,18 +19,17 @@ public class ProductServiceImpl implements ProductService {
     private static final Logger log = LoggerFactory.getLogger(ProductServiceImpl.class);
     private final ProductRepository productRepository;
 
-
-    @Autowired
     public ProductServiceImpl(ProductRepository productRepository) {
         this.productRepository = productRepository;
     }
 
+    // ===== СЪЩЕСТВУВАЩ МЕТОД =====
     @Override
     public long getActiveProductsCount() {
         return productRepository.countByActiveTrue();
     }
 
-
+    // ===== НОВИ МЕТОДИ =====
 
     @Override
     @Transactional(readOnly = true)
@@ -129,6 +127,15 @@ public class ProductServiceImpl implements ProductService {
         existing.setCategory(dto.getCategory());
         existing.setActive(dto.isActive());
 
+        // ВАЖНО: Обновяваме и количествата
+        // В production environment може да искаш да логваш тези промени
+        if (dto.getQuantityAvailable() != null) {
+            existing.setQuantityAvailable(dto.getQuantityAvailable());
+        }
+        if (dto.getQuantityReserved() != null) {
+            existing.setQuantityReserved(dto.getQuantityReserved());
+        }
+
         // Запазваме
         ProductEntity saved = productRepository.save(existing);
         log.info("Product updated successfully: {}", id);
@@ -174,7 +181,7 @@ public class ProductServiceImpl implements ProductService {
 
         // Low stock (actual available <= 10)
         long lowStockCount = productRepository.findAll().stream()
-                .filter(ProductEntity::isActive)
+                .filter(p -> p.isActive())
                 .filter(p -> {
                     int actual = (p.getQuantityAvailable() != null ? p.getQuantityAvailable() : 0) -
                             (p.getQuantityReserved() != null ? p.getQuantityReserved() : 0);
@@ -184,7 +191,7 @@ public class ProductServiceImpl implements ProductService {
 
         // Out of stock (actual available <= 0)
         long outOfStockCount = productRepository.findAll().stream()
-                .filter(ProductEntity::isActive)
+                .filter(p -> p.isActive())
                 .filter(p -> {
                     int actual = (p.getQuantityAvailable() != null ? p.getQuantityAvailable() : 0) -
                             (p.getQuantityReserved() != null ? p.getQuantityReserved() : 0);

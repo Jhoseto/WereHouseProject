@@ -1,8 +1,9 @@
-package com.yourco.warehouse.controller.admin;
+package com.yourco.warehouse.controllers;
 
 import com.yourco.warehouse.dto.InventoryAdjustmentDTO;
 import com.yourco.warehouse.dto.ProductAdminDTO;
 import com.yourco.warehouse.dto.ProductStatsDTO;
+import com.yourco.warehouse.service.InventoryAdjustmentService;
 import com.yourco.warehouse.service.InventoryBroadcastService;
 import com.yourco.warehouse.service.ProductService;
 import jakarta.validation.Valid;
@@ -11,9 +12,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,11 +31,14 @@ public class InventoryController {
     private static final Logger log = LoggerFactory.getLogger(InventoryController.class);
 
     private final ProductService productService;
+    private final InventoryAdjustmentService adjustmentService;
     private final InventoryBroadcastService broadcastService;
 
     public InventoryController(ProductService productService,
+                               InventoryAdjustmentService adjustmentService,
                                InventoryBroadcastService broadcastService) {
         this.productService = productService;
+        this.adjustmentService = adjustmentService;
         this.broadcastService = broadcastService;
     }
 
@@ -188,46 +192,39 @@ public class InventoryController {
         }
     }
 
-    // ==========================================
-    // INVENTORY ADJUSTMENTS
-    // ==========================================
-
     /**
      * POST /admin/inventory/adjustments - Корекция на наличности
      */
     @PostMapping("/adjustments")
     public ResponseEntity<Map<String, Object>> adjustInventory(
-            @Valid @RequestBody InventoryAdjustmentDTO dto) {
+            @Valid @RequestBody InventoryAdjustmentDTO dto,
+            Authentication authentication) {
 
-        log.info("POST /admin/inventory/adjustments - Product: {}, Type: {}, Qty: {}",
-                dto.getProductId(), dto.getAdjustmentType(), dto.getQuantity());
+        String username = authentication != null ? authentication.getName() : "system";
+
+        log.info("POST /admin/inventory/adjustments - Product: {}, Type: {}, Qty: {} by {}",
+                dto.getProductId(), dto.getAdjustmentType(), dto.getQuantity(), username);
 
         try {
             // Правим корекцията
-            ProductAdminDTO updated = productService.adjustInventory(
-                    dto.getProductId(),
-                    dto.getQuantity(),
-                    dto.getAdjustmentType()
-            );
+            ProductAdminDTO updated = adjustmentService.createAdjustment(dto, username);
 
-            // Попълваме допълнителна информация за adjustment DTO
-            dto.setId(System.currentTimeMillis()); // Temporary ID за frontend
-            dto.setProductSku(updated.getSku());
-            dto.setProductName(updated.getName());
-            dto.setNewQuantity(updated.getQuantityAvailable());
-            dto.setPerformedAt(LocalDateTime.now());
-            // dto.setPerformedBy трябва да се вземе от Authentication, но за простота ще пропуснем
+            // Зареждаме пълната adjustment информация
+            List<InventoryAdjustmentDTO> history = adjustmentService.getAdjustmentHistory(dto.getProductId());
+            InventoryAdjustmentDTO createdAdjustment = history.isEmpty() ? null : history.get(0);
 
             // Broadcast промените
             broadcastService.broadcastProductUpdate(updated, "adjusted");
-            broadcastService.broadcastInventoryAdjustment(dto);
+            if (createdAdjustment != null) {
+                broadcastService.broadcastInventoryAdjustment(createdAdjustment);
+            }
             broadcastService.broadcastStatsUpdate(productService.getProductStats());
 
             return ResponseEntity.ok(Map.of(
                     "success", true,
                     "message", "Наличността е коригирана успешно",
                     "product", updated,
-                    "adjustment", dto
+                    "adjustment", createdAdjustment != null ? createdAdjustment : dto
             ));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -236,6 +233,50 @@ public class InventoryController {
             log.error("Error adjusting inventory", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("success", false, "message", "Грешка при корекция на наличности"));
+        }
+    }
+
+    /**
+     * GET /admin/inventory/adjustments - История на всички корекции
+     */
+    @GetMapping("/adjustments")
+    public ResponseEntity<Map<String, Object>> getAllAdjustments() {
+        log.debug("GET /admin/inventory/adjustments - Getting all adjustments");
+
+        try {
+            List<InventoryAdjustmentDTO> adjustments = adjustmentService.getAllAdjustments();
+
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "adjustments", adjustments,
+                    "count", adjustments.size()
+            ));
+        } catch (Exception e) {
+            log.error("Error getting adjustments", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("success", false, "message", "Грешка при зареждане на корекции"));
+        }
+    }
+
+    /**
+     * GET /admin/inventory/adjustments/product/{id} - История за конкретен продукт
+     */
+    @GetMapping("/adjustments/product/{productId}")
+    public ResponseEntity<Map<String, Object>> getProductAdjustments(@PathVariable Long productId) {
+        log.debug("GET /admin/inventory/adjustments/product/{}", productId);
+
+        try {
+            List<InventoryAdjustmentDTO> history = adjustmentService.getAdjustmentHistory(productId);
+
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "adjustments", history,
+                    "count", history.size()
+            ));
+        } catch (Exception e) {
+            log.error("Error getting product adjustments", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("success", false, "message", "Грешка при зареждане на история"));
         }
     }
 

@@ -149,22 +149,40 @@ class InventoryWebSocket {
 
     connect() {
         try {
-            const socket = new SockJS('/ws/dashboard');
-            this.stompClient = Stomp.over(socket);
+            // Use factory function for auto-reconnect support
+            const socketFactory = () => new SockJS('/ws/dashboard');
+            this.stompClient = StompJs.Stomp.over(socketFactory);
 
-            // Disable debug logs
+            // Disable debug logs in production
             this.stompClient.debug = () => {};
 
-            this.stompClient.connect({}, () => {
-                console.log('WebSocket connected');
+            // Configure reconnect behavior
+            this.stompClient.reconnectDelay = 5000;
+            this.stompClient.heartbeatIncoming = 4000;
+            this.stompClient.heartbeatOutgoing = 4000;
+
+            // Connection callbacks
+            this.stompClient.onConnect = (frame) => {
+                console.log('✓ Inventory WebSocket connected');
                 this.connected = true;
                 this.subscribe();
-            }, (error) => {
-                console.error('WebSocket error:', error);
+            };
+
+            this.stompClient.onDisconnect = () => {
+                console.log('Inventory WebSocket disconnected');
                 this.connected = false;
-            });
+            };
+
+            this.stompClient.onStompError = (frame) => {
+                console.error('Inventory WebSocket STOMP error:', frame.headers['message']);
+                this.connected = false;
+            };
+
+            // Activate the connection
+            this.stompClient.activate();
+
         } catch (error) {
-            console.error('Failed to connect WebSocket:', error);
+            console.error('Failed to connect Inventory WebSocket:', error);
         }
     }
 
@@ -346,8 +364,8 @@ class ProductTable {
         try {
             await window.api.deleteProduct(id);
             window.toastManager?.success('Продуктът е деактивиран успешно');
-            await this.loadProducts();
-            await window.statsManager?.loadStats();
+            this.loadProducts();
+            window.statsManager?.loadStats();
         } catch (error) {
             window.toastManager?.error(error.message || 'Грешка при деактивиране');
         }
@@ -364,7 +382,7 @@ class ProductTable {
     }
 
     formatPrice(price) {
-        return parseFloat(price.toString() || 0).toFixed(2);
+        return parseFloat(price || 0).toFixed(2);
     }
 
     escapeHtml(text) {
@@ -497,8 +515,8 @@ class ProductModal {
             }
 
             this.close();
-            await window.productTable?.loadProducts();
-            await window.statsManager?.loadStats();
+            window.productTable?.loadProducts();
+            window.statsManager?.loadStats();
         } catch (error) {
             window.toastManager?.error(error.message || 'Грешка при запазване');
         }
@@ -678,8 +696,9 @@ async function init() {
     console.log('Initializing Inventory Management...');
 
     // Check for required libraries
-    if (typeof SockJS === 'undefined' || typeof Stomp === 'undefined') {
-        console.error('SockJS or Stomp library not loaded');
+    if (typeof SockJS === 'undefined' || typeof StompJs === 'undefined') {
+        console.error('SockJS or StompJs library not loaded');
+        console.error('Make sure bottomHtmlImports fragment is included');
         return;
     }
 
