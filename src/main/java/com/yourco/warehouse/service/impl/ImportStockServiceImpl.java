@@ -2,6 +2,7 @@ package com.yourco.warehouse.service.impl;
 
 import com.yourco.warehouse.dto.importSystem.*;
 import com.yourco.warehouse.entity.*;
+import com.yourco.warehouse.entity.enums.AdjustmentReasonEnum;
 import com.yourco.warehouse.entity.enums.ImportActionTypeEnum;
 import com.yourco.warehouse.entity.enums.ImportSessionStatusEnum;
 import com.yourco.warehouse.entity.enums.ImportStatusEnum;
@@ -373,7 +374,7 @@ public class ImportStockServiceImpl implements ImportStockService {
         product.setCategory(item.getCategory());
         product.setDescription(item.getDescription());
         product.setSku(item.getBarcode());
-        product.sellQuantity(item.getQuantity());
+        product.setQuantityAvailable(item.getQuantity());
         product.setPurchasePrice(item.getPurchasePrice());
         product.setPrice(item.getExistingSellingPrice());
         product.setLastPurchaseDate(LocalDate.now());
@@ -400,9 +401,8 @@ public class ImportStockServiceImpl implements ImportStockService {
         InventoryAdjustmentEntity adjustment = new InventoryAdjustmentEntity();
         adjustment.setProduct(product);
         adjustment.setQuantityChange(item.getQuantity());
-        adjustment.setReason("Импорт на нов продукт от фактура " +
-                (importEvent.getInvoiceNumber() != null ? importEvent.getInvoiceNumber() : "без номер"));
-        adjustment.setImportEventEnum(importEvent);
+        adjustment.setReason(AdjustmentReasonEnum.IMPORT);
+        adjustment.setImportEvent(importEvent);
 
         adjustmentRepository.save(adjustment);
 
@@ -418,7 +418,8 @@ public class ImportStockServiceImpl implements ImportStockService {
         importEventItemRepository.save(eventItem);
 
         // Update-ваме counters на import event
-        importEvent.incrementNewItems();
+        importEvent.setNewItems(importEvent.getNewItems() + 1);  // ПОПРАВКА: без incrementNewItems()
+        importEvent.setTotalItems(importEvent.getTotalItems() + 1);
     }
 
     /**
@@ -467,8 +468,7 @@ public class ImportStockServiceImpl implements ImportStockService {
         InventoryAdjustmentEntity adjustment = new InventoryAdjustmentEntity();
         adjustment.setProduct(product);
         adjustment.setQuantityChange(item.getQuantity());
-        adjustment.setReason("Импорт на стока от фактура " +
-                (importEvent.getInvoiceNumber() != null ? importEvent.getInvoiceNumber() : "без номер"));
+        adjustment.setReason(AdjustmentReasonEnum.IMPORT);
         adjustment.setImportEvent(importEvent);
 
         adjustmentRepository.save(adjustment);

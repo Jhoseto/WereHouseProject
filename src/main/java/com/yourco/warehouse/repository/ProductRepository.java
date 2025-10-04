@@ -162,7 +162,8 @@ public interface ProductRepository extends JpaRepository<ProductEntity, Long> {
     /**
      * Legacy search method – използва се от сервиса (НЕ променяй името)
      */
-    @Query("SELECT p FROM ProductEntity p WHERE p.active = true AND (LOWER(p.name) LIKE LOWER(CONCAT('%', ?1, '%')) OR LOWER(p.sku) LIKE LOWER(CONCAT('%', ?1, '%')))")
+    @Query("SELECT p FROM ProductEntity p WHERE p.active = true AND (LOWER(p.name) " +
+            "LIKE LOWER(CONCAT('%', ?1, '%')) OR LOWER(p.sku) LIKE LOWER(CONCAT('%', ?1, '%')))")
     List<ProductEntity> searchActiveProducts(String query);
 
     /**
@@ -179,4 +180,11 @@ public interface ProductRepository extends JpaRepository<ProductEntity, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT p FROM ProductEntity p WHERE p.id = :id")
     Optional<ProductEntity> findByIdWithLock(@Param("id") Long id);
+
+    /**
+     * Batch заявка за намиране на продукти по списък от SKU кодове.
+     * Оптимизирана с индекс и batch fetching за светкавична скорост.
+     */
+    @Query("SELECT p FROM ProductEntity p WHERE p.sku IN :skus")
+    List<ProductEntity> findBySkuIn(@Param("skus") List<String> skus);
 }

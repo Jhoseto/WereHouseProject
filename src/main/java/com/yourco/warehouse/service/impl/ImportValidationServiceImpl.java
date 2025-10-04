@@ -172,7 +172,7 @@ public class ImportValidationServiceImpl implements ImportValidationService {
             item.setExistingProductId(existingProduct.getId());
             item.setExistingQuantity(existingProduct.getQuantityAvailable());
             item.setExistingPurchasePrice(existingProduct.getPurchasePrice());
-            item.setExistingSellingPrice(existingProduct.getSellingPrice());
+            item.setExistingSellingPrice(existingProduct.getPrice());
 
             // Зареждаме price history
             List<PurchasePriceHistoryEntity> history = priceHistoryMap.get(existingProduct.getId());

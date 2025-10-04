@@ -37,6 +37,10 @@ public class InventoryAdjustmentEntity {
     @Column(name = "reason", nullable = true)
     private AdjustmentReasonEnum reason;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "import_event_id")
+    private ImportEventEntity importEvent;
+
     @Column(name = "note", length = 500)
     private String note;
 
@@ -106,6 +110,14 @@ public class InventoryAdjustmentEntity {
 
     public void setReason(AdjustmentReasonEnum reason) {
         this.reason = reason;
+    }
+
+    public ImportEventEntity getImportEvent() {
+        return importEvent;
+    }
+
+    public void setImportEvent(ImportEventEntity importEvent) {
+        this.importEvent = importEvent;
     }
 
     public String getNote() {
