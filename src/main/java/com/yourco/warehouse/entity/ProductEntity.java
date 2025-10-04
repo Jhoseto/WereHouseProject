@@ -6,7 +6,10 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "products")
@@ -37,6 +40,15 @@ public class ProductEntity {
     @DecimalMin(value = "0.0", inclusive = false, message = "Цената трябва да бъде положителна")
     @Digits(integer = 8, fraction = 2, message = "Цената може да има максимум 8 цифри преди десетичната запетая и 2 след нея")
     private BigDecimal price = BigDecimal.ZERO;
+
+    @Column(name = "last_purchase_date")
+    private LocalDate lastPurchaseDate;
+
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PurchasePriceHistoryEntity> priceHistory = new ArrayList<>();
+
+    @Column(name = "purchase_price", precision = 10, scale = 2)
+    private BigDecimal purchasePrice;
 
     @Column(nullable = false)
     @Min(value = 0, message = "ДДС процентът не може да бъде отрицателен")
@@ -152,6 +164,14 @@ public class ProductEntity {
         this.description = description != null ? description.trim() : null;
     }
 
+    public BigDecimal getPurchasePrice() {
+        return purchasePrice;
+    }
+
+    public void setPurchasePrice(BigDecimal purchasePrice) {
+        this.purchasePrice = purchasePrice;
+    }
+
     public String getCategory() {
         return category;
     }
@@ -182,6 +202,21 @@ public class ProductEntity {
         this.quantityReserved = quantityReserved != null ? quantityReserved : 0;
     }
 
+    public LocalDate getLastPurchaseDate() {
+        return lastPurchaseDate;
+    }
+
+    public void setLastPurchaseDate(LocalDate lastPurchaseDate) {
+        this.lastPurchaseDate = lastPurchaseDate;
+    }
+
+    public List<PurchasePriceHistoryEntity> getPriceHistory() {
+        return priceHistory;
+    }
+
+    public void setPriceHistory(List<PurchasePriceHistoryEntity> priceHistory) {
+        this.priceHistory = priceHistory;
+    }
 
     public Integer getQuantityTotal() {
         return quantityAvailable + quantityReserved;

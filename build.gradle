@@ -35,12 +35,16 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-configuration-processor")
     implementation ("org.springframework.session:spring-session-jdbc")
 
-
-
-
-
     // Development tools
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
+
+
+    // Apache POI за Excel файлове (XLS и XLSX)
+    implementation 'org.apache.poi:poi:5.4.1'
+    implementation 'org.apache.poi:poi-ooxml:5.4.1'
+
+    // OpenCSV за CSV файлове
+    implementation ("com.opencsv:opencsv:5.12.0")
 
     // Testing
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
