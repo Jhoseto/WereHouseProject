@@ -28,22 +28,123 @@
     // ═══════════════════════════════════════════════════════════════
 
     class ProductDataService {
-        static async fetchByBarcode(barcode) {
-            try {
-                const response = await fetch(`https://world.openfoodfacts.org/api/v2/product/${barcode}.json`);
-                if (!response.ok) return null;
-
-                const data = await response.json();
-                if (data.status === 0 || !data.product) return null;
-
-                return this.normalize(data.product, barcode);
-            } catch (error) {
-                console.error('Product API error:', error);
-                return null;
+        // Конфигурация на API източници по приоритет
+        static apiSources = [
+            {
+                name: 'EAN-Search',
+                enabled: false, // Ще активираш след като получиш API key
+                fetch: async (barcode, apiKey) => {
+                    const response = await fetch(`https://api.ean-search.org/api?token=${apiKey}&op=barcode-lookup&format=json&ean=${barcode}`);
+                    if (!response.ok) return null;
+                    const data = await response.json();
+                    return ProductDataService.normalizeEANSearch(data);
+                }
+            },
+            {
+                name: 'UPCitemdb',
+                enabled: true,
+                fetch: async (barcode) => {
+                    const response = await fetch(`https://api.upcitemdb.com/prod/trial/lookup?upc=${barcode}`);
+                    if (!response.ok) return null;
+                    const data = await response.json();
+                    if (data.code !== 'OK' || !data.items || data.items.length === 0) return null;
+                    return ProductDataService.normalizeUPCitemdb(data.items[0]);
+                }
+            },
+            {
+                name: 'OpenFoodFacts',
+                enabled: true,
+                fetch: async (barcode) => {
+                    const response = await fetch(`https://world.openfoodfacts.org/api/v2/product/${barcode}.json`);
+                    if (!response.ok) return null;
+                    const data = await response.json();
+                    if (data.status === 0 || !data.product) return null;
+                    return ProductDataService.normalizeOpenFoodFacts(data.product, barcode);
+                }
             }
+        ];
+
+        static async fetchByBarcode(barcode) {
+            console.log(`🔍 Търсене на продукт с баркод: ${barcode}`);
+
+            // Опитваме всеки източник последователно
+            for (const source of this.apiSources) {
+                if (!source.enabled) {
+                    console.log(`⏭️ Пропускаме ${source.name} (деактивиран)`);
+                    continue;
+                }
+
+                try {
+                    console.log(`📡 Проверяваме ${source.name}...`);
+                    const productData = await source.fetch(barcode, this.getApiKey(source.name));
+
+                    if (productData) {
+                        console.log(`✅ Продукт намерен в ${source.name}:`, productData.name);
+                        productData.source = source.name; // Запазваме източника за reference
+                        return productData;
+                    }
+
+                    console.log(`❌ Не е намерен в ${source.name}`);
+                } catch (error) {
+                    console.error(`⚠️ Грешка при ${source.name}:`, error.message);
+                    // Продължаваме със следващия източник
+                }
+            }
+
+            console.log('❌ Продукт не е намерен в нито един източник');
+            return null;
         }
 
-        static normalize(p, barcode) {
+        // Метод за съхранение на API keys (можеш да ги добавиш в config или localStorage)
+        static getApiKey(sourceName) {
+            const apiKeys = {
+                'EAN-Search': 'YOUR_API_KEY_HERE' // Ще го замениш след регистрация
+            };
+            return apiKeys[sourceName] || null;
+        }
+
+        // Normalization за UPCitemdb формат
+        static normalizeUPCitemdb(item) {
+            return {
+                sku: item.ean || item.upc,
+                name: item.title || item.brand || 'Неизвестен продукт',
+                category: item.category || 'Други',
+                unit: this.getUnit(item.size || ''),
+                description: item.description || '',
+                vatRate: 20, // Default за България
+                price: null,
+                quantityAvailable: null,
+                metadata: {
+                    brand: item.brand || '',
+                    images: item.images || []
+                }
+            };
+        }
+
+        // Normalization за EAN-Search формат
+        static normalizeEANSearch(data) {
+            if (!data || data.length === 0) return null;
+
+            const product = Array.isArray(data) ? data[0] : data;
+
+            return {
+                sku: product.ean,
+                name: product.name || 'Неизвестен продукт',
+                category: product.categoryName || 'Други',
+                unit: 'бр',
+                description: '',
+                vatRate: 20,
+                price: null,
+                quantityAvailable: null,
+                metadata: {
+                    brand: product.manufacturer || '',
+                    imageUrl: product.image || ''
+                }
+            };
+        }
+
+        // Запазваме старата normalization за OpenFoodFacts
+        static normalizeOpenFoodFacts(p, barcode) {
             const name = p.product_name_bg || p.product_name || p.generic_name || `Продукт ${barcode}`;
             const category = this.getCategory(p.categories_tags);
 
@@ -64,9 +165,9 @@
             };
         }
 
+        // Останалите utility методи остават същите
         static getCategory(tags) {
             if (!tags || !tags.length) return 'Други';
-
             const map = {
                 'beverages': 'Напитки',
                 'dairies': 'Млечни продукти',
@@ -78,7 +179,6 @@
                 'seafood': 'Риба и морски дарове',
                 'sweets': 'Сладкиши'
             };
-
             for (const [key, value] of Object.entries(map)) {
                 if (tags[0].includes(key)) return value;
             }
