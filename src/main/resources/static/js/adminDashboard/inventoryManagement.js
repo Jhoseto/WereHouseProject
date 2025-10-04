@@ -549,6 +549,24 @@ class ProductModal {
         this.inputs.sku.addEventListener('input', (e) => {
             e.target.value = e.target.value.toUpperCase();
         });
+
+        const scanBtn = document.getElementById('btn-scan-barcode');
+        if (scanBtn) {
+            scanBtn.addEventListener('click', () => {
+                console.log('🔵 Barcode scan button clicked'); // За debug
+                this.startBarcodeScanner();
+            });
+        } else {
+            console.warn('⚠️ Barcode scan button not found');
+        }
+
+        const closeScannerBtn = document.getElementById('btn-close-scanner');
+        if (closeScannerBtn) {
+            closeScannerBtn.addEventListener('click', () => {
+                console.log('🔵 Closing scanner'); // За debug
+                BarcodeScannerManager.getInstance().stopCamera();
+            });
+        }
     }
 
     setupValidation() {
@@ -584,6 +602,48 @@ class ProductModal {
         }
     }
 
+    startBarcodeScanner() {
+        console.log('🟢 Starting barcode scanner...');
+
+        const scanner = BarcodeScannerManager.getInstance();
+
+        if (!scanner.isAvailable()) {
+            window.toastManager?.error('Библиотеката за сканиране не е заредена');
+            console.error('❌ Scanner library not available');
+            return;
+        }
+
+        scanner.scan({
+            onSuccess: (productData) => {
+                console.log('✅ Product found:', productData);
+
+                // Попълни формата с данните
+                this.inputs.sku.value = productData.sku;
+                this.inputs.name.value = productData.name;
+                this.inputs.category.value = productData.category || '';
+                this.inputs.unit.value = productData.unit || 'бр';
+                this.inputs.vat.value = productData.vatRate || 20;
+                this.inputs.description.value = productData.description || '';
+
+                window.toastManager?.success(`Продукт намерен: ${productData.name}`);
+                this.inputs.price.focus();
+            },
+
+            onNotFound: (barcode) => {
+                console.log('⚠️ Product not found, barcode:', barcode);
+
+                this.inputs.sku.value = barcode;
+                window.toastManager?.info('Продуктът не е намерен. Попълнете данните ръчно.');
+                this.inputs.name.focus();
+            },
+
+            onError: (error) => {
+                console.error('❌ Scanner error:', error);
+                window.toastManager?.error('Грешка при сканиране: ' + error.message);
+            }
+        });
+    }
+
     openCreate() {
         this.title.textContent = 'Нов артикул';
         this.form.reset();
@@ -592,6 +652,7 @@ class ProductModal {
         this.inputs.vat.value = '20';
         this.inputs.quantity.value = '0';
         this.inputs.unit.value = 'бр';
+        this.inputs.price.value = '';
 
         const removalSection = document.getElementById('removal-section');
         if (removalSection) removalSection.style.display = 'none';

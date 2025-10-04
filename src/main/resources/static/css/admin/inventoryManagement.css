@@ -773,11 +773,6 @@ textarea.form-control {
     color: white;
 }
 
-.scanner-status.loading {
-    background: #3498db;
-    color: white;
-}
-
 /* Mobile optimizations */
 @media (max-width: 768px) {
     .btn-scan-barcode .scan-text {
@@ -788,6 +783,7 @@ textarea.form-control {
         padding: 8px 12px;
     }
 }
+
 
 /* ==========================================
    RESPONSIVE DESIGN

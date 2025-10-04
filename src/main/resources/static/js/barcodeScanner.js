@@ -121,18 +121,11 @@
             return typeof Html5Qrcode !== 'undefined';
         }
 
-        async hasCamera() {
-            try {
-                const devices = await navigator.mediaDevices.enumerateDevices();
-                return devices.some(d => d.kind === 'videoinput');
-            } catch {
-                return false;
-            }
-        }
-
         async scan(options = {}) {
+            // Проверка за библиотека
             if (!this.isAvailable()) {
-                this.handleError('html5-qrcode библиотеката не е заредена');
+                window.toastManager?.error('Библиотеката за сканиране не е заредена');
+                if (options.onError) options.onError(new Error('Library not loaded'));
                 return;
             }
 
@@ -146,7 +139,12 @@
                 this.showOverlay();
                 await this.startCamera();
             } catch (error) {
-                this.handleError(error.message);
+                console.error('Scanner error:', error);
+                window.toastManager?.error('Грешка при стартиране на камерата: ' + error.message);
+                if (this.callbacks.onError) {
+                    this.callbacks.onError(error);
+                }
+                this.hideOverlay();
             }
         }
 
@@ -154,6 +152,7 @@
             const overlay = document.getElementById('barcode-scanner-overlay');
             if (overlay) {
                 overlay.classList.add('active');
+                overlay.style.display = 'flex';
             }
         }
 
@@ -161,6 +160,7 @@
             const overlay = document.getElementById('barcode-scanner-overlay');
             if (overlay) {
                 overlay.classList.remove('active');
+                overlay.style.display = 'none';
             }
         }
 
@@ -182,7 +182,7 @@
                 { facingMode: "environment" },
                 config,
                 (barcode) => this.onBarcodeDetected(barcode),
-                () => {} // Ignore scan errors
+                () => {} // Игнорираме scan errors за да не спамим
             );
 
             this.isScanning = true;
@@ -192,24 +192,35 @@
         async onBarcodeDetected(barcode) {
             if (!this.isScanning) return;
 
+            // Покажи че баркодът е прочетен
             this.showStatus('✓ Баркод: ' + barcode, 'success');
+
+            // Изчакай половин секунда за да се види
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            // Спри камерата
             await this.stopCamera();
 
-            window.universalLoader?.show('Търсене на продукт...', 'Моля изчакайте', 'primary');
-
             try {
+                // Направи заявката БЕЗ визуален индикатор
                 const productData = await ProductDataService.fetchByBarcode(barcode);
 
-                window.universalLoader?.hide();
-
                 if (productData) {
+                    // Продуктът е намерен - просто извикай callback-а
                     this.callbacks.onSuccess(productData);
+
+                    // Toast ще се покаже от ProductModal
                 } else {
+                    // Не е намерен
                     this.callbacks.onNotFound(barcode);
                 }
             } catch (error) {
-                window.universalLoader?.hide();
-                this.callbacks.onError(error);
+                console.error('Product fetch error:', error);
+                window.toastManager?.error('Грешка при търсене на продукт');
+
+                if (this.callbacks.onError) {
+                    this.callbacks.onError(error);
+                }
             }
         }
 
@@ -219,7 +230,7 @@
                     await this.scanner.stop();
                     this.scanner.clear();
                 } catch (error) {
-                    console.error('Stop error:', error);
+                    console.error('Stop camera error:', error);
                 }
             }
             this.isScanning = false;
@@ -231,13 +242,6 @@
             if (status) {
                 status.textContent = message;
                 status.className = 'scanner-status active ' + type;
-            }
-        }
-
-        handleError(message) {
-            this.stopCamera();
-            if (this.callbacks.onError) {
-                this.callbacks.onError(new Error(message));
             }
         }
     }
@@ -264,5 +268,6 @@
     // ═══════════════════════════════════════════════════════════════
 
     window.BarcodeScannerManager = BarcodeScannerManager;
+    window.ProductDataService = ProductDataService;
 
 })(window);

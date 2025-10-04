@@ -233,6 +233,7 @@
             </div>
 
             <form id="product-form" class="modal-body">
+                <input type="hidden" id="input-product-id">
 
                 <!-- Basic Info -->
                 <div class="form-section">
@@ -324,7 +325,7 @@
                                        id="input-price"
                                        name="price"
                                        class="form-control"
-                                       placeholder="0.00"
+                                       placeholder="0.01"
                                        min="0.01"
                                        max="999999.99"
                                        step="0.01"
@@ -425,19 +426,18 @@
                 </div>
             </form>
 
-            <div id="barcode-scanner-container" class="barcode-scanner-container" style="display: none;">
+            <div id="barcode-scanner-overlay" class="barcode-scanner-container" style="display: none;">
                 <div class="scanner-header">
                     <h4>Сканиране на баркод</h4>
                     <button type="button" id="btn-close-scanner" class="btn-close-scanner">
                         <i class="bi bi-x-lg"></i>
                     </button>
                 </div>
-                <div id="barcode-reader" class="barcode-reader"></div>
+                <div id="barcode-camera-feed" class="barcode-reader"></div>
                 <div class="scanner-instructions">
                     <i class="bi bi-info-circle"></i>
                     <p>Насочи камерата към баркода на продукта</p>
                 </div>
-                <div id="scanner-status" class="scanner-status"></div>
             </div>
 
             <div class="modal-footer">
