@@ -149,57 +149,54 @@ public class ClientClientOrderServiceImpl implements ClientOrderService {
         return orderRepository.findByClientOrderBySubmittedAtDescPageble(client, pageable);
     }
 
+    // В ClientClientOrderServiceImpl.java
+
     @Override
+    @Transactional
     public boolean updateOrderItemQuantity(Long orderId, Long productId, Integer newQuantity, Long clientId) {
-        // 1. Намери поръчката
+
         Order order = getOrderByIdForClient(orderId, clientId)
                 .orElseThrow(() -> new IllegalArgumentException("Поръчката не е намерена"));
 
-        // 2. Провери дали може да се редактира
         if (!canEditOrder(order)) {
             throw new IllegalStateException("Поръчката не може да се редактира");
         }
 
-        // 3. Намери артикула в поръчката
         OrderItem orderItem = order.getItems().stream()
                 .filter(item -> item.getProduct().getId().equals(productId))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Артикулът не е намерен в поръчката"));
 
-        // 4. Валидирай новото количество
-        if (newQuantity <= 0) {
-            throw new IllegalArgumentException("Количеството трябва да бъде положително");
-        }
+        ProductEntity product = productRepository.findByIdWithLock(productId)
+                .orElseThrow(() -> new IllegalArgumentException("Продуктът не съществува"));
 
-        ProductEntity product = orderItem.getProduct();
         int currentReserved = orderItem.getQty().intValue();
         int difference = newQuantity - currentReserved;
 
-        // 5. Ако увеличаваме, провери наличност
+        if (difference == 0) {
+            return false;
+        }
+
         if (difference > 0) {
             if (!product.hasAvailableQuantity(difference)) {
-                throw new IllegalArgumentException("Няма достатъчно наличност за увеличение с " + difference);
+                int maxPossible = currentReserved + product.getQuantityAvailable();
+                throw new IllegalStateException(
+                        String.format("Няма достатъчно наличност. Максимално възможно: %d", maxPossible));
             }
-            // Резервирай допълнителното количество
             product.reserveQuantity(difference);
-        }
-        // 6. Ако намаляваме, освободи излишното
-        else if (difference < 0) {
+        } else {
+            // Намаляваме количеството - освобождаваме резервация
             product.releaseReservation(Math.abs(difference));
         }
 
-        // 7. Обнови артикула
         orderItem.setQty(BigDecimal.valueOf(newQuantity));
 
-        // 8. Запази промените
         productRepository.save(product);
-        order = recalculateOrderTotals(order);
         orderRepository.save(order);
-
-
 
         return true;
     }
+
 
     @Override
     public boolean removeOrderItem(Long orderId, Long productId, Long clientId) {

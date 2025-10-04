@@ -161,11 +161,6 @@ class InventoryApi {
             body: JSON.stringify(data)
         });
     }
-
-    // GET adjustments history
-    async getAdjustments() {
-        return this.request('/adjustments');
-    }
 }
 
 // ==========================================

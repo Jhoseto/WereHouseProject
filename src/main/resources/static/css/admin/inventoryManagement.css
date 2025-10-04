@@ -648,6 +648,147 @@ textarea.form-control {
     font-weight: 600;
 }
 
+/*BARCODE SCANNER*/
+/* Input group с scan бутон */
+.input-group-with-scanner {
+    display: flex;
+    gap: 8px;
+    align-items: stretch;
+}
+
+.input-group-with-scanner .form-control {
+    flex: 1;
+}
+
+/* Scan бутон */
+.btn-scan-barcode {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.btn-scan-barcode:hover {
+    background: linear-gradient(135deg, #5568d3, #6a3f91);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.btn-scan-barcode i {
+    font-size: 18px;
+}
+
+/* Scanner container */
+.barcode-scanner-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.95);
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+}
+
+.scanner-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.scanner-header h4 {
+    margin: 0;
+    font-size: 18px;
+}
+
+.btn-close-scanner {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.barcode-reader {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.barcode-reader video {
+    max-width: 100%;
+    max-height: 100%;
+    border-radius: 8px;
+}
+
+.scanner-instructions {
+    padding: 20px;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.scanner-instructions i {
+    font-size: 20px;
+}
+
+.scanner-status {
+    padding: 12px 20px;
+    text-align: center;
+    font-weight: 500;
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.scanner-status.success {
+    background: #27ae60;
+    color: white;
+}
+
+.scanner-status.error {
+    background: #e74c3c;
+    color: white;
+}
+
+.scanner-status.loading {
+    background: #3498db;
+    color: white;
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+    .btn-scan-barcode .scan-text {
+        display: none;
+    }
+
+    .btn-scan-barcode {
+        padding: 8px 12px;
+    }
+}
+
 /* ==========================================
    RESPONSIVE DESIGN
    ========================================== */

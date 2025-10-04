@@ -1,10 +1,12 @@
 package com.yourco.warehouse.repository;
 
 import com.yourco.warehouse.entity.ProductEntity;
+import jakarta.persistence.LockModeType;
 import jakarta.persistence.QueryHint;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.QueryHints;
 import org.springframework.data.repository.query.Param;
@@ -168,4 +170,13 @@ public interface ProductRepository extends JpaRepository<ProductEntity, Long> {
      */
     @Query("SELECT p FROM ProductEntity p WHERE p.active = true AND p.price > 0 ORDER BY p.name")
     List<ProductEntity> findActiveProductsWithValidPrice();
+
+    /**
+     * Намира продукт с pessimistic lock за безопасни конкурентни резервации
+     * Pessimistic lock гарантира че никой друг не може да променя продукта
+     * докато нашата транзакция не приключи
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT p FROM ProductEntity p WHERE p.id = :id")
+    Optional<ProductEntity> findByIdWithLock(@Param("id") Long id);
 }

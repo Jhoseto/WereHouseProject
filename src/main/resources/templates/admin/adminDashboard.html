@@ -205,11 +205,18 @@
 <!-- Include Bottom Imports Fragment -->
 <th:block th:replace="~{fragments/bottomHtmlImports :: bottomImports}"></th:block>
 
+<!-- html5-qrcode библиотека (ЗАДЪЛЖИТЕЛНО ПРЕДИ barcode scanner модула) -->
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
 <!-- Admin Dashboard JavaScript -->
 <script src="/js/adminDashboard/adminDashboard.js"></script>
 <script src="/js/adminDashboard/clientsManagement.js"></script>
 <script src="/js/adminDashboard/employersManagement.js"></script>
-<script src="/js/adminDashboard/inventoryManagement.js"></script>
 
+<!-- Barcode Scanner модул  -->
+<script src="/js/barcodeScanner.js"></script>
+
+<!-- Inventory Management (използва barcode scanner) -->
+<script src="/js/adminDashboard/inventoryManagement.js"></script>
 </body>
 </html>

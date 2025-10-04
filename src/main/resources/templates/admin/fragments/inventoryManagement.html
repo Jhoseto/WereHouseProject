@@ -221,8 +221,8 @@
     </div>
 
     <!-- ==========================================
-         PRODUCT MODAL (Create/Edit) - КОРИГИРАНА ВЕРСИЯ
-         ========================================== -->
+     PRODUCT MODAL (Create/Edit) - ПОПРАВЕНА ВЕРСИЯ С СКАНИРАНЕ
+     ========================================== -->
     <div class="modal-overlay" id="product-modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -240,17 +240,25 @@
 
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="input-sku">SKU <span class="required">*</span></label>
-                            <input type="text"
-                                   id="input-sku"
-                                   name="sku"
-                                   class="form-control"
-                                   placeholder="напр. PRD-001"
-                                   required
-                                   minlength="3"
-                                   maxlength="50"
-                                   pattern="[A-Z0-9\-]+"
-                                   title="Само главни букви, цифри и тире">
+                            <label for="input-sku">SKU / Баркод <span class="required">*</span></label>
+                            <div class="input-group-with-scanner">
+                                <input type="text"
+                                       id="input-sku"
+                                       name="sku"
+                                       class="form-control"
+                                       placeholder="напр. 5449000000996"
+                                       required
+                                       minlength="3"
+                                       maxlength="50">
+                                <button type="button"
+                                        id="btn-scan-barcode"
+                                        class="btn-scan-barcode"
+                                        title="Сканирай баркод с камерата">
+                                    <i class="bi bi-upc-scan"></i>
+                                    <span class="scan-text">Сканирай</span>
+                                </button>
+                            </div>
+                            <small class="form-help">Сканирай баркод или въведи ръчно SKU</small>
                         </div>
 
                         <div class="form-group">
@@ -415,9 +423,22 @@
                         <strong>Важно:</strong> За добавяне на нови бройки използвай системата за доставки вместо директна редакция.
                     </div>
                 </div>
-
-                <input type="hidden" id="input-product-id" name="id">
             </form>
+
+            <div id="barcode-scanner-container" class="barcode-scanner-container" style="display: none;">
+                <div class="scanner-header">
+                    <h4>Сканиране на баркод</h4>
+                    <button type="button" id="btn-close-scanner" class="btn-close-scanner">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
+                <div id="barcode-reader" class="barcode-reader"></div>
+                <div class="scanner-instructions">
+                    <i class="bi bi-info-circle"></i>
+                    <p>Насочи камерата към баркода на продукта</p>
+                </div>
+                <div id="scanner-status" class="scanner-status"></div>
+            </div>
 
             <div class="modal-footer">
                 <button class="btn-secondary" id="btn-cancel-modal" type="button">

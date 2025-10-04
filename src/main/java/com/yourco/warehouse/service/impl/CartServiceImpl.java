@@ -169,7 +169,9 @@ public class CartServiceImpl implements CartService {
         return cartItemRepository.hasItemsByUserId(userId);
     }
 
+    // В CartServiceImpl.java
     @Override
+    @Transactional
     public boolean reserveCartItems(Long userId) {
         List<CartItem> items = cartItemRepository.findByUserIdWithProducts(userId);
 
@@ -177,18 +179,21 @@ public class CartServiceImpl implements CartService {
             throw new IllegalStateException("Количката е празна");
         }
 
-        // Първо валидираме всички количества
+        // ВАЖНО: Използваме pessimistic lock за да заключим продуктите
+        // Това предотвратява race conditions при конкурентни резервации
         for (CartItem item : items) {
-            ProductEntity product = item.getProduct();
+            ProductEntity product = productRepository.findByIdWithLock(item.getProduct().getId())
+                    .orElseThrow(() -> new IllegalStateException("Продукт не е намерен"));
+
+            // Сега можем безопасно да валидираме и резервираме в едно действие
             if (!product.hasAvailableQuantity(item.getQuantity())) {
                 throw new IllegalStateException(
-                        String.format("Няма достатъчно наличност за '%s'", product.getName()));
+                        String.format("Няма достатъчно наличност за '%s'. Налично: %d, Поискано: %d",
+                                product.getName(),
+                                product.getQuantityAvailable(),
+                                item.getQuantity()));
             }
-        }
 
-        // Ако всички са OK, резервираме
-        for (CartItem item : items) {
-            ProductEntity product = item.getProduct();
             product.reserveQuantity(item.getQuantity());
             productRepository.save(product);
         }
