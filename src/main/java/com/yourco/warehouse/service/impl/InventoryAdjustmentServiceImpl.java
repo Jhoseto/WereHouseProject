@@ -15,7 +15,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class InventoryAdjustmentServiceImpl implements InventoryAdjustmentService {
@@ -111,9 +113,22 @@ public class InventoryAdjustmentServiceImpl implements InventoryAdjustmentServic
     @Override
     @Transactional(readOnly = true)
     public List<InventoryAdjustmentDTO> getAllAdjustments() {
-        return adjustmentRepository.findAll()
-                .stream()
-                .map(InventoryAdjustmentDTO::from)
-                .toList();
+        try {
+            List<InventoryAdjustmentEntity> adjustments = adjustmentRepository.findAll();
+
+            // Defensive programming - винаги връщаме валиден списък
+            if (adjustments.isEmpty()) {
+                return Collections.emptyList();
+            }
+
+            return adjustments.stream()
+                    .map(InventoryAdjustmentDTO::from)
+                    .collect(Collectors.toList());
+
+        } catch (Exception e) {
+            log.error("Error getting all adjustments: {}", e.getMessage(), e);
+            // Вместо да хвърляме exception, връщаме празен списък
+            return Collections.emptyList();
+        }
     }
 }

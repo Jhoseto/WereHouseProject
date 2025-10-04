@@ -13,7 +13,7 @@
                 <i class="bi bi-boxes"></i>
             </div>
             <div class="stat-content">
-                <div class="stat-number" id="stat-total-products">0</div>
+                <div class="stat-number" id="stat-total-products" data-stat="total">0</div>
                 <div class="stat-label">Общо продукти</div>
             </div>
         </div>
@@ -23,7 +23,7 @@
                 <i class="bi bi-exclamation-triangle-fill"></i>
             </div>
             <div class="stat-content">
-                <div class="stat-number" id="stat-low-stock">0</div>
+                <div class="stat-number" id="stat-low-stock" data-stat="lowstock">0</div>
                 <div class="stat-label">Ниски наличности</div>
             </div>
         </div>
@@ -33,7 +33,7 @@
                 <i class="bi bi-cash-stack"></i>
             </div>
             <div class="stat-content">
-                <div class="stat-number" id="stat-inventory-value">0 лв.</div>
+                <div class="stat-number" id="stat-inventory-value" data-stat="value">0 лв.</div>
                 <div class="stat-label">Стойност на склада</div>
             </div>
         </div>
@@ -43,7 +43,7 @@
                 <i class="bi bi-tags-fill"></i>
             </div>
             <div class="stat-content">
-                <div class="stat-number" id="stat-categories">0</div>
+                <div class="stat-number" id="stat-categories" data-stat="categories">0</div>
                 <div class="stat-label">Категории</div>
             </div>
         </div>
@@ -221,7 +221,7 @@
     </div>
 
     <!-- ==========================================
-         PRODUCT MODAL (Create/Edit)
+         PRODUCT MODAL (Create/Edit) - КОРИГИРАНА ВЕРСИЯ
          ========================================== -->
     <div class="modal-overlay" id="product-modal">
         <div class="modal-content">
@@ -247,7 +247,10 @@
                                    class="form-control"
                                    placeholder="напр. PRD-001"
                                    required
-                                   maxlength="50">
+                                   minlength="3"
+                                   maxlength="50"
+                                   pattern="[A-Z0-9\-]+"
+                                   title="Само главни букви, цифри и тире">
                         </div>
 
                         <div class="form-group">
@@ -258,6 +261,7 @@
                                    class="form-control"
                                    placeholder="напр. Минерална вода 1.5л"
                                    required
+                                   minlength="2"
                                    maxlength="200">
                         </div>
                     </div>
@@ -272,6 +276,7 @@
                                    placeholder="бр"
                                    value="бр"
                                    required
+                                   minlength="1"
                                    maxlength="20">
                             <small class="form-help">бр, кг, л, м и т.н.</small>
                         </div>
@@ -306,16 +311,19 @@
                         <div class="form-group">
                             <label for="input-price">Единична цена (без ДДС) <span class="required">*</span></label>
                             <div class="input-with-icon">
+                                <!-- КРИТИЧНА ПРОМЯНА: min="0.01" вместо min="0" -->
                                 <input type="number"
                                        id="input-price"
                                        name="price"
                                        class="form-control"
                                        placeholder="0.00"
-                                       min="0"
+                                       min="0.01"
+                                       max="999999.99"
                                        step="0.01"
                                        required>
                                 <span class="input-icon">лв</span>
                             </div>
+                            <small class="form-help">Цената трябва да е поне 0.01 лв</small>
                         </div>
 
                         <div class="form-group">
@@ -342,6 +350,8 @@
                                    class="form-control"
                                    placeholder="0"
                                    min="0"
+                                   max="999999"
+                                   step="1"
                                    value="0"
                                    required>
                             <small class="form-help">Физическо количество на склад</small>
@@ -369,12 +379,14 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label for="remove-qty">Количество за премахване</label>
+                            <!-- КРИТИЧНА ПРОМЯНА: min="1" вместо min="0" и добавен max атрибут -->
                             <input type="number"
                                    id="remove-qty"
                                    class="form-control"
                                    placeholder="0"
-                                   min="0">
-                            <small class="form-help">Колко бройки да премахнем от склада</small>
+                                   min="1"
+                                   step="1">
+                            <small class="form-help">Минимум 1 бройка, максимум до наличните</small>
                         </div>
 
                         <div class="form-group">
@@ -394,6 +406,7 @@
                         <textarea id="remove-note"
                                   class="form-control"
                                   rows="2"
+                                  maxlength="500"
                                   placeholder="Допълнителни детайли..."></textarea>
                     </div>
 

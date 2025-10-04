@@ -36,6 +36,7 @@ const state = {
     sortOrder: 'asc',
     editingProduct: null
 };
+window.state = state;
 
 // ==========================================
 // API CLIENT CLASS
@@ -151,6 +152,19 @@ class InventoryApi {
             method: 'POST',
             body: JSON.stringify(data)
         });
+    }
+
+    // ADJUSTMENT - Корекция на наличности
+    async adjustInventory(data) {
+        return this.request('/adjustments', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+    }
+
+    // GET adjustments history
+    async getAdjustments() {
+        return this.request('/adjustments');
     }
 }
 
@@ -508,6 +522,7 @@ class ProductModal {
         this.modal = document.getElementById('product-modal');
         this.form = document.getElementById('product-form');
         this.title = document.getElementById('modal-title');
+        this.saveBtn = document.getElementById('btn-save-product');
 
         this.inputs = {
             id: document.getElementById('input-product-id'),
@@ -523,17 +538,14 @@ class ProductModal {
         };
 
         this.setupEvents();
+        this.setupValidation();
     }
 
     setupEvents() {
-        // Close buttons
         document.getElementById('btn-close-modal').addEventListener('click', () => this.close());
         document.getElementById('btn-cancel-modal').addEventListener('click', () => this.close());
+        this.saveBtn.addEventListener('click', () => this.save());
 
-        // Save button
-        document.getElementById('btn-save-product').addEventListener('click', () => this.save());
-
-        // Close on overlay click
         this.modal.addEventListener('click', (e) => {
             if (e.target === this.modal) this.close();
         });
@@ -542,6 +554,39 @@ class ProductModal {
         this.inputs.sku.addEventListener('input', (e) => {
             e.target.value = e.target.value.toUpperCase();
         });
+    }
+
+    setupValidation() {
+        // SKU validation - само букви, цифри и тире
+        this.inputs.sku.addEventListener('input', (e) => {
+            const value = e.target.value;
+            const cleaned = value.replace(/[^A-Z0-9\-]/g, '');
+            if (value !== cleaned) {
+                e.target.value = cleaned;
+                window.toastManager?.warn('SKU може да съдържа само букви, цифри и тире');
+            }
+        });
+
+        // Price validation - блокираме отрицателни числа
+        this.inputs.price.addEventListener('keydown', (e) => {
+            if (e.key === '-' || e.key === 'e') {
+                e.preventDefault();
+            }
+        });
+
+        // Removal quantity real-time validation
+        const removeQtyInput = document.getElementById('remove-qty');
+        if (removeQtyInput) {
+            removeQtyInput.addEventListener('input', (e) => {
+                const value = parseInt(e.target.value) || 0;
+                const max = parseInt(e.target.getAttribute('max')) || 0;
+
+                if (value > max) {
+                    e.target.value = max;
+                    window.toastManager?.warn(`Максимално можете да премахнете ${max} бройки`);
+                }
+            });
+        }
     }
 
     openCreate() {
@@ -553,16 +598,13 @@ class ProductModal {
         this.inputs.quantity.value = '0';
         this.inputs.unit.value = 'бр';
 
-        // Скриваме removal секцията при създаване
         const removalSection = document.getElementById('removal-section');
         if (removalSection) removalSection.style.display = 'none';
 
-        // Quantity е editable при създаване
         this.inputs.quantity.readOnly = false;
         this.inputs.quantity.style.backgroundColor = '';
         this.inputs.quantity.style.cursor = '';
 
-        // SKU е editable при създаване
         this.inputs.sku.readOnly = false;
         this.inputs.sku.style.backgroundColor = '';
 
@@ -588,29 +630,42 @@ class ProductModal {
             this.inputs.quantity.value = product.quantityAvailable;
             this.inputs.status.value = product.active ? 'true' : 'false';
 
-            // Показваме removal секцията при редакция
             const removalSection = document.getElementById('removal-section');
-            if (removalSection) removalSection.style.display = 'block';
 
-            // Обновяваме текущите наличности
-            const currentQtyDisplay = document.getElementById('current-qty-display');
-            if (currentQtyDisplay) {
-                currentQtyDisplay.textContent = (product.quantityAvailable || 0) + ' ' + product.unit;
+            // Ако продукта е деактивиран - скриваме removal секцията
+            if (!product.active) {
+                if (removalSection) removalSection.style.display = 'none';
+                window.toastManager?.warn('Този продукт е деактивиран. Активирайте го за да правите корекции.');
+            } else {
+                if (removalSection) {
+                    removalSection.style.display = 'block';
+
+                    // Показваме текущите наличности
+                    const currentQtyDisplay = document.getElementById('current-qty-display');
+                    if (currentQtyDisplay) {
+                        currentQtyDisplay.textContent = (product.quantityAvailable || 0) + ' ' + product.unit;
+                    }
+
+                    // Настройваме max атрибут на полето за премахване
+                    const removeQty = document.getElementById('remove-qty');
+                    if (removeQty) {
+                        removeQty.value = '';
+                        removeQty.setAttribute('max', product.quantityAvailable);
+                        removeQty.setAttribute('min', '1');
+                    }
+
+                    const removeReason = document.getElementById('remove-reason');
+                    const removeNote = document.getElementById('remove-note');
+                    if (removeReason) removeReason.value = '';
+                    if (removeNote) removeNote.value = '';
+                }
             }
-
-            // Reset removal полетата
-            const removeQty = document.getElementById('remove-qty');
-            const removeReason = document.getElementById('remove-reason');
-            const removeNote = document.getElementById('remove-note');
-            if (removeQty) removeQty.value = '';
-            if (removeReason) removeReason.value = '';
-            if (removeNote) removeNote.value = '';
 
             // Quantity е read-only при редакция
             this.inputs.quantity.readOnly = true;
             this.inputs.quantity.style.backgroundColor = '#f5f5f5';
             this.inputs.quantity.style.cursor = 'not-allowed';
-            this.inputs.quantity.title = 'Количествата се променят чрез секцията за премахване по-долу';
+            this.inputs.quantity.title = 'Количествата се променят чрез корекции';
 
             // SKU е read-only при редакция
             this.inputs.sku.readOnly = true;
@@ -633,14 +688,13 @@ class ProductModal {
     }
 
     async save() {
-        // Първо проверяваме дали формата е валидна
+        // HTML5 validation проверка
         if (!this.form.checkValidity()) {
             this.form.reportValidity();
             return;
         }
 
         try {
-            // Събираме основните данни от формата
             const productData = {
                 sku: this.inputs.sku.value.trim(),
                 name: this.inputs.name.value.trim(),
@@ -653,35 +707,33 @@ class ProductModal {
             };
 
             if (state.editingProduct) {
-                // РЕЖИМ НА РЕДАКЦИЯ - обработваме съществуващ продукт
+                // РЕЖИМ РЕДАКЦИЯ
                 productData.id = state.editingProduct.id;
                 productData.quantityAvailable = state.editingProduct.quantityAvailable;
                 productData.quantityReserved = state.editingProduct.quantityReserved;
 
-                // Проверяваме дали има въведено количество за премахване
                 const removeQty = parseInt(document.getElementById('remove-qty')?.value) || 0;
                 const removeReason = document.getElementById('remove-reason')?.value;
                 const removeNote = document.getElementById('remove-note')?.value.trim() || '';
 
                 if (removeQty > 0) {
-                    // Администраторът иска да премахне бройки - валидираме входа
-
+                    // Валидация преди изпращане
                     if (!removeReason) {
-                        window.toastManager?.error('Моля избери причина за премахване на бройките');
+                        window.toastManager?.error('Моля избери причина за премахване');
                         document.getElementById('remove-reason')?.focus();
                         return;
                     }
 
                     if (removeQty > state.editingProduct.quantityAvailable) {
-                        window.toastManager?.error(`Не може да премахнеш повече от наличното количество (${state.editingProduct.quantityAvailable} ${state.editingProduct.unit})`);
+                        window.toastManager?.error(`Не можеш да премахнеш повече от ${state.editingProduct.quantityAvailable} ${state.editingProduct.unit}`);
                         document.getElementById('remove-qty')?.focus();
                         return;
                     }
 
-                    // Първо обновяваме основните данни на продукта
+                    // Обновяваме продукта
                     await window.api.updateProduct(productData.id, productData);
 
-                    // След това правим adjustment за премахване на бройките
+                    // Правим adjustment
                     const adjustmentData = {
                         productId: productData.id,
                         adjustmentType: 'REMOVE',
@@ -692,16 +744,16 @@ class ProductModal {
 
                     await window.api.createAdjustment(adjustmentData);
 
-                    window.toastManager?.success(`Артикулът е обновен и ${removeQty} ${state.editingProduct.unit} са премахнати успешно`);
+                    window.toastManager?.success(`Артикулът е обновен и ${removeQty} ${state.editingProduct.unit} са премахнати`);
 
                 } else {
-                    // Само обновяваме основните данни без промяна в количествата
+                    // Само обновяваме без adjustment
                     await window.api.updateProduct(productData.id, productData);
                     window.toastManager?.success('Артикулът е обновен успешно');
                 }
 
             } else {
-                // РЕЖИМ НА СЪЗДАВАНЕ - правим нов продукт с начално количество
+                // РЕЖИМ СЪЗДАВАНЕ
                 productData.quantityAvailable = parseInt(this.inputs.quantity.value) || 0;
                 productData.quantityReserved = 0;
 
@@ -709,16 +761,13 @@ class ProductModal {
                 window.toastManager?.success('Новият артикул е създаден успешно');
             }
 
-            // Затваряме модала
             this.close();
-
-            // Презареждаме данните за да видим промените
             await window.productTable?.loadProducts();
             await window.statsManager?.loadStats();
 
         } catch (error) {
             console.error('Error saving product:', error);
-            window.toastManager?.error(error.message || 'Грешка при запазване на артикула');
+            window.toastManager?.error(error.message || 'Грешка при запазване');
         }
     }
 }
@@ -739,19 +788,51 @@ class StatsManager {
     async loadStats() {
         try {
             const response = await window.api.getStats();
-            this.update(response.stats);
+
+            if (response.success && response.stats) {
+                const stats = response.stats;
+
+                // Използваме ТОЧНИТЕ имена от ProductStatsDTO
+                this.updateStats({
+                    totalProducts: stats.totalProducts || 0,
+                    lowStockCount: stats.lowStockCount || 0,
+                    totalInventoryValue: stats.totalInventoryValue || 0,
+                    categoriesCount: stats.categoriesCount || 0
+                });
+            }
         } catch (error) {
             console.error('Failed to load stats:', error);
         }
     }
 
+    // ДОБАВИ ТОЗИ МЕТОД ЗА WebSocket compatibility
     update(stats) {
-        if (!stats) return;
+        // WebSocket извиква този метод директно
+        this.updateStats({
+            totalProducts: stats.totalProducts || 0,
+            lowStockCount: stats.lowStockCount || 0,
+            totalInventoryValue: stats.totalInventoryValue || 0,
+            categoriesCount: stats.categoriesCount || 0
+        });
+    }
 
-        this.elements.total.textContent = stats.activeProducts || 0;
-        this.elements.lowStock.textContent = stats.lowStockCount || 0;
-        this.elements.value.textContent = this.formatValue(stats.totalInventoryValue);
-        this.elements.categories.textContent = stats.categoriesCount || 0;
+    updateStats(data) {
+        // Актуализираме с правилните данни
+        if (this.elements.total) {
+            this.elements.total.textContent = data.totalProducts.toString() || 0;
+        }
+
+        if (this.elements.lowStock) {
+            this.elements.lowStock.textContent = data.lowStockCount.toString() || 0;
+        }
+
+        if (this.elements.value) {
+            this.elements.value.textContent = this.formatValue(data.totalInventoryValue);
+        }
+
+        if (this.elements.categories) {
+            this.elements.categories.textContent = data.categoriesCount.toString() || 0;
+        }
     }
 
     formatValue(value) {
@@ -915,20 +996,25 @@ function setupSubTabs() {
 // EVENT HANDLERS
 // ==========================================
 function setupEventHandlers() {
-    // Create button
-    document.getElementById('btn-create-product').addEventListener('click', () => {
-        window.productModal?.openCreate();
-    });
+    // Create button - DEFENSIVE CHECK
+    const createBtn = document.getElementById('btn-create-product');
+    if (createBtn) {
+        createBtn.addEventListener('click', () => {
+            window.productModal?.openCreate();
+        });
+    }
 
-    // Refresh button
-    document.getElementById('btn-refresh').addEventListener('click', () => {
-        window.productTable?.loadProducts();
-        window.statsManager?.loadStats();
-        window.toastManager?.info('Данните са обновени');
-    });
+    // Refresh button - DEFENSIVE CHECK
+    const refreshBtn = document.getElementById('btn-refresh');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', () => {
+            window.productTable?.loadProducts();
+            window.statsManager?.loadStats();
+            window.toastManager?.info('Данните са обновени');
+        });
+    }
 
-
-    // Refresh history button
+    // Refresh history button - ВЕЧЕ ИМА DEFENSIVE CHECK
     document.getElementById('btn-refresh-history')?.addEventListener('click', () => {
         window.adjustmentHistory?.loadHistory();
         window.toastManager?.info('Историята е обновена');

@@ -9,10 +9,12 @@ import com.yourco.warehouse.service.ProductService;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -345,5 +347,76 @@ public class InventoryController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("success", false, "message", "Грешка при зареждане на мерни единици"));
         }
+    }
+
+
+    /**
+     * ═══════════════════════════════════════════════════════════
+     * EXCEPTION HANDLER - САМО ЗА INVENTORY CONTROLLER
+     * ═══════════════════════════════════════════════════════════
+     * Хваща всички възможни грешки и ги превръща в JSON responses
+     * с ясни съобщения на български за потребителя
+     */
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Map<String, Object>> handleInventoryErrors(Exception ex) {
+
+        String message;
+        HttpStatus status = HttpStatus.BAD_REQUEST;
+
+        // Определяме типа грешка и формираме подходящо съобщение
+        if (ex instanceof MethodArgumentNotValidException validationEx) {
+            // Validation грешки - вземаме първата и я превеждаме
+            message = validationEx.getBindingResult().getFieldErrors().stream()
+                    .findFirst()
+                    .map(error -> switch (error.getField()) {
+                        case "sku" -> "SKU кодът е задължителен и не може да бъде празен";
+                        case "name" -> "Името на продукта е задължително";
+                        case "price" -> "Невалидна цена - трябва да бъде положително число";
+                        case "vatRate" -> "ДДС процентът трябва да бъде между 0 и 100";
+                        case "quantityAvailable" -> "Количеството не може да бъде отрицателно";
+                        case "category" -> "Категорията е задължителна";
+                        case "unit" -> "Мерната единица е задължителна";
+                        default -> error.getDefaultMessage();
+                    })
+                    .orElse("Невалидни данни - проверете попълнените полета");
+
+        } else if (ex instanceof DataIntegrityViolationException) {
+            // Database constraint violations - обикновено дублиран SKU
+            String errorMsg = ex.getMessage().toLowerCase();
+            if (errorMsg.contains("duplicate") || errorMsg.contains("unique")) {
+                message = "Продукт с този SKU вече съществува в системата";
+            } else if (errorMsg.contains("foreign key")) {
+                message = "Този продукт не може да бъде изтрит - използва се в други записи";
+            } else {
+                message = "Грешка при запазване - проверете дали всички данни са валидни";
+            }
+
+        } else if (ex instanceof IllegalArgumentException) {
+            // Бизнес логика грешки - директно използваме съобщението от service
+            message = ex.getMessage();
+
+        } else if (ex.getMessage() != null && ex.getMessage().contains("not found")) {
+            // Entity not found
+            message = "Търсеният продукт не е намерен - възможно е да е изтрит";
+            status = HttpStatus.NOT_FOUND;
+
+        } else if (ex.getMessage() != null && ex.getMessage().contains("optimistic")) {
+            // Concurrent modification
+            message = "Друг потребител е променил този продукт - моля опреснете страницата";
+            status = HttpStatus.CONFLICT;
+
+        } else {
+            // Непредвидена грешка - логваме детайлите но не ги показваме на потребителя
+            log.error("Неочаквана грешка в инвентар модула: {}", ex.getMessage(), ex);
+            message = "Възникна техническа грешка - моля опитайте отново или се свържете с поддръжката";
+            status = HttpStatus.INTERNAL_SERVER_ERROR;
+        }
+
+        // Винаги връщаме JSON с ясно съобщение
+        return ResponseEntity.status(status)
+                .body(Map.of(
+                        "success", false,
+                        "message", message
+                ));
     }
 }
