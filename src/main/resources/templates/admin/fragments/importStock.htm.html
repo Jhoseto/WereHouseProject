@@ -1,0 +1,155 @@
+<!-- IMPORT WIZARD TAB CONTENT -->
+<div id="import-tab-content" class="tab-pane active">
+    <div id="import-wizard-container" class="wizard-container">
+
+        <!-- PROGRESS BAR -->
+        <div class="wizard-progress">
+            <div class="wizard-progress-bar" style="width: 16.67%"></div>
+            <div class="wizard-progress-text">Стъпка 1/6: Качване</div>
+        </div>
+
+        <!-- CANCEL BUTTON -->
+        <button id="cancel-import-btn" class="btn-cancel">✕ Откажи импорт</button>
+
+        <!-- STEP 1: FILE UPLOAD -->
+        <section data-step="1" class="wizard-step">
+            <h2>Стъпка 1: Качи Excel или CSV файл</h2>
+
+            <div id="drop-zone" class="drop-zone">
+                <div class="drop-zone-icon">📁</div>
+                <p class="drop-zone-text">Пусни файл тук или кликни за избор</p>
+                <p class="drop-zone-hint">Поддържат се: .xlsx, .xls, .csv (макс. 10MB)</p>
+                <input type="file" id="file-input" accept=".xlsx,.xls,.csv" hidden>
+                <button onclick="document.getElementById('file-input').click()" class="btn-primary">
+                    Избери файл
+                </button>
+            </div>
+
+            <div class="template-download">
+                <p>Нямаш готов файл?
+                    <a href="/templates/import-template.xlsx" download>Изтегли примерен шаблон</a>
+                </p>
+            </div>
+        </section>
+
+        <!-- STEP 2: COLUMN MAPPING -->
+        <section data-step="2" class="wizard-step hidden">
+            <h2>Стъпка 2: Мапни колоните</h2>
+            <div id="mapping-container"></div>
+        </section>
+
+        <!-- STEP 3: VALIDATION -->
+        <section data-step="3" class="wizard-step hidden">
+            <h2>Стъпка 3: Валидация на данните</h2>
+            <div id="validation-container"></div>
+        </section>
+
+        <!-- STEP 4: PRICING -->
+        <section data-step="4" class="wizard-step hidden">
+            <h2>Стъпка 4: Ценообразуване</h2>
+            <div id="pricing-container"></div>
+        </section>
+
+        <!-- STEP 5: SUMMARY -->
+        <section data-step="5" class="wizard-step hidden">
+            <h2>Стъпка 5: Финален преглед</h2>
+            <div id="summary-container"></div>
+        </section>
+
+        <!-- STEP 6: CONFIRM (LOADING) -->
+        <section data-step="6" class="wizard-step hidden">
+            <div class="confirm-loading">
+                <div class="loading-spinner-large"></div>
+                <h3>Импортирането е в ход...</h3>
+                <p>Моля изчакай, това може да отнеме няколко секунди</p>
+            </div>
+        </section>
+
+        <!-- NAVIGATION BUTTONS -->
+        <div class="wizard-navigation">
+            <button id="prev-btn" class="btn-secondary" style="display: none;">
+                ← Назад
+            </button>
+            <button id="next-btn" class="btn-primary">
+                Напред →
+            </button>
+        </div>
+
+    </div>
+
+    <!-- FORMULA MODAL TEMPLATE -->
+    <div id="formula-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Приложи ценообразуваща формула</h3>
+                <button id="close-formula-modal" class="modal-close">✕</button>
+            </div>
+
+            <div class="modal-body">
+                <div class="formula-type-selector">
+                    <h4>Избери тип формула:</h4>
+
+                    <label class="formula-option">
+                        <input type="radio" name="formula-type" value="MARKUP_PERCENT" checked>
+                        <div class="formula-label">
+                            <strong>Доставна цена + процент</strong>
+                            <span>Например: доставна + 30%</span>
+                        </div>
+                    </label>
+
+                    <label class="formula-option">
+                        <input type="radio" name="formula-type" value="FIXED_AMOUNT">
+                        <div class="formula-label">
+                            <strong>Доставна цена + фиксирана сума</strong>
+                            <span>Например: доставна + 2.50 лв</span>
+                        </div>
+                    </label>
+
+                    <label class="formula-option">
+                        <input type="radio" name="formula-type" value="MULTIPLIER">
+                        <div class="formula-label">
+                            <strong>Доставна цена × множител</strong>
+                            <span>Например: доставна × 1.4</span>
+                        </div>
+                    </label>
+                </div>
+
+                <div class="formula-value-input">
+                    <label for="formula-value">Стойност:</label>
+                    <input type="number" id="formula-value" step="0.01" min="0" placeholder="Въведи стойност">
+                </div>
+
+                <div class="formula-options">
+                    <label>
+                        <input type="checkbox" id="apply-rounding">
+                        Закръгли след изчисление до:
+                    </label>
+                    <select id="round-to" disabled>
+                        <option value="0.01">0.01 лв</option>
+                        <option value="0.10">0.10 лв</option>
+                        <option value="0.50">0.50 лв</option>
+                        <option value="1.00">1.00 лв</option>
+                    </select>
+                </div>
+
+                <div class="formula-preview">
+                    <h4>Примерен изчисление:</h4>
+                    <div id="formula-preview"></div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button onclick="ImportWizard.closeFormulaModal()" class="btn-secondary">
+                    Откажи
+                </button>
+                <button id="apply-formula-btn" class="btn-primary">
+                    Приложи формула
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script src="/js/adminDashboard/importStock.js"></script>
+</div>
+<!-- END IMPORT TAB CONTENT -->

@@ -2,10 +2,7 @@ package com.yourco.warehouse.service.impl;
 
 import com.yourco.warehouse.dto.importSystem.*;
 import com.yourco.warehouse.entity.*;
-import com.yourco.warehouse.entity.enums.AdjustmentReasonEnum;
-import com.yourco.warehouse.entity.enums.ImportActionTypeEnum;
-import com.yourco.warehouse.entity.enums.ImportSessionStatusEnum;
-import com.yourco.warehouse.entity.enums.ImportStatusEnum;
+import com.yourco.warehouse.entity.enums.*;
 import com.yourco.warehouse.repository.*;
 import com.yourco.warehouse.service.FileParserService;
 import com.yourco.warehouse.service.ImportStockService;
@@ -362,6 +359,7 @@ public class ImportStockServiceImpl implements ImportStockService {
         }
     }
 
+
     /**
      * Обработва нов продукт който не съществува в системата.
      * Създава нов ProductEntity, PurchasePriceHistory и InventoryAdjustment записи.
@@ -373,7 +371,6 @@ public class ImportStockServiceImpl implements ImportStockService {
         product.setName(item.getName());
         product.setCategory(item.getCategory());
         product.setDescription(item.getDescription());
-        product.setSku(item.getBarcode());
         product.setQuantityAvailable(item.getQuantity());
         product.setPurchasePrice(item.getPurchasePrice());
         product.setPrice(item.getExistingSellingPrice());
@@ -400,8 +397,12 @@ public class ImportStockServiceImpl implements ImportStockService {
         // Създаваме inventory adjustment за начално количество
         InventoryAdjustmentEntity adjustment = new InventoryAdjustmentEntity();
         adjustment.setProduct(product);
+        adjustment.setAdjustmentType(AdjustmentTypeEnum.INITIAL);
         adjustment.setQuantityChange(item.getQuantity());
+        adjustment.setQuantityBefore(0);
+        adjustment.setQuantityAfter(item.getQuantity());
         adjustment.setReason(AdjustmentReasonEnum.IMPORT);
+        adjustment.setPerformedBy(importEvent.getUploadedBy());
         adjustment.setImportEvent(importEvent);
 
         adjustmentRepository.save(adjustment);
@@ -417,10 +418,10 @@ public class ImportStockServiceImpl implements ImportStockService {
 
         importEventItemRepository.save(eventItem);
 
-        // Update-ваме counters на import event
-        importEvent.setNewItems(importEvent.getNewItems() + 1);  // ПОПРАВКА: без incrementNewItems()
-        importEvent.setTotalItems(importEvent.getTotalItems() + 1);
+        importEvent.incrementNewItems();
     }
+
+
 
     /**
      * Обработва съществуващ продукт който вече е в системата.
@@ -467,8 +468,12 @@ public class ImportStockServiceImpl implements ImportStockService {
         // Създаваме inventory adjustment за увеличение на количеството
         InventoryAdjustmentEntity adjustment = new InventoryAdjustmentEntity();
         adjustment.setProduct(product);
+        adjustment.setAdjustmentType(AdjustmentTypeEnum.ADD);  // ПОПРАВКА: използваме ADD тип
         adjustment.setQuantityChange(item.getQuantity());
+        adjustment.setQuantityBefore(oldQuantity);  // ПОПРАВКА: старото количество
+        adjustment.setQuantityAfter(product.getQuantityAvailable());  // ПОПРАВКА: новото количество
         adjustment.setReason(AdjustmentReasonEnum.IMPORT);
+        adjustment.setPerformedBy(importEvent.getUploadedBy());  // ПОПРАВКА: взимаме от import event
         adjustment.setImportEvent(importEvent);
 
         adjustmentRepository.save(adjustment);
