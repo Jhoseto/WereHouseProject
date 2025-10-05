@@ -920,6 +920,76 @@
 }
 
 /* ==========================================
+   FAIL-SAFE UI - DISABLED STATES & TOOLTIPS
+   ========================================== */
+
+/* Disabled бутони - физически блокирани */
+button:disabled, .btn-primary:disabled, .btn-secondary:disabled,
+#next-btn:disabled, #prev-btn:disabled {
+    opacity: 0.5 !important;
+    cursor: not-allowed !important;
+    pointer-events: none;
+    filter: grayscale(40%);
+}
+
+/* Disabled dropdown опции */
+select option:disabled {
+    color: var(--inventory-text-muted);
+    background: var(--inventory-bg);
+    font-style: italic;
+}
+
+/* Validation messages */
+.validation-error {
+    padding: 12px 16px;
+    background: rgba(231, 76, 60, 0.1);
+    border-left: 4px solid var(--inventory-danger);
+    border-radius: 8px;
+    color: var(--inventory-danger);
+    font-size: 14px;
+    font-weight: 500;
+    animation: slideIn 0.3s ease;
+}
+
+.validation-success {
+    padding: 12px 16px;
+    background: rgba(46, 204, 113, 0.1);
+    border-left: 4px solid var(--inventory-success);
+    border-radius: 8px;
+    color: var(--inventory-success);
+    font-size: 14px;
+    font-weight: 500;
+    animation: slideIn 0.3s ease;
+}
+
+/* Tooltip на disabled елементи */
+[disabled][title]:hover::after,
+button:disabled[title]:hover::after {
+    content: attr(title);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 8px 12px;
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    font-size: 12px;
+    white-space: nowrap;
+    border-radius: 6px;
+    pointer-events: none;
+    z-index: 1000;
+    margin-bottom: 8px;
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+
+
+
+/* ==========================================
    RESPONSIVE DESIGN
    ========================================== */
 @media (max-width: 768px) {
@@ -991,3 +1061,18 @@
     color: var(--inventory-text-muted);
     font-size: 16px;
 }
+
+.validation-error-notice {
+    display: flex;
+    gap: 16px;
+    padding: 20px;
+    background: rgba(231, 76, 60, 0.1);
+    border: 2px solid var(--inventory-danger);
+    border-radius: 12px;
+    margin-bottom: 24px;
+}
+
+.error-icon { font-size: 32px; }
+.error-content strong { color: var(--inventory-danger); display: block; margin-bottom: 8px; }
+.error-content ul { margin: 12px 0 12px 20px; }
+.error-content .note { font-size: 12px; color: var(--inventory-text-muted); margin-top: 12px; }

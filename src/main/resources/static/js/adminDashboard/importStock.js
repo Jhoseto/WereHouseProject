@@ -389,6 +389,8 @@ function renderValidationTable() {
     if (!container || !STATE.validation) return;
 
     const items = STATE.validation.items || [];
+    const errorItems = items.filter(i => i.status === 'ERROR');
+    const hasErrors = errorItems.length > 0;
 
     let html = `
         <div class="validation-header">
@@ -401,7 +403,26 @@ function renderValidationTable() {
         </div>
     `;
 
-    html += renderTable(items, [
+    // 🔥 СЪОБЩЕНИЕ КОГАТО ИМА ГРЕШКИ
+    if (hasErrors) {
+        html += `
+            <div class="validation-error-notice">
+                <div class="error-icon">⚠️</div>
+                <div class="error-content">
+                    <strong>Открити са ${errorItems.length} артикула с грешки</strong>
+                    <p>Имаш два варианта:</p>
+                    <ul>
+                        <li><strong>Поправи данните:</strong> Върни се назад, коригирай Excel файла и качи отново</li>
+                        <li><strong>Изключи артикулите:</strong> Маркирай checkbox-а "Игнорирай" при проблемните редове</li>
+                    </ul>
+                    <p class="note">Игнорираните артикули ще се запишат в бележките на импорта за справка</p>
+                </div>
+            </div>
+        `;
+    }
+
+    // Добавяме checkbox колона за ERROR items
+    const columns = [
         { key: 'rowNumber', label: '№', width: '50px' },
         { key: 'sku', label: 'SKU', width: '120px' },
         { key: 'name', label: 'Име', width: 'auto' },
@@ -409,10 +430,75 @@ function renderValidationTable() {
         { key: 'purchasePrice', label: 'Дост. цена', width: '100px', format: formatPrice },
         { key: 'status', label: 'Статус', width: '120px', format: formatStatus },
         { key: 'messages', label: 'Съобщения', width: 'auto', format: formatMessages }
-    ], 'validation-table');
+    ];
 
+    // 🔥 ДОБАВЯМЕ IGNORE КОЛОНА САМО АКО ИМА ERRORS
+    if (hasErrors) {
+        columns.push({
+            key: 'ignore',
+            label: 'Игнорирай',
+            width: '100px',
+            format: formatIgnoreCheckbox
+        });
+    }
+
+    html += renderTable(items, columns, 'validation-table');
     container.innerHTML = html;
+
+    // 🔥 ДОБАВЯМЕ EVENT LISTENERS ЗА IGNORE CHECKBOXES
+    if (hasErrors) {
+        container.querySelectorAll('.ignore-checkbox').forEach(cb => {
+            cb.addEventListener('change', onIgnoreCheckboxChange);
+        });
+    }
+
+    // 🔥 КОНТРОЛИРАМЕ БУТОНА "НАПРЕД"
+    validateCanProceed();
 }
+
+// Форматира ignore checkbox само за ERROR items
+function formatIgnoreCheckbox(value, row) {
+    if (row.status !== 'ERROR') {
+        return '-'; // Не показваме checkbox за валидни items
+    }
+
+    const checked = row.ignored ? 'checked' : '';
+    return `<input type="checkbox" class="ignore-checkbox" data-sku="${row.sku}" ${checked}>`;
+}
+
+// Handle на ignore checkbox промяна
+function onIgnoreCheckboxChange(event) {
+    const checkbox = event.target;
+    const sku = checkbox.dataset.sku;
+
+    // Намираме item-а и маркираме го като ignored
+    const item = STATE.validation.items.find(i => i.sku === sku);
+    if (item) {
+        item.ignored = checkbox.checked;
+    }
+
+    // Re-validate дали може да продължи
+    validateCanProceed();
+}
+
+// Проверява дали може да се продължи напред
+function validateCanProceed() {
+    const errorItems = STATE.validation.items.filter(i => i.status === 'ERROR' && !i.ignored);
+    const nextBtn = document.getElementById('next-btn');
+
+    if (errorItems.length > 0) {
+        nextBtn.disabled = true;
+        nextBtn.style.opacity = '0.5';
+        nextBtn.style.cursor = 'not-allowed';
+        nextBtn.title = `${errorItems.length} артикула с грешки трябва да бъдат поправени или игнорирани`;
+    } else {
+        nextBtn.disabled = false;
+        nextBtn.style.opacity = '1';
+        nextBtn.style.cursor = 'pointer';
+        nextBtn.title = '';
+    }
+}
+
 
 function renderPricingTable() {
     const container = document.getElementById('pricing-container');
@@ -690,24 +776,37 @@ function validateMapping() {
     const selects = document.querySelectorAll('.mapping-select');
     const mapping = {};
 
+    // Събираме избраните полета от всички dropdown-ове
     selects.forEach(select => {
-        const column = select.dataset.column;
-        const field = select.value;
-        if (field) {
+        const column = select.dataset.column;  // "column_0", "column_1", ...
+        const field = select.value;             // "sku", "name", "quantity", ...
+
+        if (field) {  // Игнорираме празните избори
             mapping[column] = field;
         }
     });
 
-    const hasRequired = mapping.hasOwnProperty('sku') &&
-        mapping.hasOwnProperty('quantity') &&
-        mapping.hasOwnProperty('purchasePrice');
+    // Критична поправка: Проверяваме VALUES, не KEYS
+    // mapping = { "column_0": "sku", "column_3": "quantity", ... }
+    // Object.values(mapping) = ["sku", "quantity", ...]
+    const mappedFields = Object.values(mapping);
+
+    const hasRequired = mappedFields.includes('sku') &&
+        mappedFields.includes('quantity') &&
+        mappedFields.includes('purchasePrice');
 
     const validationDiv = document.getElementById('mapping-validation');
     const nextBtn = document.getElementById('next-btn');
 
     if (!hasRequired) {
-        validationDiv.innerHTML = '<div class="validation-error">⚠ Трябва да мапнеш задължителните полета: SKU, Количество и Доставна цена</div>';
-        nextBtn.disabled = true; // ВАЖНО: Бутонът е физически блокиран
+        // Показваме кои точно полета липсват за да е по-ясно
+        const missing = [];
+        if (!mappedFields.includes('sku')) missing.push('SKU код');
+        if (!mappedFields.includes('quantity')) missing.push('Количество');
+        if (!mappedFields.includes('purchasePrice')) missing.push('Доставна цена');
+
+        validationDiv.innerHTML = `<div class="validation-error">⚠ Липсват задължителни полета: ${missing.join(', ')}</div>`;
+        nextBtn.disabled = true;
         nextBtn.style.opacity = '0.5';
         nextBtn.style.cursor = 'not-allowed';
     } else {
@@ -791,6 +890,16 @@ async function nextStep() {
         }
     }
 
+    // КРИТИЧНА ПРОВЕРКА: Блокираме преминаване от VALIDATION стъпка ако има ERROR артикули
+    if (current === STEPS.VALIDATION) {
+        const errorItems = STATE.validation.items.filter(i => i.status === 'ERROR' && !i.ignored);
+
+        if (errorItems.length > 0) {
+            showError(`Има ${errorItems.length} артикула с грешки. Поправи данните в Excel файла или изключи проблемните артикули.`);
+            return;
+        }
+    }
+
     if (current === STEPS.PRICING) {
         // Проверка дали всички нови продукти имат цени
         const newProducts = STATE.validation.items.filter(item => item.isNew && item.selected !== false);
@@ -803,12 +912,26 @@ async function nextStep() {
     }
 
     if (current === STEPS.SUMMARY) {
-        // Събираме metadata
+        // Автоматично записваме ignored items в notes за audit trail
+        const ignoredItems = STATE.validation.items.filter(i => i.ignored);
+        let autoNotes = '';
+
+        if (ignoredItems.length > 0) {
+            autoNotes = `ИГНОРИРАНИ АРТИКУЛИ (${ignoredItems.length}бр):\n`;
+            ignoredItems.forEach(item => {
+                autoNotes += `- Ред ${item.rowNumber}: ${item.sku} - ${item.name} (${item.messages.join(', ')})\n`;
+            });
+        }
+
+        // Комбинираме auto notes с user notes
+        const userNotes = document.getElementById('import-notes')?.value || '';
+        const combinedNotes = autoNotes + (userNotes ? '\n\n' + userNotes : '');
+
         STATE.metadata = {
             supplierName: document.getElementById('supplier-name')?.value || null,
             invoiceNumber: document.getElementById('invoice-number')?.value || null,
             invoiceDate: document.getElementById('invoice-date')?.value || null,
-            notes: document.getElementById('import-notes')?.value || null
+            notes: combinedNotes
         };
 
         // Финализиране на импорта
@@ -873,7 +996,12 @@ function selectAllPricing() {
     updatePricingStats();
 }
 
+// ============================================
+// FORMULA MODAL ФУНКЦИИ - ПОПРАВЕНИ
+// ============================================
+
 function openFormulaModal() {
+    // Проверка дали има избрани артикули
     if (STATE.selectedItems.size === 0) {
         showError('Моля избери артикули преди да приложиш формула');
         return;
@@ -881,14 +1009,24 @@ function openFormulaModal() {
 
     const modal = document.getElementById('formula-modal');
     if (modal) {
+        // КРИТИЧНО: Трябва да добавим 'show' класа за да се покаже модалът
+        // CSS-ът използва .modal.show за opacity: 1 и visibility: visible
         modal.classList.remove('hidden');
+        modal.classList.add('show');
         updateFormulaPreview();
+    } else {
+        console.error('Formula modal element not found in DOM');
+        showError('Грешка при отваряне на modal прозорец');
     }
 }
 
 function closeFormulaModal() {
     const modal = document.getElementById('formula-modal');
-    if (modal) modal.classList.add('hidden');
+    if (modal) {
+        // Премахваме 'show' и добавяме 'hidden'
+        modal.classList.remove('show');
+        modal.classList.add('hidden');
+    }
 }
 
 function updateFormulaPreview() {
@@ -1009,23 +1147,90 @@ function updatePricingStats() {
 
 function autoDetectColumns(columnNames) {
     const mapping = {};
+
+    // Разширен списък с ключови думи за всяко поле
+    // Включва български, английски, съкращения и вариации
     const keywords = {
-        sku: ['sku', 'код', 'артикул', 'product code', 'item code'],
-        name: ['име', 'name', 'наименование', 'product', 'артикул'],
-        quantity: ['количество', 'qty', 'quantity', 'к-во', 'бр'],
-        purchasePrice: ['доставна', 'purchase', 'cost', 'цена', 'себестойност'],
-        category: ['категория', 'category', 'група', 'group'],
-        description: ['описание', 'description', 'забележка', 'notes']
+        sku: [
+            // Български варианти
+            'sku', 'арт', 'артикул', 'артикулен', 'код', 'номер', 'каталожен',
+            // Английски варианти
+            'product code', 'item code', 'article', 'catalog', 'catalogue',
+            // Съкращения
+            'art', 'art.', 'cat', 'cat.', 'no', 'no.'
+        ],
+
+        name: [
+            // Български варианти
+            'наименование', 'име', 'название', 'продукт', 'стока', 'артикул',
+            // Английски варианти
+            'name', 'product', 'item', 'description', 'title',
+            // Комбинации
+            'product name', 'item name', 'product description'
+        ],
+
+        quantity: [
+            // Български варианти
+            'количество', 'брой', 'бройка', 'к-во', 'кво', 'бр',
+            // Английски варианти
+            'quantity', 'qty', 'amount', 'units', 'pieces', 'pcs',
+            // Вариации
+            'к во', 'к. во'
+        ],
+
+        purchasePrice: [
+            // Български варианти за цена
+            'цена', 'доставна', 'себестойност', 'единична', 'ед цена', 'ед. цена',
+            // Английски варианти
+            'price', 'cost', 'purchase', 'unit price', 'buy price',
+            // Вариации
+            'без ддс', 'without vat', 'net price', 'purchase price'
+        ],
+
+        category: [
+            // Български варианти
+            'категория', 'група', 'тип', 'вид', 'класификация',
+            // Английски варианти
+            'category', 'group', 'type', 'class', 'classification'
+        ],
+
+        description: [
+            // Български варианти
+            'описание', 'забележка', 'коментар', 'бележки', 'детайли',
+            // Английски варианти
+            'description', 'notes', 'remarks', 'details', 'comments'
+        ]
     };
 
     columnNames.forEach((name, index) => {
-        const normalized = name.toLowerCase().trim();
+        // Стъпка 1: Нормализация на името
+        // Премахваме ВСИЧКИ специални символи и множество интервали
+        const normalized = name
+            .toLowerCase()                          // Малки букви
+            .trim()                                 // Премахваме whitespace от краищата
+            .replace(/[^\wа-я\s]/gi, ' ')          // Заменяме специални символи с интервал
+            .replace(/\s+/g, ' ')                  // Множество интервали стават един
+            .trim();                               // Отново trim след почистването
 
+        const columnKey = `column_${index}`;
+        let matched = false;
+
+        // Стъпка 2: Търсим match с приоритет
+        // По-специфичните термини се проверяват първи
         for (const [field, terms] of Object.entries(keywords)) {
-            if (terms.some(term => normalized.includes(term))) {
-                mapping[`column_${index}`] = field;
-                break;
+            // Сортираме термините по дължина (по-дългите първи)
+            // Така "unit price" ще match-не преди просто "price"
+            const sortedTerms = [...terms].sort((a, b) => b.length - a.length);
+
+            for (const term of sortedTerms) {
+                if (normalized.includes(term)) {
+                    mapping[columnKey] = field;
+                    matched = true;
+                    break;
+                }
             }
+
+            if (matched) break;
         }
     });
 
@@ -1140,10 +1345,10 @@ function clearState() {
 // ============================================
 
 function showLoading(message = 'Зареждане...') {
-    let loader = document.getElementById('global-loader');
+    let loader = document.getElementById('table-loading');
     if (!loader) {
         loader = document.createElement('div');
-        loader.id = 'global-loader';
+        loader.id = 'table-loading';
         loader.className = 'loading-overlay';
         document.body.appendChild(loader);
     }
@@ -1156,7 +1361,7 @@ function showLoading(message = 'Зареждане...') {
 }
 
 function hideLoading() {
-    const loader = document.getElementById('global-loader');
+    const loader = document.getElementById('table-loading');
     if (loader) loader.classList.add('hidden');
 }
 

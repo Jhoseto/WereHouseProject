@@ -68,7 +68,6 @@ public class FileParserServiceImpl implements FileParserService {
      */
     private ParsedFileDataDTO parseExcelFile(MultipartFile file) {
         try {
-            // Създаваме workbook обект според форма на файла
             Workbook workbook;
             String fileName = file.getOriginalFilename();
 
@@ -78,11 +77,36 @@ public class FileParserServiceImpl implements FileParserService {
                 workbook = new HSSFWorkbook(file.getInputStream());
             }
 
-            // Вземаме първия sheet
             Sheet sheet = workbook.getSheetAt(0);
 
-            // Първият ред е header с имената на колоните
-            Row headerRow = sheet.getRow(0);
+            // 🔥 Намираме header реда интелигентно
+            Row headerRow = null;
+            int headerRowIndex = -1;
+            int lastRowNum = sheet.getLastRowNum();
+
+            for (int i = 0; i <= Math.min(lastRowNum, 10); i++) { // Търсим в първите 10 реда
+                Row row = sheet.getRow(i);
+                if (row == null) continue;
+
+                Cell firstCell = row.getCell(0);
+                if (firstCell != null) {
+                    String cellValue = getCellValueAsString(firstCell).toLowerCase();
+                    // Търсим ключови думи характерни за header
+                    if (cellValue.contains("арт") || cellValue.contains("sku") ||
+                            cellValue.contains("код") || cellValue.contains("наименование")) {
+                        headerRow = row;
+                        headerRowIndex = i;
+                        break;
+                    }
+                }
+            }
+
+            // Ако не намерим header с ключови думи, използваме първия непразен ред
+            if (headerRow == null) {
+                headerRow = sheet.getRow(0);
+                headerRowIndex = 0;
+            }
+
             if (headerRow == null) {
                 workbook.close();
                 throw new IllegalArgumentException("Файлът е празен - няма header ред");
@@ -98,25 +122,18 @@ public class FileParserServiceImpl implements FileParserService {
                 columnNames.add(columnName.trim());
             }
 
-            // Четем всички редове с данни
+            // Четем всички редове с данни СЛЕД header реда
             List<Map<String, String>> rows = new ArrayList<>();
             int rowCount = sheet.getLastRowNum();
 
-            // Започваме от ред 1 защото ред 0 е header
-            for (int rowIndex = 1; rowIndex <= rowCount; rowIndex++) {
+            // 🔥 КРИТИЧНА ПРОМЯНА: Започваме от реда СЛЕД header-а
+            for (int rowIndex = headerRowIndex + 1; rowIndex <= rowCount; rowIndex++) {
                 Row row = sheet.getRow(rowIndex);
-                if (row == null) {
-                    continue; // Пропускаме празни редове
-                }
-
-                // Проверка дали редът е празен
-                if (isRowEmpty(row)) {
+                if (row == null || isRowEmpty(row)) {
                     continue;
                 }
 
-                // Създаваме Map за този ред където key е column_0, column_1 и т.н.
                 Map<String, String> rowData = new LinkedHashMap<>();
-
                 for (int colIndex = 0; colIndex < columnCount; colIndex++) {
                     Cell cell = row.getCell(colIndex);
                     String cellValue = cell != null ? getCellValueAsString(cell) : "";
@@ -142,6 +159,7 @@ public class FileParserServiceImpl implements FileParserService {
             throw new RuntimeException("Грешка при четене на Excel файла: " + e.getMessage(), e);
         }
     }
+
 
     /**
      * Парсва CSV файл.
