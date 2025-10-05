@@ -71,7 +71,10 @@
          SUB-TABS NAVIGATION
          ========================================== -->
     <div class="inventory-sub-tabs">
-        <button class="sub-tab-btn active" data-sub-tab="products" type="button">
+        <button class="sub-tab-btn active" data-sub-tab="import" type="button">
+            <i class="bi bi-cloud-upload"></i> Зареждане на стока
+        </button>
+        <button class="sub-tab-btn" data-sub-tab="products" type="button">
             <i class="bi bi-box-seam"></i> Каталог артикули
         </button>
         <button class="sub-tab-btn" data-sub-tab="history" type="button">
@@ -79,11 +82,174 @@
         </button>
     </div>
 
+
+    <!-- ==========================================
+     IMPORT STOCK SECTION (Default visible)
+     ========================================== -->
+    <div class="inventory-main-section" id="import-section">
+        <div id="import-wizard-container" class="import-wizard-container">
+
+            <!-- PROGRESS BAR -->
+            <div class="import-wizard-progress">
+                <div class="import-wizard-progress-bar" style="width: 16.67%"></div>
+                <div class="import-wizard-progress-text">Стъпка 1/6: Качване</div>
+            </div>
+
+            <!-- CANCEL BUTTON -->
+            <button id="cancel-import-btn" class="import-btn-cancel">
+                <i class="bi bi-x-circle"></i> Откажи импорт
+            </button>
+
+            <!-- STEP 1: FILE UPLOAD -->
+            <section data-step="1" class="import-wizard-step">
+                <h2><i class="bi bi-cloud-arrow-up"></i> Стъпка 1: Качи Excel или CSV файл</h2>
+
+                <div id="drop-zone" class="import-drop-zone">
+                    <div class="import-drop-zone-icon">
+                        <i class="bi bi-file-earmark-arrow-up"></i>
+                    </div>
+                    <p class="import-drop-zone-text">Пусни файл тук или кликни за избор</p>
+                    <p class="import-drop-zone-hint">Поддържат се: .xlsx, .xls, .csv (макс. 10MB)</p>
+                    <input type="file" id="file-input" accept=".xlsx,.xls,.csv" hidden>
+                    <button onclick="document.getElementById('file-input').click()" class="btn-primary">
+                        <i class="bi bi-folder2-open"></i> Избери файл
+                    </button>
+                </div>
+
+                <div class="import-template-download">
+                    <p><i class="bi bi-info-circle"></i> Нямаш готов файл?
+                        <a href="/templates/import-template.xlsx" download>
+                            <i class="bi bi-download"></i> Изтегли примерен шаблон
+                        </a>
+                    </p>
+                </div>
+            </section>
+
+            <!-- STEP 2: COLUMN MAPPING -->
+            <section data-step="2" class="import-wizard-step hidden">
+                <h2><i class="bi bi-diagram-3"></i> Стъпка 2: Мапни колоните</h2>
+                <div id="mapping-container"></div>
+            </section>
+
+            <!-- STEP 3: VALIDATION -->
+            <section data-step="3" class="import-wizard-step hidden">
+                <h2><i class="bi bi-check2-square"></i> Стъпка 3: Валидация на данните</h2>
+                <div id="validation-container"></div>
+            </section>
+
+            <!-- STEP 4: PRICING -->
+            <section data-step="4" class="import-wizard-step hidden">
+                <h2><i class="bi bi-currency-exchange"></i> Стъпка 4: Ценообразуване</h2>
+                <div id="pricing-container"></div>
+            </section>
+
+            <!-- STEP 5: SUMMARY -->
+            <section data-step="5" class="import-wizard-step hidden">
+                <h2><i class="bi bi-list-check"></i> Стъпка 5: Финален преглед</h2>
+                <div id="summary-container"></div>
+            </section>
+
+            <!-- STEP 6: CONFIRM (LOADING) -->
+            <section data-step="6" class="import-wizard-step hidden">
+                <div class="import-confirm-loading">
+                    <div class="loading-spinner-large"></div>
+                    <h3><i class="bi bi-arrow-repeat"></i> Импортирането е в ход...</h3>
+                    <p>Моля изчакай, това може да отнеме няколко секунди</p>
+                </div>
+            </section>
+
+            <!-- NAVIGATION BUTTONS -->
+            <div class="import-wizard-navigation">
+                <button id="prev-btn" class="btn-secondary" style="display: none;">
+                    <i class="bi bi-arrow-left"></i> Назад
+                </button>
+                <button id="next-btn" class="btn-primary">
+                    Напред <i class="bi bi-arrow-right"></i>
+                </button>
+            </div>
+
+        </div>
+
+        <!-- FORMULA MODAL TEMPLATE -->
+        <div id="formula-modal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3><i class="bi bi-calculator"></i> Приложи ценообразуваща формула</h3>
+                    <button id="close-formula-modal" class="modal-close">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="formula-type-selector">
+                        <h4>Избери тип формула:</h4>
+
+                        <label class="formula-option">
+                            <input type="radio" name="formula-type" value="MARKUP_PERCENT" checked>
+                            <div class="formula-label">
+                                <strong><i class="bi bi-percent"></i> Доставна цена + процент</strong>
+                                <span>Например: доставна + 30%</span>
+                            </div>
+                        </label>
+
+                        <label class="formula-option">
+                            <input type="radio" name="formula-type" value="FIXED_AMOUNT">
+                            <div class="formula-label">
+                                <strong><i class="bi bi-cash-stack"></i> Доставна цена + фиксирана сума</strong>
+                                <span>Например: доставна + 2.50 лв</span>
+                            </div>
+                        </label>
+
+                        <label class="formula-option">
+                            <input type="radio" name="formula-type" value="MULTIPLIER">
+                            <div class="formula-label">
+                                <strong><i class="bi bi-x-diamond"></i> Доставна цена × множител</strong>
+                                <span>Например: доставна × 1.4</span>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div class="formula-value-input">
+                        <label for="formula-value">Стойност:</label>
+                        <input type="number" id="formula-value" step="0.01" min="0" placeholder="Въведи стойност">
+                    </div>
+
+                    <div class="formula-options">
+                        <label>
+                            <input type="checkbox" id="apply-rounding">
+                            Закръгли след изчисление до:
+                        </label>
+                        <select id="round-to" disabled>
+                            <option value="0.01">0.01 лв</option>
+                            <option value="0.10">0.10 лв</option>
+                            <option value="0.50">0.50 лв</option>
+                            <option value="1.00">1.00 лв</option>
+                        </select>
+                    </div>
+
+                    <div class="formula-preview">
+                        <h4>Примерен изчисление:</h4>
+                        <div id="formula-preview"></div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button onclick="ImportWizard.closeFormulaModal()" class="btn-secondary">
+                        <i class="bi bi-x-circle"></i> Откажи
+                    </button>
+                    <button id="apply-formula-btn" class="btn-primary">
+                        <i class="bi bi-check-circle"></i> Приложи формула
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
     <!-- ==========================================
          PRODUCTS TABLE SECTION (Default visible)
          ========================================== -->
-    <div class="inventory-main-section" id="products-section">
-
+    <div class="inventory-main-section" id="products-section" style="display: none;">
         <!-- Table Header with Controls -->
         <div class="table-controls-header">
             <div class="controls-left">

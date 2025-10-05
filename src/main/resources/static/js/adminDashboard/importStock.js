@@ -41,19 +41,53 @@ const STEPS = {
     CONFIRM: 6
 };
 
-const API_BASE = '/api/inventory/import';
+const API_BASE = '/admin/inventory/importStock';
+
+// ============================================
+// CSRF TOKEN HELPER
+// ============================================
+
+function getCsrfToken() {
+    return {
+        token: document.querySelector('meta[name="_csrf"]')?.content || window.csrfToken || '',
+        header: document.querySelector('meta[name="_csrf_header"]')?.content || window.csrfHeader || 'X-CSRF-TOKEN'
+    };
+}
+
+function getHeaders(includeContentType = true) {
+    const csrf = getCsrfToken();
+    const headers = {
+        [csrf.header]: csrf.token
+    };
+
+    if (includeContentType) {
+        headers['Content-Type'] = 'application/json';
+    }
+
+    return headers;
+}
 
 // ============================================
 // API ФУНКЦИИ - ВСИЧКИ BACKEND КОМУНИКАЦИИ
 // ============================================
 
+/**
+ * СТЪПКА 1: Upload на файл към сървъра
+ * FormData автоматично задава Content-Type, затова не го слагаме ръчно
+ */
 async function uploadFile(file, username) {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('uploadedBy', username);
 
+    const csrf = getCsrfToken();
+
     const response = await fetch(`${API_BASE}/upload`, {
         method: 'POST',
+        headers: {
+            [csrf.header]: csrf.token
+            // Не слагаме Content-Type - браузърът го прави автоматично за FormData
+        },
         body: formData
     });
 
@@ -61,10 +95,14 @@ async function uploadFile(file, username) {
     return await response.json();
 }
 
+/**
+ * СТЪПКА 2: Запазване на column mapping
+ * Казва на системата коя колона от файла съответства на кое поле
+ */
 async function saveMapping(uuid, mapping) {
     const response = await fetch(`${API_BASE}/${uuid}/mapping`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getHeaders(), // Включва CSRF токен и Content-Type
         body: JSON.stringify(mapping)
     });
 
@@ -72,19 +110,32 @@ async function saveMapping(uuid, mapping) {
     return await response.json();
 }
 
+/**
+ * СТЪПКА 3: Валидация на данните
+ * Проверява всеки артикул и връща статус (VALID/WARNING/ERROR)
+ */
 async function validateData(uuid) {
+    const csrf = getCsrfToken();
+
     const response = await fetch(`${API_BASE}/${uuid}/validate`, {
-        method: 'POST'
+        method: 'POST',
+        headers: {
+            [csrf.header]: csrf.token
+        }
     });
 
     if (!response.ok) throw new Error('Грешка при валидация');
     return await response.json();
 }
 
+/**
+ * СТЪПКА 4a: Прилагане на ценообразуваща формула към избрани артикули
+ * Изчислява продажни цени базирани на доставните цени
+ */
 async function applyPricingFormula(uuid, skus, formula) {
     const response = await fetch(`${API_BASE}/${uuid}/pricing`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getHeaders(),
         body: JSON.stringify({ skus, formula })
     });
 
@@ -92,37 +143,69 @@ async function applyPricingFormula(uuid, skus, formula) {
     return await response.json();
 }
 
+/**
+ * СТЪПКА 4b: Ръчно задаване на цена за конкретен артикул
+ * Използва се когато потребителят иска да override формулата
+ */
 async function setManualPrice(uuid, sku, price) {
     const response = await fetch(`${API_BASE}/${uuid}/pricing/manual`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getHeaders(),
         body: JSON.stringify({ sku, sellingPrice: price })
     });
 
     if (!response.ok) throw new Error('Грешка при задаване на цена');
 }
 
+/**
+ * СТЪПКА 5: Генериране на финално резюме
+ * Връща обобщена информация преди потвърждението
+ */
 async function getSummary(uuid, metadata) {
+    const csrf = getCsrfToken();
+
     const response = await fetch(`${API_BASE}/${uuid}/summary`, {
         method: 'GET',
-        headers: { 'Content-Type': 'application/json' }
+        headers: {
+            [csrf.header]: csrf.token
+        }
     });
 
     if (!response.ok) throw new Error('Грешка при зареждане на summary');
     return await response.json();
 }
 
+/**
+ * СТЪПКА 6: Финално потвърждение и записване в базата
+ * Това е необратима операция - създава продуктите в системата
+ */
 async function confirmImport(uuid) {
+    const csrf = getCsrfToken();
+
     const response = await fetch(`${API_BASE}/${uuid}/confirm`, {
-        method: 'POST'
+        method: 'POST',
+        headers: {
+            [csrf.header]: csrf.token
+        }
     });
 
     if (!response.ok) throw new Error('Грешка при финализиране на импорт');
     return await response.json();
 }
 
+/**
+ * Отказване на импорт сесия
+ * Изтрива временните данни от сървъра
+ */
 async function cancelImport(uuid) {
-    await fetch(`${API_BASE}/${uuid}`, { method: 'DELETE' });
+    const csrf = getCsrfToken();
+
+    await fetch(`${API_BASE}/${uuid}`, {
+        method: 'DELETE',
+        headers: {
+            [csrf.header]: csrf.token
+        }
+    });
 }
 
 // ============================================
@@ -205,31 +288,25 @@ function renderMappingForm() {
     const container = document.getElementById('mapping-container');
     if (!container || !STATE.parsedData) return;
 
-    // Auto-detect mapping
     const autoMapping = autoDetectColumns(STATE.parsedData.columnNames);
 
     let html = '<div class="mapping-form">';
-    html += '<h3>Мапни колоните от файла към полета в системата</h3>';
+    html += '<h3>Мапни колоните от файла към полетата в системата</h3>';
     html += '<div class="mapping-preview-table">';
     html += renderPreviewTable(STATE.parsedData);
     html += '</div>';
     html += '<div class="mapping-rows">';
 
     STATE.parsedData.columnNames.forEach((colName, index) => {
-        const suggested = autoMapping[`column_${index}`] || '';
+        const columnKey = `column_${index}`;
+        const suggested = autoMapping[columnKey] || '';
         const isAuto = suggested !== '';
 
         html += `
             <div class="mapping-row ${isAuto ? 'auto-mapped' : ''}">
                 <div class="column-name">${colName}</div>
-                <select class="mapping-select" data-column="column_${index}">
-                    <option value="">-- Игнорирай --</option>
-                    <option value="sku" ${suggested === 'sku' ? 'selected' : ''}>SKU код</option>
-                    <option value="name" ${suggested === 'name' ? 'selected' : ''}>Име на продукт</option>
-                    <option value="quantity" ${suggested === 'quantity' ? 'selected' : ''}>Количество</option>
-                    <option value="purchasePrice" ${suggested === 'purchasePrice' ? 'selected' : ''}>Доставна цена</option>
-                    <option value="category" ${suggested === 'category' ? 'selected' : ''}>Категория</option>
-                    <option value="description" ${suggested === 'description' ? 'selected' : ''}>Описание</option>
+                <select class="mapping-select" data-column="${columnKey}">
+                    ${generateMappingOptions(suggested, columnKey)}
                 </select>
                 ${isAuto ? '<span class="auto-badge">Автоматично</span>' : ''}
             </div>
@@ -242,13 +319,47 @@ function renderMappingForm() {
 
     container.innerHTML = html;
 
-    // Add change listeners
     container.querySelectorAll('.mapping-select').forEach(select => {
         select.addEventListener('change', onMappingChange);
     });
 
-    validateMapping();
+    validateMapping(); // Проверяваме веднага
 }
+
+// Генерира options като премахва вече избраните
+function generateMappingOptions(selectedValue, currentColumn) {
+    const allOptions = [
+        { value: '', label: '-- Игнорирай --' },
+        { value: 'sku', label: 'SKU код' },
+        { value: 'name', label: 'Име на продукт' },
+        { value: 'quantity', label: 'Количество' },
+        { value: 'purchasePrice', label: 'Доставна цена' },
+        { value: 'category', label: 'Категория' },
+        { value: 'description', label: 'Описание' }
+    ];
+
+    // Намираме вече избраните стойности от другите dropdown-ове
+    const selectedValues = new Set();
+    document.querySelectorAll('.mapping-select').forEach(select => {
+        if (select.dataset.column !== currentColumn && select.value) {
+            selectedValues.add(select.value);
+        }
+    });
+
+    // Генерираме options, като disable-ваме вече избраните
+    return allOptions.map(opt => {
+        const isSelected = opt.value === selectedValue;
+        const isDisabled = selectedValues.has(opt.value) && !isSelected;
+
+        return `<option value="${opt.value}" 
+                ${isSelected ? 'selected' : ''} 
+                ${isDisabled ? 'disabled' : ''}>
+                ${opt.label}
+                ${isDisabled ? ' (вече избрано)' : ''}
+            </option>`;
+    }).join('');
+}
+
 
 function renderPreviewTable(parsedData) {
     if (!parsedData || !parsedData.rows) return '';
@@ -350,8 +461,6 @@ function renderSummaryView() {
     if (!container || !STATE.validation) return;
 
     const selectedItems = STATE.validation.items.filter(item => item.selected !== false);
-
-    // Изчисляваме summary данни
     const stats = calculateSummaryStats(selectedItems);
 
     let html = `
@@ -372,66 +481,32 @@ function renderSummaryView() {
                 <div class="stat-value">${stats.updatedItems}</div>
                 <div class="stat-label">Актуализирани</div>
             </div>
-            <div class="stat-box">
-                <div class="stat-value">${stats.totalQuantity}</div>
-                <div class="stat-label">Общо количество</div>
-            </div>
-            <div class="stat-box">
-                <div class="stat-value">${formatPrice(stats.totalPurchaseValue)}</div>
-                <div class="stat-label">Обща доставна стойност</div>
-            </div>
-            <div class="stat-box">
-                <div class="stat-value">${formatPrice(stats.expectedProfit)}</div>
-                <div class="stat-label">Очаквана печалба</div>
-            </div>
-        </div>
-        
-        <div class="summary-metadata">
-            <h3>Метаданни на импорта (опционално)</h3>
-            <div class="metadata-form">
-                <input type="text" id="supplier-name" placeholder="Име на доставчик">
-                <input type="text" id="invoice-number" placeholder="Номер на фактура">
-                <input type="date" id="invoice-date">
-                <textarea id="import-notes" placeholder="Бележки"></textarea>
-            </div>
-        </div>
-        
-        <div class="summary-table-container">
-            <h3>Детайли по артикули</h3>
-            ${renderTable(selectedItems, [
-        { key: 'sku', label: 'SKU', width: '120px' },
-        { key: 'name', label: 'Име', width: 'auto' },
-        { key: 'isNew', label: 'Статус', width: '100px', format: formatNewStatus },
-        { key: 'quantity', label: 'К-во', width: '80px' },
-        { key: 'purchasePrice', label: 'Дост. цена', width: '100px', format: formatPrice },
-        { key: 'existingSellingPrice', label: 'Прод. цена', width: '100px', format: formatPrice }
-    ], 'summary-table')}
-        </div>
-        
-        <div class="summary-warning">
-            <strong>⚠ ВНИМАНИЕ:</strong> При клик на "Потвърди импорт" всички показани промени ще бъдат записани в базата данни.
-            Това действие не може да бъде отменено автоматично.
         </div>
         
         <div class="summary-confirmation">
-            <label>
+            <label class="confirmation-checkbox">
                 <input type="checkbox" id="confirm-checkbox">
-                Потвърждавам че съм прегледал данните и искам да продължа
+                <span>Потвърждавам че съм прегледал данните и искам да продължа с импорта</span>
             </label>
         </div>
     `;
 
     container.innerHTML = html;
 
-    // Enable/disable confirm button based on checkbox
     const checkbox = document.getElementById('confirm-checkbox');
     const nextBtn = document.getElementById('next-btn');
 
-    if (checkbox && nextBtn) {
+    // Бутонът е disabled по подразбиране
+    nextBtn.disabled = true;
+    nextBtn.style.opacity = '0.5';
+    nextBtn.style.cursor = 'not-allowed';
+
+    if (checkbox) {
         checkbox.addEventListener('change', () => {
             nextBtn.disabled = !checkbox.checked;
+            nextBtn.style.opacity = checkbox.checked ? '1' : '0.5';
+            nextBtn.style.cursor = checkbox.checked ? 'pointer' : 'not-allowed';
         });
-        nextBtn.disabled = true;
     }
 }
 
@@ -562,13 +637,13 @@ function onFileDrop(event) {
 }
 
 async function processFile(file) {
-    // Валидация на файла
+    // Client-side валидация - НЕ изпращаме невалидни файлове
     const validExtensions = ['xlsx', 'xls', 'csv'];
     const extension = file.name.split('.').pop().toLowerCase();
 
     if (!validExtensions.includes(extension)) {
         showError('Невалиден формат на файл. Поддържат се само Excel (.xlsx, .xls) и CSV (.csv) файлове.');
-        return;
+        return; // Спираме тук - никога не стигаме до сървъра
     }
 
     if (file.size > 10 * 1024 * 1024) {
@@ -576,7 +651,7 @@ async function processFile(file) {
         return;
     }
 
-    // Upload и parse
+    // Ако стигнем тук, файлът е валиден - можем да upload-ваме
     showLoading('Качване и обработка на файл...');
 
     try {
@@ -623,7 +698,6 @@ function validateMapping() {
         }
     });
 
-    // Проверка за задължителни полета
     const hasRequired = mapping.hasOwnProperty('sku') &&
         mapping.hasOwnProperty('quantity') &&
         mapping.hasOwnProperty('purchasePrice');
@@ -633,13 +707,16 @@ function validateMapping() {
 
     if (!hasRequired) {
         validationDiv.innerHTML = '<div class="validation-error">⚠ Трябва да мапнеш задължителните полета: SKU, Количество и Доставна цена</div>';
-        if (nextBtn) nextBtn.disabled = true;
+        nextBtn.disabled = true; // ВАЖНО: Бутонът е физически блокиран
+        nextBtn.style.opacity = '0.5';
+        nextBtn.style.cursor = 'not-allowed';
     } else {
         validationDiv.innerHTML = '<div class="validation-success">✓ Всички задължителни полета са мапнати</div>';
-        if (nextBtn) nextBtn.disabled = false;
+        nextBtn.disabled = false;
+        nextBtn.style.opacity = '1';
+        nextBtn.style.cursor = 'pointer';
     }
 
-    // Запазваме mapping-а в state
     STATE.columnMapping = { mappings: mapping };
 }
 
@@ -890,10 +967,26 @@ function updatePricingStats() {
     if (!statsDiv) return;
 
     const items = STATE.validation.items.filter(item => item.selected !== false);
-    const withPrices = items.filter(item => item.existingSellingPrice && item.existingSellingPrice > 0);
     const newProducts = items.filter(item => item.isNew);
     const newWithPrices = newProducts.filter(item => item.existingSellingPrice && item.existingSellingPrice > 0);
 
+    const allNewHavePrices = newProducts.length === 0 || newProducts.length === newWithPrices.length;
+
+    const nextBtn = document.getElementById('next-btn');
+
+    if (!allNewHavePrices) {
+        nextBtn.disabled = true;
+        nextBtn.style.opacity = '0.5';
+        nextBtn.style.cursor = 'not-allowed';
+        nextBtn.title = `${newProducts.length - newWithPrices.length} нови продукта нямат зададена цена`;
+    } else {
+        nextBtn.disabled = false;
+        nextBtn.style.opacity = '1';
+        nextBtn.style.cursor = 'pointer';
+        nextBtn.title = '';
+    }
+
+    // Update stats display
     const margins = items
         .filter(item => item.purchasePrice && item.existingSellingPrice)
         .map(item => calculateMargin(item.purchasePrice, item.existingSellingPrice));
@@ -904,9 +997,9 @@ function updatePricingStats() {
 
     statsDiv.innerHTML = `
         <div class="stat">Избрани: ${STATE.selectedItems.size}</div>
-        <div class="stat">С цени: ${withPrices.length}/${items.length}</div>
         <div class="stat">Нови продукти: ${newWithPrices.length}/${newProducts.length} с цени</div>
         <div class="stat">Среден марж: ${avgMargin.toFixed(1)}%</div>
+        ${!allNewHavePrices ? '<div class="stat error">⚠ Задай цени на всички нови продукти</div>' : ''}
     `;
 }
 

@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 @RestController
-@RequestMapping("/api/inventory/import")
+@RequestMapping("/admin/inventory/importStock")
 public class ImportStockController {
 
     private final ImportStockService importStockService;
@@ -66,11 +66,10 @@ public class ImportStockController {
     }
 
     @GetMapping("/{uuid}/summary")
-    public ResponseEntity<ImportSummaryDTO> getSummary(
-            @PathVariable String uuid,
-            @RequestBody ImportMetadataDTO metadata) {
+    public ResponseEntity<ImportSummaryDTO> getSummary(@PathVariable String uuid) {
+        // Metadata не е критично за summary - може да се вземе от session
 
-        ImportSummaryDTO summary = importStockService.getSummary(uuid, metadata);
+        ImportSummaryDTO summary = importStockService.getSummary(uuid, null);
         return ResponseEntity.ok(summary);
     }
 

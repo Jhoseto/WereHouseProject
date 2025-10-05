@@ -1018,6 +1018,7 @@ function setupTableSorting() {
 // ==========================================
 function setupSubTabs() {
     const subTabButtons = document.querySelectorAll('.sub-tab-btn');
+    const importSection = document.getElementById('import-section');
     const productsSection = document.getElementById('products-section');
     const historySection = document.getElementById('history-section');
 
@@ -1030,12 +1031,19 @@ function setupSubTabs() {
 
             const tab = btn.dataset.subTab;
 
-            if (tab === 'products') {
-                // Show products, hide history
+            if (tab === 'import') {
+                // Show import, hide others
+                importSection.style.display = 'block';
+                productsSection.style.display = 'none';
+                historySection.style.display = 'none';
+            } else if (tab === 'products') {
+                // Show products, hide others
+                importSection.style.display = 'none';
                 productsSection.style.display = 'block';
                 historySection.style.display = 'none';
             } else if (tab === 'history') {
-                // Show history, hide products
+                // Show history, hide others
+                importSection.style.display = 'none';
                 productsSection.style.display = 'none';
                 historySection.style.display = 'block';
 
