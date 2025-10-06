@@ -28,7 +28,11 @@ const STATE = {
     // UI state
     selectedItems: new Set(),
     sortBy: 'rowNumber',
-    sortOrder: 'asc'
+    sortOrder: 'asc',
+    validationSortBy: 'rowNumber',
+    validationSortOrder: 'asc',
+    pricingSortBy: 'sku',
+    pricingSortOrder: 'asc'
 };
 
 // Константи
@@ -453,7 +457,7 @@ function renderValidationTable() {
         { key: 'messages', label: 'Съобщения', width: 'auto', format: formatMessages }
     ];
 
-    html += renderTable(items, columns, 'validation-table');
+    html += renderTable(items, columns, 'validation-table', 'validation');
     container.innerHTML = html;
 
     // Event listener за search
@@ -472,6 +476,7 @@ function renderPricingTable() {
     const items = STATE.validation.items.filter(item =>
         item.status !== 'ERROR' && item.selected !== false
     );
+    const sortedItems = sortItems(items, STATE.pricingSortBy, STATE.pricingSortOrder);
 
     let html = `
         <div class="pricing-header">
@@ -481,10 +486,16 @@ function renderPricingTable() {
                 <button onclick="openFormulaModal()" class="btn-primary">Приложи формула</button>
             </div>
             <div class="pricing-stats" id="pricing-stats"></div>
+            <div class="validation-search-bar">
+               <input type="text" 
+           id="pricing-search-input" 
+           placeholder="Търси по SKU или име..." 
+           class="search-input">
+             </div>
         </div>
     `;
 
-    html += renderTable(items, [
+    html += renderTable(sortedItems, [
         { key: 'checkbox', label: '☑', width: '40px', format: formatCheckbox },
         { key: 'newStatus', label: 'Тип', width: '100px', format: formatNewStatus },
         { key: 'sku', label: 'SKU', width: '120px' },
@@ -493,7 +504,8 @@ function renderPricingTable() {
         { key: 'existingSellingPrice', label: 'Текуща продажна', width: '120px', format: formatExistingPrice },
         { key: 'newPrice', label: 'Нова продажна', width: '150px', format: formatNewPriceInput },
         { key: 'margin', label: 'Марж %', width: '80px', format: formatMargin }
-    ], 'pricing-table');
+
+    ], 'pricing-table', 'pricing');
 
     container.innerHTML = html;
     updatePricingStats();
@@ -568,7 +580,7 @@ function renderSummaryView() {
 // GENERIC TABLE RENDERING
 // ============================================
 
-function renderTable(data, columns, className = '') {
+function renderTable(data, columns, className = '', tableName = '') {
     if (!data || data.length === 0) {
         return '<div class="empty-table">Няма данни за показване</div>';
     }
@@ -577,7 +589,18 @@ function renderTable(data, columns, className = '') {
 
     columns.forEach(col => {
         const width = col.width ? `style="width: ${col.width}"` : '';
-        html += `<th ${width}>${col.label}</th>`;
+
+        // Ако е сортируема колона, добави onclick и CSS класове
+        if (tableName && col.key !== 'checkbox' && col.key !== 'messages') {
+            const currentSortBy = tableName === 'validation' ? STATE.validationSortBy : STATE.pricingSortBy;
+            const currentSortOrder = tableName === 'validation' ? STATE.validationSortOrder : STATE.pricingSortOrder;
+            const sortClass = currentSortBy === col.key ? `sorted-${currentSortOrder}` : '';
+            const cursorStyle = 'style="cursor: pointer; user-select: none;"';
+
+            html += `<th ${width} ${cursorStyle} class="${sortClass}" onclick="sortTableByColumn('${tableName}', '${col.key}')">${col.label}</th>`;
+        } else {
+            html += `<th ${width}>${col.label}</th>`;
+        }
     });
 
     html += '</tr></thead><tbody>';
@@ -1490,24 +1513,71 @@ function clearState() {
 // ============================================
 
 function showLoading(message = 'Зареждане...') {
+    console.log('showLoading called with:', message);  // DEBUG
+
     let loader = document.getElementById('table-loading');
+    let createdNew = false;
+
     if (!loader) {
+        console.log('Creating new loader element');  // DEBUG
         loader = document.createElement('div');
         loader.id = 'table-loading';
-        loader.className = 'loading-overlay';
+        loader.className = 'table-loading';
         document.body.appendChild(loader);
+        createdNew = true;
     }
 
-    loader.innerHTML = `
-        <div class="loading-spinner"></div>
-        <div class="loading-message">${message}</div>
+    // Задължителни стилове: FIXED POSITION + OVERLAY (като в теста)
+    loader.style.cssText = `
+        position: fixed !important;
+        top: 0 !important; 
+        left: 0 !important; 
+        width: 100% !important; 
+        height: 100% !important;
+        background: rgba(0, 0, 0, 0.5) !important;  /* По-тъмен за видимост (черен overlay) */
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        z-index: 99999 !important;  /* Много висок, за да покрие всичко */
+        font-family: sans-serif !important;
+        color: white !important;  /* Бял текст за контраст */
     `;
-    loader.classList.remove('hidden');
+
+    // Съдържание с inline стилове (спинър винаги видим)
+    loader.innerHTML = `
+        <div class="spinner" style="
+            border: 6px solid rgba(255, 255, 255, 0.3) !important;
+            border-top: 6px solid #ffffff !important;  /* Бял спинър */
+            border-radius: 50% !important;
+            width: 50px !important; 
+            height: 50px !important;
+            animation: spin 1s linear infinite !important;
+            margin-bottom: 20px !important;
+        "></div>
+        <p style="margin: 0 !important; font-size: 18px !important; font-weight: bold !important;">${message}</p>
+    `;
+
+    // Keyframes директно (ако CSS липсва)
+    if (!window.spinKeyframesAdded) {
+        const style = document.createElement('style');
+        style.textContent = '@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }';
+        document.head.appendChild(style);
+        window.spinKeyframesAdded = true;
+    }
+
+    console.log('Loader shown. Element:', loader, 'Display:', loader.style.display, 'Position:', loader.style.position);  // DEBUG
 }
 
 function hideLoading() {
+    console.log('hideLoading called');  // DEBUG
     const loader = document.getElementById('table-loading');
-    if (loader) loader.classList.add('hidden');
+    if (loader) {
+        loader.style.display = 'none !important';
+        console.log('Loader hidden successfully');
+    } else {
+        console.warn('No loader element found to hide');
+    }
 }
 
 function showError(message) {
@@ -1609,6 +1679,93 @@ function setupEventListeners() {
     }
 }
 
+/**
+ * Сортира масив от обекти по дадено поле
+ * Поддържа numbers, strings и dates
+ */
+function sortItems(items, sortBy, sortOrder) {
+    if (!items || items.length === 0) return items;
+
+    const sorted = [...items];
+    sorted.sort((a, b) => {
+        let valA = a[sortBy];
+        let valB = b[sortBy];
+
+        // Handle null/undefined
+        if (valA == null && valB == null) return 0;
+        if (valA == null) return 1;
+        if (valB == null) return -1;
+
+        // Числови стойности
+        if (typeof valA === 'number' && typeof valB === 'number') {
+            return sortOrder === 'asc' ? valA - valB : valB - valA;
+        }
+
+        // Текстови стойности (използва bulgarian locale)
+        const comparison = String(valA).localeCompare(String(valB), 'bg');
+        return sortOrder === 'asc' ? comparison : -comparison;
+    });
+
+    return sorted;
+}
+
+/**
+ * Сортира таблица при клик на header
+ */
+function sortTableByColumn(tableName, columnKey) {
+    if (tableName === 'validation') {
+        // Toggle sort order ако е същата колона
+        if (STATE.validationSortBy === columnKey) {
+            STATE.validationSortOrder = STATE.validationSortOrder === 'asc' ? 'desc' : 'asc';
+        } else {
+            STATE.validationSortBy = columnKey;
+            STATE.validationSortOrder = 'asc';
+        }
+
+        // Сортирай данните
+        STATE.validation.items = sortItems(
+            STATE.validation.items,
+            STATE.validationSortBy,
+            STATE.validationSortOrder
+        );
+
+        // Re-render таблицата
+        renderValidationTable();
+
+    } else if (tableName === 'pricing') {
+        // Toggle sort order ако е същата колона
+        if (STATE.pricingSortBy === columnKey) {
+            STATE.pricingSortOrder = STATE.pricingSortOrder === 'asc' ? 'desc' : 'asc';
+        } else {
+            STATE.pricingSortBy = columnKey;
+            STATE.pricingSortOrder = 'asc';
+        }
+
+        // Re-render таблицата със сортирани данни
+        renderPricingTable();
+    }
+}
+
+/**
+ * Филтрира pricing таблицата в реално време по SKU или име
+ */
+function filterPricingTable(event) {
+    const query = event.target.value.toLowerCase().trim();
+    const rows = document.querySelectorAll('.pricing-table tbody tr');
+
+    rows.forEach(row => {
+        const sku = row.querySelector('td:nth-child(3)')?.textContent.toLowerCase() || '';
+        const name = row.querySelector('td:nth-child(4)')?.textContent.toLowerCase() || '';
+
+        if (!query || sku.includes(query) || name.includes(query)) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+
 function sortPreviewTable(columnName) {
     if (STATE.sortBy === columnName) {
         STATE.sortOrder = STATE.sortOrder === 'asc' ? 'desc' : 'asc';
@@ -1639,6 +1796,8 @@ function filterValidationTable(event) {
 
 // Export за глобален достъп
 window.sortPreviewTable = sortPreviewTable;
+window.sortTableByColumn = sortTableByColumn;
+window.filterPricingTable = filterPricingTable;
 
 // Export за глобален достъп
 window.ImportWizard = {

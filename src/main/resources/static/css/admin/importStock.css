@@ -380,6 +380,40 @@
     color: var(--inventory-text);
     border-bottom: 2px solid var(--inventory-border);
     white-space: nowrap;
+    cursor: pointer;
+}
+
+/* Кликваеми header-и - hover ефект */
+.data-table thead th[style*="cursor: pointer"] {
+    transition: all 0.2s ease;
+    position: relative;
+    cursor: pointer;
+}
+
+.data-table thead th[style*="cursor: pointer"]:hover {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    transform: translateY(-2px);
+}
+
+/* Малка стрелка която показва че може да се сортира */
+.data-table thead th[style*="cursor: pointer"]::before {
+    content: '⇅';
+    opacity: 0.3;
+    margin-right: 4px;
+    font-size: 12px;
+    transition: opacity 0.2s ease;
+}
+
+.data-table thead th[style*="cursor: pointer"]:hover::before {
+    opacity: 0.8;
+}
+
+/* Активен сортиращ header има по-ярка стрелка */
+.data-table thead th.sorted-asc::before,
+.data-table thead th.sorted-desc::before {
+    opacity: 1;
+    font-weight: bold;
 }
 
 .data-table tbody td {
