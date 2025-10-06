@@ -35,7 +35,7 @@ public class ValidatedItemDTO {
 
     // Изчислени полета
     private BigDecimal priceDifferencePercent; // Разлика в доставната цена спрямо последната
-    private boolean isNew; // true ако е нов продукт
+    private boolean newProduct; // true ако е нов продукт
     private boolean selected; // Дали е селектиран за импорт
 
     public ValidatedItemDTO() {
@@ -192,12 +192,12 @@ public class ValidatedItemDTO {
         this.priceDifferencePercent = priceDifferencePercent;
     }
 
-    public boolean isNew() {
-        return isNew;
+    public boolean isNewProduct() {
+        return newProduct;
     }
 
-    public void setNew(boolean isNew) {
-        this.isNew = isNew;
+    public void setNewProduct(boolean newProduct) {
+        this.newProduct = newProduct;
     }
 
     public boolean isSelected() {

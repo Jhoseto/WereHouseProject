@@ -114,4 +114,6 @@ public interface ImportStockService {
      * @param uuid UUID на import session
      */
     void cancelImport(String uuid);
+
+    void syncValidationData(String uuid, List<ValidatedItemDTO> updatedItems);
 }

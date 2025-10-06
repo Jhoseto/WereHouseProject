@@ -291,7 +291,7 @@ function renderMappingForm() {
     const autoMapping = autoDetectColumns(STATE.parsedData.columnNames);
 
     let html = '<div class="mapping-form">';
-    html += '<h3>Мапни колоните от файла към полетата в системата</h3>';
+    html += '<h3>Интелигентна система прихваща данните от колоните в файла но има ситуации в, които може да се наложи да го направите ръчно</h3>';
     html += '<div class="mapping-preview-table">';
     html += renderPreviewTable(STATE.parsedData);
     html += '</div>';
@@ -364,11 +364,24 @@ function generateMappingOptions(selectedValue, currentColumn) {
 function renderPreviewTable(parsedData) {
     if (!parsedData || !parsedData.rows) return '';
 
-    const previewRows = parsedData.rows.slice(0, 5);
+    let previewRows = parsedData.rows.slice(0, 5);
+
+    // Сортиране ако има активно
+    if (STATE.sortBy && STATE.sortOrder) {
+        previewRows = [...previewRows].sort((a, b) => {
+            const aVal = String(a[STATE.sortBy] || '');
+            const bVal = String(b[STATE.sortBy] || '');
+
+            const comparison = aVal.localeCompare(bVal, 'bg', { numeric: true });
+            return STATE.sortOrder === 'asc' ? comparison : -comparison;
+        });
+    }
+
     let html = '<table class="preview-table"><thead><tr>';
 
-    parsedData.columnNames.forEach(name => {
-        html += `<th>${name}</th>`;
+    parsedData.columnNames.forEach((name, index) => {
+        const sortClass = STATE.sortBy === name ? `sorted-${STATE.sortOrder}` : '';
+        html += `<th class="${sortClass}" onclick="sortPreviewTable('${name}')">${name}</th>`;
     });
     html += '</tr></thead><tbody>';
 
@@ -401,6 +414,13 @@ function renderValidationTable() {
                 <span class="stat error">✗ Грешки: ${STATE.validation.itemsWithErrors}</span>
             </div>
         </div>
+        
+        <div class="validation-search-bar">
+            <input type="text" 
+                   id="validation-search-input" 
+                   placeholder="Търси по SKU или име..." 
+                   class="search-input">
+        </div>
     `;
 
     // 🔥 СЪОБЩЕНИЕ КОГАТО ИМА ГРЕШКИ
@@ -410,12 +430,13 @@ function renderValidationTable() {
                 <div class="error-icon">⚠️</div>
                 <div class="error-content">
                     <strong>Открити са ${errorItems.length} артикула с грешки</strong>
-                    <p>Имаш два варианта:</p>
+                    <p>Имате два варианта:</p>
                     <ul>
-                        <li><strong>Поправи данните:</strong> Върни се назад, коригирай Excel файла и качи отново</li>
-                        <li><strong>Изключи артикулите:</strong> Маркирай checkbox-а "Игнорирай" при проблемните редове</li>
+                        <li><strong>Поправи данните:</strong> Върни се назад, коригирай данните в самия файла и качи отново</li>
+                        <li><strong>Редактирай данните:</strong> Редактирай данните в полетата, които са отбелязани като грешни или редактирай тези, които
+                        мислиш че са сбъркани в файла.</li>
                     </ul>
-                    <p class="note">Игнорираните артикули ще се запишат в бележките на импорта за справка</p>
+                    <p class="note">Редактираните артикули ще се запишат в бележките към импорта за справка</p>
                 </div>
             </div>
         `;
@@ -426,77 +447,21 @@ function renderValidationTable() {
         { key: 'rowNumber', label: '№', width: '50px' },
         { key: 'sku', label: 'SKU', width: '120px' },
         { key: 'name', label: 'Име', width: 'auto' },
-        { key: 'quantity', label: 'К-во', width: '80px' },
-        { key: 'purchasePrice', label: 'Дост. цена', width: '100px', format: formatPrice },
+        { key: 'quantity', label: 'К-во', width: '100px', format: formatEditableQuantity },
+        { key: 'purchasePrice', label: 'Дост. цена', width: '120px', format: formatEditablePurchasePrice },
         { key: 'status', label: 'Статус', width: '120px', format: formatStatus },
         { key: 'messages', label: 'Съобщения', width: 'auto', format: formatMessages }
     ];
 
-    // 🔥 ДОБАВЯМЕ IGNORE КОЛОНА САМО АКО ИМА ERRORS
-    if (hasErrors) {
-        columns.push({
-            key: 'ignore',
-            label: 'Игнорирай',
-            width: '100px',
-            format: formatIgnoreCheckbox
-        });
-    }
-
     html += renderTable(items, columns, 'validation-table');
     container.innerHTML = html;
 
-    // 🔥 ДОБАВЯМЕ EVENT LISTENERS ЗА IGNORE CHECKBOXES
-    if (hasErrors) {
-        container.querySelectorAll('.ignore-checkbox').forEach(cb => {
-            cb.addEventListener('change', onIgnoreCheckboxChange);
-        });
+    // Event listener за search
+    const searchInput = document.getElementById('validation-search-input');
+    if (searchInput) {
+        searchInput.addEventListener('input', filterValidationTable);
     }
 
-    // 🔥 КОНТРОЛИРАМЕ БУТОНА "НАПРЕД"
-    validateCanProceed();
-}
-
-// Форматира ignore checkbox само за ERROR items
-function formatIgnoreCheckbox(value, row) {
-    if (row.status !== 'ERROR') {
-        return '-'; // Не показваме checkbox за валидни items
-    }
-
-    const checked = row.ignored ? 'checked' : '';
-    return `<input type="checkbox" class="ignore-checkbox" data-sku="${row.sku}" ${checked}>`;
-}
-
-// Handle на ignore checkbox промяна
-function onIgnoreCheckboxChange(event) {
-    const checkbox = event.target;
-    const sku = checkbox.dataset.sku;
-
-    // Намираме item-а и маркираме го като ignored
-    const item = STATE.validation.items.find(i => i.sku === sku);
-    if (item) {
-        item.ignored = checkbox.checked;
-    }
-
-    // Re-validate дали може да продължи
-    validateCanProceed();
-}
-
-// Проверява дали може да се продължи напред
-function validateCanProceed() {
-    const errorItems = STATE.validation.items.filter(i => i.status === 'ERROR' && !i.ignored);
-    const nextBtn = document.getElementById('next-btn');
-
-    if (errorItems.length > 0) {
-        nextBtn.disabled = true;
-        nextBtn.style.opacity = '0.5';
-        nextBtn.style.cursor = 'not-allowed';
-        nextBtn.title = `${errorItems.length} артикула с грешки трябва да бъдат поправени или игнорирани`;
-    } else {
-        nextBtn.disabled = false;
-        nextBtn.style.opacity = '1';
-        nextBtn.style.cursor = 'pointer';
-        nextBtn.title = '';
-    }
 }
 
 
@@ -521,6 +486,7 @@ function renderPricingTable() {
 
     html += renderTable(items, [
         { key: 'checkbox', label: '☑', width: '40px', format: formatCheckbox },
+        { key: 'newStatus', label: 'Тип', width: '100px', format: formatNewStatus },
         { key: 'sku', label: 'SKU', width: '120px' },
         { key: 'name', label: 'Име', width: 'auto' },
         { key: 'purchasePrice', label: 'Дост. цена', width: '100px', format: formatPrice },
@@ -540,6 +506,8 @@ function renderPricingTable() {
     container.querySelectorAll('.price-input').forEach(input => {
         input.addEventListener('change', onPriceInputChange);
     });
+
+    updateSelectAllButton();
 }
 
 function renderSummaryView() {
@@ -637,7 +605,7 @@ function getRowClass(row) {
     if (row.status === 'ERROR') classes.push('row-error');
     if (row.status === 'WARNING') classes.push('row-warning');
     if (row.status === 'VALID') classes.push('row-valid');
-    if (row.isNew) classes.push('row-new');
+    if (row.newProduct) classes.push('row-new');
 
     return classes.join(' ');
 }
@@ -671,18 +639,18 @@ function formatCheckbox(value, row, index) {
 }
 
 function formatExistingPrice(value, row) {
-    if (row.isNew) return '<span class="text-muted">Нов продукт</span>';
+    if (row.newProduct) return '<span class="text-muted">Нов продукт</span>';
     return formatPrice(value);
 }
 
 function formatNewPriceInput(value, row) {
-    const required = row.isNew ? 'required' : '';
+    const required = row.newProduct ? 'required' : '';
     const currentValue = row.existingSellingPrice || '';
-    const cssClass = row.isNew ? 'price-input new-product' : 'price-input';
+    const cssClass = row.newProduct ? 'price-input new-product' : 'price-input';
 
     return `<input type="number" step="0.01" class="${cssClass}" 
             data-sku="${row.sku}" value="${currentValue}" ${required} 
-            placeholder="${row.isNew ? 'Задължително' : 'Непроменена'}">`;
+            placeholder="${row.newProduct ? 'Задължително' : 'Непроменена'}">`;
 }
 
 function formatMargin(value, row) {
@@ -698,10 +666,62 @@ function formatMargin(value, row) {
 }
 
 function formatNewStatus(value, row) {
-    return row.isNew ?
+    return row.newProduct ?
         '<span class="badge badge-new">НОВ</span>' :
         '<span class="badge badge-update">Актуализация</span>';
 }
+
+// Редактируемо поле за количество
+function formatEditableQuantity(value, row) {
+    const hasError = row.messages.some(m => m.includes('Количество'));
+    const isEdited = row.editedFields && row.editedFields.includes('quantity');
+
+    let cssClass = 'editable-field';
+    if (hasError) cssClass += ' field-error';
+    else if (isEdited) cssClass += ' field-edited';
+    else if (row.quantity) cssClass += ' field-valid';
+
+    const displayValue = row.quantity || value || '';
+
+    return `
+        <input type="number" 
+               class="${cssClass}" 
+               value="${displayValue}"
+               data-sku="${row.sku}"
+               data-field="quantity"
+               onchange="onFieldEdit(event)"
+               min="1"
+               step="1">
+        ${isEdited ? '<span class="edit-indicator">✎</span>' : ''}
+    `;
+}
+
+// Редактируемо поле за доставна цена
+function formatEditablePurchasePrice(value, row) {
+    const hasError = row.messages.some(m => m.includes('цена'));
+    const isEdited = row.editedFields && row.editedFields.includes('purchasePrice');
+
+    let cssClass = 'editable-field';
+    if (hasError) cssClass += ' field-error';
+    else if (isEdited) cssClass += ' field-edited';
+    else if (row.purchasePrice) cssClass += ' field-valid';
+
+    const displayValue = row.purchasePrice || value || '';
+
+    return `
+        <input type="number" 
+               class="${cssClass}" 
+               value="${displayValue}"
+               data-sku="${row.sku}"
+               data-field="purchasePrice"
+               onchange="onFieldEdit(event)"
+               min="0.01"
+               step="0.01">
+        ${isEdited ? '<span class="edit-indicator">✎</span>' : ''}
+    `;
+}
+
+
 
 // ============================================
 // EVENT HANDLERS
@@ -829,6 +849,7 @@ function onPricingCheckboxChange(event) {
         STATE.selectedItems.delete(sku);
     }
 
+    updateSelectAllButton();
     updatePricingStats();
 }
 
@@ -852,6 +873,81 @@ function onPriceInputChange(event) {
 
     updatePricingStats();
 }
+
+// Обработка на редакция на поле
+function onFieldEdit(event) {
+    const input = event.target;
+    const sku = input.dataset.sku;
+    const field = input.dataset.field;
+    const newValue = input.value.trim();
+
+    // Намери артикула в STATE
+    const item = STATE.validation.items.find(i => i.sku === sku);
+    if (!item) return;
+
+    // Инициализирай editedFields ако липсва
+    if (!item.editedFields) {
+        item.editedFields = [];
+    }
+
+    // Валидирай новата стойност
+    let isValid = false;
+    let errorMessage = '';
+
+    if (field === 'quantity') {
+        const qty = parseInt(newValue);
+        if (isNaN(qty) || qty <= 0) {
+            errorMessage = 'Количеството трябва да е положително число';
+        } else {
+            item.quantity = qty;
+            isValid = true;
+        }
+    } else if (field === 'purchasePrice') {
+        const price = parseFloat(newValue);
+        if (isNaN(price) || price <= 0) {
+            errorMessage = 'Доставната цена трябва да е положително число';
+        } else {
+            item.purchasePrice = price;
+            isValid = true;
+        }
+    }
+
+    if (isValid) {
+        // Премахни грешката за това поле ако има такава
+        item.messages = item.messages.filter(m =>
+            !m.includes(field === 'quantity' ? 'Количество' : 'цена')
+        );
+
+        // Маркирай полето като редактирано
+        if (!item.editedFields.includes(field)) {
+            item.editedFields.push(field);
+        }
+
+        // Update статуса ако вече няма грешки
+        if (item.messages.length === 0 || !item.messages.some(m => m.includes('ГРЕШКА'))) {
+            item.status = 'VALID';
+        }
+
+        // Визуална обратна връзка
+        input.classList.remove('field-error');
+        input.classList.add('field-edited');
+
+    } else {
+        // Покажи грешката
+        input.classList.add('field-error');
+        input.classList.remove('field-edited');
+
+        // Добави съобщение за грешка ако липсва
+        if (!item.messages.some(m => m.includes(errorMessage))) {
+            item.messages.push('ГРЕШКА: ' + errorMessage);
+        }
+        item.status = 'ERROR';
+    }
+
+    // Re-render таблицата за да покаже промените
+    renderValidationTable();
+}
+
 
 // ============================================
 // WIZARD NAVIGATION
@@ -892,17 +988,40 @@ async function nextStep() {
 
     // КРИТИЧНА ПРОВЕРКА: Блокираме преминаване от VALIDATION стъпка ако има ERROR артикули
     if (current === STEPS.VALIDATION) {
-        const errorItems = STATE.validation.items.filter(i => i.status === 'ERROR' && !i.ignored);
+        const errorItems = STATE.validation.items.filter(i => i.status === 'ERROR');
 
         if (errorItems.length > 0) {
-            showError(`Има ${errorItems.length} артикула с грешки. Поправи данните в Excel файла или изключи проблемните артикули.`);
+            showError(`Има ${errorItems.length} артикула с грешки. Коригирай данните директно в таблицата.`);
             return;
+        }
+
+        // Изпрати редактираните артикули към backend за синхронизация
+        const editedItems = STATE.validation.items.filter(item =>
+            item.editedFields && item.editedFields.length > 0
+        );
+
+        if (editedItems.length > 0) {
+            showLoading('Синхронизиране на данни...');
+            try {
+                const response = await fetch(`${API_BASE}/${STATE.uuid}/syncValidation`, {
+                    method: 'POST',
+                    headers: getHeaders(),
+                    body: JSON.stringify(editedItems)
+                });
+
+                if (!response.ok) throw new Error('Грешка при синхронизиране');
+                hideLoading();
+            } catch (error) {
+                hideLoading();
+                showError('Грешка: ' + error.message);
+                return;
+            }
         }
     }
 
     if (current === STEPS.PRICING) {
         // Проверка дали всички нови продукти имат цени
-        const newProducts = STATE.validation.items.filter(item => item.isNew && item.selected !== false);
+        const newProducts = STATE.validation.items.filter(item => item.newProduct && item.selected !== false);
         const missingPrices = newProducts.filter(item => !item.existingSellingPrice || item.existingSellingPrice <= 0);
 
         if (missingPrices.length > 0) {
@@ -912,31 +1031,26 @@ async function nextStep() {
     }
 
     if (current === STEPS.SUMMARY) {
-        // Автоматично записваме ignored items в notes за audit trail
-        const ignoredItems = STATE.validation.items.filter(i => i.ignored);
-        let autoNotes = '';
-
-        if (ignoredItems.length > 0) {
-            autoNotes = `ИГНОРИРАНИ АРТИКУЛИ (${ignoredItems.length}бр):\n`;
-            ignoredItems.forEach(item => {
-                autoNotes += `- Ред ${item.rowNumber}: ${item.sku} - ${item.name} (${item.messages.join(', ')})\n`;
-            });
-        }
-
-        // Комбинираме auto notes с user notes
-        const userNotes = document.getElementById('import-notes')?.value || '';
-        const combinedNotes = autoNotes + (userNotes ? '\n\n' + userNotes : '');
-
         STATE.metadata = {
             supplierName: document.getElementById('supplier-name')?.value || null,
             invoiceNumber: document.getElementById('invoice-number')?.value || null,
             invoiceDate: document.getElementById('invoice-date')?.value || null,
-            notes: combinedNotes
+            notes: document.getElementById('import-notes')?.value || null
         };
 
-        // Финализиране на импорта
+        // ВАЖНО: Първо изпращаме summary към backend който update-ва статуса на READY
+        showLoading('Подготовка за финализиране...');
+        try {
+            await getSummary(STATE.uuid, STATE.metadata);
+            hideLoading();
+        } catch (error) {
+            hideLoading();
+            showError('Грешка при подготовка: ' + error.message);
+            return;
+        }
+
         await executeImport();
-        return; // executeImport ще update-не стъпката
+        return;
     }
 
     STATE.currentStep = Math.min(current + 1, 6);
@@ -969,7 +1083,7 @@ async function executeImport() {
 
         setTimeout(() => {
             // Redirect към inventory management
-            window.location.href = '/admin#inventory';
+            window.location.href = '/admin/dashboard?tab=inventory';
         }, 2000);
 
     } catch (error) {
@@ -985,15 +1099,46 @@ async function executeImport() {
 // ============================================
 
 function selectAllPricing() {
+    const checkboxes = document.querySelectorAll('.item-checkbox');
+
+    // Проверяваме колко са маркирани в момента
+    const checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
+    const totalCount = checkboxes.length;
+
+    // Ако всички или повечето са маркирани, размаркираме всички
+    // Иначе маркираме всички
+    const shouldCheck = checkedCount < totalCount / 2;
+
     STATE.selectedItems.clear();
 
-    const checkboxes = document.querySelectorAll('.item-checkbox');
     checkboxes.forEach(cb => {
-        cb.checked = true;
-        STATE.selectedItems.add(cb.dataset.sku);
+        cb.checked = shouldCheck;
+        if (shouldCheck) {
+            STATE.selectedItems.add(cb.dataset.sku);
+        }
     });
 
+    // Update-ваме текста на бутона
+    updateSelectAllButton();
     updatePricingStats();
+}
+
+// обновява текста на бутона според състоянието
+function updateSelectAllButton() {
+    const button = document.querySelector('.pricing-actions button[onclick="selectAllPricing()"]');
+    if (!button) return;
+
+    const checkboxes = document.querySelectorAll('.item-checkbox');
+    const checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
+    const totalCount = checkboxes.length;
+
+    if (checkedCount === 0) {
+        button.textContent = 'Избери всички';
+    } else if (checkedCount === totalCount) {
+        button.textContent = 'Размаркирай всички';
+    } else {
+        button.textContent = `Избери всички (${checkedCount}/${totalCount})`;
+    }
 }
 
 // ============================================
@@ -1104,8 +1249,8 @@ function updatePricingStats() {
     const statsDiv = document.getElementById('pricing-stats');
     if (!statsDiv) return;
 
-    const items = STATE.validation.items.filter(item => item.selected !== false);
-    const newProducts = items.filter(item => item.isNew);
+    const items = STATE.validation.items.filter(item => item.status !== 'ERROR' && item.selected !== false);
+    const newProducts = items.filter(item => item.newProduct);
     const newWithPrices = newProducts.filter(item => item.existingSellingPrice && item.existingSellingPrice > 0);
 
     const allNewHavePrices = newProducts.length === 0 || newProducts.length === newWithPrices.length;
@@ -1265,8 +1410,8 @@ function calculateMargin(purchasePrice, sellingPrice) {
 function calculateSummaryStats(items) {
     const stats = {
         totalItems: items.length,
-        newItems: items.filter(i => i.isNew).length,
-        updatedItems: items.filter(i => !i.isNew).length,
+        newItems: items.filter(i => i.newProduct).length,
+        updatedItems: items.filter(i => !i.newProduct).length,
         totalQuantity: items.reduce((sum, i) => sum + (i.quantity || 0), 0),
         totalPurchaseValue: items.reduce((sum, i) => sum + ((i.purchasePrice || 0) * (i.quantity || 0)), 0),
         totalSellingValue: items.reduce((sum, i) => sum + ((i.existingSellingPrice || 0) * (i.quantity || 0)), 0),
@@ -1463,6 +1608,37 @@ function setupEventListeners() {
         });
     }
 }
+
+function sortPreviewTable(columnName) {
+    if (STATE.sortBy === columnName) {
+        STATE.sortOrder = STATE.sortOrder === 'asc' ? 'desc' : 'asc';
+    } else {
+        STATE.sortBy = columnName;
+        STATE.sortOrder = 'asc';
+    }
+
+    renderMappingForm();
+}
+
+function filterValidationTable(event) {
+    const query = event.target.value.toLowerCase().trim();
+    const rows = document.querySelectorAll('.validation-table tbody tr');
+
+    rows.forEach(row => {
+        const sku = row.querySelector('td:nth-child(2)')?.textContent.toLowerCase() || '';
+        const name = row.querySelector('td:nth-child(3)')?.textContent.toLowerCase() || '';
+
+        if (!query || sku.includes(query) || name.includes(query)) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+
+// Export за глобален достъп
+window.sortPreviewTable = sortPreviewTable;
 
 // Export за глобален достъп
 window.ImportWizard = {

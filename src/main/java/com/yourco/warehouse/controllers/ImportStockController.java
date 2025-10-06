@@ -8,6 +8,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/admin/inventory/importStock")
 public class ImportStockController {
@@ -92,5 +94,13 @@ public class ImportStockController {
     public ResponseEntity<Void> cancelImport(@PathVariable String uuid) {
         importStockService.cancelImport(uuid);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{uuid}/syncValidation")
+    public ResponseEntity<Void> syncValidation(
+            @PathVariable String uuid,
+            @RequestBody List<ValidatedItemDTO> updatedItems) {
+        importStockService.syncValidationData(uuid, updatedItems);
+        return ResponseEntity.ok().build();
     }
 }

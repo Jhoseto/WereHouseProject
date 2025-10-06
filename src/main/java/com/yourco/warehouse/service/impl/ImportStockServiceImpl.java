@@ -235,7 +235,7 @@ public class ImportStockServiceImpl implements ImportStockService {
 
         // Изчисляваме статистики
         int totalItems = selectedItems.size();
-        int newItems = (int) selectedItems.stream().filter(ValidatedItemDTO::isNew).count();
+        int newItems = (int) selectedItems.stream().filter(ValidatedItemDTO::isNewProduct).count();
         int updatedItems = totalItems - newItems;
 
         summary.setTotalItems(totalItems);
@@ -333,7 +333,7 @@ public class ImportStockServiceImpl implements ImportStockService {
                     .collect(Collectors.toList());
 
             for (ValidatedItemDTO item : selectedItems) {
-                if (item.isNew()) {
+                if (item.isNewProduct()) {
                     processNewProduct(item, importEvent);
                 } else {
                     processExistingProduct(item, importEvent);
@@ -401,7 +401,6 @@ public class ImportStockServiceImpl implements ImportStockService {
         adjustment.setQuantityChange(item.getQuantity());
         adjustment.setQuantityBefore(0);
         adjustment.setQuantityAfter(item.getQuantity());
-        adjustment.setReason(AdjustmentReasonEnum.IMPORT);
         adjustment.setPerformedBy(importEvent.getUploadedBy());
         adjustment.setImportEvent(importEvent);
 
@@ -472,7 +471,6 @@ public class ImportStockServiceImpl implements ImportStockService {
         adjustment.setQuantityChange(item.getQuantity());
         adjustment.setQuantityBefore(oldQuantity);  // ПОПРАВКА: старото количество
         adjustment.setQuantityAfter(product.getQuantityAvailable());  // ПОПРАВКА: новото количество
-        adjustment.setReason(AdjustmentReasonEnum.IMPORT);
         adjustment.setPerformedBy(importEvent.getUploadedBy());  // ПОПРАВКА: взимаме от import event
         adjustment.setImportEvent(importEvent);
 
@@ -505,6 +503,40 @@ public class ImportStockServiceImpl implements ImportStockService {
     public void cancelImport(String uuid) {
         sessions.remove(uuid);
     }
+
+
+    @Override
+    @Transactional
+    public void syncValidationData(String uuid, List<ValidatedItemDTO> updatedItems) {
+        ImportSessionDTO session = getSessionOrThrow(uuid);
+        ValidationResultDTO validation = session.getValidationResult();
+
+        if (validation == null) {
+            throw new IllegalArgumentException("Липсва validation result");
+        }
+
+        // За всеки update-нат артикул, намери го в session ValidationResultDTO и replace-ни данните
+        for (ValidatedItemDTO updated : updatedItems) {
+            validation.getItems().stream()
+                    .filter(item -> item.getSku().equals(updated.getSku()))
+                    .findFirst()
+                    .ifPresent(item -> {
+                        // Copy всички полета от updated към item
+                        item.setQuantity(updated.getQuantity());
+                        item.setPurchasePrice(updated.getPurchasePrice());
+                        item.setName(updated.getName());
+                        item.setCategory(updated.getCategory());
+                        item.setDescription(updated.getDescription());
+                        item.setBarcode(updated.getBarcode());
+                        item.setStatus(updated.getStatus());
+                        item.setMessages(updated.getMessages());
+                    });
+        }
+
+        // Re-изчисли статистиката
+        validation.recalculateStatistics();
+    }
+
 
     /**
      * Helper метод който взима session или хвърля exception ако не съществува.

@@ -95,6 +95,8 @@ public class ImportValidationServiceImpl implements ImportValidationService {
         return result;
     }
 
+
+
     /**
      * Валидира един ред от файла.
      * Проверява формат на данните, дали продуктът съществува, и разлики в цените.
@@ -128,9 +130,51 @@ public class ImportValidationServiceImpl implements ImportValidationService {
 
         // Валидация на SKU - задължително поле
         if (sku == null || sku.trim().isEmpty()) {
+            item.setNewProduct(true); // Без SKU не може да е в базата
             item.addError("SKU кодът липсва");
             return item;
         }
+
+        // КРИТИЧНА ВАЛИДАЦИЯ: Проверка на формата на SKU според entity constraint
+        // SKU може да съдържа само главни букви, цифри, тире и долна черта
+        if (!sku.matches("^[A-Z0-9-_]+$")) {
+            item.addError("SKU може да съдържа само главни букви, цифри, тире и долна черта");
+            // НЕ return-ваме тук - продължаваме да проверяваме дали е нов или съществуващ
+            // защото тази информация е полезна дори когато има грешка във формата на SKU
+        }
+
+        // ============================================================
+        // КРИТИЧНО: ОПРЕДЕЛЯМЕ НОВ/СЪЩЕСТВУВАЩ ПРОДУКТ ВЕДНАГА СЛЕД SKU
+        // Това НЕ зависи от валидността на quantity и price!
+        // ============================================================
+        ProductEntity existingProduct = existingProductsMap.get(sku);
+
+        if (existingProduct != null) {
+            // Съществуващ продукт
+            item.setNewProduct(false);
+            item.setExistingProductId(existingProduct.getId());
+            item.setExistingQuantity(existingProduct.getQuantityAvailable());
+            item.setExistingPurchasePrice(existingProduct.getPurchasePrice());
+            item.setExistingSellingPrice(existingProduct.getPrice());
+
+            // Зареждаме price history
+            List<PurchasePriceHistoryEntity> history = priceHistoryMap.get(existingProduct.getId());
+            if (history != null && !history.isEmpty()) {
+                List<PriceHistoryItemDTO> historyItems = history.stream()
+                        .limit(5)
+                        .map(h -> new PriceHistoryItemDTO(h.getPurchasePrice(), h.getPurchaseDate()))
+                        .collect(Collectors.toList());
+                item.setPriceHistory(historyItems);
+            }
+        } else {
+            // Нов продукт
+            item.setNewProduct(true);
+        }
+
+        // ============================================================
+        // валидираме quantity и price
+        // Вече знаем дали е нов или съществуващ!
+        // ============================================================
 
         // Валидация на quantity - задължително поле и трябва да е положително число
         Integer quantity = null;
@@ -158,32 +202,26 @@ public class ImportValidationServiceImpl implements ImportValidationService {
             item.addError("Доставната цена не е валидно число: " + purchasePriceStr);
         }
 
-        // Ако има грешки спираме тук
+        // Ако има грешки до тук, артикулът вече има правилно зададено newProduct поле!
         if (item.getStatus() == ValidationStatusEnum.ERROR) {
             return item;
         }
 
-        // Проверяваме дали продуктът вече съществува
-        ProductEntity existingProduct = existingProductsMap.get(sku);
+        // ============================================================
+        // ДОПЪЛНИТЕЛНА ЛОГИКА САМО ЗА ВАЛИДНИ АРТИКУЛИ
+        // ============================================================
 
-        if (existingProduct != null) {
-            // Съществуващ продукт
-            item.setNew(false);
-            item.setExistingProductId(existingProduct.getId());
-            item.setExistingQuantity(existingProduct.getQuantityAvailable());
-            item.setExistingPurchasePrice(existingProduct.getPurchasePrice());
-            item.setExistingSellingPrice(existingProduct.getPrice());
+        // За нови продукти името е задължително
+        if (item.isNewProduct()) {
+            if (name == null || name.trim().isEmpty()) {
+                item.addError("Името на продукта липсва (задължително за нови артикули)");
+            }
+        }
 
-            // Зареждаме price history
+        // За съществуващи продукти правим price comparison
+        if (!item.isNewProduct() && existingProduct != null) {
             List<PurchasePriceHistoryEntity> history = priceHistoryMap.get(existingProduct.getId());
             if (history != null && !history.isEmpty()) {
-                List<PriceHistoryItemDTO> historyItems = history.stream()
-                        .limit(5) // Показваме последните 5 цени
-                        .map(h -> new PriceHistoryItemDTO(h.getPurchasePrice(), h.getPurchaseDate()))
-                        .collect(Collectors.toList());
-                item.setPriceHistory(historyItems);
-
-                // Сравняваме новата цена с последната
                 BigDecimal lastPrice = history.get(0).getPurchasePrice();
                 BigDecimal priceDiff = purchasePrice.subtract(lastPrice);
                 BigDecimal priceDiffPercent = priceDiff
@@ -201,15 +239,6 @@ public class ImportValidationServiceImpl implements ImportValidationService {
                         item.addWarning("Доставната цена е намаляла с " + priceDiffPercent.abs() + "% спрямо последната доставка");
                     }
                 }
-            }
-
-        } else {
-            // Нов продукт
-            item.setNew(true);
-
-            // За нови продукти името е задължително
-            if (name == null || name.trim().isEmpty()) {
-                item.addError("Името на продукта липсва (задължително за нови артикули)");
             }
         }
 

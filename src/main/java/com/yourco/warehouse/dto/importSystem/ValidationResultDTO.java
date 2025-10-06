@@ -1,5 +1,7 @@
 package com.yourco.warehouse.dto.importSystem;
 
+import com.yourco.warehouse.entity.enums.ValidationStatusEnum;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -46,12 +48,22 @@ public class ValidationResultDTO {
                 break;
         }
 
-        if (item.isNew()) {
+        if (item.isNewProduct()) {
             this.newProducts++;
         } else {
             this.existingProducts++;
         }
     }
+
+    public void recalculateStatistics() {
+        this.totalItems = items.size();
+        this.validItems = (int) items.stream().filter(i -> i.getStatus() == ValidationStatusEnum.VALID).count();
+        this.itemsWithWarnings = (int) items.stream().filter(i -> i.getStatus() == ValidationStatusEnum.WARNING).count();
+        this.itemsWithErrors = (int) items.stream().filter(i -> i.getStatus() == ValidationStatusEnum.ERROR).count();
+        this.newProducts = (int) items.stream().filter(ValidatedItemDTO::isNewProduct).count();
+        this.existingProducts = totalItems - newProducts;
+    }
+
 
     /**
      * Проверява дали има артикули готови за импорт.
