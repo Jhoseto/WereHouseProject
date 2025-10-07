@@ -3,16 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Съни Комерс-Димо Пенев - Дистрибуция на хранителни продукти</title>
-    <meta name="description" content="Добре дошли в портала на Съни Комерс-Димо Пенев ООД. Директен внос и дистрибуция на хранителни продукти от Европа. Над 2500 артикула за хотели, ресторанти и хорека бизнес.">
+    <title>Warehouse Portal - Демонстрационна версия</title>
+    <meta name="description" content="Пълнофункционална B2B складова система. Разгледайте възможностите за персонализация и тествайте с demo акаунти.">
 
-    <div th:replace="~{fragments/topHtmlImports :: topImports}"></div>
+    <th:block th:replace="~{fragments/topHtmlImports :: topImports}"></th:block>
     <link rel="stylesheet" href="/css/index.css">
-
-
 </head>
 <body>
-<!-- Flash Messages Data (скрит за JavaScript) -->
+
+<!-- Flash Messages Data -->
 <div th:replace="~{fragments/toastSystem :: flashData}"></div>
 
 <!-- Навигация -->
@@ -26,25 +25,33 @@
     <div class="hero-content">
         <div class="hero-container">
             <div class="hero-text">
+                <div class="hero-badge">
+                    <i class="bi bi-code-square"></i>
+                    <span>Демонстрационна версия</span>
+                </div>
+
                 <h1 class="hero-title">
-                    Добре дошли в бъдещето на
-                    <span class="accent-text">хранителната дистрибуция</span>
+                    Вашият B2B складов портал
+                    <span class="accent-text">напълно персонализиран</span>
                 </h1>
+
                 <p class="hero-subtitle">
-                    Открийте удобството на дигиталните заявки със Съни Комерс-Димо Пенев ООД.
-                    Вашият надежден партньор за директен внос и дистрибуция на хранителни продукти от цяла Европа.
+                    Пълнофункционална система за управление на B2B поръчки.
+                    Всеки елемент се адаптира за вашия бранд и бизнес.
                 </p>
+
                 <div class="hero-cta">
-                    <button class="btn btn-primary btn-large" onclick="scrollToRegister()">
-                        <i class="bi bi-rocket-takeoff"></i>
-                        Започнете днес
+                    <button class="btn btn-primary btn-large" onclick="scrollToSection('demo-accounts')">
+                        <i class="bi bi-play-circle"></i>
+                        Тествайте с demo акаунти
                     </button>
-                    <button class="btn btn-secondary btn-large" onclick="scrollToLogin()">
-                        <i class="bi bi-person-check"></i>
-                        Вече съм клиент
+                    <button class="btn btn-secondary btn-large" onclick="scrollToSection('features')">
+                        <i class="bi bi-grid"></i>
+                        Разгледайте функциите
                     </button>
                 </div>
             </div>
+
             <div class="hero-visual">
                 <div class="hero-card">
                     <div class="hero-card-header">
@@ -56,19 +63,19 @@
                     </div>
                     <div class="hero-card-content">
                         <div class="preview-interface">
-                            <div class="preview-header">Нова заявка</div>
+                            <div class="preview-header">Demo поръчка</div>
                             <div class="preview-items">
                                 <div class="preview-item">
                                     <i class="bi bi-box"></i>
-                                    Замразени меса - 50кг
+                                    Вашите продукти - 50кг
                                 </div>
                                 <div class="preview-item">
                                     <i class="bi bi-basket"></i>
-                                    Зеленчукови консерви - 100бр
+                                    Вашият каталог - 100бр
                                 </div>
                                 <div class="preview-item">
                                     <i class="bi bi-egg"></i>
-                                    Млечни продукти и яйца - 20кг
+                                    Вашият бизнес - 20кг
                                 </div>
                             </div>
                             <div class="preview-actions">
@@ -79,304 +86,420 @@
                 </div>
             </div>
         </div>
+
+        <div class="hero-note">
+            <i class="bi bi-info-circle"></i>
+            <p>Тази страница ще бъде персонализирана спрямо вашите желаня и изисквания за вашите клиенти.
+                Лого, цветове, текстове, продукти - всичко, което вашите клиенти трябва да знаят се адаптира спрямо вашите изисквания.</p>
+        </div>
     </div>
 </header>
 
-<!-- Trust Section -->
-<section class="trust">
-    <div class="container">
-        <div class="trust-stats">
-            <div class="trust-stat">
-                <span class="stat-number" data-count="15">15+</span>
-                <span class="stat-label">години опит</span>
-            </div>
-            <div class="trust-stat">
-                <span class="stat-number" data-count="2500">2500+</span>
-                <span class="stat-label">продукта</span>
-            </div>
-            <div class="trust-stat">
-                <span class="stat-number" data-count="500">500+</span>
-                <span class="stat-label">доволни клиенти</span>
-            </div>
-            <div class="trust-stat">
-                <span class="stat-number" data-count="99.8">99.8%</span>
-                <span class="stat-label">надеждност</span>
-            </div>
+<!-- Features Overview - System Modules -->
+<section id="features" class="features-overview">
+    <div class="container-demo">
+        <div class="section-header">
+            <h2 class="section-title">Модули и възможности</h2>
+            <p class="section-subtitle">Пълнофункционална система - всичко готово за продукция</p>
         </div>
-    </div>
-</section>
 
-<!-- Features Section -->
-<section class="features">
-    <div class="container">
-        <div class="features-header">
-            <h2 class="section-title">Защо да изберете нашата платформа?</h2>
-            <p class="section-subtitle">Професионални решения за бизнеса с над 20 години опит</p>
-        </div>
         <div class="features-grid">
+
+            <!-- Client Module -->
             <div class="feature-card">
                 <div class="feature-icon">
-                    <i class="bi bi-lightning-charge"></i>
+                    <i class="bi bi-people"></i>
                 </div>
-                <h3 class="feature-title">Директен внос</h3>
-                <p class="feature-description">Директен внос от цяла Европа без междинни търговци. Най-добри цени и свежи продукти.</p>
+                <h3 class="feature-title">Клиентски модул</h3>
+                <p class="feature-description">B2B портал за вашите клиенти</p>
+
+                <ul class="feature-list">
+                    <li><i class="bi bi-check2"></i> Интерактивен продуктов каталог</li>
+                    <li><i class="bi bi-check2"></i> Real-time търсене и филтриране</li>
+                    <li><i class="bi bi-check2"></i> Автоматично запазване на кошницата</li>
+                    <li><i class="bi bi-check2"></i> Проследяване на поръчки в реално време</li>
+                    <li><i class="bi bi-check2"></i> История и експорт на поръчки</li>
+                    <li><i class="bi bi-check2"></i> Mobile-ready интерфейс</li>
+                </ul>
+
+                <a href="#demo-accounts" class="feature-cta">
+                    Тествайте като клиент
+                    <i class="bi bi-arrow-right"></i>
+                </a>
             </div>
+
+            <!-- Employer Module -->
             <div class="feature-card">
                 <div class="feature-icon">
-                    <i class="bi bi-graph-up-arrow"></i>
+                    <i class="bi bi-clipboard-check"></i>
                 </div>
-                <h3 class="feature-title">Над 2500 артикула</h3>
-                <p class="feature-description">Богато портфолио от хранителни продукти за всички типове бизнес.</p>
+                <h3 class="feature-title">Служебен модул</h3>
+                <p class="feature-description">Управление на поръчки за вашия екип</p>
+
+                <ul class="feature-list">
+                    <li><i class="bi bi-check2"></i> Real-time dashboard с всички поръчки</li>
+                    <li><i class="bi bi-check2"></i> Едно-кликово потвърждаване</li>
+                    <li><i class="bi bi-check2"></i> Детайлен преглед на заявки</li>
+                    <li><i class="bi bi-check2"></i> Филтриране и сортиране</li>
+                    <li><i class="bi bi-check2"></i> Audit trail за всички промени</li>
+                    <li><i class="bi bi-check2"></i> Email/WebSocket известия</li>
+                </ul>
+
+                <a href="#demo-accounts" class="feature-cta">
+                    Тествайте като служител
+                    <i class="bi bi-arrow-right"></i>
+                </a>
             </div>
+
+            <!-- Admin Module -->
             <div class="feature-card">
                 <div class="feature-icon">
-                    <i class="bi bi-shield-check"></i>
+                    <i class="bi bi-gear"></i>
                 </div>
-                <h3 class="feature-title">Високи стандарти</h3>
-                <p class="feature-description">Продукти отговарящи на най-високите европейски стандарти за качество и безопасност.</p>
+                <h3 class="feature-title">Администраторски модул</h3>
+                <p class="feature-description">Пълен контрол за собственика</p>
+
+                <ul class="feature-list">
+                    <li><i class="bi bi-check2"></i> Управление на клиенти и служители</li>
+                    <li><i class="bi bi-check2"></i> Управление на продукти и инвентар</li>
+                    <li><i class="bi bi-check2"></i> Bulk операции и import от Excel</li>
+                    <li><i class="bi bi-check2"></i> Ценообразуване и margin control</li>
+                    <li><i class="bi bi-check2"></i> Детайлни отчети и статистики</li>
+                    <li><i class="bi bi-check2"></i> Системни настройки</li>
+                </ul>
+
+                <a href="#demo-accounts" class="feature-cta">
+                    Тествайте като админ
+                    <i class="bi bi-arrow-right"></i>
+                </a>
             </div>
-            <div class="feature-card">
-                <div class="feature-icon">
-                    <i class="bi bi-truck"></i>
+
+        </div>
+    </div>
+</section>
+
+<!-- How It Works - Process Flow -->
+<section class="process-flow">
+    <div class="container-demo">
+        <div class="section-header">
+            <h2 class="section-title">Как работи системата</h2>
+            <p class="section-subtitle">От поръчка до доставка - автоматизирано и прозрачно</p>
+        </div>
+
+        <div class="flow-steps">
+
+            <div class="flow-step">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <div class="step-icon"><i class="bi bi-person-plus"></i></div>
+                    <h4>Регистрация</h4>
+                    <p>B2B клиентите се регистрират. Вие одобрявате достъпа от админ панела.</p>
                 </div>
-                <h3 class="feature-title">Бърза доставка</h3>
-                <p class="feature-description">Ефективна логистика и надеждна доставка в община Несебър и региона.</p>
+            </div>
+
+            <div class="flow-connector"></div>
+
+            <div class="flow-step">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <div class="step-icon"><i class="bi bi-grid"></i></div>
+                    <h4>Разглеждане</h4>
+                    <p>Клиентите разглеждат каталога с real-time търсене и филтри.</p>
+                </div>
+            </div>
+
+            <div class="flow-connector"></div>
+
+            <div class="flow-step">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <div class="step-icon"><i class="bi bi-cart"></i></div>
+                    <h4>Поръчка</h4>
+                    <p>Добавят продукти и изпращат поръчка с бележки.</p>
+                </div>
+            </div>
+
+            <div class="flow-connector"></div>
+
+            <div class="flow-step">
+                <div class="step-number">4</div>
+                <div class="step-content">
+                    <div class="step-icon"><i class="bi bi-check-circle"></i></div>
+                    <h4>Обработка</h4>
+                    <p>Вашият екип получава известие и потвърждава поръчката.</p>
+                </div>
+            </div>
+
+            <div class="flow-connector"></div>
+
+            <div class="flow-step">
+                <div class="step-number">5</div>
+                <div class="step-content">
+                    <div class="step-icon"><i class="bi bi-truck"></i></div>
+                    <h4>Проследяване</h4>
+                    <p>Клиентът вижда статуса в реално време до доставка.</p>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="flow-note">
+            <p>Искате да видите на живо? Използвайте demo акаунтите по-долу за целия процес.</p>
+        </div>
+    </div>
+</section>
+
+<!-- Tech Stack -->
+<section class="tech-stack">
+    <div class="container-demo">
+        <div class="section-header">
+            <h2 class="section-title">Модерни технологии</h2>
+            <p class="section-subtitle">Enterprise-grade stack за гарантирано дългосрочно ползване</p>
+        </div>
+
+        <div class="tech-grid">
+            <div class="tech-item">
+                <i class="bi bi-cup-hot"></i>
+                <h4>Spring Boot 3.4</h4>
+                <p>Enterprise Java framework</p>
+            </div>
+            <div class="tech-item">
+                <i class="bi bi-database"></i>
+                <h4>MySQL 9</h4>
+                <p>Надеждна SQL база данни</p>
+            </div>
+            <div class="tech-item">
+                <i class="bi bi-shield-check"></i>
+                <h4>Spring Security</h4>
+                <p>Bank-level сигурност</p>
+            </div>
+            <div class="tech-item">
+                <i class="bi bi-phone"></i>
+                <h4>Responsive Design</h4>
+                <p>Mobile, tablet, desktop</p>
+            </div>
+            <div class="tech-item">
+                <i class="bi bi-lightning"></i>
+                <h4>WebSocket</h4>
+                <p>Real-time обновявания</p>
+            </div>
+            <div class="tech-item">
+                <i class="bi bi-plugin"></i>
+                <h4>RESTful API</h4>
+                <p>Готово за интеграции</p>
+            </div>
+            <div class="tech-item">
+                <i class="bi bi-upc-scan"></i>
+                <h4>ERP Barcode Scanner</h4>
+                <p>Система за сканиране</p>
+            </div>
+            <div class="tech-item">
+                <i class="bi bi-filetype-xml"></i>
+                <h4>Mapping Import File</h4>
+                <p>Зареждане на артикули от файл</p>
+            </div>
+            <div class="tech-item">
+                <i class="bi bi-geo-alt"></i>
+                <h4>GPS Tracking</h4>
+                <p>Проследяване на товара</p>
+            </div>
+            <div class="tech-item">
+                <i class="bi bi-cloud-arrow-down"></i>
+                <h4>AWS Backup services</h4>
+                <p>Резервни копия на базата</p>
             </div>
         </div>
     </div>
 </section>
 
-<!-- Login Section -->
+<!-- Personalization Section -->
+<section class="personalization">
+    <div class="container-demo">
+        <div class="section-header">
+            <h2 class="section-title">Пълна персонализация</h2>
+            <p class="section-subtitle">Вашият бранд, вашите цветове, вашето съобщение</p>
+        </div>
+
+        <div class="customization-grid">
+            <div class="custom-item">
+                <i class="bi bi-palette"></i>
+                <h4>Брандинг</h4>
+                <p>Лого, цветове, типография според вашия фирмен стил</p>
+            </div>
+            <div class="custom-item">
+                <i class="bi bi-chat-quote"></i>
+                <h4>Съдържание</h4>
+                <p>Hero секция, описания, маркетингови текстове</p>
+            </div>
+            <div class="custom-item">
+                <i class="bi bi-envelope"></i>
+                <h4>Email темплейти</h4>
+                <p>Известия с вашия бранд и лого</p>
+            </div>
+            <div class="custom-item">
+                <i class="bi bi-graph-up"></i>
+                <h4>Trust stats</h4>
+                <p>Вашите реални бизнес показатели</p>
+            </div>
+        </div>
+
+        <div class="customization-note">
+            След закупуване работим заедно за custom index страница която отразява вашия бранд и комуникира с клиентите по начина който искате.
+        </div>
+    </div>
+</section>
+
+
+<!-- Demo Accounts - Main CTA -->
+<section id="demo-accounts" class="demo-accounts">
+    <div class="container-demo">
+        <div class="section-header">
+            <h2 class="section-title">Тествайте системата веднага</h2>
+            <p class="section-subtitle">Пълен достъп до всички функции с demo акаунти</p>
+        </div>
+
+        <div class="accounts-grid">
+
+            <div class="account-card">
+                <div class="account-badge client">Клиент</div>
+                <h3>Demo Client Account</h3>
+                <div class="account-credentials">
+                    <div class="credential">
+                        <span class="label">Username:</span>
+                        <code>client1</code>
+                    </div>
+                    <div class="credential">
+                        <span class="label">Password:</span>
+                        <code>client123</code>
+                    </div>
+                </div>
+                <div class="account-features">
+                    <span><i class="bi bi-check"></i> Каталог с 2800+ продукта</span>
+                    <span><i class="bi bi-check"></i> Създаване на поръчки</span>
+                    <span><i class="bi bi-check"></i> Проследяване на статус</span>
+                </div>
+                <a href="javascript:void(0)" onclick="scrollToLogin()" class="account-btn">
+                    Влезте като клиент
+                    <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+
+            <div class="account-card">
+                <div class="account-badge employer">Служител</div>
+                <h3>Demo Employer Account</h3>
+                <div class="account-credentials">
+                    <div class="credential">
+                        <span class="label">Username:</span>
+                        <code>employer1</code>
+                    </div>
+                    <div class="credential">
+                        <span class="label">Password:</span>
+                        <code>employer123</code>
+                    </div>
+                </div>
+                <div class="account-features">
+                    <span><i class="bi bi-check"></i> Real-time dashboard</span>
+                    <span><i class="bi bi-check"></i> Управление на поръчки</span>
+                    <span><i class="bi bi-check"></i> Order flow контрол</span>
+                </div>
+                <a href="javascript:void(0)" onclick="scrollToLogin()" class="account-btn">
+                    Влезте като служител
+                    <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+
+            <div class="account-card featured">
+                <div class="account-badge admin">Администратор</div>
+                <h3>Demo Admin Account</h3>
+                <div class="account-credentials">
+                    <div class="credential">
+                        <span class="label">Username:</span>
+                        <code>admin</code>
+                    </div>
+                    <div class="credential">
+                        <span class="label">Password:</span>
+                        <code>admin123</code>
+                    </div>
+                </div>
+                <div class="account-features">
+                    <span><i class="bi bi-check"></i> Пълен административен достъп</span>
+                    <span><i class="bi bi-check"></i> Управление на всички модули</span>
+                    <span><i class="bi bi-check"></i> Системни настройки</span>
+                </div>
+                <a href="javascript:void(0)" onclick="scrollToLogin()" class="account-btn">
+                    Влезте като админ
+                    <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+
+        </div>
+
+        <div class="demo-note">
+            <i class="bi bi-info-circle"></i>
+            <p>Напълно функционални акаунти с реални данни. Създавайте тестови поръчки, потвърждавайте ги, редактирайте продукти - всичко е достъпно.</p>
+        </div>
+    </div>
+</section>
+
+
+<!-- Login Section (запазваме съществуващата) -->
+
 <section class="login-section" id="login">
     <div class="container">
         <div class="login-container">
             <div class="login-header">
-                <h2 class="login-title">Влезте в своя акаунт</h2>
-                <p class="login-subtitle">Изберете вашия тип акаунт</p>
+                <h2 class="login-title">Влезте в системата</h2>
+                <p class="login-subtitle">Използвайте вашите потребителски данни</p>
             </div>
-
 
             <div class="login-tabs">
-                <div class="tab-buttons">
-                    <button class="tab-btn active" data-tab="clients" onclick="switchTab('clients')">
-                        <span class="tab-icon">
-                            <i class="bi bi-building"></i>
-                        </span>
-                        <span class="tab-text">Клиенти</span>
-                    </button>
-                    <button class="tab-btn" data-tab="employees" onclick="switchTab('employees')">
-                        <span class="tab-icon">
-                            <i class="bi bi-people"></i>
-                        </span>
-                        <span class="tab-text">Служители/Администратори</span>
-                    </button>
-                </div>
+                <div class="tab-content active" id="common-login-tab">
+                    <form th:action="@{/login}" method="post" class="login-form">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
 
-                <div class="tab-content">
-                    <div class="tab-pane active" id="clients">
-                        <form class="login-form" method="post" action="/login">
-                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-                            <input type="hidden" name="role" value="CLIENT">
-                            <div class="form-group">
-                                <label for="client-username" class="form-label">Потребителско име</label>
-                                <input
-                                        type="text"
-                                        id="client-username"
-                                        name="username"
-                                        class="form-input"
-                                        placeholder="Въведете вашето потребителско име"
-                                        required
-                                        autocomplete="username"
-                                >
-                            </div>
-                            <div class="form-group">
-                                <label for="client-password" class="form-label">Парола</label>
-                                <input
-                                        type="password"
-                                        id="client-password"
-                                        name="password"
-                                        class="form-input"
-                                        placeholder="Въведете вашата парола"
-                                        required
-                                        autocomplete="current-password"
-                                >
-                            </div>
-                            <div class="form-group">
-                                <div class="form-check">
-                                    <input type="checkbox"
-                                           id="client-remember-me"
-                                           name="remember-me"
-                                           class="form-check-input">
-                                    <label for="client-remember-me" class="form-check-label">
-                                        Запомни ме за 30 дни
-                                    </label>
-                                </div>
-                            </div>
-                            <button type="submit" class="btn btn-primary btn-full">
-                                <i class="bi bi-box-arrow-in-right"></i>
-                                Влезте в системата
-                            </button>
-                        </form>
-                        <div class="login-help">
-                            <p class="help-text">Нов клиент?
-                                <a href="#register" class="help-link" onclick="scrollToRegister()">Регистрирайте се тук</a>
-                            </p>
+                        <div class="form-group">
+                            <label for="username">
+                                <i class="bi bi-person"></i>
+                                Потребителско име
+                            </label>
+                            <input type="text" id="username" name="username"
+                                   placeholder="Въведете потребителско име"      >
                         </div>
-                    </div>
 
-                    <div class="tab-pane" id="employees">
-                        <form class="login-form" method="post" action="/login">
-                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-                            <input type="hidden" name="role" value="EMPLOYER">
-                            <div class="form-group">
-                                <label for="employee-username" class="form-label">Служебен акаунт</label>
-                                <input
-                                        type="text"
-                                        id="employee-username"
-                                        name="username"
-                                        class="form-input"
-                                        placeholder="Въведете служебното потребителско име"
-                                        required
-                                        autocomplete="username"
-                                >
-                            </div>
-                            <div class="form-group">
-                                <label for="employee-password" class="form-label">Служебна парола</label>
-                                <input
-                                        type="password"
-                                        id="employee-password"
-                                        name="password"
-                                        class="form-input"
-                                        placeholder="Въведете служебната парола"
-                                        required
-                                        autocomplete="current-password"
-                                >
-                            </div>
-                            <div class="form-group">
-                                <div class="form-check">
-                                    <input type="checkbox"
-                                           id="employee-remember-me"
-                                           name="remember-me"
-                                           class="form-check-input">
-                                    <label for="employee-remember-me" class="form-check-label">
-                                        Запомни ме за 30 дни
-                                    </label>
-                                </div>
-                            </div>
-                            <button type="submit" class="btn btn-primary btn-full">
-                                <i class="bi bi-key"></i>
-                                Служебен вход
-                            </button>
-                        </form>
-                        <div class="login-help">
-                            <p class="help-text">Проблеми с достъпа? Свържете се с IT отдела</p>
+                        <div class="form-group">
+                            <label for="password">
+                                <i class="bi bi-lock"></i>
+                                Парола
+                            </label>
+                            <input type="password" id="password" name="password"
+                                   placeholder="Въведете парола" required>
                         </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
 
-<!-- Registration CTA -->
-<section class="register-cta" id="register">
-    <div class="container">
-        <div class="cta-content">
-            <div class="cta-text">
-                <h2 class="cta-title">Готови за дигитална трансформация?</h2>
-                <p class="cta-subtitle">
-                    Присъединете се към портала на Съни Комерс-Димо Пенев и открийте новото
-                    измерение на хранителната дистрибуция. Най-добри цени и свежи продукти.
-                </p>
-                <ul class="cta-benefits">
-                    <li class="cta-benefit">
-                        <span class="benefit-icon">
-                            <i class="bi bi-stars"></i>
-                        </span>
-                        Персонализирано портфолио според вашите нужди
-                    </li>
-                    <li class="cta-benefit">
-                        <span class="benefit-icon">
-                            <i class="bi bi-bar-chart"></i>
-                        </span>
-                        Детайлни отчети за поръчки и доставки
-                    </li>
-                    <li class="cta-benefit">
-                        <span class="benefit-icon">
-                            <i class="bi bi-award"></i>
-                        </span>
-                        Специални цени за регистрирани партньори
-                    </li>
-                </ul>
-            </div>
-            <div class="cta-form">
-                <div class="register-card">
-                    <h3 class="register-title">Регистрация</h3>
-                    <form class="register-form" onsubmit="handleRegistration(event)">
-                        <div class="form-group">
-                            <input
-                                    type="text"
-                                    name="company"
-                                    class="form-input"
-                                    placeholder="Вашите имена..."
-                                    required
-                            >
-                        </div>
-                        <div class="form-group">
-                            <input
-                                    type="text"
-                                    name="contact_person"
-                                    class="form-input"
-                                    placeholder="Име на фирмата..."
-                                    required
-                            >
-                        </div>
-                        <div class="form-group">
-                            <input
-                                    type="email"
-                                    name="email"
-                                    class="form-input"
-                                    placeholder="Email адрес..."
-                                    required
-                            >
-                        </div>
-                        <div class="form-group">
-                            <input
-                                    type="tel"
-                                    name="phone"
-                                    class="form-input"
-                                    placeholder="Телефон +35988XXXXXXX"
-                                    required
-                            >
-                        </div>
-                        <div class="form-group">
-                            <textarea
-                                    name="message"
-                                    class="form-input"
-                                    rows="3"
-                                    placeholder="Допълнителна информация (по избор)"
-                            ></textarea>
-                        </div>
-                        <button type="submit" class="btn btn-accent btn-full">
-                            <i class="bi bi-send"></i>
-                            Изпрати заявката
+                        <button type="submit" class="btn-submit">
+                            <i class="bi bi-box-arrow-in-right"></i>
+                            Вход
                         </button>
                     </form>
-                    <p class="register-note">
-                        С изпращане на заявката за регистрация, вие се съгласявате с нашата политика и условия
-                        за използване на портала !
-                    </p>
                 </div>
             </div>
         </div>
     </div>
 </section>
-<!-- Include Footer Fragment -->
+
+<!-- Footer -->
 <div th:replace="~{fragments/footer :: footer}"></div>
 
-<!-- Scripts -->
-<script src="/js/index.js"></script>
+<!-- JS -->
 <div th:replace="~{fragments/bottomHtmlImports :: bottomImports}"></div>
 
+<script src="/js/index.js"></script>
+<script>
+    function scrollToSection(sectionId) {
+        const element = document.getElementById(sectionId);
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }
+</script>
 </body>
 </html>

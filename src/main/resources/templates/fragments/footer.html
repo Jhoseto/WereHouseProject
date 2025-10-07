@@ -1,75 +1,94 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="bg">
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      lang="bg">
 
-<!-- Footer Fragment -->
-<footer th:fragment="footer" class="footer">
+<!-- Compact Modern Footer -->
+<footer th:fragment="footer" class="modern-footer">
+    <div class="footer-backdrop"></div>
+
     <div class="container">
-        <div class="footer-content">
-            <!-- Company Info Section -->
-            <div class="footer-section">
-                <img src="/images/logo1.png" alt="Съни Комерс-Димо Пенев" class="footer-logo">
-                <p class="footer-text">
-                    Водещ доставчик на хранителни продукти в региона с над 20 години опит
-                    в директния внос и дистрибуция.
+        <!-- Main Footer Content - Compact Grid -->
+        <div class="footer-grid">
+
+            <!-- Brand & Info Column -->
+            <div class="footer-section footer-brand">
+                <div class="brand-container">
+                    <img src="/images/logo1.png" alt="Warehouse Portal Demo" class="footer-logo-img">
+                </div>
+                <p class="brand-description">
+                    Модерно B2B решение за складово управление
                 </p>
             </div>
 
-            <!-- Contact Info Section -->
+            <!-- Navigation Links -->
             <div class="footer-section">
-                <h3 class="footer-title">Контакти</h3>
-                <div class="contact-info">
-                    <div class="contact-item">
-                        <span class="contact-icon">📍</span>
-                        <span>к.к. Слънчев бряг, България</span>
-                    </div>
-                    <div class="contact-item">
-                        <span class="contact-icon">📞</span>
-                        <span>+359 XXX XXX XXX</span>
-                    </div>
-                    <div class="contact-item">
-                        <span class="contact-icon">📧</span>
-                        <span>info@sunnyfood.bg</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Quick Links Section -->
-            <div class="footer-section">
-                <h3 class="footer-title">Бързи връзки</h3>
                 <ul class="footer-links">
-                    <!-- Условни връзки според автентикацията -->
-                    <div sec:authorize="!isAuthenticated()">
-                        <li><a href="#login" class="footer-link" onclick="scrollToLogin()">Вход</a></li>
-                        <li><a href="#register" class="footer-link" onclick="scrollToRegister()">Регистрация</a></li>
-                    </div>
-
-                    <div sec:authorize="isAuthenticated()">
-                        <!-- Връзки за ADMIN и EMPLOYER -->
-                        <div sec:authorize="hasAnyRole('ADMIN', 'EMPLOYER')">
-                            <li><a th:href="@{/templates/employer/dashboard}" class="footer-link">Админ панел</a></li>
-                            <li><a th:href="@{/templates/employer/orders}" class="footer-link">Поръчки</a></li>
-                        </div>
-
-                        <!-- Връзки за CLIENT -->
-                        <div sec:authorize="hasRole('CLIENT')">
-                            <li><a th:href="@{/catalog}" class="footer-link">Каталог</a></li>
-                            <li><a th:href="@{/client/orders}" class="footer-link">Моите поръчки</a></li>
-                        </div>
-                    </div>
-
-                    <!-- Общи връзки -->
-                    <li><a th:href="@{/about}" class="footer-link">За нас</a></li>
-                    <li><a href="#" class="footer-link">Условия</a></li>
+                    <li sec:authorize="!isAuthenticated()">
+                        <a href="#login" onclick="scrollToLogin()">
+                            <i class="bi bi-box-arrow-in-right"></i>
+                            <span>Вход</span>
+                        </a>
+                    </li>
+                    <li sec:authorize="!isAuthenticated()">
+                        <a href="#register" onclick="scrollToRegister()">
+                            <i class="bi bi-person-plus"></i>
+                            <span>Регистрация</span>
+                        </a>
+                    </li>
+                    <li sec:authorize="hasAnyRole('ADMIN', 'EMPLOYER')">
+                        <a th:href="@{/templates/employer/dashboard}">
+                            <i class="bi bi-speedometer2"></i>
+                            <span>Табло</span>
+                        </a>
+                    </li>
+                    <li sec:authorize="hasRole('CLIENT')">
+                        <a th:href="@{/catalog}">
+                            <i class="bi bi-grid"></i>
+                            <span>Каталог</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a th:href="@{/about}">
+                            <i class="bi bi-info-circle"></i>
+                            <span>За нас</span>
+                        </a>
+                    </li>
                 </ul>
             </div>
+
+            <!-- Contact Info -->
+            <div class="footer-section">
+                <ul class="contact-list">
+                    <li>
+                        <i class="bi bi-geo-alt"></i>
+                        <span>Демо локация, България</span>
+                    </li>
+                    <li>
+                        <i class="bi bi-envelope"></i>
+                        <span>demo@warehouseportal.bg</span>
+                    </li>
+                    <li>
+                        <i class="bi bi-telephone"></i>
+                        <span>+359 XXX XXX XXX</span>
+                    </li>
+                </ul>
+            </div>
+
         </div>
 
-        <!-- Footer Bottom -->
+        <!-- Footer Bottom Bar - Ultra Compact -->
         <div class="footer-bottom">
-            <p class="copyright">
-                Търговск
-                &copy; 2025 Съни Комерс-Димо Пенев ООД. Всички права запазени.
-            </p>
+            <div class="copyright">
+                <i class="bi bi-c-circle"></i>
+                <span>2025 Warehouse Portal</span>
+            </div>
+            <div class="footer-badges">
+                <span class="badge">
+                    <i class="bi bi-code-slash"></i>
+                    Демо версия
+                </span>
+            </div>
         </div>
     </div>
 </footer>
