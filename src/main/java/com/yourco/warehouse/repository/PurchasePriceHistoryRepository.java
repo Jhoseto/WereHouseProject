@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.List;
 
 /**
@@ -52,4 +53,16 @@ public interface PurchasePriceHistoryRepository extends JpaRepository<PurchasePr
      * Използва индекса idx_import_event за бърза заявка.
      */
     List<PurchasePriceHistoryEntity> findByImportEventId(Long importEventId);
+
+    /**
+     * Намира price history за продукт след определена дата
+     */
+    @Query("SELECT ph FROM PurchasePriceHistoryEntity ph WHERE ph.product.id = :productId AND ph.purchaseDate >= :startDate ORDER BY ph.purchaseDate DESC")
+    List<PurchasePriceHistoryEntity> findByProductIdAndDateAfter(@Param("productId") Long productId, @Param("startDate") LocalDate startDate);
+
+    /**
+     * Намира всички уникални доставчици
+     */
+    @Query("SELECT DISTINCT ph.supplierName FROM PurchasePriceHistoryEntity ph WHERE ph.supplierName IS NOT NULL ORDER BY ph.supplierName")
+    List<String> findDistinctSuppliers();
 }

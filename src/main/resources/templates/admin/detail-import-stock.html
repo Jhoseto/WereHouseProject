@@ -184,6 +184,10 @@
                 </div>
 
                 <div class="filters-actions">
+                    <button class="btn-primary" id="btn-view-import-graph" type="button" title="Графика на импорта">
+                        <i class="bi bi-graph-up-arrow"></i>
+                        Графика на импорта
+                    </button>
                     <button id="reset-filters" class="btn-secondary">
                         <i class="bi bi-arrow-counterclockwise"></i> Изчисти
                     </button>
@@ -266,6 +270,9 @@
 
     </div>
 </section>
+
+<!-- Graph Modal -->
+<div th:replace="~{admin/fragments/graphModal :: graphModal}"></div>
 
 <!-- Include Footer Fragment -->
 <div th:replace="~{fragments/footer :: footer}"></div>

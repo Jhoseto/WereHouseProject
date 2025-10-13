@@ -485,6 +485,9 @@ class ProductTable {
                 <td>${statusBadge}</td>
                 <td class="actions-column">
                     <div class="action-buttons">
+                        <button class="action-btn graph" data-id="${product.id}" title="Графика">
+                            <i class="bi bi-graph-up"></i>
+                        </button>
                         <button class="action-btn edit" data-id="${product.id}" title="Редактирай">
                             <i class="bi bi-pencil"></i>
                         </button>
@@ -498,6 +501,14 @@ class ProductTable {
     }
 
     attachRowEvents() {
+        // Graph buttons
+        this.tbody.querySelectorAll('.action-btn.graph').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const id = parseInt(e.currentTarget.dataset.id);
+                window.GraphModal.open([id]);
+            });
+        });
+
         // Edit buttons
         this.tbody.querySelectorAll('.action-btn.edit').forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -1105,6 +1116,14 @@ function setupSubTabs() {
 // EVENT HANDLERS
 // ==========================================
 function setupEventHandlers() {
+    // Graph all button
+    const graphAllBtn = document.getElementById('btn-graph-all');
+    if (graphAllBtn) {
+        graphAllBtn.addEventListener('click', () => {
+            window.GraphModal.open(null);
+        });
+    }
+
     // Create button - DEFENSIVE CHECK
     const createBtn = document.getElementById('btn-create-product');
     if (createBtn) {

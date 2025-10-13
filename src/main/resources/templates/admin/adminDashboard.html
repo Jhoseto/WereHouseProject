@@ -15,6 +15,7 @@
     <link rel="stylesheet" href="/css/admin/employersManagement.css">
     <link rel="stylesheet" href="/css/admin/inventoryManagement.css">
     <link rel="stylesheet" href="/css/admin/importStock.css">
+    <link rel="stylesheet" href="/css/admin/graphModal.css">
 
     <meta name="description" content="Администраторски панел за управление на система, потребители, инвентар и отчети">
 </head>
@@ -200,6 +201,9 @@
 <!-- Include Toast System Fragment -->
 <div th:replace="~{fragments/toastSystem :: toastContainer}"></div>
 
+<!-- Graph Modal -->
+<div th:replace="~{admin/fragments/graphModal :: graphModal}"></div>
+
 <!-- Include Footer Fragment -->
 <div th:replace="~{fragments/footer :: footer}"></div>
 
@@ -220,6 +224,29 @@
 <!-- Inventory Management (използва barcode scanner) -->
 <script src="/js/adminDashboard/inventoryManagement.js"></script>
 <script src="/js/adminDashboard/importStock.js"></script>
+
+<!-- Chart.js v4.5.0 -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.min.js"></script>
+
+<!-- chartjs-adapter-date-fns -->
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<!-- Graph Modal JS -->
+<script src="/js/adminDashboard/graphModal.js"></script>
+
+<script>
+    // Отваряне на модала за конкретен продукт
+    function openGraphForProduct(productId) {
+        window.GraphModal.open([productId]);
+    }
+    // Отваряне на модала за няколко продукта
+    function openGraphForMultiple(productIds) {
+        window.GraphModal.open(productIds);
+    }
+    // Отваряне на модала за всички продукти
+    function openGraphForAll() {
+        window.GraphModal.open(null);
+    }
+</script>
 
 </body>
 </html>

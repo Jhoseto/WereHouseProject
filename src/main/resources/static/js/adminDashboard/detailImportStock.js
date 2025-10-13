@@ -690,7 +690,44 @@ class EventHandlers {
         this.setupPagination();
         this.setupNavigation();
         this.setupActions();
+        this.setupImportGraph();
     }
+
+    setupImportGraph() {
+        const graphBtn = document.getElementById('btn-view-import-graph');
+        if (graphBtn) {
+            graphBtn.addEventListener('click', () => {
+                this.openImportGraph();
+            });
+        }
+    }
+
+    openImportGraph() {
+        if (!STATE.currentImportEvent || !STATE.allItems.length) {
+            window.toastManager?.warning('Няма заредени данни за импорта');
+            return;
+        }
+
+        // Извличаме всички уникални productIds от импорта
+        const productIds = [...new Set(
+            STATE.allItems.map(item => item.productId).filter(id => id != null)
+        )];
+
+        if (productIds.length === 0) {
+            window.toastManager?.warning('Няма продукти в импорта');
+            return;
+        }
+
+        // Отваряме GraphModal с всички продукти от импорта
+        window.GraphModal.open(productIds);
+        setTimeout(() => {
+            const subtitle = document.getElementById('graph-subtitle');
+            if (subtitle) {
+                subtitle.textContent = `Анализ на импорт: ${STATE.currentImportEvent.fileName} (${productIds.length} продукта)`;
+            }
+        }, 100);
+    }
+
 
     setupSearchAndFilters() {
         // Search input

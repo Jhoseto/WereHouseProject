@@ -1,0 +1,862 @@
+/**
+ * GRAPH MODAL CSS
+ * ===============
+ * Apple/Tesla inspired design - минималистичен, професионален, модерен
+ * Чисти линии, градиенти, smooth animations, focus на usability
+ * Адаптирано към актуализираната HTML структура и JS функционалност
+ */
+
+/* ==========================================
+   CSS VARIABLES - ЛЕСНА ПЕРСОНАЛИЗАЦИЯ
+   ========================================== */
+:root {
+    /* Primary Colors - Purple gradient theme (Tesla-inspired) */
+    --gm-primary: #667eea;
+    --gm-primary-dark: #764ba2;
+    --gm-primary-light: #a8b5ff;
+
+    /* Semantic Colors */
+    --gm-success: #48bb78;
+    --gm-success-dark: #38a169;
+    --gm-warning: #ed8936;
+    --gm-warning-dark: #dd6b20;
+    --gm-danger: #f56565;
+    --gm-danger-dark: #e53e3e;
+    --gm-info: #4299e1;
+    --gm-info-dark: #3182ce;
+
+    /* Neutral Colors (Apple-inspired clean palette) */
+    --gm-bg-primary: #ffffff;
+    --gm-bg-secondary: #f8f9fa;
+    --gm-bg-tertiary: #f1f3f4;
+    --gm-bg-dark: #1c1c1e;
+    --gm-text-primary: #1d1d1f;
+    --gm-text-secondary: #48484a;
+    --gm-text-tertiary: #86868b;
+    --gm-border: #d2d2d7;
+    --gm-shadow: rgba(0, 0, 0, 0.08);
+
+    /* Spacing System */
+    --gm-spacing-xs: 0.25rem;
+    --gm-spacing-sm: 0.5rem;
+    --gm-spacing-md: 1rem;
+    --gm-spacing-lg: 1.5rem;
+    --gm-spacing-xl: 2rem;
+    --gm-spacing-2xl: 3rem;
+
+    /* Border Radius (Rounded like Apple) */
+    --gm-radius-sm: 0.375rem;
+    --gm-radius-md: 0.5rem;
+    --gm-radius-lg: 0.75rem;
+    --gm-radius-xl: 1rem;
+    --gm-radius-full: 9999px;
+
+    /* Transitions (Smooth like Tesla UI) */
+    --gm-transition-fast: 150ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    --gm-transition-normal: 250ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    --gm-transition-slow: 350ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+
+    /* Shadows (Subtle depth) */
+    --gm-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
+    --gm-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+    --gm-shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.1);
+    --gm-shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.12);
+
+    /* Typography (System fonts) */
+    --gm-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    --gm-font-weight-light: 300;
+    --gm-font-weight-normal: 400;
+    --gm-font-weight-medium: 500;
+    --gm-font-weight-semibold: 600;
+    --gm-font-weight-bold: 700;
+}
+
+/* ==========================================
+   MODAL OVERLAY & CONTAINER
+   ========================================== */
+.graph-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: var(--gm-spacing-lg);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity var(--gm-transition-normal), visibility var(--gm-transition-normal);
+}
+
+.graph-modal-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.graph-modal-container {
+    background: var(--gm-bg-primary);
+    border-radius: var(--gm-radius-xl);
+    box-shadow: var(--gm-shadow-xl);
+    width: 100%;
+    max-width: 1400px;
+    max-height: 95vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transform: scale(0.95) translateY(20px);
+    transition: transform var(--gm-transition-normal);
+}
+
+.graph-modal-overlay.active .graph-modal-container {
+    transform: scale(1) translateY(0);
+}
+
+/* ==========================================
+   MODAL HEADER
+   ========================================== */
+.graph-modal-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: var(--gm-spacing-xl);
+    background: linear-gradient(135deg, var(--gm-primary) 0%, var(--gm-primary-dark) 100%);
+    color: white;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.header-left {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gm-spacing-xs);
+    flex: 1;
+}
+
+.modal-title {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: var(--gm-font-weight-semibold);
+    display: flex;
+    align-items: center;
+    gap: var(--gm-spacing-md);
+    line-height: 1.2;
+}
+
+.modal-title i {
+    font-size: 1.75rem;
+    opacity: 0.9;
+}
+
+.modal-subtitle {
+    margin: 0;
+    font-size: 0.875rem;
+    opacity: 0.9;
+    font-weight: var(--gm-font-weight-normal);
+    line-height: 1.3;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+}
+
+.close-button {
+    background: rgba(255, 255, 255, 0.15);
+    border: none;
+    border-radius: var(--gm-radius-md);
+    color: white;
+    cursor: pointer;
+    font-size: 1.25rem;
+    padding: var(--gm-spacing-md);
+    transition: all var(--gm-transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    opacity: 0.8;
+}
+
+.close-button:hover {
+    background: rgba(255, 255, 255, 0.25);
+    opacity: 1;
+    transform: scale(1.05);
+}
+
+.close-button:active {
+    transform: scale(0.95);
+}
+
+/* ==========================================
+   CONFIGURATION PANEL
+   ========================================== */
+.graph-config-panel {
+    padding: var(--gm-spacing-lg);
+    background: var(--gm-bg-secondary);
+    border-bottom: 1px solid var(--gm-border);
+}
+
+.config-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: var(--gm-spacing-lg);
+}
+
+.config-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gm-spacing-sm);
+}
+
+.config-group label {
+    font-size: 0.875rem;
+    font-weight: var(--gm-font-weight-semibold);
+    color: var(--gm-text-primary);
+    display: block;
+    margin-bottom: var(--gm-spacing-xs);
+}
+
+.selector-wrapper {
+    position: relative;
+}
+
+.graph-select {
+    width: 100%;
+    padding: var(--gm-spacing-md) var(--gm-spacing-lg);
+    border: 1px solid var(--gm-border);
+    border-radius: var(--gm-radius-md);
+    background: var(--gm-bg-primary);
+    color: var(--gm-text-primary);
+    font-size: 0.875rem;
+    font-family: var(--gm-font-family);
+    transition: all var(--gm-transition-fast);
+    min-height: 44px;
+    appearance: none;
+}
+
+.graph-select:focus {
+    outline: none;
+    border-color: var(--gm-primary);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.graph-select[multiple] {
+    min-height: 120px;
+    padding: var(--gm-spacing-md);
+}
+
+.select-helper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: var(--gm-spacing-sm);
+    padding: var(--gm-spacing-sm) var(--gm-spacing-md);
+    background: var(--gm-bg-tertiary);
+    border-radius: var(--gm-radius-sm);
+}
+
+.helper-text {
+    font-size: 0.75rem;
+    color: var(--gm-text-tertiary);
+    font-weight: var(--gm-font-weight-normal);
+}
+
+.helper-button {
+    background: transparent;
+    border: 1px solid var(--gm-border);
+    border-radius: var(--gm-radius-sm);
+    padding: var(--gm-spacing-xs) var(--gm-spacing-sm);
+    font-size: 0.75rem;
+    color: var(--gm-primary);
+    cursor: pointer;
+    transition: all var(--gm-transition-fast);
+    font-weight: var(--gm-font-weight-medium);
+}
+
+.helper-button:hover {
+    background: var(--gm-primary-light);
+    border-color: var(--gm-primary);
+    color: var(--gm-primary-dark);
+}
+
+/* Checkbox Group for Analysis Options */
+.checkbox-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gm-spacing-sm);
+}
+
+.checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: var(--gm-spacing-md);
+    cursor: pointer;
+    user-select: none;
+    padding: var(--gm-spacing-sm);
+    border-radius: var(--gm-radius-sm);
+    transition: background-color var(--gm-transition-fast);
+}
+
+.checkbox-item:hover {
+    background: var(--gm-bg-tertiary);
+}
+
+.checkbox-item input[type="checkbox"] {
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--gm-border);
+    border-radius: var(--gm-radius-sm);
+    position: relative;
+    cursor: pointer;
+    transition: all var(--gm-transition-fast);
+}
+
+.checkbox-item input[type="checkbox"]:checked {
+    background: var(--gm-primary);
+    border-color: var(--gm-primary);
+}
+
+.checkbox-item input[type="checkbox"]:checked + .checkmark {
+    opacity: 1;
+}
+
+.checkmark {
+    position: absolute;
+    inset: 0;
+    background: transparent;
+    border-radius: var(--gm-radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    color: white;
+    opacity: 0;
+    transition: opacity var(--gm-transition-fast);
+}
+
+.checkbox-item input[type="checkbox"]:checked + .checkmark::after {
+    content: '✓';
+}
+
+/* Action Buttons */
+.action-buttons {
+    display: flex;
+    gap: var(--gm-spacing-md);
+    margin-top: var(--gm-spacing-md);
+}
+
+.action-btn {
+    padding: var(--gm-spacing-md) var(--gm-spacing-lg);
+    border: 1px solid var(--gm-border);
+    border-radius: var(--gm-radius-md);
+    background: var(--gm-bg-primary);
+    color: var(--gm-text-primary);
+    font-size: 0.875rem;
+    font-weight: var(--gm-font-weight-medium);
+    cursor: pointer;
+    transition: all var(--gm-transition-fast);
+    display: flex;
+    align-items: center;
+    gap: var(--gm-spacing-sm);
+    white-space: nowrap;
+}
+
+.action-btn:hover:not(:disabled) {
+    background: var(--gm-bg-tertiary);
+    border-color: var(--gm-primary);
+    color: var(--gm-primary);
+    transform: translateY(-1px);
+    box-shadow: var(--gm-shadow-sm);
+}
+
+.action-btn:active {
+    transform: translateY(0);
+}
+
+.action-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.action-btn.primary {
+    background: linear-gradient(135deg, var(--gm-primary) 0%, var(--gm-primary-dark) 100%);
+    color: white;
+    border: none;
+}
+
+.action-btn.primary:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--gm-shadow-md);
+}
+
+/* ==========================================
+   TABS NAVIGATION
+   ========================================== */
+.graph-tabs {
+    display: flex;
+    background: var(--gm-bg-secondary);
+    border-bottom: 1px solid var(--gm-border);
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.graph-tabs::-webkit-scrollbar {
+    display: none;
+}
+
+.graph-tab {
+    padding: var(--gm-spacing-md) var(--gm-spacing-lg);
+    border: none;
+    background: transparent;
+    color: var(--gm-text-secondary);
+    font-size: 0.875rem;
+    font-weight: var(--gm-font-weight-medium);
+    cursor: pointer;
+    position: relative;
+    white-space: nowrap;
+    transition: all var(--gm-transition-fast);
+    display: flex;
+    align-items: center;
+    gap: var(--gm-spacing-sm);
+    flex-shrink: 0;
+}
+
+.graph-tab:hover {
+    color: var(--gm-primary);
+    background: var(--gm-bg-tertiary);
+}
+
+.graph-tab.active {
+    color: var(--gm-primary);
+    background: var(--gm-bg-primary);
+}
+
+.graph-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80%;
+    height: 2px;
+    background: linear-gradient(90deg, var(--gm-primary) 0%, var(--gm-primary-dark) 100%);
+}
+
+.graph-tab[data-empty="true"] {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.graph-tab[data-empty="true"]:hover {
+    background: transparent;
+    color: var(--gm-text-tertiary);
+}
+
+.graph-tab i {
+    font-size: 1rem;
+    opacity: 0.8;
+}
+
+/* ==========================================
+   CONTENT AREA
+   ========================================== */
+.graph-content {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.chart-content-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--gm-spacing-xl);
+    background: var(--gm-bg-secondary);
+    display: block;
+}
+
+.chart-content-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.chart-content-container::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.chart-content-container::-webkit-scrollbar-thumb {
+    background: var(--gm-border);
+    border-radius: var(--gm-radius-full);
+}
+
+.chart-content-container::-webkit-scrollbar-thumb:hover {
+    background: var(--gm-text-tertiary);
+}
+
+.tab-panel {
+    display: none;
+}
+
+.tab-panel.active {
+    display: block;
+    animation: fadeInContent var(--gm-transition-normal);
+}
+
+.tab-panel[data-empty="true"] .chart-section {
+    opacity: 0.5;
+    position: relative;
+}
+
+.tab-panel[data-empty="true"] .chart-section::after {
+    content: 'Няма налични данни';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 1rem;
+    color: var(--gm-text-tertiary);
+    font-weight: var(--gm-font-weight-medium);
+    text-align: center;
+    padding: var(--gm-spacing-md);
+    background: var(--gm-bg-primary);
+    border-radius: var(--gm-radius-md);
+    box-shadow: var(--gm-shadow-sm);
+}
+
+@keyframes fadeInContent {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ==========================================
+   CHART SECTIONS
+   ========================================== */
+.chart-section {
+    margin-bottom: var(--gm-spacing-2xl);
+    animation: fadeInContent var(--gm-transition-normal);
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--gm-spacing-lg);
+    padding-bottom: var(--gm-spacing-md);
+    border-bottom: 1px solid var(--gm-border);
+    flex-wrap: wrap;
+    gap: var(--gm-spacing-sm);
+}
+
+.section-header h3 {
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: var(--gm-font-weight-semibold);
+    color: var(--gm-text-primary);
+    display: flex;
+    align-items: center;
+    gap: var(--gm-spacing-sm);
+}
+
+.chart-controls {
+    display: flex;
+    gap: var(--gm-spacing-md);
+    flex-wrap: wrap;
+}
+
+/* Toggle Switches for Chart Controls */
+.toggle-switch {
+    display: flex;
+    align-items: center;
+    gap: var(--gm-spacing-sm);
+    cursor: pointer;
+    user-select: none;
+    font-size: 0.875rem;
+    font-weight: var(--gm-font-weight-medium);
+}
+
+.toggle-switch input[type="checkbox"] {
+    appearance: none;
+    width: 44px;
+    height: 24px;
+    background: var(--gm-border);
+    border-radius: var(--gm-radius-full);
+    position: relative;
+    cursor: pointer;
+    transition: all var(--gm-transition-fast);
+    outline: none;
+    flex-shrink: 0;
+}
+
+.toggle-switch input[type="checkbox"]:checked {
+    background: linear-gradient(135deg, var(--gm-primary) 0%, var(--gm-primary-dark) 100%);
+}
+
+.toggle-switch input[type="checkbox"]::before {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: white;
+    top: 2px;
+    left: 2px;
+    transition: transform var(--gm-transition-fast);
+    box-shadow: var(--gm-shadow-sm);
+    transform: translateX(0);
+}
+
+.toggle-switch input[type="checkbox"]:checked::before {
+    transform: translateX(20px);
+}
+
+.toggle-switch span {
+    color: var(--gm-text-secondary);
+    cursor: pointer;
+}
+
+/* Chart Container */
+.chart-container {
+    background: var(--gm-bg-primary);
+    border-radius: var(--gm-radius-lg);
+    padding: var(--gm-spacing-xl);
+    border: 1px solid var(--gm-border);
+    box-shadow: var(--gm-shadow-sm);
+    transition: all var(--gm-transition-fast);
+    position: relative;
+    min-height: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.chart-container:hover {
+    box-shadow: var(--gm-shadow-md);
+    border-color: var(--gm-primary-light);
+}
+
+.chart-container canvas {
+    max-height: 100%;
+    max-width: 100%;
+}
+
+/* ==========================================
+   LOADING STATE
+   ========================================== */
+.loading-container {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--gm-spacing-2xl);
+    min-height: 300px;
+    color: var(--gm-text-secondary);
+}
+
+.loading-container.active {
+    display: flex;
+}
+
+.loading-spinner {
+    width: 48px;
+    height: 48px;
+    border: 3px solid var(--gm-border);
+    border-top: 3px solid var(--gm-primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: var(--gm-spacing-md);
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.loading-text {
+    font-size: 0.875rem;
+    font-weight: var(--gm-font-weight-medium);
+}
+
+/* ==========================================
+   EMPTY STATE
+   ========================================== */
+.empty-state {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--gm-spacing-2xl);
+    text-align: center;
+    min-height: 300px;
+    color: var(--gm-text-secondary);
+}
+
+.empty-state.active {
+    display: flex;
+}
+
+.empty-icon {
+    font-size: 4rem;
+    color: var(--gm-text-tertiary);
+    margin-bottom: var(--gm-spacing-lg);
+    opacity: 0.5;
+}
+
+.empty-state h3 {
+    font-size: 1.125rem;
+    font-weight: var(--gm-font-weight-semibold);
+    color: var(--gm-text-primary);
+    margin: var(--gm-spacing-sm) 0;
+}
+
+.empty-state p {
+    font-size: 0.875rem;
+    margin-bottom: var(--gm-spacing-lg);
+    max-width: 400px;
+    line-height: 1.4;
+}
+
+/* ==========================================
+   RESPONSIVE DESIGN
+   ========================================== */
+@media (max-width: 1200px) {
+    .config-row {
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: var(--gm-spacing-md);
+    }
+}
+
+@media (max-width: 768px) {
+    .graph-modal-overlay {
+        padding: var(--gm-spacing-md);
+    }
+
+    .graph-modal-container {
+        max-height: 100vh;
+        border-radius: var(--gm-radius-lg);
+    }
+
+    .graph-modal-header {
+        padding: var(--gm-spacing-lg);
+    }
+
+    .config-row {
+        grid-template-columns: 1fr;
+    }
+
+    .action-buttons {
+        flex-direction: column;
+    }
+
+    .action-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .chart-content-container {
+        padding: var(--gm-spacing-md);
+    }
+
+    .chart-container {
+        padding: var(--gm-spacing-lg);
+        min-height: 250px;
+    }
+
+    .graph-tabs {
+        padding: 0 var(--gm-spacing-md);
+    }
+
+    .graph-tab {
+        padding: var(--gm-spacing-sm) var(--gm-spacing-md);
+        font-size: 0.8125rem;
+        gap: var(--gm-spacing-xs);
+    }
+
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--gm-spacing-md);
+    }
+
+    .chart-controls {
+        width: 100%;
+        justify-content: flex-start;
+        gap: var(--gm-spacing-sm);
+    }
+}
+
+@media (max-width: 480px) {
+    .modal-title {
+        font-size: 1.25rem;
+    }
+
+    .modal-subtitle {
+        font-size: 0.8125rem;
+    }
+
+    .graph-config-panel,
+    .graph-modal-header {
+        padding: var(--gm-spacing-md);
+    }
+
+    .chart-container {
+        min-height: 200px;
+        padding: var(--gm-spacing-md);
+    }
+
+    .graph-tab {
+        font-size: 0.75rem;
+    }
+
+    .toggle-switch {
+        font-size: 0.8125rem;
+    }
+}
+
+/* ==========================================
+   UTILITY CLASSES
+   ========================================== */
+.text-primary { color: var(--gm-primary) !important; }
+.text-success { color: var(--gm-success) !important; }
+.text-warning { color: var(--gm-warning) !important; }
+.text-danger { color: var(--gm-danger) !important; }
+.text-info { color: var(--gm-info) !important; }
+
+.bg-primary { background-color: var(--gm-primary) !important; }
+.bg-secondary { background-color: var(--gm-bg-secondary) !important; }
+
+.bg-gradient-primary {
+    background: linear-gradient(135deg, var(--gm-primary) 0%, var(--gm-primary-dark) 100%) !important;
+}
+
+/* Accessibility: Focus styles */
+*:focus-visible {
+    outline: 2px solid var(--gm-primary);
+    outline-offset: 2px;
+}
+
+/* Dark mode support (optional, for future) */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --gm-bg-primary: #000000;
+        --gm-bg-secondary: #1c1c1e;
+        --gm-text-primary: #ffffff;
+        --gm-text-secondary: #e5e5e7;
+        --gm-text-tertiary: #8e8e93;
+        --gm-border: #38383a;
+    }
+
+    .graph-modal-header {
+        background: linear-gradient(135deg, var(--gm-primary-dark) 0%, var(--gm-primary) 100%);
+    }
+
+    .action-btn.primary {
+        background: linear-gradient(135deg, var(--gm-primary-dark) 0%, var(--gm-primary) 100%);
+    }
+}
