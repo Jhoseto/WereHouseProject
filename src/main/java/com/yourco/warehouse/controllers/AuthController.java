@@ -38,7 +38,7 @@ public class AuthController {
     @PostMapping("/login")
     public String processLogin(@RequestParam String username,
                                @RequestParam String password,
-                               @RequestParam String role,
+                               @RequestParam(required = false) String role, // вече не е задължителен
                                @RequestParam(required = false) String rememberMe,
                                HttpServletRequest request,
                                HttpServletResponse response,
@@ -77,13 +77,14 @@ public class AuthController {
                             "Ако смятате че това е грешка, изпратете email на support@sunnycomers.bg с вашето потребителско име.");
             redirectAttributes.addFlashAttribute("errorTitle", "Деактивиран акаунт");
 
-            // Логваме опита за влизане с деактивиран акаунт
             System.out.println("SECURITY WARNING: Опит за влизане с деактивиран акаунт: " + username);
             return "redirect:/";
         }
 
-        // 4. ПРОВЕРКА НА РОЛЯТА (опционално)
-        if (!role.equals("CLIENT") && !role.equals("EMPLOYER")) {
+        // 4. ПРОВЕРКА НА РОЛЯТА (от акаунта, а не от клиента)
+        Role userRole = user.getRole();
+
+        if (userRole != Role.CLIENT && userRole != Role.EMPLOYER && userRole != Role.ADMIN) {
             redirectAttributes.addFlashAttribute("errorMessage", "Невалидна роля за влизане.");
             redirectAttributes.addFlashAttribute("errorTitle", "Грешка в системата");
             return "redirect:/";
@@ -100,11 +101,10 @@ public class AuthController {
                                 "За reset на парола изпратете email на support@sunnycomers.bg");
                 redirectAttributes.addFlashAttribute("errorTitle", "Грешна парола");
 
-                // Логваме неуспешния опит
                 System.out.println("SECURITY WARNING: Неуспешен опит за влизане с грешна парола: " + username);
 
                 return "redirect:/";
-            }else {
+            } else {
                 SecurityContextHolder.getContext().setAuthentication(authentication);
 
                 request.getSession().setAttribute(
@@ -115,6 +115,7 @@ public class AuthController {
                 if (rememberMe != null && !rememberMe.isEmpty()) {
                     rememberMeServices.loginSuccess(request, response, authentication);
                 }
+
                 String welcomeMessage = getPersonalizedWelcomeMessage(user);
                 String welcomeTitle = getGreetingByTime() + ", " + user.getUsername();
 
@@ -122,22 +123,19 @@ public class AuthController {
                 redirectAttributes.addFlashAttribute("successTitle", welcomeTitle);
                 System.out.println("SUCCESS: Потребител " + username + " е автентикиран успешно!");
 
-                if (user.getRole().equals(Role.EMPLOYER)) {
+                // Редирект според ролята
+                if (userRole.equals(Role.EMPLOYER)) {
                     return "redirect:/employer/dashboard";
-
-                } else if (user.getRole().equals(Role.ADMIN)){
+                } else if (userRole.equals(Role.ADMIN)) {
                     return "redirect:/admin/dashboard";
-
                 } else {
                     return "redirect:/catalog";
                 }
-
             }
 
         } catch (Exception e) {
             System.out.println("ГРЕШКА при автентикация: " + e.getMessage());
 
-            // Специфични съобщения според exception-а
             if (e.getMessage().contains("деактивиран")) {
                 redirectAttributes.addFlashAttribute("errorMessage",
                         "Акаунтът ви е деактивиран от администратор. За повече информация се свържете с IT отдела.");
@@ -152,6 +150,7 @@ public class AuthController {
             return "redirect:/";
         }
     }
+
 
     // HELPER МЕТОДИ ОСТАВАТ СЪЩИТЕ
     private String getPersonalizedWelcomeMessage(UserEntity user) {

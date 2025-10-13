@@ -226,9 +226,11 @@ public class ProductServiceImpl implements ProductService {
                 .map(p -> {
                     int qty = p.getQuantityAvailable() != null ? p.getQuantityAvailable() : 0;
                     BigDecimal price = p.getPrice() != null ? p.getPrice() : BigDecimal.ZERO;
-                    return price.multiply(BigDecimal.valueOf(qty));
+                    BigDecimal value = price.multiply(BigDecimal.valueOf(qty));
+                    return value;
                 })
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+
 
         // Categories count
         long categoriesCount = productRepository.findDistinctCategories().size();

@@ -2,7 +2,10 @@ package com.yourco.warehouse.service;
 
 import com.yourco.warehouse.dto.InventoryAdjustmentDTO;
 import com.yourco.warehouse.dto.ProductAdminDTO;
+import com.yourco.warehouse.dto.importSystem.ImportEventDTO;
+
 import java.util.List;
+import java.util.Map;
 
 public interface InventoryAdjustmentService {
 
@@ -28,4 +31,24 @@ public interface InventoryAdjustmentService {
      * Получава всички корекции (за reports таба)
      */
     List<InventoryAdjustmentDTO> getAllAdjustments();
+
+    /**
+     * Получава смесена история от adjustments и import events сортирана по дата
+     * Използва се за History таба в inventory management
+     */
+    Map<String, Object> getMixedHistory();
+
+    /**
+     * Получава детайли за конкретен import event с всички артикули
+     * Използва се за детайлната страница на импорт
+     * @param importEventId ID на импорт събитието
+     * @return ImportEventDTO с всички данни и изчислени статистики
+     */
+    ImportEventDTO getImportEventDetails(Long importEventId);
+
+    /**
+     * Получава списък с всички import events за навигационния dropdown
+     * Връща компактна информация без артикулите за бърза навигация
+     */
+    List<ImportEventDTO> getImportEventsForNavigation();
 }

@@ -142,8 +142,21 @@ class InventoryApi {
     }
 
     // GET all adjustments
-    async getAdjustments() {
-        return this.request('/adjustments');
+    // ЗАМЕНЯМЕ getAdjustments() с новия метод:
+    async getHistory() {
+        const response = await fetch('/admin/inventory/history', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        return await response.json();
     }
 
     // POST create adjustment
@@ -160,6 +173,38 @@ class InventoryApi {
             method: 'POST',
             body: JSON.stringify(data)
         });
+    }
+
+    async getImportEventDetails(importEventId) {
+        const response = await fetch(`/admin/inventory/import-events/${importEventId}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        return await response.json();
+    }
+
+    async getImportEventsForNavigation() {
+        const response = await fetch('/admin/inventory/import-events', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        return await response.json();
     }
 }
 
@@ -1094,31 +1139,70 @@ class AdjustmentHistory {
         this.loadingEl = document.getElementById('adjustments-loading');
         this.section = document.getElementById('history-section');
         this.adjustments = [];
+        this.importEvents = [];
+        this.mixedHistory = [];
     }
 
     async loadHistory() {
         this.showLoading();
 
         try {
-            const response = await window.api.getAdjustments();
+            const response = await window.api.getHistory(); // ПРОМЕНЕН МЕТОД
+
             this.adjustments = response.adjustments || [];
+            this.importEvents = response.importEvents || []; // НОВО
+
+            // Смесваме двата типа записи и ги сортираме по дата
+            this.mixedHistory = this.createMixedHistory();
+
             this.render();
         } catch (error) {
-            console.error('Failed to load adjustments history:', error);
+            console.error('Failed to load history:', error);
             window.toastManager?.error('Грешка при зареждане на историята');
         } finally {
             this.hideLoading();
         }
     }
 
+    // НОВ МЕТОД ЗА СМЕСВАНЕ НА ИСТОРИЯТА:
+    createMixedHistory() {
+        const mixed = [];
+
+        // Добавяме adjustments с тип 'adjustment'
+        this.adjustments.forEach(adj => {
+            mixed.push({
+                type: 'adjustment',
+                data: adj,
+                timestamp: new Date(adj.performedAt)
+            });
+        });
+
+        // Добавяме import events с тип 'import'
+        this.importEvents.forEach(imp => {
+            mixed.push({
+                type: 'import',
+                data: imp,
+                timestamp: new Date(imp.completedAt || imp.uploadedAt)
+            });
+        });
+
+        // Сортираме по дата (най-нови първи)
+        mixed.sort((a, b) => b.timestamp - a.timestamp);
+
+        return mixed;
+    }
+
+
     render() {
-        if (!this.adjustments.length) {
+        if (!this.tbody) return;
+
+        if (this.mixedHistory.length === 0) {
             this.tbody.innerHTML = `
                 <tr class="empty-state">
                     <td colspan="9">
                         <div class="empty-state-content">
-                            <i class="bi bi-inbox"></i>
-                            <p>Няма намерени корекции</p>
+                            <i class="bi bi-clock-history"></i>
+                            <p>Няма записи в историята</p>
                         </div>
                     </td>
                 </tr>
@@ -1126,10 +1210,19 @@ class AdjustmentHistory {
             return;
         }
 
-        this.tbody.innerHTML = this.adjustments.map(adj => this.renderRow(adj)).join('');
+        // Рендерираме смесената история
+        const rows = this.mixedHistory.map(entry => {
+            if (entry.type === 'adjustment') {
+                return this.renderAdjustmentRow(entry.data);
+            } else if (entry.type === 'import') {
+                return this.renderImportEventRow(entry.data);
+            }
+        }).join('');
+
+        this.tbody.innerHTML = rows;
     }
 
-    renderRow(adj) {
+    renderAdjustmentRow(adj) {
         const typeBadge = this.getTypeBadge(adj.adjustmentType);
         const changeBadge = this.getChangeBadge(adj.quantityChange);
         const reasonText = this.getReasonText(adj.reason);
@@ -1165,6 +1258,80 @@ class AdjustmentHistory {
                 </td>
             </tr>
         `;
+    }
+
+
+    // МЕТОД ЗА РЕНДЕРИРАНЕ НА IMPORT EVENT РЕДОВЕ:
+    renderImportEventRow(importEvent) {
+        const formattedDate = this.formatDate(importEvent.completedAt || importEvent.uploadedAt);
+        const fileName = this.escapeHtml(importEvent.fileName);
+        const supplierInfo = importEvent.supplierName ?
+            `<div class="supplier-info">Доставчик: ${this.escapeHtml(importEvent.supplierName)}</div>` : '';
+
+        return `
+            <tr class="import-event-row" data-import-id="${importEvent.id}">
+                <td class="date-cell">${formattedDate}</td>
+                <td class="import-file-cell" colspan="2">
+                    <div class="import-event-info">
+                        <div class="import-header">
+                            <i class="bi bi-cloud-upload import-icon"></i>
+                            <strong class="import-title">Импорт на стока</strong>
+                            <span class="file-name">${fileName}</span>
+                        </div>
+                        ${supplierInfo}
+                        <div class="import-stats">
+                            <span class="stat-item">
+                                <i class="bi bi-plus-circle"></i>
+                                ${importEvent.newItems || 0} нови
+                            </span>
+                            <span class="stat-item">
+                                <i class="bi bi-arrow-up-circle"></i>
+                                ${importEvent.updatedItems || 0} обновени
+                            </span>
+                            <span class="stat-item">
+                                <i class="bi bi-box"></i>
+                                ${importEvent.totalItems || 0} общо
+                            </span>
+                        </div>
+                    </div>
+                </td>
+                <td class="import-value-cell" colspan="3">
+                    <div class="import-financial-info">
+                        <div class="total-value">
+                            Стойност: ${this.formatCurrency(importEvent.totalPurchaseValue)}
+                        </div>
+                        ${importEvent.invoiceNumber ?
+            `<div class="invoice-info">Фактура: ${this.escapeHtml(importEvent.invoiceNumber)}</div>` : ''
+        }
+                    </div>
+                </td>
+                <td class="import-actions-cell" colspan="2">
+                    <button class="btn-view-import" onclick="openImportDetails(${importEvent.id})" 
+                            title="Виж детайли на импорта">
+                        <i class="bi bi-eye"></i> Детайли
+                    </button>
+                </td>
+            </tr>
+        `;
+    }
+
+    //HELPER МЕТОДИ:
+    formatCurrency(amount) {
+        if (!amount) return '0.00 лв';
+        return new Intl.NumberFormat('bg-BG', {
+            style: 'currency',
+            currency: 'BGN',
+            minimumFractionDigits: 2
+        }).format(amount);
+    }
+
+    getAdjustmentTypeText(type) {
+        const types = {
+            'ADD': 'Добавяне',
+            'REMOVE': 'Премахване',
+            'INITIAL': 'Начално'
+        };
+        return types[type] || type;
     }
 
     getTypeBadge(type) {
@@ -1305,3 +1472,8 @@ document.addEventListener('click', (e) => {
         setTimeout(checkAndInit, 100);
     }
 });
+
+window.openImportDetails = function(importEventId) {
+    const url = `/admin/detail-import-stock?id=${importEventId}`;
+    window.open(url, '_blank');
+};

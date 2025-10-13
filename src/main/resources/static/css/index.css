@@ -161,35 +161,35 @@
     font-size: 17px;
 }
 
-.btn-primary {
+.btn-primary1 {
     background: var(--idx-accent);
     color: var(--idx-white);
     box-shadow: 0 4px 16px rgba(125, 211, 192, 0.25);
 }
 
-.btn-primary:hover {
+.btn-primary1:hover {
     background: var(--idx-accent-hover);
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(125, 211, 192, 0.35);
 }
 
-.btn-primary:active {
+.btn-primary1:active {
     transform: translateY(0);
 }
 
-.btn-secondary {
+.btn-secondary1 {
     background: transparent;
     color: var(--idx-text);
     border: 1.5px solid var(--idx-border);
 }
 
-.btn-secondary:hover {
+.btn-secondary1:hover {
     background: var(--idx-bg-alt);
     border-color: var(--idx-accent);
     color: var(--idx-accent);
 }
 
-/* Hero Card */
+/* Hero Card Video */
 .hero-visual {
     position: relative;
     display: flex;
@@ -199,23 +199,33 @@
 
 .hero-card {
     width: 100%;
-    max-width: 500px;
-    background: var(--idx-white);
+    max-width: 600px;
     border-radius: 20px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08), 0 0 0 1px var(--idx-border);
     overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08), 0 0 0 1px var(--idx-border);
     transition: all 0.3s ease;
+    background: #ebebeb; /* черен фон за видео fallback */
+    display: flex;
+    flex-direction: column;
 }
 
-.hero-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.12), 0 0 0 1px var(--idx-accent);
+.hero-card video {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 0 0 25px 25px;
+    object-fit: cover;
+    transition: transform 0.3s ease;
 }
+
 
 .hero-card-header {
-    background: var(--idx-bg-alt);
+    background: rgba(255, 255, 255, 0.05);
     padding: 12px 16px;
     border-bottom: 1px solid var(--idx-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .card-dots {
@@ -235,12 +245,15 @@
 .dot-green { background: #28ca42; }
 
 .hero-card:hover .dot {
-    transform: scale(1.1);
+    transform: scale(1.2);
 }
 
 .hero-card-content {
-    padding: var(--idx-space-lg);
+    padding: 15px;
     background: var(--idx-white);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
 }
 
 .preview-interface {

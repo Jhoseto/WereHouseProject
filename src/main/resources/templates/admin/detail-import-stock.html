@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="bg">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Детайли на импорт | Warehouse Portal</title>
+
+    <!-- Include Top HTML Imports Fragment -->
+    <th:block th:replace="~{fragments/topHtmlImports :: topImports}"></th:block>
+
+    <!-- Admin Dashboard Base Styles -->
+    <link rel="stylesheet" href="/css/admin/adminDashboard.css">
+    <link rel="stylesheet" href="/css/admin/inventoryManagement.css">
+
+    <!-- Detail Import Stock Specific Styles -->
+    <link rel="stylesheet" href="/css/admin/detailImportStock.css">
+
+    <meta name="description" content="Детайлен изглед на импорт на стока с пълни статистики и анализи">
+</head>
+<body class="detail-import-stock-page">
+
+<!-- Flash Messages Data -->
+<div th:replace="~{fragments/toastSystem :: flashData}"></div>
+
+<!-- Include Navigation Fragment -->
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+
+<!-- Toast Container -->
+<div th:replace="~{fragments/toastSystem :: toastContainer}"></div>
+
+<!-- Main Detail Import Stock Section -->
+<section class="detail-import-stock-section">
+    <div class="container">
+
+        <!-- ==========================================
+             HEADER WITH NAVIGATION
+             ========================================== -->
+        <div class="detail-header">
+            <div class="header-left">
+                <div class="page-title">
+                    <i class="bi bi-cloud-upload-fill"></i>
+                    <h1 id="import-title">Детайли на импорт</h1>
+                </div>
+                <div class="breadcrumb">
+                    <a href="/admin/dashboard?tab=inventory" class="breadcrumb-link">
+                        <i class="bi bi-arrow-left"></i> Назад към инвентар
+                    </a>
+                </div>
+            </div>
+
+            <div class="header-right">
+                <!-- Import Navigation Dropdown -->
+                <div class="import-navigation">
+                    <label for="import-selector">Други импорти:</label>
+                    <select id="import-selector" class="import-selector">
+                        <option value="">Зареждане...</option>
+                    </select>
+                </div>
+
+                <!-- Refresh Button -->
+                <button id="btn-refresh-import" class="btn-icon" title="Опресни данните">
+                    <i class="bi bi-arrow-clockwise"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- ==========================================
+             IMPORT SUMMARY CARDS
+             ========================================== -->
+        <div class="import-summary-grid">
+            <div class="summary-card main-info">
+                <div class="card-header">
+                    <i class="bi bi-info-circle"></i>
+                    <h3>Основна информация</h3>
+                </div>
+                <div class="card-body">
+                    <div class="info-row">
+                        <span class="label">Файл:</span>
+                        <span id="info-filename" class="value">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Дата:</span>
+                        <span id="info-date" class="value">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Потребител:</span>
+                        <span id="info-user" class="value">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Доставчик:</span>
+                        <span id="info-supplier" class="value">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Фактура:</span>
+                        <span id="info-invoice" class="value">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="summary-card statistics">
+                <div class="card-header">
+                    <i class="bi bi-bar-chart"></i>
+                    <h3>Статистики</h3>
+                </div>
+                <div class="card-body">
+                    <div class="stat-item">
+                        <span class="stat-value" id="stat-total-items">0</span>
+                        <span class="stat-label">Общо артикули</span>
+                    </div>
+                    <div class="stat-item new">
+                        <span class="stat-value" id="stat-new-items">0</span>
+                        <span class="stat-label">Нови продукти</span>
+                    </div>
+                    <div class="stat-item updated">
+                        <span class="stat-value" id="stat-updated-items">0</span>
+                        <span class="stat-label">Обновени</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="summary-card statistics">
+                <div class="card-header">
+                    <i class="bi bi-bar-chart"></i>
+                    <h3>Бележки</h3>
+                </div>
+                <div class="card-body">
+                    <p id="info-notes">-</p>
+                </div>
+            </div>
+
+            <div class="summary-card financials">
+                <div class="card-header">
+                    <i class="bi bi-currency-exchange"></i>
+                    <h3>Финансова информация</h3>
+                </div>
+                <div class="card-body">
+                    <div class="financial-item">
+                        <span class="financial-value" id="financial-purchase-value">0.00 лв</span>
+                        <span class="financial-label">Обща закупна стойност</span>
+                    </div>
+                    <div class="financial-item">
+                        <span class="financial-value" id="financial-selling-value">0.00 лв</span>
+                        <span class="financial-label">Обща продажна стойност</span>
+                    </div>
+                    <div class="financial-item">
+                        <span class="financial-value" id="financial-average-markup">0.00%</span>
+                        <span class="financial-label">Среден марж</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==========================================
+             FILTERS AND SEARCH
+             ========================================== -->
+        <div class="filters-section">
+            <div class="filters-row">
+                <div class="search-box">
+                    <i class="bi bi-search"></i>
+                    <input type="text" id="search-input" placeholder="Търси по SKU, име, категория..." autocomplete="off">
+                    <button id="clear-search" class="clear-btn" style="display: none;">
+                        <i class="bi bi-x"></i>
+                    </button>
+                </div>
+
+                <div class="filter-group">
+                    <select id="action-type-filter" class="filter-select">
+                        <option value="">Всички операции</option>
+                        <option value="CREATED">Само нови продукти</option>
+                        <option value="UPDATED">Само обновявания</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <select id="category-filter" class="filter-select">
+                        <option value="">Всички категории</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <input type="number" id="min-price-filter" placeholder="Мин. цена" step="0.01" min="0">
+                    <input type="number" id="max-price-filter" placeholder="Макс. цена" step="0.01" min="0">
+                </div>
+
+                <div class="filters-actions">
+                    <button id="reset-filters" class="btn-secondary">
+                        <i class="bi bi-arrow-counterclockwise"></i> Изчисти
+                    </button>
+                    <button id="export-data" class="btn-primary">
+                        <i class="bi bi-download"></i> Експорт
+                    </button>
+                </div>
+            </div>
+
+            <!-- Filter Status Bar -->
+            <div id="filter-status" class="filter-status" style="display: none;">
+                <span class="status-text">Показани <span id="visible-count">0</span> от <span id="total-count">0</span> артикула</span>
+                <div class="active-filters" id="active-filters"></div>
+            </div>
+        </div>
+
+        <!-- ==========================================
+             ITEMS TABLE
+             ========================================== -->
+        <div class="items-table-section">
+            <div class="table-wrapper">
+                <table class="items-table">
+                    <thead>
+                    <tr>
+                        <th data-sort="productSku">SKU <i class="bi bi-chevron-expand"></i></th>
+                        <th data-sort="productName">Наименование <i class="bi bi-chevron-expand"></i></th>
+                        <th data-sort="productCategory">Категория <i class="bi bi-chevron-expand"></i></th>
+                        <th data-sort="actionType">Операция</th>
+                        <th data-sort="quantityChange">Количество <i class="bi bi-chevron-expand"></i></th>
+                        <th data-sort="newPurchasePrice">Закупна цена <i class="bi bi-chevron-expand"></i></th>
+                        <th data-sort="newSellingPrice">Продажна цена <i class="bi bi-chevron-expand"></i></th>
+                        <th data-sort="markupPercent">Марж % <i class="bi bi-chevron-expand"></i></th>
+                        <th data-sort="totalPurchaseValue">Стойност <i class="bi bi-chevron-expand"></i></th>
+                    </tr>
+                    </thead>
+                    <tbody id="items-table-body">
+                    <!-- Rows will be inserted by JavaScript -->
+                    <tr class="empty-state">
+                        <td colspan="9">
+                            <div class="empty-state-content">
+                                <i class="bi bi-inbox"></i>
+                                <p>Няма данни за показване</p>
+                            </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Table Pagination -->
+            <div class="table-pagination" id="table-pagination" style="display: none;">
+                <div class="pagination-info">
+                    <span>Показани <span id="pagination-start">0</span>-<span id="pagination-end">0</span> от <span id="pagination-total">0</span></span>
+                </div>
+                <div class="pagination-controls">
+                    <button id="pagination-prev" class="pagination-btn" disabled>
+                        <i class="bi bi-chevron-left"></i>
+                    </button>
+                    <span class="pagination-pages" id="pagination-pages"></span>
+                    <button id="pagination-next" class="pagination-btn" disabled>
+                        <i class="bi bi-chevron-right"></i>
+                    </button>
+                </div>
+                <div class="pagination-size">
+                    <select id="pagination-size-select">
+                        <option value="25">25 на страница</option>
+                        <option value="50" selected>50 на страница</option>
+                        <option value="100">100 на страница</option>
+                        <option value="all">Всички</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div class="loading-state" id="loading-state" style="display: none;">
+            <div class="spinner-large"></div>
+            <p>Зареждане на импорт данни...</p>
+        </div>
+
+    </div>
+</section>
+
+<!-- Include Footer Fragment -->
+<div th:replace="~{fragments/footer :: footer}"></div>
+
+<!-- Include Bottom Imports Fragment -->
+<th:block th:replace="~{fragments/bottomHtmlImports :: bottomImports}"></th:block>
+
+<!-- Detail Import Stock JavaScript -->
+<script src="/js/adminDashboard/detailImportStock.js"></script>
+
+</body>
+</html>

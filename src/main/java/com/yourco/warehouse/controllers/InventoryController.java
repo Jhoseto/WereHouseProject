@@ -3,6 +3,7 @@ package com.yourco.warehouse.controllers;
 import com.yourco.warehouse.dto.InventoryAdjustmentDTO;
 import com.yourco.warehouse.dto.ProductAdminDTO;
 import com.yourco.warehouse.dto.ProductStatsDTO;
+import com.yourco.warehouse.dto.importSystem.ImportEventDTO;
 import com.yourco.warehouse.service.InventoryAdjustmentService;
 import com.yourco.warehouse.service.InventoryBroadcastService;
 import com.yourco.warehouse.service.ProductService;
@@ -419,4 +420,77 @@ public class InventoryController {
                         "message", message
                 ));
     }
+
+
+    /**
+     * GET /admin/inventory/history - Смесена история от adjustments и import events
+     * Заменя стария /adjustments endpoint с по-богата функционалност
+     */
+    @GetMapping("/history")
+    public ResponseEntity<Map<String, Object>> getHistory() {
+
+        try {
+            Map<String, Object> history = adjustmentService.getMixedHistory();
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.putAll(history);
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            log.error("Error loading history", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("success", false, "message", "Грешка при зареждане на историята"));
+        }
+    }
+
+    /**
+     * GET /admin/inventory/import-events/{id} - Детайли за конкретен import event
+     * Използва се за отварянето на детайлната страница
+     */
+    @GetMapping("/import-events/{id}")
+    public ResponseEntity<Map<String, Object>> getImportEventDetails(@PathVariable Long id) {
+
+        try {
+            ImportEventDTO importEvent = adjustmentService.getImportEventDetails(id);
+
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "importEvent", importEvent
+            ));
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("success", false, "message", e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error loading import event details", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("success", false, "message", "Грешка при зареждане на детайли"));
+        }
+    }
+
+    /**
+     * GET /admin/inventory/import-events - Всички import events за навигация
+     * Използва се в dropdown менюто на детайлната страница
+     */
+    @GetMapping("/import-events")
+    public ResponseEntity<Map<String, Object>> getImportEventsForNavigation() {
+
+        try {
+            List<ImportEventDTO> importEvents = adjustmentService.getImportEventsForNavigation();
+
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "importEvents", importEvents
+            ));
+
+        } catch (Exception e) {
+            log.error("Error loading import events for navigation", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("success", false, "message", "Грешка при зареждане на импорт събития"));
+        }
+    }
+
+
 }

@@ -137,6 +137,7 @@ public class ProductEntity {
         this.price = price != null ? price.setScale(2, RoundingMode.HALF_UP) : BigDecimal.ZERO;
     }
 
+
     public int getVatRate() {
         return vatRate;
     }

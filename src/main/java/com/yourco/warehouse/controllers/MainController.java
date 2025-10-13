@@ -14,6 +14,7 @@ import com.yourco.warehouse.service.ClientOrderService;
 import com.yourco.warehouse.utils.RequestUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.csrf.CsrfToken;
@@ -22,7 +23,10 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.context.request.RequestAttributes;
+import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.support.RequestContextUtils;
+
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -327,6 +331,46 @@ public class MainController {
             return "error/general";
         }
     }
+
+
+
+    /**
+     * Детайлна страница за импорт на стока
+     * Достъпна само за администратори
+     * URL: /admin/detail-import-stock?id={importEventId}
+     */
+    @GetMapping("/admin/detail-import-stock")
+    @PreAuthorize("hasRole('ADMIN')")
+    public String detailImportStock(@RequestParam("id") Long importEventId,
+                                    Model model,
+                                    Authentication authentication, WebRequest webRequest) {
+        try {
+
+            // Валидираме че import event ID е валиден
+            if (importEventId == null || importEventId <= 0) {
+                return "redirect:/admin/dashboard?tab=inventory&error=invalid-import-id";
+            }
+
+            // Добавяме основни модел атрибути
+            model.addAttribute("importEventId", importEventId);
+            model.addAttribute("pageTitle", "Детайли на импорт");
+            model.addAttribute("pageDescription", "Подробен анализ на импорт събитие");
+
+            // Информация за текущия потребител
+            UserEntity currentUser = userService.getCurrentUser();
+            model.addAttribute("currentUser", currentUser);
+
+            return "admin/detail-import-stock";
+
+        } catch (Exception e) {
+
+            model.addAttribute("errorMessage", "Възникна грешка при зареждане на детайлите за импорт");
+            model.addAttribute("errorTitle", "Системна грешка");
+
+            return "error/general";
+        }
+    }
+
 
     @GetMapping("/about")
     public String about(Model model) {
