@@ -1,43 +1,58 @@
-<div th:fragment="graphModal" id="graph-modal" class="graph-modal-overlay" role="dialog" aria-labelledby="modal-title" aria-modal="true">
-    <div class="graph-modal-container" role="document">
-        <!-- MODAL HEADER WITH CONTROLS -->
-        <div class="graph-modal-header">
-            <div class="header-left">
-                <h2 class="modal-title" id="modal-title">
-                    <i class="bi bi-graph-up-arrow" aria-hidden="true"></i>
+<div th:fragment="graphModal" id="graph-modal" class="gm-modal-overlay" role="dialog" aria-labelledby="modal-title" aria-modal="true">
+    <div class="gm-container" role="document">
+        <!-- MODAL HEADER -->
+        <div class="gm-header">
+            <div class="gm-header-left">
+                <h2 class="gm-title" id="modal-title">
+                    <i class="bi bi-graph-up-arrow"></i>
                     Графичен анализ
                 </h2>
-                <p class="modal-subtitle" id="graph-subtitle">Анализ на продуктови данни и тенденции</p>
+                <p class="gm-subtitle" id="graph-subtitle">Анализ на продуктови данни</p>
             </div>
-            <div class="header-right">
-                <button id="graph-modal-close" class="close-button" aria-label="Затвори модала">
-                    <i class="bi bi-x-lg" aria-hidden="true"></i>
-                </button>
-            </div>
+            <button id="graph-modal-close" class="gm-close-btn" aria-label="Затвори">
+                <i class="bi bi-x-lg"></i>
+            </button>
         </div>
 
-        <!-- CONFIGURATION PANEL -->
-        <div class="graph-config-panel">
-            <div class="config-row">
-                <!-- Product Selection -->
-                <div class="config-group">
-                    <label for="product-selector">Продукти за анализ</label>
-                    <div class="selector-wrapper">
-                        <select id="product-selector" class="graph-select" multiple aria-label="Избор на продукти">
-                            <option value="" disabled>Зареждане...</option>
-                        </select>
-                        <div class="select-helper">
-                            <span class="helper-text">Избери продукти или остави празно за всички</span>
-                            <button id="select-all-products" class="helper-button" type="button" aria-label="Избери всички продукти">Всички</button>
-                            <button id="clear-product-selection" class="helper-button" type="button" aria-label="Изчисти избора на продукти">Изчисти</button>
+        <!-- CONFIG PANEL -->
+        <div class="gm-config-panel">
+            <div class="gm-config-grid">
+                <!-- Product Selector -->
+                <div class="gm-config-group">
+                    <label class="gm-config-label">Продукти за анализ</label>
+                    <div class="gm-product-selector-wrapper">
+                        <div class="gm-search-box">
+                            <i class="bi bi-search"></i>
+                            <input type="text" id="product-search" class="gm-product-search-input" placeholder="Търси по SKU или име...">
+                            <button id="clear-search" class="gm-clear-search-btn" style="display:none;">
+                                <i class="bi bi-x"></i>
+                            </button>
+                        </div>
+
+                        <div class="gm-selected-products" id="selected-products-display">
+                            <span class="gm-no-selection">Няма избрани продукти (всички)</span>
+                        </div>
+
+                        <div class="gm-product-dropdown" id="product-dropdown">
+                            <div class="gm-dropdown-actions">
+                                <button id="select-all-products" class="gm-dropdown-action-btn">
+                                    <i class="bi bi-check-all"></i> Всички
+                                </button>
+                                <button id="clear-product-selection" class="gm-dropdown-action-btn">
+                                    <i class="bi bi-x-circle"></i> Изчисти
+                                </button>
+                            </div>
+                            <div class="gm-product-list" id="product-list">
+                                <!-- Динамично -->
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Time Range -->
-                <div class="config-group">
-                    <label for="time-range-selector">Времеви период</label>
-                    <select id="time-range-selector" class="graph-select" aria-label="Избор на времеви период">
+                <div class="gm-config-group">
+                    <label class="gm-config-label">Времеви период</label>
+                    <select id="time-range-selector" class="gm-select">
                         <option value="7d">Последните 7 дни</option>
                         <option value="30d" selected>Последните 30 дни</option>
                         <option value="90d">Последните 3 месеца</option>
@@ -46,217 +61,211 @@
                     </select>
                 </div>
 
-                <!-- Analysis Options -->
-                <div class="config-group">
-                    <label>Анализи за включване</label>
-                    <div class="checkbox-group">
-                        <label class="checkbox-item">
-                            <input type="checkbox" id="include-categories" checked aria-label="Включи категорийни анализи">
-                            <span class="checkmark" aria-hidden="true"></span>
-                            Категорийни анализи
+                <!-- Checkboxes -->
+                <div class="gm-config-group">
+                    <label class="gm-config-label">Анализи за включване</label>
+                    <div class="gm-checkbox-group">
+                        <label class="gm-checkbox-item">
+                            <input type="checkbox" id="include-categories" checked>
+                            <span class="gm-checkmark"></span>
+                            <span class="gm-checkbox-label">Категорийни анализи</span>
                         </label>
-                        <label class="checkbox-item">
-                            <input type="checkbox" id="include-suppliers" checked aria-label="Включи доставчик анализи">
-                            <span class="checkmark" aria-hidden="true"></span>
-                            Доставчик анализи
+                        <label class="gm-checkbox-item">
+                            <input type="checkbox" id="include-suppliers" checked>
+                            <span class="gm-checkmark"></span>
+                            <span class="gm-checkbox-label">Доставчик анализи</span>
                         </label>
                     </div>
                 </div>
 
                 <!-- Action Buttons -->
-                <div class="action-buttons">
-                    <button id="load-analytics" class="action-btn primary" type="button" aria-label="Зареди графичен анализ">
-                        <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>
+                <div class="gm-action-buttons">
+                    <button id="load-analytics" class="gm-action-btn primary">
+                        <i class="bi bi-arrow-clockwise"></i>
                         Зареди анализ
                     </button>
-                    <button id="export-charts" class="action-btn" disabled type="button" aria-label="Експортирай графиките като ZIP">
-                        <i class="bi bi-download" aria-hidden="true"></i>
+                    <button id="export-charts" class="gm-action-btn" disabled>
+                        <i class="bi bi-download"></i>
                         Експорт
                     </button>
                 </div>
             </div>
         </div>
 
-        <!-- CHART TABS NAVIGATION -->
-        <div class="graph-tabs" role="tablist">
-            <button class="graph-tab active" data-tab="price-analysis" role="tab" aria-selected="true" aria-controls="price-analysis-content">
-                <i class="bi bi-currency-dollar" aria-hidden="true"></i>
+        <!-- TABS -->
+        <div class="gm-tabs" role="tablist">
+            <button class="gm-tab active" data-tab="price-analysis" role="tab" aria-selected="true">
+                <i class="bi bi-currency-dollar"></i>
                 Ценови анализ
             </button>
-            <button class="graph-tab" data-tab="quantity-analysis" role="tab" aria-selected="false" aria-controls="quantity-analysis-content">
-                <i class="bi bi-bar-chart" aria-hidden="true"></i>
+            <button class="gm-tab" data-tab="quantity-analysis" role="tab" aria-selected="false">
+                <i class="bi bi-bar-chart"></i>
                 Количества
             </button>
-            <button class="graph-tab" data-tab="performance-analysis" role="tab" aria-selected="false" aria-controls="performance-analysis-content" data-empty="true">
-                <i class="bi bi-graph-up" aria-hidden="true"></i>
+            <button class="gm-tab" data-tab="performance-analysis" role="tab" aria-selected="false" data-empty="true">
+                <i class="bi bi-graph-up"></i>
                 Производителност
             </button>
-            <button class="graph-tab" data-tab="category-analysis" role="tab" aria-selected="false" aria-controls="category-analysis-content" data-empty="true">
-                <i class="bi bi-pie-chart" aria-hidden="true"></i>
+            <button class="gm-tab" data-tab="category-analysis" role="tab" aria-selected="false" data-empty="true">
+                <i class="bi bi-pie-chart"></i>
                 Категории
             </button>
-            <button class="graph-tab" data-tab="supplier-analysis" role="tab" aria-selected="false" aria-controls="supplier-analysis-content" data-empty="true">
-                <i class="bi bi-truck" aria-hidden="true"></i>
+            <button class="gm-tab" data-tab="supplier-analysis" role="tab" aria-selected="false" data-empty="true">
+                <i class="bi bi-truck"></i>
                 Доставчици
             </button>
         </div>
 
-        <!-- CHART CONTENT SECTIONS -->
-        <div class="graph-content">
-            <div class="chart-content-container">
-                <!-- Price Analysis Tab -->
-                <div id="price-analysis-content" class="tab-panel active" role="tabpanel">
-                    <div class="chart-section">
-                        <div class="section-header">
+        <!-- CONTENT -->
+        <div class="gm-content">
+            <div class="gm-chart-content-container">
+                <!-- Price Analysis -->
+                <div id="price-analysis-content" class="gm-tab-panel active">
+                    <div class="gm-chart-section">
+                        <div class="gm-section-header">
                             <h3>История на цените</h3>
-                            <div class="chart-controls">
-                                <label class="toggle-switch">
-                                    <input type="checkbox" id="show-purchase-prices" checked aria-label="Покажи закупни цени">
-                                    <span class="toggle-slider" aria-hidden="true"></span>
-                                    Закупни цени
+                            <div class="gm-chart-controls">
+                                <label class="gm-toggle-switch">
+                                    <input type="checkbox" id="show-purchase-prices" checked>
+                                    <span>Закупни цени</span>
                                 </label>
-                                <label class="toggle-switch">
-                                    <input type="checkbox" id="show-selling-prices" checked aria-label="Покажи продажни цени">
-                                    <span class="toggle-slider" aria-hidden="true"></span>
-                                    Продажни цени
+                                <label class="gm-toggle-switch">
+                                    <input type="checkbox" id="show-selling-prices" checked>
+                                    <span>Продажни цени</span>
                                 </label>
-                                <label class="toggle-switch">
-                                    <input type="checkbox" id="show-margin-trend" checked aria-label="Покажи марж тенденция">
-                                    <span class="toggle-slider" aria-hidden="true"></span>
-                                    Марж тенденция
+                                <label class="gm-toggle-switch">
+                                    <input type="checkbox" id="show-margin-trend" checked>
+                                    <span>Марж тенденция</span>
                                 </label>
                             </div>
                         </div>
-                        <div class="chart-container">
-                            <canvas id="price-history-chart" aria-label="Графика на историята на цените"></canvas>
+                        <div class="gm-chart-container">
+                            <canvas id="price-history-chart"></canvas>
                         </div>
                     </div>
-                    <div class="chart-section">
-                        <div class="section-header">
+                    <div class="gm-chart-section">
+                        <div class="gm-section-header">
                             <h3>Ценови промени</h3>
                         </div>
-                        <div class="chart-container">
-                            <canvas id="price-changes-chart" aria-label="Графика на ценови промени"></canvas>
+                        <div class="gm-chart-container">
+                            <canvas id="price-changes-chart"></canvas>
                         </div>
                     </div>
                 </div>
 
-                <!-- Quantity Analysis Tab -->
-                <div id="quantity-analysis-content" class="tab-panel" role="tabpanel">
-                    <div class="chart-section">
-                        <div class="section-header">
+                <!-- Quantity Analysis -->
+                <div id="quantity-analysis-content" class="gm-tab-panel">
+                    <div class="gm-chart-section">
+                        <div class="gm-section-header">
                             <h3>Движения в наличностите</h3>
-                            <div class="chart-controls">
-                                <label class="toggle-switch">
-                                    <input type="checkbox" id="show-imports" checked aria-label="Покажи импорти">
-                                    <span class="toggle-slider" aria-hidden="true"></span>
-                                    Импорти
+                            <div class="gm-chart-controls">
+                                <label class="gm-toggle-switch">
+                                    <input type="checkbox" id="show-imports" checked>
+                                    <span>Импорти</span>
                                 </label>
-                                <label class="toggle-switch">
-                                    <input type="checkbox" id="show-adjustments" checked aria-label="Покажи корекции">
-                                    <span class="toggle-slider" aria-hidden="true"></span>
-                                    Корекции
+                                <label class="gm-toggle-switch">
+                                    <input type="checkbox" id="show-adjustments" checked>
+                                    <span>Корекции</span>
                                 </label>
-                                <label class="toggle-switch">
-                                    <input type="checkbox" id="show-sales" checked aria-label="Покажи продажби">
-                                    <span class="toggle-slider" aria-hidden="true"></span>
-                                    Продажби
+                                <label class="gm-toggle-switch">
+                                    <input type="checkbox" id="show-sales" checked>
+                                    <span>Продажби</span>
                                 </label>
                             </div>
                         </div>
-                        <div class="chart-container">
-                            <canvas id="quantity-movements-chart" aria-label="Графика на движения в наличностите"></canvas>
+                        <div class="gm-chart-container">
+                            <canvas id="quantity-movements-chart"></canvas>
                         </div>
                     </div>
-                    <div class="chart-section">
-                        <div class="section-header">
+                    <div class="gm-chart-section">
+                        <div class="gm-section-header">
                             <h3>Текущи наличности</h3>
                         </div>
-                        <div class="chart-container">
-                            <canvas id="current-stock-chart" aria-label="Графика на текущи наличности"></canvas>
+                        <div class="gm-chart-container">
+                            <canvas id="current-stock-chart"></canvas>
                         </div>
                     </div>
                 </div>
 
-                <!-- Performance Analysis Tab -->
-                <div id="performance-analysis-content" class="tab-panel" role="tabpanel" data-empty="true">
-                    <div class="chart-section">
-                        <div class="section-header">
+                <!-- Performance Analysis -->
+                <div id="performance-analysis-content" class="gm-tab-panel" data-empty="true">
+                    <div class="gm-chart-section">
+                        <div class="gm-section-header">
                             <h3>Топ продукти по печалба</h3>
                         </div>
-                        <div class="chart-container">
-                            <canvas id="top-performers-chart" aria-label="Графика на топ продукти по печалба"></canvas>
+                        <div class="gm-chart-container">
+                            <canvas id="top-performers-chart"></canvas>
                         </div>
                     </div>
-                    <div class="chart-section">
-                        <div class="section-header">
+                    <div class="gm-chart-section">
+                        <div class="gm-section-header">
                             <h3>Трендове в продажбите</h3>
                         </div>
-                        <div class="chart-container">
-                            <canvas id="sales-trends-chart" aria-label="Графика на трендове в продажбите"></canvas>
+                        <div class="gm-chart-container">
+                            <canvas id="sales-trends-chart"></canvas>
                         </div>
                     </div>
                 </div>
 
-                <!-- Category Analysis Tab -->
-                <div id="category-analysis-content" class="tab-panel" role="tabpanel" data-empty="true">
-                    <div class="chart-section">
-                        <div class="section-header">
+                <!-- Category Analysis -->
+                <div id="category-analysis-content" class="gm-tab-panel" data-empty="true">
+                    <div class="gm-chart-section">
+                        <div class="gm-section-header">
                             <h3>Разпределение по категории</h3>
                         </div>
-                        <div class="chart-container">
-                            <canvas id="category-distribution-chart" aria-label="Графика на разпределение по категории"></canvas>
+                        <div class="gm-chart-container">
+                            <canvas id="category-distribution-chart"></canvas>
                         </div>
                     </div>
-                    <div class="chart-section">
-                        <div class="section-header">
+                    <div class="gm-chart-section">
+                        <div class="gm-section-header">
                             <h3>Категорийна производителност</h3>
                         </div>
-                        <div class="chart-container">
-                            <canvas id="category-performance-chart" aria-label="Графика на категорийна производителност"></canvas>
+                        <div class="gm-chart-container">
+                            <canvas id="category-performance-chart"></canvas>
                         </div>
                     </div>
                 </div>
 
-                <!-- Supplier Analysis Tab -->
-                <div id="supplier-analysis-content" class="tab-panel" role="tabpanel" data-empty="true">
-                    <div class="chart-section">
-                        <div class="section-header">
+                <!-- Supplier Analysis -->
+                <div id="supplier-analysis-content" class="gm-tab-panel" data-empty="true">
+                    <div class="gm-chart-section">
+                        <div class="gm-section-header">
                             <h3>Доставчици по обем</h3>
                         </div>
-                        <div class="chart-container">
-                            <canvas id="supplier-volume-chart" aria-label="Графика на доставчици по обем"></canvas>
+                        <div class="gm-chart-container">
+                            <canvas id="supplier-volume-chart"></canvas>
                         </div>
                     </div>
-                    <div class="chart-section">
-                        <div class="section-header">
+                    <div class="gm-chart-section">
+                        <div class="gm-section-header">
                             <h3>Ценова стабилност по доставчици</h3>
                         </div>
-                        <div class="chart-container">
-                            <canvas id="supplier-stability-chart" aria-label="Графика на ценова стабилност по доставчици"></canvas>
+                        <div class="gm-chart-container">
+                            <canvas id="supplier-stability-chart"></canvas>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- LOADING STATE -->
-        <div id="graph-loading" class="loading-container" aria-live="polite">
-            <div class="loading-spinner" aria-hidden="true"></div>
-            <p class="loading-text">Зареждане на графични данни...</p>
-        </div>
-
-        <!-- EMPTY STATE -->
-        <div id="graph-empty" class="empty-state" role="alert">
-            <div class="empty-icon">
-                <i class="bi bi-graph-up" aria-hidden="true"></i>
+            <!-- LOADING -->
+            <div id="graph-loading" class="gm-loading-container">
+                <div class="gm-loading-spinner"></div>
+                <p class="gm-loading-text">Зареждане на графични данни...</p>
             </div>
-            <h3>Няма данни за анализ</h3>
-            <p>Изберете продукти и настройте филтрите за да видите графични анализи.</p>
-            <button id="configure-analysis" class="action-btn primary" type="button" aria-label="Конфигурирай анализ">
-                <i class="bi bi-gear" aria-hidden="true"></i>
-                Конфигуриране
-            </button>
+
+            <!-- EMPTY STATE -->
+            <div id="graph-empty" class="gm-empty-state">
+                <div class="gm-empty-icon">
+                    <i class="bi bi-graph-up"></i>
+                </div>
+                <h3>Няма данни за анализ</h3>
+                <p>Изберете продукти и настройте филтрите за да видите графични анализи.</p>
+                <button id="configure-analysis" class="gm-action-btn primary">
+                    <i class="bi bi-gear"></i>
+                    Конфигуриране
+                </button>
+            </div>
         </div>
     </div>
 </div>

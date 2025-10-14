@@ -1,13 +1,6 @@
 /**
- * GRAPH MODAL JAVASCRIPT
- * ======================
- * Мощна система за графични анализи с минималистичен Apple/Tesla дизайн.
- * Структурирана в секции за лесна поддръжка и разширяване.
- *
- * Принципи: Минимален код за максимални резултати
- * - Едно API извикване зарежда всички данни
- * - Chart.js за професионални визуализации
- * - Modular architecture за лесна поддръжка
+ * GRAPH MODAL JAVASCRIPT - ПЪЛНА ВЕРСИЯ
+ * ======================================
  */
 
 // ==========================================
@@ -20,36 +13,35 @@ const GraphModalState = {
     currentProductIds: [],
     currentTimeRange: '30d',
     activeTab: 'price-analysis',
-    charts: new Map(), // Съхраняваме Chart.js инстанциите
+    charts: new Map(),
     metadata: null,
     includeCategories: true,
     includeSuppliers: true
 };
 
-// Chart.js глобална конфигурация за Apple/Tesla стил
 const CHART_THEME = {
     colors: {
-        primary: '#667eea',
-        secondary: '#764ba2',
-        success: '#48bb78',
-        warning: '#ed8936',
-        danger: '#f56565',
-        info: '#4299e1',
+        primary: '#3d4a5c',
+        accent: '#7dd3c0',
+        success: '#27ae60',
+        warning: '#f39c12',
+        danger: '#e74c3c',
+        info: '#3498db',
         purple: '#9f7aea',
         teal: '#38b2ac'
     },
     gradients: {
-        primary: ['#667eea', '#764ba2'],
-        success: ['#48bb78', '#38a169'],
-        warning: ['#ed8936', '#dd6b20'],
-        info: ['#4299e1', '#3182ce']
+        primary: ['#3d4a5c', '#2d3a4c'],
+        accent: ['#7dd3c0', '#6bc4b0'],
+        success: ['#27ae60', '#1e8449'],
+        warning: ['#f39c12', '#d68910']
     },
     fonts: {
         family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
         size: {
-            small: 12,
-            normal: 14,
-            large: 16
+            small: 11,
+            normal: 12,
+            large: 14
         }
     }
 };
@@ -135,14 +127,14 @@ class GraphModalManager {
         this.modal = document.getElementById('graph-modal');
         this.api = new GraphModalAPI();
         this.chartRenderer = new ChartRenderer();
+        this.selectedProductIds = new Set();
         this.init();
     }
 
     init() {
         this.setupEventHandlers();
-        // Зареждаме metadata, но не спираме ако има грешка
         this.loadInitialMetadata().catch(err => {
-            console.warn('Could not load metadata on init, will work without dropdowns:', err);
+            console.warn('Could not load metadata on init:', err);
             GraphModalState.metadata = {
                 products: [],
                 categories: [],
@@ -156,7 +148,7 @@ class GraphModalManager {
             GraphModalState.metadata = await this.api.loadMetadata();
             this.populateProductSelector();
         } catch (error) {
-            console.warn('Metadata not available, dropdowns will be disabled:', error);
+            console.warn('Metadata not available:', error);
             GraphModalState.metadata = {
                 products: [],
                 categories: [],
@@ -166,21 +158,20 @@ class GraphModalManager {
     }
 
     setupEventHandlers() {
-        // Modal close handlers
         document.getElementById('graph-modal-close')?.addEventListener('click', () => this.close());
         this.modal?.addEventListener('click', (e) => {
-            if (e.target === this.modal) this.close();
+            if (e.target.classList.contains('gm-modal-overlay')) {
+                this.close();
+            }
         });
 
-        // Escape key handler
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && GraphModalState.isOpen) {
                 this.close();
             }
         });
 
-        // Tab switching
-        document.querySelectorAll('.graph-tab').forEach(tab => {
+        document.querySelectorAll('.gm-tab').forEach(tab => {
             tab.addEventListener('click', (e) => {
                 const tabId = e.currentTarget.dataset.tab;
                 this.switchTab(tabId);
@@ -190,41 +181,35 @@ class GraphModalManager {
         // Configuration controls
         document.getElementById('load-analytics')?.addEventListener('click', () => this.loadAnalytics());
         document.getElementById('export-charts')?.addEventListener('click', () => this.exportCharts());
-
-        // Product selector helpers
         document.getElementById('select-all-products')?.addEventListener('click', () => this.selectAllProducts());
         document.getElementById('clear-product-selection')?.addEventListener('click', () => this.clearProductSelection());
 
-        // Chart controls (toggle switches)
         this.setupChartControls();
 
-        // Empty state configure button
         document.getElementById('configure-analysis')?.addEventListener('click', () => {
-            document.querySelector('.graph-config-panel').scrollIntoView({ behavior: 'smooth' });
+            document.querySelector('.gm-config-panel')?.scrollIntoView({ behavior: 'smooth' });
         });
     }
 
     setupChartControls() {
-        // Price analysis controls
         document.getElementById('show-purchase-prices')?.addEventListener('change', (e) => {
-            this.toggleChartDataset('price-history-chart', 'purchase', e.target.checked);
+            this.toggleChartDataset('price-history-chart', 'Закупни', e.target.checked);
         });
         document.getElementById('show-selling-prices')?.addEventListener('change', (e) => {
-            this.toggleChartDataset('price-history-chart', 'selling', e.target.checked);
+            this.toggleChartDataset('price-history-chart', 'Продажни', e.target.checked);
         });
         document.getElementById('show-margin-trend')?.addEventListener('change', (e) => {
-            this.toggleChartDataset('price-history-chart', 'margin', e.target.checked);
+            this.toggleChartDataset('price-history-chart', 'Марж', e.target.checked);
         });
 
-        // Quantity analysis controls
         document.getElementById('show-imports')?.addEventListener('change', (e) => {
-            this.toggleChartDataset('quantity-movements-chart', 'import', e.target.checked);
+            this.toggleChartDataset('quantity-movements-chart', 'Импорти', e.target.checked);
         });
         document.getElementById('show-adjustments')?.addEventListener('change', (e) => {
-            this.toggleChartDataset('quantity-movements-chart', 'adjustment', e.target.checked);
+            this.toggleChartDataset('quantity-movements-chart', 'Корекции', e.target.checked);
         });
         document.getElementById('show-sales')?.addEventListener('change', (e) => {
-            this.toggleChartDataset('quantity-movements-chart', 'sales', e.target.checked);
+            this.toggleChartDataset('quantity-movements-chart', 'Продажби', e.target.checked);
         });
     }
 
@@ -263,7 +248,6 @@ class GraphModalManager {
             GraphModalState.isOpen = false;
             this.modal.style.display = 'none';
             document.body.style.overflow = '';
-
             this.chartRenderer.destroyAllCharts();
         }, 300);
     }
@@ -271,7 +255,6 @@ class GraphModalManager {
     switchTab(tabId) {
         if (GraphModalState.activeTab === tabId) return;
 
-        // Проверка за наличност на данни
         if (tabId === 'category-analysis' && !GraphModalState.currentData?.categoryAnalysis) {
             window.toastManager?.warning('Няма данни за категорийни анализи');
             return;
@@ -285,13 +268,12 @@ class GraphModalManager {
             return;
         }
 
-        // Update tab buttons
-        document.querySelectorAll('.graph-tab').forEach(tab => {
+        document.querySelectorAll('.gm-tab').forEach(tab => {
             tab.classList.toggle('active', tab.dataset.tab === tabId);
+            tab.setAttribute('aria-selected', tab.dataset.tab === tabId);
         });
 
-        // Update tab content
-        document.querySelectorAll('.tab-panel').forEach(content => {
+        document.querySelectorAll('.gm-tab-panel').forEach(content => {
             content.classList.toggle('active', content.id === `${tabId}-content`);
         });
 
@@ -332,20 +314,16 @@ class GraphModalManager {
             console.error('Failed to load analytics:', error);
             this.hideLoading();
             this.showError(error.message);
-            window.toastManager?.error('Грешка при зареждане на анализа: ' + error.message);
+            window.toastManager?.error('Грешка при зареждане: ' + error.message);
         }
     }
 
     gatherConfiguration() {
-        const productSelector = document.getElementById('product-selector');
         const timeRangeSelector = document.getElementById('time-range-selector');
-        const includeCategories = document.getElementById('include-categories').checked;
-        const includeSuppliers = document.getElementById('include-suppliers').checked;
+        const includeCategories = document.getElementById('include-categories')?.checked || false;
+        const includeSuppliers = document.getElementById('include-suppliers')?.checked || false;
 
-        let productIds = [];
-        if (productSelector) {
-            productIds = Array.from(productSelector.selectedOptions).map(option => parseInt(option.value));
-        }
+        let productIds = Array.from(this.selectedProductIds || []);
 
         return {
             productIds: productIds.filter(id => !isNaN(id)),
@@ -356,47 +334,154 @@ class GraphModalManager {
     }
 
     populateProductSelector() {
-        const selector = document.getElementById('product-selector');
-        if (!selector || !GraphModalState.metadata?.products) {
-            selector.innerHTML = '<option value="">Няма налични продукти</option>';
+        const searchInput = document.getElementById('product-search');
+        const productList = document.getElementById('product-list');
+        const dropdown = document.getElementById('product-dropdown');
+        const selectedDisplay = document.getElementById('selected-products-display');
+        const clearBtn = document.getElementById('clear-search');
+
+        if (!GraphModalState.metadata?.products || !productList) {
+            console.warn('No products or product list element');
             return;
         }
 
-        selector.innerHTML = '';
+        const products = GraphModalState.metadata.products;
 
-        GraphModalState.metadata.products.forEach(product => {
-            const option = document.createElement('option');
-            option.value = product.id;
-            option.textContent = `${product.sku} - ${product.name} (${product.category})`;
-            selector.appendChild(option);
+        const renderProductList = (filteredProducts) => {
+            const displayProducts = filteredProducts.slice();
+
+            productList.innerHTML = displayProducts.map(product => `
+                <label class="gm-product-item">
+                    <input 
+                        type="checkbox" 
+                        value="${product.id}" 
+                        data-sku="${product.sku || ''}"
+                        data-name="${product.name || ''}"
+                    >
+                    <span class="gm-product-info">
+                        <strong>${product.sku || ''}</strong> - ${product.name || ''}
+                        <small>${product.category || 'Без категория'}</small>
+                    </span>
+                </label>
+            `).join('');
+
+            if (filteredProducts.length > 100) {
+                productList.innerHTML += `<div class="gm-product-item-note">Показани ${displayProducts.length} от ${filteredProducts.length}. Използвай търсенето.</div>`;
+            }
+
+            productList.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                checkbox.addEventListener('change', () => this.updateSelectedDisplay());
+                if (this.selectedProductIds.has(parseInt(checkbox.value))) {
+                    checkbox.checked = true;
+                }
+            });
+        };
+
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                const query = e.target.value.toLowerCase().trim();
+                if (clearBtn) clearBtn.style.display = query ? 'block' : 'none';
+
+                const filtered = products.filter(p =>
+                    (p.sku && p.sku.toLowerCase().includes(query)) ||
+                    (p.name && p.name.toLowerCase().includes(query)) ||
+                    (p.category && p.category.toLowerCase().includes(query))
+                );
+
+                renderProductList(filtered);
+            });
+
+            searchInput.addEventListener('focus', () => {
+                if (dropdown) dropdown.style.display = 'block';
+            });
+        }
+
+        if (clearBtn) {
+            clearBtn.addEventListener('click', () => {
+                if (searchInput) {
+                    searchInput.value = '';
+                    clearBtn.style.display = 'none';
+                    renderProductList(products);
+                }
+            });
+        }
+
+        document.addEventListener('click', (e) => {
+            if (dropdown && !e.target.closest('.gm-product-selector-wrapper')) {
+                dropdown.style.display = 'none';
+            }
         });
+
+        renderProductList(products);
+    }
+
+    updateSelectedDisplay() {
+        const productList = document.getElementById('product-list');
+        const selectedDisplay = document.getElementById('selected-products-display');
+
+        if (!productList || !selectedDisplay) return;
+
+        const checked = productList.querySelectorAll('input[type="checkbox"]:checked');
+        this.selectedProductIds = new Set(Array.from(checked).map(cb => parseInt(cb.value)));
+
+        if (this.selectedProductIds.size === 0) {
+            selectedDisplay.innerHTML = '<span class="gm-no-selection">Няма избрани продукти (всички)</span>';
+        } else if (this.selectedProductIds.size <= 5) {
+            selectedDisplay.innerHTML = Array.from(checked).map(cb =>
+                `<span class="gm-selected-tag">${cb.dataset.sku} <i class="bi bi-x" data-id="${cb.value}"></i></span>`
+            ).join('');
+
+            selectedDisplay.querySelectorAll('.bi-x').forEach(icon => {
+                icon.addEventListener('click', () => {
+                    const id = parseInt(icon.dataset.id);
+                    this.selectedProductIds.delete(id);
+                    const checkbox = productList.querySelector(`input[value="${id}"]`);
+                    if (checkbox) checkbox.checked = false;
+                    this.updateSelectedDisplay();
+                });
+            });
+        } else {
+            selectedDisplay.innerHTML = `<span class="gm-selection-count"><i class="bi bi-check-circle"></i> ${this.selectedProductIds.size} избрани продукта</span>`;
+        }
     }
 
     preselectProducts(productIds) {
-        const selector = document.getElementById('product-selector');
-        if (!selector) return;
+        const productList = document.getElementById('product-list');
+        if (!productList) return;
 
-        Array.from(selector.options).forEach(option => {
-            option.selected = productIds.includes(parseInt(option.value));
+        productIds.forEach(id => this.selectedProductIds.add(id));
+
+        productList.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+            if (productIds.includes(parseInt(checkbox.value))) {
+                checkbox.checked = true;
+            }
         });
+
+        this.updateSelectedDisplay();
     }
 
     selectAllProducts() {
-        const selector = document.getElementById('product-selector');
-        if (!selector) return;
+        const productList = document.getElementById('product-list');
+        if (!productList) return;
 
-        Array.from(selector.options).forEach(option => {
-            option.selected = true;
+        productList.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+            checkbox.checked = true;
+            this.selectedProductIds.add(parseInt(checkbox.value));
         });
+
+        this.updateSelectedDisplay();
     }
 
     clearProductSelection() {
-        const selector = document.getElementById('product-selector');
-        if (!selector) return;
+        const productList = document.getElementById('product-list');
+        if (!productList) return;
 
-        Array.from(selector.options).forEach(option => {
-            option.selected = false;
+        productList.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+            checkbox.checked = false;
         });
+
+        this.selectedProductIds.clear();
+        this.updateSelectedDisplay();
     }
 
     toggleChartDataset(chartId, datasetLabel, visible) {
@@ -414,7 +499,7 @@ class GraphModalManager {
             window.toastManager?.success('Графиките са експортирани успешно');
         } catch (error) {
             console.error('Export failed:', error);
-            window.toastManager?.error('Грешка при експорт на графиките');
+            window.toastManager?.error('Грешка при експорт');
         }
     }
 
@@ -440,23 +525,37 @@ class GraphModalManager {
     }
 
     showLoading() {
-        document.getElementById('graph-loading').style.display = 'flex';
-        document.querySelector('.chart-content-container').style.display = 'none';
-        document.getElementById('graph-empty').style.display = 'none';
+        const loading = document.getElementById('graph-loading');
+        const content = document.querySelector('.gm-chart-content-container');
+        const empty = document.getElementById('graph-empty');
+
+        if (loading) loading.style.display = 'flex';
+        if (content) content.style.display = 'none';
+        if (empty) empty.style.display = 'none';
     }
 
     hideLoading() {
-        document.getElementById('graph-loading').style.display = 'none';
-        document.querySelector('.chart-content-container').style.display = 'block';
+        const loading = document.getElementById('graph-loading');
+        const content = document.querySelector('.gm-chart-content-container');
+
+        if (loading) loading.style.display = 'none';
+        if (content) content.style.display = 'block';
     }
 
     showError(message) {
         const emptyState = document.getElementById('graph-empty');
-        emptyState.style.display = 'flex';
-        emptyState.querySelector('h3').textContent = 'Грешка при зареждане';
-        emptyState.querySelector('p').textContent = message || 'Няма данни за анализ';
-        document.querySelector('.chart-content-container').style.display = 'none';
-        document.getElementById('graph-loading').style.display = 'none';
+        const content = document.querySelector('.gm-chart-content-container');
+        const loading = document.getElementById('graph-loading');
+
+        if (emptyState) {
+            emptyState.style.display = 'flex';
+            const h3 = emptyState.querySelector('h3');
+            const p = emptyState.querySelector('p');
+            if (h3) h3.textContent = 'Грешка при зареждане';
+            if (p) p.textContent = message || 'Няма данни за анализ';
+        }
+        if (content) content.style.display = 'none';
+        if (loading) loading.style.display = 'none';
     }
 }
 
@@ -489,7 +588,6 @@ class ChartRenderer {
         }
 
         this.destroyAllCharts();
-
         this.renderTabCharts(GraphModalState.activeTab, data);
     }
 
@@ -531,7 +629,6 @@ class ChartRenderer {
             const productName = product ? `${product.sku} - ${product.name}` : `Product ${productId}`;
             const color = colors[colorIndex % colors.length];
 
-            // Purchase prices line
             if (productData.purchasePrices && productData.purchasePrices.length > 0) {
                 datasets.push({
                     label: `${productName} (Закупни)`,
@@ -549,7 +646,6 @@ class ChartRenderer {
                 });
             }
 
-            // Selling prices line
             if (productData.sellingPrices && productData.sellingPrices.length > 0) {
                 datasets.push({
                     label: `${productName} (Продажни)`,
@@ -568,7 +664,6 @@ class ChartRenderer {
                 });
             }
 
-            // Margin trend line
             if (productData.marginHistory && productData.marginHistory.length > 0) {
                 datasets.push({
                     label: `${productName} (Марж)`,
@@ -1061,7 +1156,7 @@ class ChartRenderer {
                 datasets: [{
                     label: 'Общо покупки',
                     data: volumes,
-                    backgroundColor: this.generateGradient(ctx, CHART_THEME.gradients.primary),
+                    backgroundColor: CHART_THEME.colors.accent,
                     borderRadius: 8
                 }]
             },
@@ -1128,10 +1223,6 @@ class ChartRenderer {
         this.charts.set('supplier-stability-chart', chart);
     }
 
-    // ==========================================
-    // UTILITY METHODS FOR CHART RENDERING
-    // ==========================================
-
     findProductById(productId) {
         return GraphModalState.currentData?.products?.find(p => p.id == productId);
     }
@@ -1167,13 +1258,6 @@ class ChartRenderer {
         }
 
         return colors;
-    }
-
-    generateGradient(ctx, colors) {
-        const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-        gradient.addColorStop(0, colors[0]);
-        gradient.addColorStop(1, colors[1]);
-        return gradient;
     }
 
     addAlpha(color, alpha) {
@@ -1271,14 +1355,14 @@ class ChartRenderer {
 }
 
 // ==========================================
-// GLOBAL INITIALIZATION AND EXPORT
+// GLOBAL INITIALIZATION
 // ==========================================
 
 let graphModalInstance = null;
 
 document.addEventListener('DOMContentLoaded', () => {
     if (typeof Chart === 'undefined') {
-        console.error('Chart.js library is not loaded! Please include Chart.js before graphModal.js');
+        console.error('Chart.js library is not loaded!');
         return;
     }
 

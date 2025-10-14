@@ -505,7 +505,7 @@ class ProductTable {
         this.tbody.querySelectorAll('.action-btn.graph').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const id = parseInt(e.currentTarget.dataset.id);
-                window.GraphModal.open([id]);
+                window.GraphModal.open(id);
             });
         });
 
