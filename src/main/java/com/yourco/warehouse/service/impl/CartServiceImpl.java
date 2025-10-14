@@ -219,25 +219,6 @@ public class CartServiceImpl implements CartService {
         return true;
     }
 
-    @Override
-    public boolean finalizeCartSale(Long userId) {
-        List<CartItem> items = cartItemRepository.findByUserIdWithProducts(userId);
-
-        for (CartItem item : items) {
-            ProductEntity product = item.getProduct();
-            try {
-                product.sellQuantity(item.getQuantity());
-                productRepository.save(product);
-            } catch (Exception e) {
-                log.error("Грешка при финализиране на продажбата за {}: {}",
-                        product.getSku(), e.getMessage());
-                throw new IllegalStateException("Грешка при финализиране на продажбата");
-            }
-        }
-
-        clearCart(userId);
-        return true;
-    }
 
     @Override
     @Transactional(readOnly = true)

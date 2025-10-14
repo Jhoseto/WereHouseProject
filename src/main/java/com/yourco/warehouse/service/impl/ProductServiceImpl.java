@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -192,6 +193,8 @@ public class ProductServiceImpl implements ProductService {
         log.info("Product activated: {}", id);
     }
 
+
+
     @Override
     @Transactional(readOnly = true)
     public ProductStatsDTO getProductStats() {
@@ -200,7 +203,7 @@ public class ProductServiceImpl implements ProductService {
         long totalProducts = productRepository.count();
         long activeProducts = productRepository.countByActiveTrue();
 
-        // Low stock (actual available <= 10)
+        // Low stock (actual available <= 10) - ТУК използваме actual за сигнализация
         long lowStockCount = productRepository.findAll().stream()
                 .filter(p -> p.isActive())
                 .filter(p -> {
@@ -210,7 +213,7 @@ public class ProductServiceImpl implements ProductService {
                 })
                 .count();
 
-        // Out of stock (actual available <= 0)
+        // Out of stock (actual available <= 0) - ТУК използваме actual за сигнализация
         long outOfStockCount = productRepository.findAll().stream()
                 .filter(p -> p.isActive())
                 .filter(p -> {
@@ -220,27 +223,63 @@ public class ProductServiceImpl implements ProductService {
                 })
                 .count();
 
-        // Total inventory value
-        BigDecimal totalValue = productRepository.findAll().stream()
+        // ✅ Изчисляване на стойности - вземаме списък с активните продукти
+        List<ProductEntity> activeProductsList = productRepository.findAll().stream()
                 .filter(ProductEntity::isActive)
+                .toList();
+
+        // ✅ ПОПРАВЕНО - За ОБОРОТ използваме САМО quantityAvailable (физически в склада)
+        BigDecimal totalValueWithoutVat = activeProductsList.stream()
                 .map(p -> {
+                    // ✅ Използваме САМО available, НЕ (available - reserved)!
                     int qty = p.getQuantityAvailable() != null ? p.getQuantityAvailable() : 0;
-                    BigDecimal price = p.getPrice() != null ? p.getPrice() : BigDecimal.ZERO;
-                    BigDecimal value = price.multiply(BigDecimal.valueOf(qty));
-                    return value;
+
+                    BigDecimal priceWithoutVat = p.getPrice() != null ? p.getPrice() : BigDecimal.ZERO;
+                    return priceWithoutVat.multiply(BigDecimal.valueOf(qty));
                 })
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
+        // ✅ ПОПРАВЕНО - За ОБОРОТ с ДДС също използваме САМО quantityAvailable
+        BigDecimal totalValueWithVat = activeProductsList.stream()
+                .map(p -> {
+                    // ✅ Използваме САМО available, НЕ (available - reserved)!
+                    int qty = p.getQuantityAvailable() != null ? p.getQuantityAvailable() : 0;
+
+                    BigDecimal priceWithoutVat = p.getPrice() != null ? p.getPrice() : BigDecimal.ZERO;
+                    int vatRate = p.getVatRate(); // 0, 9 или 20
+
+                    // Изчисляваме цена С ДДС за този конкретен продукт
+                    BigDecimal vatMultiplier = BigDecimal.ONE.add(
+                            BigDecimal.valueOf(vatRate).divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP)
+                    );
+                    BigDecimal priceWithVat = priceWithoutVat.multiply(vatMultiplier);
+
+                    return priceWithVat.multiply(BigDecimal.valueOf(qty));
+                })
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         // Categories count
         long categoriesCount = productRepository.findDistinctCategories().size();
 
-        log.debug("Stats calculated - total: {}, active: {}, lowStock: {}, outOfStock: {}, value: {}, categories: {}",
-                totalProducts, activeProducts, lowStockCount, outOfStockCount, totalValue, categoriesCount);
+        log.debug("Stats calculated - total: {}, active: {}, lowStock: {}, outOfStock: {}, " +
+                        "valueWithoutVat: {}, valueWithVat: {}, categories: {}",
+                totalProducts, activeProducts, lowStockCount, outOfStockCount,
+                totalValueWithoutVat, totalValueWithVat, categoriesCount);
 
-        return new ProductStatsDTO(totalProducts, activeProducts, lowStockCount,
-                outOfStockCount, totalValue, categoriesCount);
+        // ✅ Създаваме DTO с И ДВЕТЕ стойности
+        ProductStatsDTO stats = new ProductStatsDTO();
+        stats.setTotalProducts(totalProducts);
+        stats.setActiveProducts(activeProducts);
+        stats.setLowStockCount(lowStockCount);
+        stats.setOutOfStockCount(outOfStockCount);
+        stats.setTotalInventoryValue(totalValueWithoutVat);        // БЕЗ ДДС
+        stats.setTotalInventoryValueWithVat(totalValueWithVat);    // С ДДС
+        stats.setCategoriesCount(categoriesCount);
+
+        return stats;
     }
+
+
 
     @Override
     @Transactional(readOnly = true)

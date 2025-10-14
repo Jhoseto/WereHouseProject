@@ -57,10 +57,6 @@ public interface CartService {
      */
     boolean releaseCartReservations(Long userId);
 
-    /**
-     * Финализира продажбата
-     */
-    boolean finalizeCartSale(Long userId);
 
     /**
      * Валидира наличността на артикулите

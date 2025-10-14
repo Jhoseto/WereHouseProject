@@ -11,6 +11,7 @@ import com.yourco.warehouse.repository.UserRepository;
 import com.yourco.warehouse.service.CartService;
 import com.yourco.warehouse.service.ClientOrderService;
 import com.yourco.warehouse.dto.CartItemDTO;
+import com.yourco.warehouse.service.DashboardBroadcastService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,9 +27,9 @@ import java.util.*;
 
 @Service
 @Transactional
-public class ClientClientOrderServiceImpl implements ClientOrderService {
+public class ClientOrderServiceImpl implements ClientOrderService {
 
-    private static final Logger log = LoggerFactory.getLogger(ClientClientOrderServiceImpl.class);
+    private static final Logger log = LoggerFactory.getLogger(ClientOrderServiceImpl.class);
 
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
@@ -36,20 +37,23 @@ public class ClientClientOrderServiceImpl implements ClientOrderService {
     private final UserRepository userRepository;
     private final CartService cartService;
     private final OrderMapper orderMapper;
+    private final DashboardBroadcastService broadcastService;
 
     @Autowired
-    public ClientClientOrderServiceImpl(OrderRepository orderRepository,
-                                        OrderItemRepository orderItemRepository,
-                                        ProductRepository productRepository,
-                                        UserRepository userRepository,
-                                        CartService cartService,
-                                        OrderMapper orderMapper) {
+    public ClientOrderServiceImpl(OrderRepository orderRepository,
+                                  OrderItemRepository orderItemRepository,
+                                  ProductRepository productRepository,
+                                  UserRepository userRepository,
+                                  CartService cartService,
+                                  OrderMapper orderMapper,
+                                  DashboardBroadcastService broadcastService) {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
         this.productRepository = productRepository;
         this.userRepository = userRepository;
         this.cartService = cartService;
         this.orderMapper = orderMapper;
+        this.broadcastService = broadcastService;
     }
 
     @Override
@@ -102,6 +106,33 @@ public class ClientClientOrderServiceImpl implements ClientOrderService {
 
             // 9. Изчисти количката
             cartService.clearCart(userId);
+
+            // ✅ 10. НОВО - Broadcast новата поръчка към всички dashboard-ове
+            try {
+                Map<String, Object> orderData = new HashMap<>();
+                orderData.put("orderId", savedOrder.getId());
+                orderData.put("clientName", client.getUsername());
+                orderData.put("status", savedOrder.getStatus().name());
+                orderData.put("itemsCount", savedOrder.getItems().size());
+                orderData.put("totalGross", savedOrder.getTotalGross());
+                orderData.put("submittedAt", savedOrder.getSubmittedAt());
+                orderData.put("isUrgent", savedOrder.getStatus() == OrderStatus.URGENT);
+
+                broadcastService.broadcastNewOrder(savedOrder.getId(), orderData);
+
+                // ✅ изчислява counters-ите
+                Long urgentCount = orderRepository.countByStatus(OrderStatus.URGENT);
+                Long pendingCount = orderRepository.countByStatus(OrderStatus.PENDING);
+                Long confirmedCount = orderRepository.countByStatus(OrderStatus.CONFIRMED);
+                Long shippedCount = orderRepository.countByStatus(OrderStatus.SHIPPED);
+                Long cancelledCount = orderRepository.countByStatus(OrderStatus.CANCELLED);
+
+                broadcastService.broadcastCounterUpdate(urgentCount, pendingCount, confirmedCount, shippedCount, cancelledCount);
+
+            } catch (Exception e) {
+                log.warn("Failed to broadcast new order {}: {}", savedOrder.getId(), e.getMessage());
+                // Продължаваме - поръчката е създадена успешно
+            }
 
             return savedOrder;
 

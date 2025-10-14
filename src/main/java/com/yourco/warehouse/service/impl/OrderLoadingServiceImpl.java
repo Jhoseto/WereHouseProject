@@ -1,5 +1,6 @@
 package com.yourco.warehouse.service.impl;
 
+import com.yourco.warehouse.dto.ProductAdminDTO;
 import com.yourco.warehouse.entity.*;
 import com.yourco.warehouse.entity.enums.OrderStatus;
 import com.yourco.warehouse.entity.enums.Role;
@@ -7,7 +8,9 @@ import com.yourco.warehouse.repository.OrderRepository;
 import com.yourco.warehouse.repository.ProductRepository;
 import com.yourco.warehouse.repository.ShippedProcessRepository;
 import com.yourco.warehouse.repository.UserRepository;
+import com.yourco.warehouse.service.InventoryBroadcastService;
 import com.yourco.warehouse.service.OrderLoadingService;
+import com.yourco.warehouse.service.ProductService;
 import com.yourco.warehouse.service.UserService;
 import org.apache.commons.math3.stat.descriptive.summary.Product;
 import org.slf4j.Logger;
@@ -44,16 +47,24 @@ public class OrderLoadingServiceImpl implements OrderLoadingService {
     private final UserService userService;
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
+    private final InventoryBroadcastService broadcastService;
+    private final ProductService productService;
 
     @Autowired
     public OrderLoadingServiceImpl(OrderRepository orderRepository,
                                    ShippedProcessRepository shippedProcessRepository,
-                                   UserService userService, UserRepository userRepository, ProductRepository productRepository) {
+                                   UserService userService,
+                                   UserRepository userRepository,
+                                   ProductRepository productRepository,
+                                   InventoryBroadcastService broadcastService,
+                                   ProductService productService) {
         this.orderRepository = orderRepository;
         this.shippedProcessRepository = shippedProcessRepository;
         this.userService = userService;
         this.userRepository = userRepository;
         this.productRepository = productRepository;
+        this.broadcastService = broadcastService;
+        this.productService = productService;
     }
 
     @Override
@@ -172,22 +183,12 @@ public class OrderLoadingServiceImpl implements OrderLoadingService {
             order.setShippingDurationSeconds((int) durationSeconds);
             orderRepository.save(order);
 
-            List<OrderItem> allItems = order.getItems();
 
-            // Премахване на бройките за артикулите от каталога (инвентара)
-            for (OrderItem item : allItems) {
-                Optional<ProductEntity> productOpt = productRepository.findById(item.getProduct().getId());
-
-                if (productOpt.isEmpty()) {
-                    throw new RuntimeException("Продуктът не е намерен за item ID: " + item.getId());
-                }
-                ProductEntity product = productOpt.get();
-
-                Integer available = product.getQuantityAvailable();
-                BigDecimal qty = item.getQty();
-
-                product.setQuantityAvailable(available - qty.intValue());
-                productRepository.save(product);
+            // ✅ НОВО - Обнови статистиките в admin панела
+            try {
+                broadcastService.broadcastStatsUpdate(productService.getProductStats());
+            } catch (Exception e) {
+                log.warn("Failed to broadcast stats update: {}", e.getMessage());
             }
 
             // Изчисти временната session - товаренето е завършено
@@ -205,6 +206,10 @@ public class OrderLoadingServiceImpl implements OrderLoadingService {
             throw e;
         }
     }
+
+
+
+
 
     @Override
     @Transactional(readOnly = true)

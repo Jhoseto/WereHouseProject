@@ -3,6 +3,7 @@ package com.yourco.warehouse.service.impl;
 import com.yourco.warehouse.dto.ClientDTO;
 import com.yourco.warehouse.dto.DashboardDTO;
 import com.yourco.warehouse.dto.OrderDTO;
+import com.yourco.warehouse.dto.ProductAdminDTO;
 import com.yourco.warehouse.entity.Order;
 import com.yourco.warehouse.entity.OrderItem;
 import com.yourco.warehouse.entity.ProductEntity;
@@ -11,11 +12,15 @@ import com.yourco.warehouse.entity.enums.OrderStatus;
 import com.yourco.warehouse.entity.enums.UserStatus;
 import com.yourco.warehouse.mapper.OrderMapper;
 import com.yourco.warehouse.repository.OrderRepository;
+import com.yourco.warehouse.repository.ProductRepository;
 import com.yourco.warehouse.service.DashboardService;
+import com.yourco.warehouse.service.InventoryBroadcastService;
+import com.yourco.warehouse.service.ProductService;
 import com.yourco.warehouse.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.web.webauthn.management.PublicKeyCredentialUserEntityRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,14 +44,23 @@ public class DashboardServiceImpl implements DashboardService {
     private final OrderRepository orderRepository;
     private final OrderMapper orderMapper;
     private final UserService userService;
+    private final ProductRepository productRepository;
+    private final InventoryBroadcastService inventoryBroadcastService;
+    private final ProductService productService;
 
     @Autowired
     public DashboardServiceImpl(OrderRepository orderRepository,
                                 OrderMapper orderMapper,
-                                UserService userService) {
+                                UserService userService,
+                                ProductRepository productRepository,
+                                InventoryBroadcastService inventoryBroadcastService,
+                                ProductService productService) {
         this.orderRepository = orderRepository;
         this.orderMapper = orderMapper;
         this.userService = userService;
+        this.productRepository = productRepository;
+        this.inventoryBroadcastService = inventoryBroadcastService;
+        this.productService = productService;
     }
 
     // ==========================================
@@ -370,10 +384,9 @@ public class DashboardServiceImpl implements DashboardService {
     // ==========================================
 
     @Override
-    @Transactional // Critical write operation
+    @Transactional
     public DashboardDTO approveOrderWithCorrections(Long orderId, String operatorNote) {
         try {
-
             Optional<Order> orderOpt = orderRepository.findById(orderId);
             if (orderOpt.isEmpty()) {
                 return new DashboardDTO("Поръчката не е намерена");
@@ -381,16 +394,36 @@ public class DashboardServiceImpl implements DashboardService {
 
             Order order = orderOpt.get();
 
-            // ✅ РЕАЛНА ЛОГИКА: Проверява статуса
             if (order.getStatus() != OrderStatus.PENDING && order.getStatus() != OrderStatus.URGENT) {
                 return new DashboardDTO("Поръчката не може да бъде одобрена в текущия статус: " + order.getStatus());
+            }
+
+            // ✅ Потвърди продажбата при одобрение
+            for (OrderItem item : order.getItems()) {
+                ProductEntity product = productRepository.findById(item.getProduct().getId())
+                        .orElseThrow(() -> new IllegalStateException("Продукт не е намерен: " + item.getProduct().getId()));
+
+                int quantity = item.getQty().intValue();
+                product.confirmSale(quantity);
+                productRepository.save(product);
+
+                log.debug("Confirmed sale for product {}: {} units. Available: {}, Reserved: {}",
+                        product.getName(), quantity, product.getQuantityAvailable(), product.getQuantityReserved());
+
+                // ✅ НОВО - Broadcast промяната в инвентара
+                try {
+                    ProductAdminDTO productDTO = ProductAdminDTO.from(product);
+                    inventoryBroadcastService.broadcastProductUpdate(productDTO, "confirmed");
+                    log.debug("Broadcasted inventory update for product: {}", product.getName());
+                } catch (Exception e) {
+                    log.warn("Failed to broadcast product update for {}: {}", product.getName(), e.getMessage());
+                }
             }
 
             // Одобри поръчката
             order.setStatus(OrderStatus.CONFIRMED);
             order.setConfirmedAt(LocalDateTime.now());
 
-            // Ако има бележка от оператора, добави я
             if (operatorNote != null && !operatorNote.trim().isEmpty()) {
                 String existingNote = order.getModificationNote();
                 String finalNote = existingNote != null ?
@@ -402,23 +435,32 @@ public class DashboardServiceImpl implements DashboardService {
 
             orderRepository.save(order);
 
+            // ✅ НОВО - Broadcast обновени статистики
+            try {
+                inventoryBroadcastService.broadcastStatsUpdate(productService.getProductStats());
+                log.debug("Broadcasted inventory stats update after order approval");
+            } catch (Exception e) {
+                log.warn("Failed to broadcast stats update: {}", e.getMessage());
+            }
+
             DashboardDTO response = new DashboardDTO();
             response.setSuccess(true);
 
-            // Генерирай съобщението базирано на дали има корекции
             if (order.getHasModifications() != null && order.getHasModifications()) {
                 response.setMessage("Поръчката е одобрена с корекции. Клиентът ще получи уведомление и детайли за корекцията");
             } else {
-                response.setMessage("Поръчката е одобрена !");
+                response.setMessage("Поръчката е одобрена успешно!");
             }
 
             return response;
 
         } catch (Exception e) {
-            log.error("Грешка при одобряване на поръчка {}", orderId, e);
-            return new DashboardDTO("Грешка при одобряване на поръчката: " + e.getMessage());
+            log.error("Грешка при одобряване на поръчка {}: {}", orderId, e.getMessage());
+            return new DashboardDTO("Грешка при одобряване: " + e.getMessage());
         }
     }
+
+
 
     @Override
     @Transactional // Critical write operation

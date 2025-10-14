@@ -23,6 +23,9 @@ public class ProductStatsDTO {
     @JsonProperty("totalInventoryValue")
     private BigDecimal totalInventoryValue;
 
+    @JsonProperty("totalInventoryValueWithVat")  // ✅ С ДДС (точно изчислена)
+    private BigDecimal totalInventoryValueWithVat;
+
     @JsonProperty("categoriesCount")
     private long categoriesCount;
 
@@ -54,6 +57,14 @@ public class ProductStatsDTO {
 
     public BigDecimal getTotalInventoryValue() { return totalInventoryValue; }
     public void setTotalInventoryValue(BigDecimal totalInventoryValue) { this.totalInventoryValue = totalInventoryValue; }
+
+    public BigDecimal getTotalInventoryValueWithVat() {
+        return totalInventoryValueWithVat;
+    }
+
+    public void setTotalInventoryValueWithVat(BigDecimal totalInventoryValueWithVat) {
+        this.totalInventoryValueWithVat = totalInventoryValueWithVat;
+    }
 
     public long getCategoriesCount() { return categoriesCount; }
     public void setCategoriesCount(long categoriesCount) { this.categoriesCount = categoriesCount; }

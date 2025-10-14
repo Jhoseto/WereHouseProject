@@ -904,11 +904,11 @@ class StatsManager {
             if (response.success && response.stats) {
                 const stats = response.stats;
 
-                // Използваме ТОЧНИТЕ имена от ProductStatsDTO
                 this.updateStats({
                     totalProducts: stats.totalProducts || 0,
                     lowStockCount: stats.lowStockCount || 0,
                     totalInventoryValue: stats.totalInventoryValue || 0,
+                    totalInventoryValueWithVat: stats.totalInventoryValueWithVat || 0,
                     categoriesCount: stats.categoriesCount || 0
                 });
             }
@@ -929,7 +929,6 @@ class StatsManager {
     }
 
     updateStats(data) {
-        // Актуализираме с правилните данни
         if (this.elements.total) {
             this.elements.total.textContent = data.totalProducts.toString() || 0;
         }
@@ -939,7 +938,14 @@ class StatsManager {
         }
 
         if (this.elements.value) {
+            // БЕЗ ДДС
             this.elements.value.textContent = this.formatValue(data.totalInventoryValue);
+
+            // С ДДС
+            const vatElement = document.getElementById('stat-inventory-value-vat');
+            if (vatElement && data.totalInventoryValueWithVat) {
+                vatElement.textContent = `С ДДС: ${this.formatValue(data.totalInventoryValueWithVat)}`;
+            }
         }
 
         if (this.elements.categories) {

@@ -185,6 +185,8 @@ public class ProductEntity {
         return quantityAvailable;
     }
 
+
+
     public void setQuantityAvailable(Integer quantityAvailable) {
         if (quantityAvailable != null && quantityAvailable < 0) {
             throw new IllegalArgumentException("Наличното количество не може да бъде отрицателно");
@@ -196,12 +198,15 @@ public class ProductEntity {
         return quantityReserved;
     }
 
+
+
     public void setQuantityReserved(Integer quantityReserved) {
         if (quantityReserved != null && quantityReserved < 0) {
             throw new IllegalArgumentException("Резервираното количество не може да бъде отрицателно");
         }
         this.quantityReserved = quantityReserved != null ? quantityReserved : 0;
     }
+
 
     public LocalDate getLastPurchaseDate() {
         return lastPurchaseDate;
@@ -229,13 +234,21 @@ public class ProductEntity {
                 quantityAvailable >= requestedQuantity;
     }
 
+    /**
+     * Резервира количество за поръчка (PENDING статус)
+     * ВАЖНО: Не намалява quantityAvailable - само маркира като резервирано
+     */
     public void reserveQuantity(Integer quantity) {
-        if (!hasAvailableQuantity(quantity)) {
-            throw new IllegalStateException("Няма достатъчно налично количество за резервация");
+        int free = this.quantityAvailable - this.quantityReserved;
+        if (quantity > free) {
+            throw new IllegalStateException(
+                    String.format("Няма достатъчно свободно количество. Налични: %d, Резервирани: %d, Свободни: %d",
+                            this.quantityAvailable, this.quantityReserved, free));
         }
-        this.quantityAvailable -= quantity;
+        // ✅ САМО увеличаваме резервираните, БЕЗ да намаляваме available
         this.quantityReserved += quantity;
     }
+
 
     public void releaseReservation(Integer quantity) {
         if (quantity > quantityReserved) {
@@ -245,12 +258,21 @@ public class ProductEntity {
         this.quantityAvailable += quantity;
     }
 
-    public void sellQuantity(Integer quantity) {
-        if (quantity > quantityReserved) {
-            throw new IllegalStateException("Не може да се продаде повече от резервираното количество");
+
+    /**
+     * Потвърждава продажбата (CONFIRMED статус)
+     * Извадя от физическия инвентар и освобождава резервацията
+     */
+    public void confirmSale(Integer quantity) {
+        if (quantity > this.quantityReserved) {
+            throw new IllegalStateException(
+                    String.format("Не може да се потвърди повече от резервираното. Резервирани: %d, Поискани: %d",
+                            this.quantityReserved, quantity));
         }
-        this.quantityReserved -= quantity;
+        this.quantityAvailable -= quantity;  // ✅ СЕГА намаляваме available
+        this.quantityReserved -= quantity;   // ✅ Освобождаваме резервацията
     }
+
 
     public BigDecimal getPriceWithVat() {
         BigDecimal vatMultiplier = BigDecimal.ONE.add(
@@ -262,6 +284,7 @@ public class ProductEntity {
     public BigDecimal getVatAmount() {
         return getPriceWithVat().subtract(price);
     }
+
 
     // toString за debugging
     @Override

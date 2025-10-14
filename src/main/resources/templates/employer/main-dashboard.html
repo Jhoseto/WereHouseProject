@@ -224,7 +224,7 @@
             onclick="switchTab('urgent')"
             title="Спешни поръчки - над 12 часа без обработка. Изискват незабавно внимание.">
         <i class="tab-icon bi bi-exclamation-triangle-fill"></i>
-        <span class="tab-label">Спешни</span>
+        <span class="tab-label">Спешни/Приоритетни</span>
         <span class="tab-count" id="urgent-tab-count" th:text="${urgentCount ?: 0}">0</span>
     </button>
     <button class="tab-btn"
@@ -232,7 +232,7 @@
             onclick="switchTab('pending')"
             title="Чакащи обработка - нови поръчки получени в последните 12 часа.">
         <i class="tab-icon bi bi-hourglass-split"></i>
-        <span class="tab-label">Чакащи</span>
+        <span class="tab-label">Чакащи одобрение</span>
         <span class="tab-count" id="pending-tab-count" th:text="${pendingCount ?: 0}">0</span>
     </button>
     <button class="tab-btn"
@@ -240,7 +240,7 @@
             onclick="switchTab('confirmed')"
             title="Обработени поръчки - одобрени и готови за експедиция.">
         <i class="tab-icon bi bi-check-circle-fill"></i>
-        <span class="tab-label">Обработени</span>
+        <span class="tab-label">Обработени за товар</span>
         <span class="tab-count" id="confirmed-tab-count" th:text="${confirmedCount ?: 0}">0</span>
     </button>
     <button class="tab-btn"
@@ -248,7 +248,7 @@
             onclick="switchTab('shipped')"
             title="Завършени поръчки - изпратени за доставка.">
         <i class="tab-icon bi bi-truck"></i>
-        <span class="tab-label">Завършени</span>
+        <span class="tab-label">Завършени поръчки</span>
         <span class="tab-count" id="shipped-tab-count" th:text="${shippedCount ?: 0}">0</span>
     </button>
     <button class="tab-btn"
@@ -256,7 +256,7 @@
             onclick="switchTab('cancelled')"
             title="Отказани поръчки - отменени заявки за справка и анализ.">
         <i class="tab-icon bi bi-x-circle-fill"></i>
-        <span class="tab-label">Отказани</span>
+        <span class="tab-label">Отказани поръчки</span>
         <span class="tab-count" id="cancelled-tab-count" th:text="${cancelledCount ?: 0}">0</span>
     </button>
 </nav>
@@ -492,7 +492,7 @@
 <div th:replace="~{fragments/bottomHtmlImports :: bottomImports}"></div>
 
 <!-- Dashboard JavaScript Modules -->
-<script src="/js/orders-nav.js"></script>
+<script src="/js/client-orders-nav.js"></script>
 <script src="/js/employersDashboard/dashboardApi.js"></script>
 <script src="/js/employersDashboard/dashboardManager.js"></script>
 <script src="/js/employersDashboard/dashboardUI.js"></script>
