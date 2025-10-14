@@ -463,7 +463,7 @@ public class DashboardServiceImpl implements DashboardService {
 
 
     @Override
-    @Transactional // Critical write operation
+    @Transactional
     public DashboardDTO rejectOrderWithNotification(Long orderId, String rejectionReason) {
         try {
 
@@ -478,17 +478,35 @@ public class DashboardServiceImpl implements DashboardService {
 
             Order order = orderOpt.get();
 
-            //  Проверява статуса
-            if (order.getStatus().equals( OrderStatus.CONFIRMED)) {
-                return new DashboardDTO("Поръчката не може да бъде отказана в текущия статус: " + order.getStatus());
+            // Проверява статуса
+            if (order.getStatus().equals(OrderStatus.CONFIRMED)) {
+                return new DashboardDTO("Поръчката ви вече е потвърдена и не може да бъде отказана");
+            }
+
+            // ✅ НОВО: Освобождава резервациите за всички артикули
+            for (OrderItem item : order.getItems()) {
+                ProductEntity product = item.getProduct();
+                Integer quantity = item.getQty().intValue();
+
+                // Освобождаваме резервацията
+                product.releaseReservation(quantity);
+                productRepository.save(product);
             }
 
             // Отказва поръчката
             order.setStatus(OrderStatus.CANCELLED);
             order.setModificationNote("Отказана: " + rejectionReason);
-            order.setConfirmedAt(LocalDateTime.now()); // Маркираме момента на решението
+            order.setConfirmedAt(LocalDateTime.now());
 
             orderRepository.save(order);
+
+            // ✅ НОВО: Broadcast обновени статистики за инвентара
+            try {
+                inventoryBroadcastService.broadcastStatsUpdate(productService.getProductStats());
+
+            } catch (Exception e) {
+                log.warn("Failed to broadcast stats update: {}", e.getMessage());
+            }
 
             DashboardDTO response = new DashboardDTO();
             response.setSuccess(true);

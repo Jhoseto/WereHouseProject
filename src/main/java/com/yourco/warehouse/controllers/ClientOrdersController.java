@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -249,6 +250,35 @@ public class ClientOrdersController {
             response.put("success", false);
             response.put("message", "Възникна грешка при обновяването на поръчката");
             return ResponseEntity.status(500).body(response);
+        }
+    }
+
+
+    /**
+     * Cancel PENDING order (client-side cancellation with deletion)
+     * DELETE /api/orders/{orderId}/cancel
+     */
+    @DeleteMapping("/api/orders/{orderId}/cancel")
+    public ResponseEntity<Map<String, Object>> cancelPendingOrder(
+            @PathVariable Long orderId) {
+
+        try {
+            Long clientId = userService.getCurrentUser().getId();
+
+            Map<String, Object> result = clientOrderService.cancelPendingOrder(orderId, clientId);
+
+            if ((Boolean) result.get("success")) {
+                return ResponseEntity.ok(result);
+            } else {
+                return ResponseEntity.badRequest().body(result);
+            }
+
+        } catch (Exception e) {
+            log.error("Error in cancel order endpoint for order {}", orderId, e);
+            Map<String, Object> errorResult = new HashMap<>();
+            errorResult.put("success", false);
+            errorResult.put("message", "Грешка при отказване на поръчката: " + e.getMessage());
+            return ResponseEntity.status(500).body(errorResult);
         }
     }
 }

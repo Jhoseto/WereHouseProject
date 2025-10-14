@@ -470,6 +470,95 @@ class OrderDetailManager {
 }
 
 // ==========================================
+// ORDER CANCELLATION (CLIENT-SIDE)
+// ==========================================
+
+/**
+ * Setup cancel order button event listener
+ */
+function setupCancelOrderButton() {
+    const cancelBtn = document.getElementById('cancelOrderBtn');
+
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', handleCancelOrder);
+        console.log('✅ Cancel order button initialized');
+    }
+}
+
+/**
+ * Handle order cancellation
+ */
+async function handleCancelOrder(event) {
+    const button = event.currentTarget;
+    const orderId = button.getAttribute('data-order-id');
+
+    // Confirmation диалог
+    const confirmed = confirm(
+        '⚠️ ВНИМАНИЕ!\n\n' +
+        'Сигурни ли сте, че искате да откажете тази поръчка?\n\n' +
+        '• Поръчката ще бъде изтрита завинаги\n' +
+        '• Всички резервирани количества ще бъдат освободени\n' +
+        '• Това действие НЕ МОЖЕ да бъде отменено\n\n' +
+        'Продължавате ли?'
+    );
+
+    if (!confirmed) {
+        return;
+    }
+
+    // Disable бутона и покажи loading
+    button.disabled = true;
+    button.innerHTML = '<i class="bi bi-hourglass-split"></i> Отказване...';
+
+    try {
+        console.log('🗑️ Cancelling order:', orderId);
+
+        const response = await fetch(`/api/orders/${orderId}/cancel`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                [window.csrfHeader]: window.csrfToken
+            }
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            // Success message
+            if (window.toastManager) {
+                window.toastManager.success('Поръчката е отказана успешно и изтрита');
+            } else {
+                alert('✅ Поръчката е отказана успешно!');
+            }
+
+            console.log('✅ Order cancelled successfully');
+
+            // Redirect към списъка с поръчки след 1.5 секунди
+            setTimeout(() => {
+                window.location.href = '/orders';
+            }, 1500);
+
+        } else {
+            throw new Error(result.message || 'Неуспешно отказване на поръчката');
+        }
+
+    } catch (error) {
+        console.error('❌ Error cancelling order:', error);
+
+        // Error message
+        if (window.toastManager) {
+            window.toastManager.error('Грешка: ' + error.message);
+        } else {
+            alert('❌ Грешка при отказване на поръчката:\n' + error.message);
+        }
+
+        // Restore бутона
+        button.disabled = false;
+        button.innerHTML = '<i class="bi bi-x-circle"></i> Откажи поръчката';
+    }
+}
+
+// ==========================================
 // INITIALIZATION
 // ==========================================
 
@@ -484,4 +573,6 @@ document.addEventListener('DOMContentLoaded', function() {
     } else {
         console.log('Поръчката не може да се редактира - OrderDetailManager не е нужен');
     }
+
+    setupCancelOrderButton();
 });

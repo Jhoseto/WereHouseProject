@@ -243,6 +243,15 @@
                         <i class="bi bi-arrow-left"></i>
                         Назад към поръчките
                     </a>
+
+                    <button th:if="${order.status == T(com.yourco.warehouse.entity.enums.OrderStatus).PENDING}"
+                            type="button"
+                            id="cancelOrderBtn"
+                            class="btn btn-danger"
+                            th:attr="data-order-id=${order.id}">
+                        <i class="bi bi-x-circle"></i>
+                        Откажи поръчката
+                    </button>
                 </div>
 
                 <div th:if="${canEdit}" class="edit-actions">

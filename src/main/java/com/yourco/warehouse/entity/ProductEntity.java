@@ -250,12 +250,18 @@ public class ProductEntity {
     }
 
 
+    /**
+     * Освобождава резервация (при отказ на PENDING поръчка)
+     * ВАЖНО: Не променя quantityAvailable - само намалява резервираното
+     */
     public void releaseReservation(Integer quantity) {
         if (quantity > quantityReserved) {
-            throw new IllegalStateException("Не може да се освободи повече от резервираното количество");
+            throw new IllegalStateException(
+                    String.format("Не може да се освободи повече от резервираното количество. Резервирани: %d, Поискани: %d",
+                            this.quantityReserved, quantity));
         }
+        // ✅ САМО намаляваме резервираните, БЕЗ да увеличаваме available
         this.quantityReserved -= quantity;
-        this.quantityAvailable += quantity;
     }
 
 

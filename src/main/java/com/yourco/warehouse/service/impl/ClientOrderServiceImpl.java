@@ -8,10 +8,8 @@ import com.yourco.warehouse.repository.OrderRepository;
 import com.yourco.warehouse.repository.OrderItemRepository;
 import com.yourco.warehouse.repository.ProductRepository;
 import com.yourco.warehouse.repository.UserRepository;
-import com.yourco.warehouse.service.CartService;
-import com.yourco.warehouse.service.ClientOrderService;
+import com.yourco.warehouse.service.*;
 import com.yourco.warehouse.dto.CartItemDTO;
-import com.yourco.warehouse.service.DashboardBroadcastService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +36,9 @@ public class ClientOrderServiceImpl implements ClientOrderService {
     private final CartService cartService;
     private final OrderMapper orderMapper;
     private final DashboardBroadcastService broadcastService;
+    private final InventoryBroadcastService inventoryBroadcastService;
+    private final ProductService productService;
+    private final DashboardBroadcastService dashboardBroadcastService;
 
     @Autowired
     public ClientOrderServiceImpl(OrderRepository orderRepository,
@@ -46,7 +47,10 @@ public class ClientOrderServiceImpl implements ClientOrderService {
                                   UserRepository userRepository,
                                   CartService cartService,
                                   OrderMapper orderMapper,
-                                  DashboardBroadcastService broadcastService) {
+                                  DashboardBroadcastService broadcastService,
+                                  InventoryBroadcastService inventoryBroadcastService,
+                                  ProductService productService,
+                                  DashboardBroadcastService dashboardBroadcastService) {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
         this.productRepository = productRepository;
@@ -54,6 +58,9 @@ public class ClientOrderServiceImpl implements ClientOrderService {
         this.cartService = cartService;
         this.orderMapper = orderMapper;
         this.broadcastService = broadcastService;
+        this.inventoryBroadcastService = inventoryBroadcastService;
+        this.productService = productService;
+        this.dashboardBroadcastService = dashboardBroadcastService;
     }
 
     @Override
@@ -466,5 +473,103 @@ public class ClientOrderServiceImpl implements ClientOrderService {
     public Optional<OrderDTO> getOrderById(Long id) {
         return orderRepository.findByIdWithItems(id)
                 .map(orderMapper::toDTO);
+    }
+
+
+
+    @Override
+    @Transactional
+    public Map<String, Object> cancelPendingOrder(Long orderId, Long clientId) {
+        Map<String, Object> result = new HashMap<>();
+
+        try {
+            log.info("Starting cancellation of order {} by client {}", orderId, clientId);
+
+            // 1. Намери поръчката
+            Optional<Order> orderOpt = getOrderByIdForClient(orderId, clientId);
+
+            if (orderOpt.isEmpty()) {
+                result.put("success", false);
+                result.put("message", "Поръчката не е намерена или нямате достъп до нея");
+                return result;
+            }
+
+            Order order = orderOpt.get();
+
+            // 2. Провери дали е PENDING
+            if (!order.getStatus().equals(OrderStatus.PENDING)) {
+                result.put("success", false);
+                result.put("message", "Можете да откажете само поръчки в статус PENDING. Текущ статус: " + order.getStatus());
+                return result;
+            }
+
+            log.info("Releasing reservations for order {}", orderId);
+
+            // 3. ✅ КЛЮЧОВО: Освобождаваме резервациите ДОКАТО order е жив
+            for (OrderItem item : order.getItems()) {
+                Long productId = item.getProduct().getId();
+                Integer quantity = item.getQty().intValue();
+
+                log.info("Processing product {}, releasing {} units", productId, quantity);
+
+                // Вземи продукта от repository
+                ProductEntity product = productRepository.findById(productId)
+                        .orElseThrow(() -> new IllegalStateException("Продукт не е намерен"));
+
+                int beforeReserved = product.getQuantityReserved();
+
+                log.info("BEFORE: product={}, available={}, reserved={}",
+                        productId, product.getQuantityAvailable(), beforeReserved);
+
+                // Освобождаваме резервацията
+                product.releaseReservation(quantity);
+
+                log.info("AFTER: product={}, available={}, reserved={}",
+                        productId, product.getQuantityAvailable(), product.getQuantityReserved());
+
+                // Записваме ВЕДНАГА
+                productRepository.saveAndFlush(product);
+
+                log.info("✅ Saved changes for product {}", productId);
+            }
+
+            // 4. СЕГА изтриваме order (СЛЕД като резервациите са освободени)
+            orderRepository.delete(order);
+            orderRepository.flush();
+
+            log.info("✅ Client {} cancelled and deleted order {}", clientId, orderId);
+
+            // 5. Broadcast актуализация
+            try {
+                Long urgentCount = orderRepository.countByStatus(OrderStatus.URGENT);
+                Long pendingCount = orderRepository.countByStatus(OrderStatus.PENDING);
+                Long confirmedCount = orderRepository.countByStatus(OrderStatus.CONFIRMED);
+                Long cancelledCount = orderRepository.countByStatus(OrderStatus.CANCELLED);
+                Long shippedCount = orderRepository.countByStatus(OrderStatus.SHIPPED);
+
+                dashboardBroadcastService.broadcastCounterUpdate(
+                        urgentCount, pendingCount, confirmedCount, cancelledCount, shippedCount
+                );
+            } catch (Exception e) {
+                log.warn("Failed to broadcast counter update: {}", e.getMessage());
+            }
+
+            try {
+                inventoryBroadcastService.broadcastStatsUpdate(productService.getProductStats());
+            } catch (Exception e) {
+                log.warn("Failed to broadcast stats update: {}", e.getMessage());
+            }
+
+            result.put("success", true);
+            result.put("message", "Поръчката е отказана успешно и изтрита");
+
+            return result;
+
+        } catch (Exception e) {
+            log.error("❌ Error cancelling order {} for client {}: {}", orderId, clientId, e.getMessage(), e);
+            result.put("success", false);
+            result.put("message", "Грешка при отказване на поръчката: " + e.getMessage());
+            return result;
+        }
     }
 }

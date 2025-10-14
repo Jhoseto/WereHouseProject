@@ -4,6 +4,7 @@ import com.yourco.warehouse.dto.OrderDTO;
 import com.yourco.warehouse.entity.Order;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
@@ -87,4 +88,7 @@ public interface ClientOrderService {
     Map<String, Object> updateOrderBatch(Long orderId, Map<Long, Integer> itemUpdates, Long clientId);
 
     Optional<OrderDTO> getOrderById(Long id);
+
+    @Transactional
+    Map<String, Object> cancelPendingOrder(Long orderId, Long clientId);
 }
