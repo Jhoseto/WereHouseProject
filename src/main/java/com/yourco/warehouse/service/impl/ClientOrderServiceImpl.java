@@ -10,6 +10,7 @@ import com.yourco.warehouse.repository.ProductRepository;
 import com.yourco.warehouse.repository.UserRepository;
 import com.yourco.warehouse.service.*;
 import com.yourco.warehouse.dto.CartItemDTO;
+import jakarta.persistence.EntityManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -237,43 +238,42 @@ public class ClientOrderServiceImpl implements ClientOrderService {
 
 
     @Override
+    @Transactional
     public boolean removeOrderItem(Long orderId, Long productId, Long clientId) {
-        // 1. Намери поръчката
         Order order = getOrderByIdForClient(orderId, clientId)
                 .orElseThrow(() -> new IllegalArgumentException("Поръчката не е намерена"));
 
-        // 2. Провери дали може да се редактира
         if (!canEditOrder(order)) {
             throw new IllegalStateException("Поръчката не може да се редактира");
         }
 
-        // 3. Намери артикула
         OrderItem orderItem = order.getItems().stream()
                 .filter(item -> item.getProduct().getId().equals(productId))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Артикулът не е намерен в поръчката"));
 
-        // 4. Освободи резервацията
-        ProductEntity product = orderItem.getProduct();
+        // ✅ ПОПРАВКА: Зареди product с lock
+        ProductEntity product = productRepository.findByIdWithLock(productId)
+                .orElseThrow(() -> new IllegalArgumentException("Продуктът не е намерен"));
+
         product.releaseReservation(orderItem.getQty().intValue());
         productRepository.save(product);
 
-        // 5. Премахни артикула от поръчката
         order.getItems().remove(orderItem);
 
-        // 6. Провери дали поръчката не е останала празна
         if (order.getItems().isEmpty()) {
             throw new IllegalStateException("Поръчката не може да остане без артикули");
         }
 
-        // 7. Преизчисли и запази
         order = recalculateOrderTotals(order);
         orderRepository.save(order);
 
         return true;
     }
 
+
     @Override
+    @Transactional
     public boolean canEditOrder(Order order) {
         return order.getStatus() == OrderStatus.PENDING;
     }
@@ -351,8 +351,11 @@ public class ClientOrderServiceImpl implements ClientOrderService {
 
             for (OrderItem item : new ArrayList<>(order.getItems())) {
                 if (!itemUpdates.containsKey(item.getProduct().getId())) {
-                    // Този артикул трябва да се премахне
-                    ProductEntity product = item.getProduct();
+                    // ✅ ПОПРАВКА: Зареди product с lock
+                    Long productId = item.getProduct().getId();
+                    ProductEntity product = productRepository.findByIdWithLock(productId)
+                            .orElseThrow(() -> new IllegalStateException("Продукт не е намерен"));
+
                     product.releaseReservation(item.getQty().intValue());
                     productRepository.save(product);
                     itemsToRemove.add(item);
@@ -483,81 +486,50 @@ public class ClientOrderServiceImpl implements ClientOrderService {
         Map<String, Object> result = new HashMap<>();
 
         try {
-            log.info("Starting cancellation of order {} by client {}", orderId, clientId);
-
             // 1. Намери поръчката
-            Optional<Order> orderOpt = getOrderByIdForClient(orderId, clientId);
+            Order order = orderRepository.findById(orderId)
+                    .orElseThrow(() -> new IllegalArgumentException("Поръчката не е намерена"));
 
-            if (orderOpt.isEmpty()) {
+            // 2. Провери дали принадлежи на клиента
+            if (!order.getClient().getId().equals(clientId)) {
                 result.put("success", false);
-                result.put("message", "Поръчката не е намерена или нямате достъп до нея");
+                result.put("message", "Поръчката не е намерена");
                 return result;
             }
 
-            Order order = orderOpt.get();
-
-            // 2. Провери дали е PENDING
+            // 3. Провери дали е PENDING
             if (!order.getStatus().equals(OrderStatus.PENDING)) {
                 result.put("success", false);
-                result.put("message", "Можете да откажете само поръчки в статус PENDING. Текущ статус: " + order.getStatus());
+                result.put("message", "Можете да откажете само поръчки в статус PENDING");
                 return result;
             }
 
-            log.info("Releasing reservations for order {}", orderId);
-
-            // 3. ✅ КЛЮЧОВО: Освобождаваме резервациите ДОКАТО order е жив
+            // 4. Запази списък с productId и quantities ПРЕДИ да изтриеш нещо
+            Map<Long, Integer> reservationsToRelease = new HashMap<>();
             for (OrderItem item : order.getItems()) {
-                Long productId = item.getProduct().getId();
-                Integer quantity = item.getQty().intValue();
-
-                log.info("Processing product {}, releasing {} units", productId, quantity);
-
-                // Вземи продукта от repository
-                ProductEntity product = productRepository.findById(productId)
-                        .orElseThrow(() -> new IllegalStateException("Продукт не е намерен"));
-
-                int beforeReserved = product.getQuantityReserved();
-
-                log.info("BEFORE: product={}, available={}, reserved={}",
-                        productId, product.getQuantityAvailable(), beforeReserved);
-
-                // Освобождаваме резервацията
-                product.releaseReservation(quantity);
-
-                log.info("AFTER: product={}, available={}, reserved={}",
-                        productId, product.getQuantityAvailable(), product.getQuantityReserved());
-
-                // Записваме ВЕДНАГА
-                productRepository.saveAndFlush(product);
-
-                log.info("✅ Saved changes for product {}", productId);
+                reservationsToRelease.put(item.getProduct().getId(), item.getQty().intValue());
             }
 
-            // 4. СЕГА изтриваме order (СЛЕД като резервациите са освободени)
+            // 5. ПЪРВО: Изтрий order items
+            List<OrderItem> itemsToDelete = new ArrayList<>(order.getItems());
+            order.getItems().clear();
+            orderItemRepository.deleteAll(itemsToDelete);
+            orderItemRepository.flush();
+
+            // 6. ВТОРО: Изтрий order
             orderRepository.delete(order);
             orderRepository.flush();
 
-            log.info("✅ Client {} cancelled and deleted order {}", clientId, orderId);
+            // 7. ТРЕТО: СЕГА освободи резервациите (след като order и items са изтрити)
+            for (Map.Entry<Long, Integer> entry : reservationsToRelease.entrySet()) {
+                Long productId = entry.getKey();
+                Integer quantity = entry.getValue();
 
-            // 5. Broadcast актуализация
-            try {
-                Long urgentCount = orderRepository.countByStatus(OrderStatus.URGENT);
-                Long pendingCount = orderRepository.countByStatus(OrderStatus.PENDING);
-                Long confirmedCount = orderRepository.countByStatus(OrderStatus.CONFIRMED);
-                Long cancelledCount = orderRepository.countByStatus(OrderStatus.CANCELLED);
-                Long shippedCount = orderRepository.countByStatus(OrderStatus.SHIPPED);
+                ProductEntity product = productRepository.findByIdWithLock(productId)
+                        .orElseThrow(() -> new IllegalStateException("Продукт не е намерен"));
 
-                dashboardBroadcastService.broadcastCounterUpdate(
-                        urgentCount, pendingCount, confirmedCount, cancelledCount, shippedCount
-                );
-            } catch (Exception e) {
-                log.warn("Failed to broadcast counter update: {}", e.getMessage());
-            }
-
-            try {
-                inventoryBroadcastService.broadcastStatsUpdate(productService.getProductStats());
-            } catch (Exception e) {
-                log.warn("Failed to broadcast stats update: {}", e.getMessage());
+                product.releaseReservation(quantity);
+                productRepository.saveAndFlush(product);
             }
 
             result.put("success", true);
@@ -566,7 +538,7 @@ public class ClientOrderServiceImpl implements ClientOrderService {
             return result;
 
         } catch (Exception e) {
-            log.error("❌ Error cancelling order {} for client {}: {}", orderId, clientId, e.getMessage(), e);
+            log.error("Error cancelling order {}: {}", orderId, e.getMessage(), e);
             result.put("success", false);
             result.put("message", "Грешка при отказване на поръчката: " + e.getMessage());
             return result;

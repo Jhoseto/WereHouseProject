@@ -45,7 +45,6 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
      * Кешира се агресивно защото се променя рядко
      */
     @Query(value = "SELECT COUNT(*) FROM orders WHERE status = :status", nativeQuery = true)
-    @Cacheable(value = "fastOrderCount", key = "#status", unless = "#result == null")
     @QueryHints({
             @QueryHint(name = "org.hibernate.readOnly", value = "true"),
             @QueryHint(name = "org.hibernate.fetchSize", value = "1"),
@@ -73,7 +72,6 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
         WHERE status IN ('PENDING', 'URGENT', 'CONFIRMED', 'CANCELLED')
         GROUP BY status
         """, nativeQuery = true)
-    @Cacheable(value = "allOrderCounts", unless = "#result == null")
     @QueryHints({
             @QueryHint(name = "org.hibernate.readOnly", value = "true"),
             @QueryHint(name = "org.hibernate.fetchSize", value = "10")
@@ -100,7 +98,6 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
         FROM orders 
         WHERE submitted_at >= :startDate AND submitted_at <= :endDate
         """, nativeQuery = true)
-    @Cacheable(value = "dailyStatsSuper", key = "#startDate.toLocalDate()")
     @QueryHints({
             @QueryHint(name = "org.hibernate.readOnly", value = "true"),
             @QueryHint(name = "org.hibernate.fetchSize", value = "1")
@@ -131,7 +128,6 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
         ORDER BY o.submitted_at DESC 
         LIMIT :limit
         """, nativeQuery = true)
-    @Cacheable(value = "orderProjections", key = "#status + '_' + #limit")
     @QueryHints({
             @QueryHint(name = "org.hibernate.readOnly", value = "true"),
             @QueryHint(name = "org.hibernate.fetchSize", value = "50")
@@ -182,7 +178,6 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
         WHERE o.status = :status 
         ORDER BY o.submittedAt DESC
         """)
-    @Cacheable(value = "ordersByStatus", key = "#status")
     @QueryHints({
             @QueryHint(name = "org.hibernate.readOnly", value = "true"),
             @QueryHint(name = "org.hibernate.fetchSize", value = "100"),
@@ -199,7 +194,6 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             "LEFT JOIN FETCH o.items oi " +
             "LEFT JOIN FETCH oi.product " +
             "WHERE o.id = :orderId")
-    @Cacheable(value = "orderByIdFull", key = "#orderId")
     @QueryHints({
             @QueryHint(name = "org.hibernate.readOnly", value = "true"),
             @QueryHint(name = "org.hibernate.batchSize", value = "10")
@@ -275,7 +269,6 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
      */
     @Query(value = "SELECT COALESCE(SUM(total_gross), 0) FROM orders WHERE status = :status",
             nativeQuery = true)
-    @Cacheable(value = "totalValueByStatus", key = "#status")
     @QueryHints(@QueryHint(name = "org.hibernate.readOnly", value = "true"))
     @Transactional(readOnly = true)
     java.math.BigDecimal getTotalValueByStatusFast(@Param("status") String status);

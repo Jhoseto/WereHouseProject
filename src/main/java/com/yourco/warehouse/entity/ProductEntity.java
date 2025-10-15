@@ -239,14 +239,22 @@ public class ProductEntity {
      * ВАЖНО: Не намалява quantityAvailable - само маркира като резервирано
      */
     public void reserveQuantity(Integer quantity) {
-        int free = this.quantityAvailable - this.quantityReserved;
+        if (quantity == null || quantity <= 0) {
+            throw new IllegalArgumentException("Количеството трябва да бъде положително число");
+        }
+
+        int available = this.quantityAvailable != null ? this.quantityAvailable : 0;
+        int reserved = this.quantityReserved != null ? this.quantityReserved : 0;
+        int free = available - reserved;
+
         if (quantity > free) {
             throw new IllegalStateException(
                     String.format("Няма достатъчно свободно количество. Налични: %d, Резервирани: %d, Свободни: %d",
-                            this.quantityAvailable, this.quantityReserved, free));
+                            available, reserved, free));
         }
-        // ✅ САМО увеличаваме резервираните, БЕЗ да намаляваме available
-        this.quantityReserved += quantity;
+
+        // ✅ ИЗПОЛЗВАЙ SETTER-А вместо директна промяна!
+        this.setQuantityReserved(reserved + quantity);
     }
 
 
@@ -255,13 +263,20 @@ public class ProductEntity {
      * ВАЖНО: Не променя quantityAvailable - само намалява резервираното
      */
     public void releaseReservation(Integer quantity) {
-        if (quantity > quantityReserved) {
+        if (quantity == null || quantity <= 0) {
+            throw new IllegalArgumentException("Количеството трябва да бъде положително число");
+        }
+
+        int current = this.quantityReserved != null ? this.quantityReserved : 0;
+
+        if (quantity > current) {
             throw new IllegalStateException(
                     String.format("Не може да се освободи повече от резервираното количество. Резервирани: %d, Поискани: %d",
-                            this.quantityReserved, quantity));
+                            current, quantity));
         }
-        // ✅ САМО намаляваме резервираните, БЕЗ да увеличаваме available
-        this.quantityReserved -= quantity;
+
+        // ✅ ИЗПОЛЗВАЙ SETTER-А вместо директна промяна!
+        this.setQuantityReserved(current - quantity);
     }
 
 

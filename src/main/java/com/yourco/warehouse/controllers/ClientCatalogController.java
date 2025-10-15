@@ -35,7 +35,6 @@ public class ClientCatalogController {
         try {
             List<ProductCatalogDTO> productDTOs = catalogService.getAllActiveProducts();
             return ResponseEntity.ok()
-                    .header("Cache-Control", "public, max-age=300")
                     .body(productDTOs);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -54,7 +53,6 @@ public class ClientCatalogController {
         try {
             List<ProductCatalogDTO> productDTOs = catalogService.searchActive(query);
             return ResponseEntity.ok()
-                    .header("Cache-Control", "public, max-age=60")
                     .body(productDTOs);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -83,7 +81,6 @@ public class ClientCatalogController {
 
             List<ProductCatalogDTO> productDTOs = catalogService.filterProducts(category, minPrice, maxPrice);
             return ResponseEntity.ok()
-                    .header("Cache-Control", "public, max-age=180")
                     .body(productDTOs);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -118,7 +115,6 @@ public class ClientCatalogController {
             metadata.put("categories", catalogService.getAllCategories());
             metadata.put("priceStats", catalogService.getPriceStatistics());
             return ResponseEntity.ok()
-                    .header("Cache-Control", "public, max-age=1800")
                     .body(metadata);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
