@@ -922,10 +922,13 @@ class CatalogManager {
     }
 
     getInventoryData(product) {
+        const available = product.quantityAvailable || 0;
+        const reserved = product.quantityReserved || 0;
+
         return {
-            available: product.quantityAvailable || 0,
-            reserved: product.quantityReserved || 0,
-            actualAvailable: product.actualAvailable || 0
+            available: available,
+            reserved: reserved,
+            actualAvailable: available  // ПРОМЯНА: Показваме общо наличните, не свободните
         };
     }
 

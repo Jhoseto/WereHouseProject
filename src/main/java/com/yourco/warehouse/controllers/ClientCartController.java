@@ -428,13 +428,17 @@ public class ClientCartController {
             response.put("redirectUrl", "/orders/" + order.getId());
 
 
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            // БИЗНЕС ГРЕШКИ - връщаме точното съобщение от сървиса
             response.put("success", false);
             response.put("message", e.getMessage());
-            return ResponseEntity.badRequest().body(response);
+            log.warn("Бизнес грешка при checkout: {}", e.getMessage());
+            return ResponseEntity.ok(response);  // ✅ Връщаме 200 OK, не BadRequest
         } catch (Exception e) {
+            // ТЕХНИЧЕСКИ ГРЕШКИ
+            log.error("Техническа грешка при checkout", e);
             response.put("success", false);
-            response.put("message", "Възникна грешка при създаването на поръчката");
+            response.put("message", "Възникна техническа грешка. Моля, презаредете страницата.");
             return ResponseEntity.status(500).body(response);
         }
 

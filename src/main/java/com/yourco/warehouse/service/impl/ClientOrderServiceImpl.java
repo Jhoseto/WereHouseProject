@@ -300,6 +300,7 @@ public class ClientOrderServiceImpl implements ClientOrderService {
     }
 
 
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Map<String, Object> updateOrderBatch(Long orderId, Map<Long, Integer> itemUpdates, Long clientId) {
@@ -397,24 +398,25 @@ public class ClientOrderServiceImpl implements ClientOrderService {
 
                 // Проверка на наличност ако увеличаваме
                 if (difference > 0) {
-                    int available = product.getQuantityAvailable();
-                    if (available < difference) {
-                        // Не можем да увеличим с толкова - задай максималното възможно
-                        int maxPossible = currentReserved + available;
+                    int maxOrderable = getMaxOrderableQuantity(clientId, product);
+
+                    if (currentReserved + difference > maxOrderable) {
+                        // Не можем да увеличим толкова
+                        int maxPossible = maxOrderable;
 
                         Map<String, Object> warning = new HashMap<>();
-                        warning.put("message", String.format("Продуктът '%s' няма достатъчна наличност. Заявени: %d, налични: %d, актуализирано на: %d",
-                                product.getName(), newQuantity, available, maxPossible));
+                        warning.put("message", String.format("Продуктът '%s' няма достатъчна наличност. Заявени: %d, максимум: %d (налични в склада: %d)",
+                                product.getName(), currentReserved + difference, maxPossible, product.getQuantityAvailable()));
                         warning.put("productId", productId);
                         warning.put("productName", product.getName());
-                        warning.put("requestedQuantity", newQuantity);
-                        warning.put("availableQuantity", available);
+                        warning.put("requestedQuantity", currentReserved + difference);
+                        warning.put("availableQuantity", product.getQuantityAvailable());
                         warning.put("finalQuantity", maxPossible);
                         warnings.add(warning);
 
                         // Използвай максималното възможно количество
                         newQuantity = maxPossible;
-                        difference = available;
+                        difference = newQuantity - currentReserved;
                     }
 
                     if (difference > 0) {
@@ -543,5 +545,15 @@ public class ClientOrderServiceImpl implements ClientOrderService {
             result.put("message", "Грешка при отказване на поръчката: " + e.getMessage());
             return result;
         }
+    }
+
+
+    /**
+     * Изчислява максималното количество което user може да поръча
+     */
+    private int getMaxOrderableQuantity(Long userId, ProductEntity product) {
+        int available = product.getQuantityAvailable();
+        BigDecimal reserved = orderItemRepository.getReservedQuantityByUser(userId, product.getId());
+        return available + reserved.intValue();
     }
 }

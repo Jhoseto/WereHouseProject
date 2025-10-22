@@ -656,29 +656,29 @@ class CartPanel {
                 credentials: 'include'
             });
 
-            if (response.ok) {
-                const data = await response.json();
-                if (data.success) {
-                    window.toastManager?.success(data.message || 'Поръчката е създадена успешно!');
+            // ПОПРАВКА: Четем JSON дори при грешка
+            const data = await response.json();
 
-                    modal.remove();
-                    document.body.style.overflow = '';
-                    this.close();
+            if (data.success) {
+                // УСПЕХ - Затваряме и пренасочваме
+                window.toastManager?.success(data.message || 'Поръчката е създадена успешно!');
 
-                    await window.cartManager?.updateBadge();
+                modal.remove();
+                document.body.style.overflow = '';
+                this.close();
 
-                    if (data.redirectUrl) {
-                        setTimeout(() => {
-                            window.location.href = data.redirectUrl;
-                        }, 1000);
-                    }
-                } else {
-                    window.toastManager?.error(data.message || 'Грешка при създаване на поръчката');
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = originalText;
+                await window.cartManager?.updateBadge();
+
+                if (data.redirectUrl) {
+                    setTimeout(() => {
+                        window.location.href = data.redirectUrl;
+                    }, 1000);
                 }
             } else {
-                throw new Error('Server error');
+                // ГРЕШКА - Показваме съобщението и оставяме модала отворен
+                window.toastManager?.error(data.message || 'Грешка при създаване на поръчката');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
             }
         } catch (error) {
             console.error('Checkout error:', error);

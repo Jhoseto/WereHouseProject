@@ -6,6 +6,7 @@ import com.yourco.warehouse.entity.CartItem;
 import com.yourco.warehouse.entity.ProductEntity;
 import com.yourco.warehouse.entity.UserEntity;
 import com.yourco.warehouse.repository.CartItemRepository;
+import com.yourco.warehouse.repository.OrderItemRepository;
 import com.yourco.warehouse.repository.ProductRepository;
 import com.yourco.warehouse.repository.UserRepository;
 import com.yourco.warehouse.service.CartService;
@@ -29,14 +30,17 @@ public class CartServiceImpl implements CartService {
     private final CartItemRepository cartItemRepository;
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
+    private final OrderItemRepository orderItemRepository;
 
     @Autowired
     public CartServiceImpl(CartItemRepository cartItemRepository,
                            ProductRepository productRepository,
-                           UserRepository userRepository) {
+                           UserRepository userRepository,
+                           OrderItemRepository orderItemRepository) {
         this.cartItemRepository = cartItemRepository;
         this.productRepository = productRepository;
         this.userRepository = userRepository;
+        this.orderItemRepository = orderItemRepository;
     }
 
     @Override
@@ -46,7 +50,7 @@ public class CartServiceImpl implements CartService {
         UserEntity user = getUserById(userId);
         ProductEntity product = getActiveProductById(productId);
 
-        // Проверка за наличност
+        // Проверка за наличност според новата логика
         Optional<CartItem> existingItem = cartItemRepository.findByUserIdAndProductId(userId, productId);
         int totalQuantityNeeded = quantity;
 
@@ -54,10 +58,20 @@ public class CartServiceImpl implements CartService {
             totalQuantityNeeded += existingItem.get().getQuantity();
         }
 
-        if (!product.hasAvailableQuantity(totalQuantityNeeded)) {
-            throw new IllegalArgumentException(
-                    String.format("Няма достатъчно наличност за '%s'. Налично: %d, поискано: %d",
-                            product.getName(), product.getQuantityAvailable(), totalQuantityNeeded));
+        int maxOrderable = getMaxOrderableQuantity(userId, product);
+        if (totalQuantityNeeded > maxOrderable) {
+            int userReserved = maxOrderable - product.getQuantityAvailable();
+
+            String message;
+            if (userReserved > 0) {
+                message = String.format("⚠️ Вече имате поръчка за %d бр. от този артикул. Налични в склада: %d бр. Не можете да поръчате повече.",
+                        userReserved, product.getQuantityAvailable());
+            } else {
+                message = String.format("⚠️ Налични са само %d бр. в склада. Не можете да поръчате %d бр.",
+                        product.getQuantityAvailable(), totalQuantityNeeded);
+            }
+
+            throw new IllegalArgumentException(message);
         }
 
         // Добавяне или обновяване
@@ -82,10 +96,20 @@ public class CartServiceImpl implements CartService {
 
         ProductEntity product = cartItem.getProduct();
 
-        if (!product.hasAvailableQuantity(newQuantity)) {
-            throw new IllegalArgumentException(
-                    String.format("Няма достатъчно наличност за '%s'. Налично: %d",
-                            product.getName(), product.getQuantityAvailable()));
+        int maxOrderable = getMaxOrderableQuantity(userId, product);
+        if (newQuantity > maxOrderable) {
+            int userReserved = maxOrderable - product.getQuantityAvailable();
+
+            String message;
+            if (userReserved > 0) {
+                message = String.format("⚠️ Вече имате поръчка за %d бр. Налични в склада: %d бр. Максимум можете да поръчате общо: %d бр.",
+                        userReserved, product.getQuantityAvailable(), maxOrderable);
+            } else {
+                message = String.format("⚠️ Налични са само %d бр. в склада.",
+                        product.getQuantityAvailable());
+            }
+
+            throw new IllegalArgumentException(message);
         }
 
         cartItem.setQuantity(newQuantity);
@@ -169,7 +193,8 @@ public class CartServiceImpl implements CartService {
         return cartItemRepository.hasItemsByUserId(userId);
     }
 
-    // В CartServiceImpl.java
+
+
     @Override
     @Transactional
     public boolean reserveCartItems(Long userId) {
@@ -180,18 +205,26 @@ public class CartServiceImpl implements CartService {
         }
 
         // ВАЖНО: Използваме pessimistic lock за да заключим продуктите
-        // Това предотвратява race conditions при конкурентни резервации
         for (CartItem item : items) {
             ProductEntity product = productRepository.findByIdWithLock(item.getProduct().getId())
                     .orElseThrow(() -> new IllegalStateException("Продукт не е намерен"));
 
-            // Сега можем безопасно да валидираме и резервираме в едно действие
-            if (!product.hasAvailableQuantity(item.getQuantity())) {
-                throw new IllegalStateException(
-                        String.format("Няма достатъчно наличност за '%s'. Налично: %d, Поискано: %d",
-                                product.getName(),
-                                product.getQuantityAvailable(),
-                                item.getQuantity()));
+            // НОВА ЛОГИКА: Проверка с отчитане на вече резервираните от user-а
+            int maxOrderable = getMaxOrderableQuantity(userId, product);
+
+            if (item.getQuantity() > maxOrderable) {
+                int userReserved = maxOrderable - product.getQuantityAvailable();
+
+                String message;
+                if (userReserved > 0) {
+                    message = String.format("⚠️ Артикул '%s': Вече имате поръчка за %d бр. Налични в склада: %d бр. Не можете да поръчате общо повече от %d бр.",
+                            product.getName(), userReserved, product.getQuantityAvailable(), maxOrderable);
+                } else {
+                    message = String.format("⚠️ Артикул '%s': Налични са само %d бр. в склада.",
+                            product.getName(), product.getQuantityAvailable());
+                }
+
+                throw new IllegalArgumentException(message);
             }
 
             product.reserveQuantity(item.getQuantity());
@@ -200,6 +233,8 @@ public class CartServiceImpl implements CartService {
 
         return true;
     }
+
+
 
     @Override
     public boolean releaseCartReservations(Long userId) {
@@ -227,9 +262,11 @@ public class CartServiceImpl implements CartService {
 
         return items.stream().allMatch(item -> {
             ProductEntity product = item.getProduct();
-            return product.isActive() && product.hasAvailableQuantity(item.getQuantity());
+            int maxOrderable = getMaxOrderableQuantity(userId, product);
+            return product.isActive() && item.getQuantity() <= maxOrderable;
         });
     }
+
 
     // ==================== PRIVATE HELPER METHODS ====================
 
@@ -328,5 +365,16 @@ public class CartServiceImpl implements CartService {
             this.totalWithVat = totalWithVat;
             this.vatAmount = vatAmount;
         }
+    }
+
+
+    /**
+     * Изчислява максималното количество което user може да поръча
+     * @return quantityAvailable + вече резервираното от този user
+     */
+    private int getMaxOrderableQuantity(Long userId, ProductEntity product) {
+        int available = product.getQuantityAvailable();
+        BigDecimal reserved = orderItemRepository.getReservedQuantityByUser(userId, product.getId());
+        return available + reserved.intValue();
     }
 }

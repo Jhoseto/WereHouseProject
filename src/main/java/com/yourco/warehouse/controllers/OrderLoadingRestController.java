@@ -171,6 +171,7 @@ public class OrderLoadingRestController {
         try {
             log.debug("Getting active sessions progress");
 
+
             // РЕАЛЕН SERVICE CALL
             List<Map<String, Object>> result = orderLoadingService.getActiveLoadingProgress();
 
